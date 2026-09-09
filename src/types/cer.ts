@@ -305,6 +305,35 @@ export interface CerSessionNoteRecord {
   }
 }
 
+// ------------------------------------------
+// ENTIDADES DO BUILD 04B — KNOWLEDGE FROM SESSION
+// ------------------------------------------
+
+export const SESSION_OBSERVATION_TYPES = {
+  PARTICIPANT_REPORT: 'participant_report',
+  PROFESSIONAL_OBSERVATION: 'professional_observation',
+} as const
+
+export type SessionObservationType =
+  (typeof SESSION_OBSERVATION_TYPES)[keyof typeof SESSION_OBSERVATION_TYPES]
+
+export interface CerSessionObservationRecord {
+  id: string
+  session_id: string
+  enrollment_id: string
+  recorded_by_user_id: string
+  observation_type: SessionObservationType
+  text: string
+  access_class: VisibilityClass
+  created: string
+  updated: string
+  expand?: {
+    session_id?: CerSessionRecord
+    enrollment_id?: EnrollmentRecord
+    recorded_by_user_id?: UserAccountRecord
+  }
+}
+
 /**
  * Estrutura determinística de preparação pré-encontro (sem persistência)
  */
@@ -401,6 +430,7 @@ export const KNOWLEDGE_EVIDENCE_TYPES = {
   ASSOCIATION: 'association',
   PARTICIPANT_RECOGNITION: 'participant_recognition',
   PROFESSIONAL_OBSERVATION: 'professional_observation',
+  PARTICIPANT_REPORT_IN_SESSION: 'participant_report_in_session',
 } as const
 
 export type KnowledgeEvidenceType =

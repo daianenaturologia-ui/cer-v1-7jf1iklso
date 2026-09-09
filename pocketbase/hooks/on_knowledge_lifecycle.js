@@ -233,9 +233,53 @@ onRecordCreate((e) => {
       throw new BadRequestError('Recognition referenciado na evidência não encontrado.')
     }
   } else if (evType === 'professional_observation') {
-    // Observação profissional é vinculada por id
-    targetEnrollmentId = kiEnrollmentId
-    targetAccessClass = 'shared_care'
+    // BURACO CER-03C-10 CORRIGIDO: Resolver estritamente em cer_session_observations
+    // ID inexistente -> throw; observation_type deve ser 'professional_observation'
+    // enrollment_id deve ser idêntico ao KI; ler access_class REAL da Observation (professional_private)
+    try {
+      const obsRec = $app.findFirstRecordByData('cer_session_observations', 'id', evId)
+      const obsType = obsRec.getString('observation_type')
+      if (obsType !== 'professional_observation') {
+        throw new BadRequestError(
+          'Tipo de evidência "professional_observation" exige observation_type "professional_observation", mas o registro encontrado é "' +
+            obsType +
+            '".',
+        )
+      }
+      targetEnrollmentId = obsRec.getString('enrollment_id')
+      targetAccessClass = obsRec.getString('access_class') || 'professional_private'
+    } catch (obsErr) {
+      if (obsErr.message && obsErr.message.indexOf('Tipo de evidência') !== -1) {
+        throw obsErr
+      }
+      throw new BadRequestError(
+        'Observação de sessão referenciada na evidência não encontrada em cer_session_observations.',
+      )
+    }
+  } else if (evType === 'participant_report_in_session') {
+    // Resolver estritamente em cer_session_observations com observation_type = 'participant_report'
+    try {
+      const obsRec = $app.findFirstRecordByData('cer_session_observations', 'id', evId)
+      const obsType = obsRec.getString('observation_type')
+      if (obsType !== 'participant_report') {
+        throw new BadRequestError(
+          'Tipo de evidência "participant_report_in_session" exige observation_type "participant_report", mas o registro encontrado é "' +
+            obsType +
+            '".',
+        )
+      }
+      targetEnrollmentId = obsRec.getString('enrollment_id')
+      targetAccessClass = obsRec.getString('access_class') || 'professional_private'
+    } catch (obsErr) {
+      if (obsErr.message && obsErr.message.indexOf('Tipo de evidência') !== -1) {
+        throw obsErr
+      }
+      throw new BadRequestError(
+        'Observação de relato da participante na sessão não encontrada em cer_session_observations.',
+      )
+    }
+  } else {
+    throw new BadRequestError('Tipo de evidência desconhecido ou inválido: "' + evType + '".')
   }
 
   // Cross-enrollment check (P16)

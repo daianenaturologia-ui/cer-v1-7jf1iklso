@@ -74,6 +74,17 @@ onRecordUpdate((e) => {
             const pr = $app.findFirstRecordByData('cer_participant_recognitions', 'id', evId)
             evAccess = pr.getString('access_class') || 'shared_care'
           } catch (_) {}
+        } else if (
+          evType === 'professional_observation' ||
+          evType === 'participant_report_in_session'
+        ) {
+          // BURACO CER-03C-10 CORRIGIDO: Resolver estritamente em cer_session_observations
+          try {
+            const obs = $app.findFirstRecordByData('cer_session_observations', 'id', evId)
+            evAccess = obs.getString('access_class') || 'professional_private'
+          } catch (_) {
+            evAccess = 'professional_private'
+          }
         }
 
         // Se a evidência for participant_private, o Knowledge Item SÓ pode ser participant_private

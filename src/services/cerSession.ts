@@ -2,6 +2,8 @@ import pb from '@/lib/pocketbase/client'
 import type {
   CerSessionRecord,
   CerSessionNoteRecord,
+  CerSessionObservationRecord,
+  SessionObservationType,
   SessionStatus,
   SessionPreparationData,
   EnrollmentRecord,
@@ -123,6 +125,58 @@ export const cerSessionNoteService = {
   async update(noteId: string, text: string): Promise<CerSessionNoteRecord> {
     return await pb.collection('cer_session_notes').update<CerSessionNoteRecord>(noteId, {
       text: text,
+    })
+  },
+}
+
+/**
+ * Service de Observações de Sessão Epistemicamente Preservadas (Build 04B - Knowledge from Session)
+ * Registro único e imutável. Observation é create-only; DELETE e UPDATE são negados.
+ */
+export const cerSessionObservationService = {
+  /**
+   * Lista as observações registradas para uma sessão
+   */
+  async listBySession(sessionId: string): Promise<CerSessionObservationRecord[]> {
+    return await pb
+      .collection('cer_session_observations')
+      .getFullList<CerSessionObservationRecord>({
+        filter: `session_id = "${sessionId}"`,
+        sort: 'created',
+        expand: 'recorded_by_user_id',
+      })
+  },
+
+  /**
+   * Lista as observações de um enrollment inteiro
+   */
+  async listByEnrollment(enrollmentId: string): Promise<CerSessionObservationRecord[]> {
+    return await pb
+      .collection('cer_session_observations')
+      .getFullList<CerSessionObservationRecord>({
+        filter: `enrollment_id = "${enrollmentId}"`,
+        sort: '-created',
+        expand: 'recorded_by_user_id,session_id',
+      })
+  },
+
+  /**
+   * Cria uma observação de sessão (participant_report ou professional_observation)
+   */
+  async create(data: {
+    session_id: string
+    observation_type: SessionObservationType
+    text: string
+  }): Promise<CerSessionObservationRecord> {
+    const session = await pb.collection('cer_sessions').getOne<CerSessionRecord>(data.session_id)
+    const currentUserId = pb.authStore.record?.id
+    return await pb.collection('cer_session_observations').create<CerSessionObservationRecord>({
+      session_id: data.session_id,
+      enrollment_id: session.enrollment_id,
+      recorded_by_user_id: currentUserId,
+      observation_type: data.observation_type,
+      text: data.text,
+      access_class: 'professional_private',
     })
   },
 }

@@ -22,7 +22,13 @@ import {
   cerSessionNoteService,
   computeSessionPreparation,
 } from '@/services/cerSession'
-import type { CerSessionRecord, CerSessionNoteRecord, SessionPreparationData } from '@/types/cer'
+import type {
+  CerSessionRecord,
+  CerSessionNoteRecord,
+  CerSessionObservationRecord,
+  SessionPreparationData,
+} from '@/types/cer'
+import { cerSessionObservationService } from '@/services/cerSession'
 
 interface ProfessionalSessionManagerProps {
   enrollmentId: string
@@ -36,12 +42,21 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
   const [sessions, setSessions] = useState<CerSessionRecord[]>([])
   const [activeSession, setActiveSession] = useState<CerSessionRecord | null>(null)
   const [activeNote, setActiveNote] = useState<CerSessionNoteRecord | null>(null)
+  const [observations, setObservations] = useState<CerSessionObservationRecord[]>([])
   const [preparation, setPreparation] = useState<SessionPreparationData | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
   const [loading, setLoading] = useState(true)
   const [savingNote, setSavingNote] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'preparacao' | 'encontro' | 'historico'>('preparacao')
+
+  // Estado para bloco humano opcional: "O que vale preservar deste encontro?"
+  const [observationText, setObservationText] = useState('')
+  const [savingObservation, setSavingObservation] = useState(false)
+  const [observationTypeChoice, setObservationTypeChoice] = useState<
+    'participant_report' | 'professional_observation'
+  >('participant_report')
+
   const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(
     null,
   )
@@ -78,12 +93,43 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
   const selectSession = async (sess: CerSessionRecord) => {
     setActiveSession(sess)
     try {
-      const note = await cerSessionNoteService.getBySessionId(sess.id)
+      const [note, obsList] = await Promise.all([
+        cerSessionNoteService.getBySessionId(sess.id),
+        cerSessionObservationService.listBySession(sess.id),
+      ])
       setActiveNote(note)
+      setObservations(obsList)
       setNoteDraft(note?.text || '')
     } catch {
       setActiveNote(null)
+      setObservations([])
       setNoteDraft('')
+    }
+  }
+
+  const handleCreateObservation = async () => {
+    if (!activeSession || !observationText.trim()) return
+    try {
+      setSavingObservation(true)
+      await cerSessionObservationService.create({
+        session_id: activeSession.id,
+        observation_type: observationTypeChoice,
+        text: observationText.trim(),
+      })
+      setObservationText('')
+      const updatedObs = await cerSessionObservationService.listBySession(activeSession.id)
+      setObservations(updatedObs)
+      setFeedback({
+        message: 'Observação preservada com integridade epistemológica.',
+        type: 'success',
+      })
+    } catch (err: unknown) {
+      setFeedback({
+        message: err instanceof Error ? err.message : 'Falha ao registrar observação.',
+        type: 'error',
+      })
+    } finally {
+      setSavingObservation(false)
     }
   }
 
@@ -617,6 +663,135 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                     <p className="text-[11px] text-muted-foreground italic flex items-center gap-1">
                       <Lock className="w-3 h-3 text-muted-foreground" />
                       Encontro concluído: anotações não podem mais ser sobrescritas ou alteradas.
+                    </p>
+                  )}
+                </div>
+
+                {/* BLOCO HUMANO OPCIONAL (Build 04B): "O que vale preservar deste encontro?" */}
+                <div className="p-3.5 rounded-lg border border-border/70 bg-background space-y-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <span className="text-xs font-semibold text-foreground">
+                        O que vale preservar deste encontro?
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] font-normal text-muted-foreground"
+                      >
+                        Opcional
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Registre observações fiéis do encontro para fundamentação epistemológica
+                      segura. Nenhuma observação é obrigatória.
+                    </p>
+                  </div>
+
+                  {/* Formulário de Nova Observação (permitido em in_progress ou completed) */}
+                  {(isInProgress || isCompleted) && (
+                    <div className="p-3 rounded-md border border-border/50 bg-muted/20 space-y-2.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-medium text-foreground">
+                          Tipo de registro:
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={
+                              observationTypeChoice === 'participant_report' ? 'default' : 'outline'
+                            }
+                            onClick={() => setObservationTypeChoice('participant_report')}
+                            className="text-xs h-7 px-2.5"
+                          >
+                            Algo que ela contou
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={
+                              observationTypeChoice === 'professional_observation'
+                                ? 'default'
+                                : 'outline'
+                            }
+                            onClick={() => setObservationTypeChoice('professional_observation')}
+                            className="text-xs h-7 px-2.5"
+                          >
+                            Algo que eu observei
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Textarea
+                        placeholder={
+                          observationTypeChoice === 'participant_report'
+                            ? 'Palavras ou relatos trazidos pela própria interagente...'
+                            : 'Fato diretamente observado em sessão, sem inferência explicativa...'
+                        }
+                        value={observationText}
+                        onChange={(e) => setObservationText(e.target.value)}
+                        rows={2}
+                        className="text-xs font-normal resize-y"
+                      />
+
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] text-muted-foreground italic">
+                          {observationTypeChoice === 'participant_report'
+                            ? 'Origem: relato da participante. Registro preservado com sigilo profissional.'
+                            : 'Origem: observação direta do profissional, sem juízo ou hipótese.'}
+                        </p>
+                        <Button
+                          size="sm"
+                          onClick={handleCreateObservation}
+                          disabled={savingObservation || !observationText.trim()}
+                          className="text-xs h-7 px-3"
+                        >
+                          {savingObservation ? 'Preservando...' : 'Preservar Observação'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Lista de Observações Já Preservadas */}
+                  {observations.length > 0 ? (
+                    <div className="space-y-2 pt-1">
+                      <span className="text-[11px] font-medium text-foreground">
+                        Observações preservadas neste encontro ({observations.length}):
+                      </span>
+                      <div className="divide-y divide-border/30 rounded-md border border-border/40 bg-muted/10">
+                        {observations.map((obs) => (
+                          <div key={obs.id} className="p-2.5 text-xs space-y-1">
+                            <div className="flex items-center justify-between">
+                              <Badge
+                                variant={
+                                  obs.observation_type === 'participant_report'
+                                    ? 'secondary'
+                                    : 'outline'
+                                }
+                                className="text-[10px] uppercase font-mono px-1.5 py-0"
+                              >
+                                {obs.observation_type === 'participant_report'
+                                  ? 'Algo que ela contou'
+                                  : 'Algo observado'}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground font-mono">
+                                {new Date(obs.created).toLocaleTimeString('pt-BR', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
+                            <p className="text-foreground leading-relaxed pl-1 text-[11px]">
+                              "{obs.text}"
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Nenhuma observação isolada registrada para este encontro até o momento.
                     </p>
                   )}
                 </div>

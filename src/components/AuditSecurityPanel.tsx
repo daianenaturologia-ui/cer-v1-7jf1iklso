@@ -3,6 +3,7 @@ import { runBuild01IsolationTests, runBuild02EngineTests, type TestResult } from
 import { runBuild03AKnowledgeTests, runBuild03BLongitudinalTests } from '@/services/testsKnowledge'
 import { runBuild03CPostAuditTests } from '@/services/testsKnowledge03c'
 import { runBuild04ASessionTests } from '@/services/testsSession'
+import { runBuild04BSessionKnowledgeTests } from '@/services/testsSession04b'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -23,19 +24,21 @@ export const AuditSecurityPanel: React.FC = () => {
   const [b03bResults, setB03bResults] = useState<TestResult[]>([])
   const [b03cResults, setB03cResults] = useState<TestResult[]>([])
   const [b04aResults, setB04aResults] = useState<TestResult[]>([])
+  const [b04bResults, setB04bResults] = useState<TestResult[]>([])
   const [running, setRunning] = useState(false)
   const [hasRun, setHasRun] = useState(false)
 
   const handleRunTests = async () => {
     setRunning(true)
     try {
-      const [res01, res02, res03a, res03b, res03c, res04a] = await Promise.all([
+      const [res01, res02, res03a, res03b, res03c, res04a, res04b] = await Promise.all([
         runBuild01IsolationTests(),
         runBuild02EngineTests(),
         runBuild03AKnowledgeTests(),
         runBuild03BLongitudinalTests(),
         runBuild03CPostAuditTests(),
         runBuild04ASessionTests(),
+        runBuild04BSessionKnowledgeTests(),
       ])
       setB01Results(res01)
       setB02Results(res02)
@@ -43,6 +46,7 @@ export const AuditSecurityPanel: React.FC = () => {
       setB03bResults(res03b)
       setB03cResults(res03c)
       setB04aResults(res04a)
+      setB04bResults(res04b)
       setHasRun(true)
     } catch (err) {
       console.error('Falha ao executar suíte de testes:', err)
@@ -63,6 +67,7 @@ export const AuditSecurityPanel: React.FC = () => {
     ...b03bResults,
     ...b03cResults,
     ...b04aResults,
+    ...b04bResults,
   ]
   const passedCount = allResults.filter((r) => r.status === 'PASSOU').length
 
@@ -74,8 +79,8 @@ export const AuditSecurityPanel: React.FC = () => {
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-primary" />
               <CardTitle className="text-base font-semibold">
-                Auditoria de Segurança, Engine, Conhecimento & Sessões (Builds 01, 02, 03A, 03B, 03C
-                e 04A)
+                Auditoria de Segurança, Engine, Conhecimento & Sessões (Builds 01, 02, 03A, 03B,
+                03C, 04A e 04B)
               </CardTitle>
             </div>
             <CardDescription className="text-xs">
@@ -124,6 +129,49 @@ export const AuditSecurityPanel: React.FC = () => {
           </div>
         ) : (
           <>
+            {/* Bloco de Testes do Build 04B */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-medium text-foreground pb-1 border-b border-border/40">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>
+                  Testes Obrigatórios do Build 04B — Knowledge from Session & Correção CER-03C-10 (
+                  {b04bResults.length} testes)
+                </span>
+              </div>
+              {b04bResults.map((t) => (
+                <div
+                  key={t.id}
+                  className="p-3 rounded-lg border border-border/50 bg-muted/20 flex flex-col gap-1.5 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {t.status === 'PASSOU' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-destructive shrink-0" />
+                      )}
+                      <span className="font-medium text-foreground">{t.name}</span>
+                    </div>
+                    <Badge
+                      variant={
+                        t.status === 'PASSOU'
+                          ? 'secondary'
+                          : t.status === 'NÃO IMPLEMENTADO'
+                            ? 'outline'
+                            : 'destructive'
+                      }
+                      className="text-[10px] uppercase font-mono tracking-wider shrink-0"
+                    >
+                      {t.status}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-[11px] pl-6 leading-relaxed">
+                    {t.details}
+                  </p>
+                </div>
+              ))}
+            </div>
+
             {/* Bloco de Testes do Build 04A */}
             <div className="space-y-2.5">
               <div className="flex items-center gap-2 text-xs font-medium text-foreground pb-1 border-b border-border/40">

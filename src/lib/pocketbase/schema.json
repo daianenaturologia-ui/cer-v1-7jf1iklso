@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T20:03:42.643Z",
+  "generatedAt": "2026-09-09T20:31:55.304Z",
   "collections": [
     {
       "name": "users",
@@ -1998,7 +1998,8 @@
             "signal",
             "association",
             "participant_recognition",
-            "professional_observation"
+            "professional_observation",
+            "participant_report_in_session"
           ]
         },
         {
@@ -2404,6 +2405,87 @@
         "CREATE UNIQUE INDEX idx_cer_session_notes_session ON cer_session_notes (session_id)",
         "CREATE INDEX idx_cer_session_notes_enrollment ON cer_session_notes (enrollment_id)",
         "CREATE INDEX idx_cer_session_notes_author ON cer_session_notes (author_user_id)"
+      ]
+    },
+    {
+      "name": "cer_session_observations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && recorded_by_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && recorded_by_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "session_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_sessions"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "recorded_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "observation_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["participant_report", "professional_observation"]
+        },
+        {
+          "name": "text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared",
+            "professional_private",
+            "shared_care",
+            "administrative",
+            "system_internal"
+          ]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cso_session ON cer_session_observations (session_id)",
+        "CREATE INDEX idx_cso_enrollment ON cer_session_observations (enrollment_id)",
+        "CREATE INDEX idx_cso_author ON cer_session_observations (recorded_by_user_id)",
+        "CREATE INDEX idx_cso_type ON cer_session_observations (observation_type)"
       ]
     }
   ]
