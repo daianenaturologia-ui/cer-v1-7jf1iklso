@@ -1349,6 +1349,145 @@ export async function runBuild04ASessionTests(): Promise<TestResult[]> {
       })
     }
 
+    // =========================================================================
+    // AUDITORIA CIRÚRGICA — CICLO DE VIDA DA NOTA EM SESSÃO CANCELADA (C1–C4)
+    // =========================================================================
+
+    // C1: Session scheduled + criar Note -> PERMITIDO
+    let c1SessionId = ''
+    let c1NoteId = ''
+    const initialNoteText = 'Texto inicial da nota clínica em sessão agendada (C1).'
+    try {
+      await pb.collection('users').authWithPassword('profissional.a@cer.app', 'Skip@Pass')
+      const sessC1 = await pb.collection('cer_sessions').create({
+        enrollment_id: ENROLLMENT_ANA,
+        status: 'scheduled',
+        scheduled_at: new Date(Date.now() + 86400000).toISOString(),
+      })
+      c1SessionId = sessC1.id
+
+      const noteC1 = await pb.collection('cer_session_notes').create({
+        session_id: sessC1.id,
+        enrollment_id: ENROLLMENT_ANA,
+        text: initialNoteText,
+      })
+      c1NoteId = noteC1.id
+
+      const passed =
+        !!noteC1.id && noteC1.session_id === sessC1.id && noteC1.text === initialNoteText
+      results.push({
+        id: 'C1_SCHEDULED_CREATE_NOTE_ALLOWED',
+        name: 'C1: Session scheduled + criar Note → PERMITIDO',
+        category: 'Build 04A / Note Integridade',
+        status: passed ? 'PASSOU' : 'NÃO PASSOU',
+        details: passed
+          ? `SUCESSO: Nota ${noteC1.id} criada com sucesso para sessão scheduled ${sessC1.id}.`
+          : 'FALHA: Criação de nota em sessão scheduled falhou.',
+        timestamp: new Date().toISOString(),
+      })
+    } catch (err: unknown) {
+      results.push({
+        id: 'C1_SCHEDULED_CREATE_NOTE_ALLOWED',
+        name: 'C1: Session scheduled + criar Note → PERMITIDO',
+        category: 'Build 04A / Note Integridade',
+        status: 'NÃO PASSOU',
+        details: `Erro: ${err instanceof Error ? err.message : ''}`,
+        timestamp: new Date().toISOString(),
+      })
+    }
+
+    // C2: scheduled com Note existente -> cancelar Session -> PERMITIDO; Note preservada
+    try {
+      await pb.collection('users').authWithPassword('profissional.a@cer.app', 'Skip@Pass')
+      const updatedSess = await pb.collection('cer_sessions').update(c1SessionId, {
+        status: 'cancelled',
+      })
+      const notePreserved = await pb.collection('cer_session_notes').getOne(c1NoteId)
+
+      const passed =
+        updatedSess.status === 'cancelled' &&
+        notePreserved.id === c1NoteId &&
+        notePreserved.text === initialNoteText
+
+      results.push({
+        id: 'C2_CANCEL_SESSION_PRESERVES_EXISTING_NOTE',
+        name: 'C2: scheduled com Note existente → cancelar Session PERMITIDO; Note preservada',
+        category: 'Build 04A / Note Integridade',
+        status: passed ? 'PASSOU' : 'NÃO PASSOU',
+        details: passed
+          ? `SUCESSO: Sessão cancelada com sucesso; nota ${c1NoteId} permanece íntegra com conteúdo original.`
+          : 'FALHA: Cancelamento falhou ou nota foi perdida.',
+        timestamp: new Date().toISOString(),
+      })
+    } catch (err: unknown) {
+      results.push({
+        id: 'C2_CANCEL_SESSION_PRESERVES_EXISTING_NOTE',
+        name: 'C2: scheduled com Note existente → cancelar Session PERMITIDO; Note preservada',
+        category: 'Build 04A / Note Integridade',
+        status: 'NÃO PASSOU',
+        details: `Erro: ${err instanceof Error ? err.message : ''}`,
+        timestamp: new Date().toISOString(),
+      })
+    }
+
+    // C3: UPDATE da Note após cancelled -> NEGADO server-side
+    let c3Passed = false
+    try {
+      await pb.collection('users').authWithPassword('profissional.a@cer.app', 'Skip@Pass')
+      try {
+        await pb.collection('cer_session_notes').update(c1NoteId, {
+          text: 'Tentativa extemporânea e indevida de alterar nota de sessão cancelada (C3).',
+        })
+      } catch {
+        c3Passed = true
+      }
+      results.push({
+        id: 'C3_UPDATE_NOTE_AFTER_CANCELLED_DENIED',
+        name: 'C3: UPDATE da Note após Session cancelled → NEGADO server-side',
+        category: 'Build 04A / Note Integridade',
+        status: c3Passed ? 'PASSOU' : 'NÃO PASSOU',
+        details: c3Passed
+          ? 'SUCESSO: Hook onRecordUpdate bloqueou tentativa de alteração de nota com Session.status=cancelled.'
+          : 'FALHA: Servidor permitiu atualização de nota em sessão cancelada!',
+        timestamp: new Date().toISOString(),
+      })
+    } catch (err: unknown) {
+      results.push({
+        id: 'C3_UPDATE_NOTE_AFTER_CANCELLED_DENIED',
+        name: 'C3: UPDATE da Note após Session cancelled → NEGADO server-side',
+        category: 'Build 04A / Note Integridade',
+        status: 'NÃO PASSOU',
+        details: `Erro: ${err instanceof Error ? err.message : ''}`,
+        timestamp: new Date().toISOString(),
+      })
+    }
+
+    // C4: conteúdo anterior da Note permanece intacto após a tentativa negada
+    try {
+      await pb.collection('users').authWithPassword('profissional.a@cer.app', 'Skip@Pass')
+      const noteAfter = await pb.collection('cer_session_notes').getOne(c1NoteId)
+      const passed = noteAfter.text === initialNoteText
+      results.push({
+        id: 'C4_NOTE_CONTENT_INTACT_AFTER_DENIED_UPDATE',
+        name: 'C4: Conteúdo anterior da Note permanece intacto após tentativa negada',
+        category: 'Build 04A / Note Integridade',
+        status: passed ? 'PASSOU' : 'NÃO PASSOU',
+        details: passed
+          ? `SUCESSO: Conteúdo verificado via GET: "${noteAfter.text}". Permaneceu 100% idêntico ao estado pré-cancelamento.`
+          : `FALHA: Conteúdo da nota foi corrompido ou alterado ("${noteAfter.text}").`,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (err: unknown) {
+      results.push({
+        id: 'C4_NOTE_CONTENT_INTACT_AFTER_DENIED_UPDATE',
+        name: 'C4: Conteúdo anterior da Note permanece intacto após tentativa negada',
+        category: 'Build 04A / Note Integridade',
+        status: 'NÃO PASSOU',
+        details: `Erro: ${err instanceof Error ? err.message : ''}`,
+        timestamp: new Date().toISOString(),
+      })
+    }
+
     // I12: nota fora da Knowledge Layer -> CONFIRMAR ausência de derivação
     try {
       await pb.collection('users').authWithPassword('profissional.a@cer.app', 'Skip@Pass')
