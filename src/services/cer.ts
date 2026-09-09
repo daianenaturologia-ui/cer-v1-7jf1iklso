@@ -257,7 +257,9 @@ export const enrollmentService = {
         existing = await pb
           .collection('professional_enrollment_access')
           .getFirstListItem(`enrollment_id = "${enrollment.id}"`)
-      } catch { /* intentionally ignored */ }
+      } catch {
+        /* intentionally ignored */
+      }
 
       if (!existing) {
         const createdAccess = await pb

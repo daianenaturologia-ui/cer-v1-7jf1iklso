@@ -1,4 +1,4 @@
-// Hook para auditar revogação ou alteração de acesso profissional (PROFESSIONAL_ACCESS_REVOKED)
+// Hook de auditoria para revogação de vínculo profissional (PROFESSIONAL_ACCESS_REVOKED)
 onRecordAfterUpdateSuccess((e) => {
   e.next()
 
