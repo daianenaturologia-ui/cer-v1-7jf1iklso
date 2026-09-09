@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T20:49:03.336Z",
+  "generatedAt": "2026-09-09T21:08:54.879Z",
   "collections": [
     {
       "name": "users",
@@ -2593,6 +2593,222 @@
         "CREATE INDEX idx_kp_ki ON cer_knowledge_presentations (knowledge_item_id)",
         "CREATE INDEX idx_kp_enrollment ON cer_knowledge_presentations (enrollment_id)",
         "CREATE INDEX idx_kp_status ON cer_knowledge_presentations (status)"
+      ]
+    },
+    {
+      "name": "cer_ai_proposals",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "requested_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "proposal_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "association_suggestion",
+            "knowledge_suggestion",
+            "integrative_hypothesis"
+          ]
+        },
+        {
+          "name": "proposal_text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "edited_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pending_review", "approved", "discarded", "observing"]
+        },
+        {
+          "name": "review_action",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["approved", "edited_and_approved", "discarded", "observing"]
+        },
+        {
+          "name": "framework_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_frameworks"
+        },
+        {
+          "name": "target_knowledge_item_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_knowledge_items"
+        },
+        {
+          "name": "target_association_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_associations"
+        },
+        {
+          "name": "reviewed_by_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "purpose",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "model_metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_aip_enrollment ON cer_ai_proposals (enrollment_id)",
+        "CREATE INDEX idx_aip_requester ON cer_ai_proposals (requested_by_user_id)",
+        "CREATE INDEX idx_aip_status ON cer_ai_proposals (status)",
+        "CREATE INDEX idx_aip_type ON cer_ai_proposals (proposal_type)"
+      ]
+    },
+    {
+      "name": "cer_ai_proposal_sources",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && proposal_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && proposal_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && proposal_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && proposal_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && proposal_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && proposal_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "proposal_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_ai_proposals"
+        },
+        {
+          "name": "source_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "experience_response",
+            "signal",
+            "association",
+            "knowledge_item",
+            "participant_recognition",
+            "session_observation"
+          ]
+        },
+        {
+          "name": "source_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "source_version",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "relation_type",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["supports", "contrasts", "qualifies", "contextualizes", "updates"]
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared",
+            "professional_private",
+            "shared_care",
+            "administrative",
+            "system_internal"
+          ]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_aips_proposal ON cer_ai_proposal_sources (proposal_id)",
+        "CREATE INDEX idx_aips_source ON cer_ai_proposal_sources (source_id)",
+        "CREATE INDEX idx_aips_type ON cer_ai_proposal_sources (source_type)"
       ]
     }
   ]

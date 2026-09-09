@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { AuditSecurityPanel } from '@/components/AuditSecurityPanel'
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
+import { ProfessionalAiWorkspace } from '@/components/ProfessionalAiWorkspace'
 import { ProfessionalSessionManager } from '@/components/ProfessionalSessionManager'
 import { ProfessionalExperienceManager } from '@/components/experience'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -384,6 +385,23 @@ export const ProfissionalHome: React.FC = () => {
                 enrollmentId={enr.id}
                 participantName={enr.expand?.person_id?.full_name || 'Interagente'}
               />
+            ))}
+          </div>
+        )}
+
+        {/* BUILD 05: AI Core V1 — Assistência Profissional (Briefing, Ask CER & Proposal Engine) */}
+        {enrollments.length > 0 && user && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-serif font-semibold text-foreground">
+              AI Core V1 — Assistência Profissional (Build 05)
+            </h2>
+            {enrollments.map((enr) => (
+              <div key={`ai-ws-${enr.id}`} className="space-y-2">
+                <span className="text-xs font-medium text-muted-foreground block">
+                  Interagente: {enr.expand?.person_id?.full_name || 'Interagente'}
+                </span>
+                <ProfessionalAiWorkspace humanUserId={user.id} enrollmentId={enr.id} />
+              </div>
             ))}
           </div>
         )}

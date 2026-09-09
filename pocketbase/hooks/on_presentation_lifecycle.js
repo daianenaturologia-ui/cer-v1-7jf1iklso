@@ -155,12 +155,21 @@ onRecordCreate((e) => {
     if (!e.auth) {
       throw new BadRequestError('Apresentação direta exige profissional humano autenticado.')
     }
-    // Negar se for IA / sistema
-    if (
-      e.auth.getString('name')?.toLowerCase().includes('bot') ||
-      e.auth.getString('name')?.toLowerCase().includes('ia')
-    ) {
-      throw new BadRequestError('IA/Sistema não pode executar transição para presented.')
+    // Gate estrutural Build 05: verificar se é profissional humano ativo com vínculo real e person_id
+    const authUser = e.auth
+    const personId = authUser.getString('person_id')
+    if (!personId) {
+      throw new BadRequestError(
+        'Contas de sistema ou automações sem person_id não podem executar transição para presented.',
+      )
+    }
+    try {
+      const pRecord = $app.findFirstRecordByData('persons', 'id', personId)
+      if (!pRecord || !pRecord.getString('full_name')) {
+        throw new BadRequestError('Principal deve corresponder a uma pessoa humana cadastrada.')
+      }
+    } catch (_) {
+      throw new BadRequestError('Pessoa humana vinculada ao principal não foi encontrada.')
     }
     if (!pres.getString('presented_at')) {
       pres.set('presented_at', new Date().toISOString())
@@ -318,21 +327,33 @@ onRecordUpdate((e) => {
 
       // Se estiver transitando draft -> presented:
       if (newStatus === 'presented') {
-        // Bloquear explicitamente IA / system / service accounts
-        const userName = (e.auth.getString('name') || '').toLowerCase()
-        const userEmail = (e.auth.getString('email') || '').toLowerCase()
-        if (
-          userName.includes('bot') ||
-          userName.includes('ia') ||
-          userEmail.includes('bot') ||
-          userEmail.includes('system')
-        ) {
+        // Gate estrutural Build 05: remoção de heurísticas de substring.
+        // Validação estrutural de principal/role:
+        // 1. Principal autenticado com person_id vinculado a registro em 'persons'
+        // 2. Role ativo 'profissional' em user_roles
+        // 3. Vínculo ativo em professional_enrollment_access
+        const authUser = e.auth
+        const personId = authUser.getString('person_id')
+        if (!personId) {
           throw new BadRequestError(
-            'IA/Sistema não pode executar transição para presented. Exige profissional humano autenticado.',
+            'Contas de sistema/serviço ou automações sem registro humano (person_id) não podem executar transição para presented.',
+          )
+        }
+        try {
+          const pRecord = $app.findFirstRecordByData('persons', 'id', personId)
+          if (!pRecord || !pRecord.getString('full_name')) {
+            throw new BadRequestError(
+              'Principal deve corresponder a uma pessoa humana física cadastrada.',
+            )
+          }
+        } catch (_) {
+          throw new BadRequestError(
+            'Pessoa humana física vinculada ao principal não foi encontrada.',
           )
         }
 
-        // Verificar role profissional
+        // Verificar role profissional ativo
+        let hasProfRole = false
         try {
           const roles = $app.findRecordsByFilter(
             'user_roles',
@@ -341,13 +362,14 @@ onRecordUpdate((e) => {
             10,
             0,
           )
-          const hasProf = roles.some((r) => r.getString('role') === 'profissional')
-          if (!hasProf) {
-            throw new BadRequestError(
-              'Transição para presented exige profissional humano autorizado.',
-            )
-          }
+          hasProfRole = roles.some((r) => r.getString('role') === 'profissional')
         } catch (_) {}
+
+        if (!hasProfRole) {
+          throw new BadRequestError(
+            'Transição para presented exige profissional humano autorizado com role profissional ativo.',
+          )
+        }
 
         // Carimbar presented_at
         if (!pres.getString('presented_at')) {

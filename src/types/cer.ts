@@ -237,6 +237,12 @@ export const AUDIT_ACTIONS = {
   PRESENTATION_UPDATED_DRAFT: 'PRESENTATION_UPDATED_DRAFT',
   PRESENTATION_PRESENTED: 'PRESENTATION_PRESENTED',
   PRESENTATION_WITHDRAWN: 'PRESENTATION_WITHDRAWN',
+  // Ações de auditoria do AI Core V1 (Build 05)
+  AI_REQUESTED: 'AI_REQUESTED',
+  AI_CONTEXT_RESOLVED: 'AI_CONTEXT_RESOLVED',
+  AI_PROPOSAL_CREATED: 'AI_PROPOSAL_CREATED',
+  AI_PROPOSAL_REVIEWED: 'AI_PROPOSAL_REVIEWED',
+  AI_REQUEST_REFUSED: 'AI_REQUEST_REFUSED',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -263,6 +269,129 @@ export interface PersonRecord {
   notes?: string
   created: string
   updated: string
+}
+
+// ------------------------------------------
+// ENTIDADES DO BUILD 05 — AI CORE V1
+// ------------------------------------------
+
+export const AI_PROPOSAL_TYPES = {
+  ASSOCIATION_SUGGESTION: 'association_suggestion',
+  KNOWLEDGE_SUGGESTION: 'knowledge_suggestion',
+  INTEGRATIVE_HYPOTHESIS: 'integrative_hypothesis',
+} as const
+
+export type AiProposalType = (typeof AI_PROPOSAL_TYPES)[keyof typeof AI_PROPOSAL_TYPES]
+
+export const AI_PROPOSAL_STATUS = {
+  PENDING_REVIEW: 'pending_review',
+  APPROVED: 'approved',
+  DISCARDED: 'discarded',
+  OBSERVING: 'observing',
+} as const
+
+export type AiProposalStatus = (typeof AI_PROPOSAL_STATUS)[keyof typeof AI_PROPOSAL_STATUS]
+
+export const AI_REVIEW_ACTIONS = {
+  APPROVED: 'approved',
+  EDITED_AND_APPROVED: 'edited_and_approved',
+  DISCARDED: 'discarded',
+  OBSERVING: 'observing',
+} as const
+
+export type AiReviewAction = (typeof AI_REVIEW_ACTIONS)[keyof typeof AI_REVIEW_ACTIONS]
+
+export const AI_OUTPUT_STATUS = {
+  ANSWERED: 'answered',
+  INSUFFICIENT_INFORMATION: 'insufficient_information',
+  CONFLICTING_INFORMATION: 'conflicting_information',
+  REFUSED: 'refused',
+} as const
+
+export type AiOutputStatus = (typeof AI_OUTPUT_STATUS)[keyof typeof AI_OUTPUT_STATUS]
+
+export const AI_PROPOSAL_SOURCE_TYPES = {
+  EXPERIENCE_RESPONSE: 'experience_response',
+  SIGNAL: 'signal',
+  ASSOCIATION: 'association',
+  KNOWLEDGE_ITEM: 'knowledge_item',
+  PARTICIPANT_RECOGNITION: 'participant_recognition',
+  SESSION_OBSERVATION: 'session_observation',
+} as const
+
+export type AiProposalSourceType =
+  (typeof AI_PROPOSAL_SOURCE_TYPES)[keyof typeof AI_PROPOSAL_SOURCE_TYPES]
+
+export interface CerAiProposalRecord {
+  id: string
+  enrollment_id: string
+  requested_by_user_id: string
+  proposal_type: AiProposalType
+  proposal_text: string
+  edited_text?: string
+  status: AiProposalStatus
+  review_action?: AiReviewAction
+  framework_id?: string
+  target_knowledge_item_id?: string
+  target_association_id?: string
+  reviewed_by_user_id?: string
+  reviewed_at?: string
+  purpose?: string
+  model_metadata?: {
+    provider: string
+    model: string
+    model_version?: string
+    prompt_version?: string
+    schema_version?: string
+  }
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    requested_by_user_id?: UserAccountRecord
+    reviewed_by_user_id?: UserAccountRecord
+    framework_id?: CerFrameworkRecord
+    target_knowledge_item_id?: CerKnowledgeItemRecord
+    target_association_id?: CerAssociationRecord
+    cer_ai_proposal_sources_via_proposal_id?: CerAiProposalSourceRecord[]
+  }
+}
+
+export interface CerAiProposalSourceRecord {
+  id: string
+  proposal_id: string
+  source_type: AiProposalSourceType
+  source_id: string
+  source_version?: number
+  relation_type?: EvidenceRelationType
+  access_class?: VisibilityClass
+  created: string
+  updated: string
+  expand?: {
+    proposal_id?: CerAiProposalRecord
+  }
+}
+
+/**
+ * Contrato canônico de output estruturado AI V1
+ */
+export interface AiOutputContract {
+  status: AiOutputStatus
+  basis: Array<{
+    source_type: AiProposalSourceType
+    source_id: string
+    source_version?: number
+    concept_key?: string
+    access_class: VisibilityClass
+    relation_type?: EvidenceRelationType
+  }>
+  proposal_or_answer: string
+  uncertainty: 'low' | 'medium' | 'high'
+  missing_information: string[]
+  conflicting_information: boolean | { description: string; paths: string[] }
+  framework_id?: string
+  epistemic_classification?: SignalSourceType | KnowledgeType
+  suggested_question?: string
 }
 
 // ------------------------------------------

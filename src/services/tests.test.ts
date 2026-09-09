@@ -5,6 +5,7 @@ import { runBuild03CPostAuditTests } from './testsKnowledge03c'
 import { runBuild04ASessionTests } from './testsSession'
 import { runBuild04BSessionKnowledgeTests } from './testsSession04b'
 import { runBuild04CPresentationTests } from './testsPresentation04c'
+import { runBuild05AiCoreTests } from './testsAi05'
 
 describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
   it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {
@@ -151,6 +152,23 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
     expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
 
     // Todos os testes do 04C devem ser 'PASSOU'
+    for (const r of results) {
+      expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
+    }
+  }, 90000)
+
+  it('executa suíte completa de testes controlados do Build 05 (AI Core V1: T1–T20, R1–R15, A1–A14, H1–H7)', async () => {
+    const results = await runBuild05AiCoreTests()
+    console.log(
+      'Build 05 test results summary:',
+      results.map((r) => `${r.name}: ${r.status}`),
+    )
+
+    // NENHUM teste do Build 05 pode falhar
+    const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')
+    expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
+
+    // Todos os testes do 05 devem ser 'PASSOU'
     for (const r of results) {
       expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
     }
