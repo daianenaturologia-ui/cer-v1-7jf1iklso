@@ -23,8 +23,11 @@ import {
   ShieldCheck,
   CheckCircle2,
   Copy,
-  ExternalLink,
+  Pause,
+  Play,
+  Check,
 } from 'lucide-react'
+import { AuditSecurityPanel } from '@/components/AuditSecurityPanel'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export const ProfissionalHome: React.FC = () => {
@@ -276,7 +279,7 @@ export const ProfissionalHome: React.FC = () => {
                           <span>{productData?.name || 'Acompanhamento Individual CER'}</span>
                           <span>•</span>
                           <span className="capitalize">
-                            Jornada: {journeyData?.current_stage || 'acolhimento'} (
+                            Jornada: {journeyData?.current_stage || 'onboarding'} (
                             {journeyData?.stage_status || 'em andamento'})
                           </span>
                         </div>
@@ -291,6 +294,33 @@ export const ProfissionalHome: React.FC = () => {
                         <div className="text-right text-[10px] text-muted-foreground font-mono">
                           ID: {enr.id.slice(0, 7)}
                         </div>
+                        {enr.status === 'active' ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-[10px] gap-1 px-2"
+                            onClick={async () => {
+                              await enrollmentService.updateStatus(enr.id, 'paused')
+                              await loadData()
+                            }}
+                          >
+                            <Pause className="w-3 h-3" />
+                            <span>Pausar</span>
+                          </Button>
+                        ) : enr.status === 'paused' ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-[10px] gap-1 px-2"
+                            onClick={async () => {
+                              await enrollmentService.updateStatus(enr.id, 'active')
+                              await loadData()
+                            }}
+                          >
+                            <Play className="w-3 h-3" />
+                            <span>Reativar</span>
+                          </Button>
+                        ) : null}
                       </div>
                     </div>
                   )
@@ -299,6 +329,9 @@ export const ProfissionalHome: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Painel Integrado de Auditoria e Testes RLS (Build 01) */}
+        <AuditSecurityPanel />
       </main>
 
       {/* Dialog Modal: Vincular Nova Interagente (Entrada sob convite da profissional) */}

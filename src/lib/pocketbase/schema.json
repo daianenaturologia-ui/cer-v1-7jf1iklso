@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-09-09T13:39:44.206Z",
+  "generatedAt": "2026-09-09T13:53:50.077Z",
   "collections": [
     {
       "name": "users",
       "type": "auth",
       "apiRules": {
-        "list": "id = @request.auth.id",
-        "view": "id = @request.auth.id",
+        "list": "id = @request.auth.id && @request.auth.status = 'active'",
+        "view": "id = @request.auth.id && @request.auth.status = 'active'",
         "create": "",
-        "update": "id = @request.auth.id",
-        "delete": "id = @request.auth.id"
+        "update": "id = @request.auth.id && @request.auth.status = 'active'",
+        "delete": "id = @request.auth.id && @request.auth.status = 'active'"
       },
       "fields": [
         {
@@ -44,6 +44,25 @@
           "required": false,
           "system": false,
           "collectionRef": "persons"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["invited", "active", "suspended", "disabled"]
+        },
+        {
+          "name": "mfa_enabled",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "mfa_secret",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -52,93 +71,22 @@
       ]
     },
     {
-      "name": "profiles",
-      "type": "base",
-      "apiRules": {
-        "list": "@request.auth.id != '' && user = @request.auth.id",
-        "view": "@request.auth.id != '' && user = @request.auth.id",
-        "create": "@request.auth.id != '' && user = @request.auth.id",
-        "update": "@request.auth.id != '' && user = @request.auth.id",
-        "delete": "@request.auth.id != '' && user = @request.auth.id"
-      },
-      "fields": [
-        {
-          "name": "user",
-          "type": "relation",
-          "required": true,
-          "system": false,
-          "collectionRef": "users"
-        },
-        {
-          "name": "profile_type",
-          "type": "select",
-          "required": true,
-          "system": false,
-          "selectValues": ["interagente", "profissional"]
-        },
-        {
-          "name": "full_name",
-          "type": "text",
-          "required": true,
-          "system": false
-        },
-        {
-          "name": "created",
-          "type": "autodate",
-          "required": false,
-          "system": false,
-          "autodateTriggers": ["onCreate"]
-        },
-        {
-          "name": "updated",
-          "type": "autodate",
-          "required": false,
-          "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
-        }
-      ],
-      "indexes": [
-        "CREATE INDEX idx_profiles_user ON profiles (user)",
-        "CREATE INDEX idx_profiles_profile_type ON profiles (profile_type)"
-      ]
-    },
-    {
       "name": "enrollments",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (person_id.users_via_person_id.id ?= @request.auth.id || professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id || @request.auth.id = profissional || @request.auth.id = interagente)",
-        "view": "@request.auth.id != '' && (person_id.users_via_person_id.id ?= @request.auth.id || professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id || @request.auth.id = profissional || @request.auth.id = interagente)",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != '' && (professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id || @request.auth.id = profissional)",
+        "list": "@request.auth.id != '' && @request.auth.status = 'active' && (person_id.users_via_person_id.id ?= @request.auth.id || (professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && professional_enrollment_access_via_enrollment_id.is_active = true))",
+        "view": "@request.auth.id != '' && @request.auth.status = 'active' && (person_id.users_via_person_id.id ?= @request.auth.id || (professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && professional_enrollment_access_via_enrollment_id.is_active = true))",
+        "create": "@request.auth.id != '' && @request.auth.status = 'active' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.status = 'active' && (professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && professional_enrollment_access_via_enrollment_id.is_active = true)",
         "delete": null
       },
       "fields": [
-        {
-          "name": "interagente",
-          "type": "relation",
-          "required": true,
-          "system": false,
-          "collectionRef": "users"
-        },
-        {
-          "name": "profissional",
-          "type": "relation",
-          "required": false,
-          "system": false,
-          "collectionRef": "users"
-        },
-        {
-          "name": "product",
-          "type": "text",
-          "required": true,
-          "system": false
-        },
         {
           "name": "status",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["ativa", "pendente", "encerrada"]
+          "selectValues": ["invited", "onboarding", "active", "paused", "completed", "cancelled"]
         },
         {
           "name": "start_date",
@@ -187,20 +135,16 @@
           "system": false
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_enrollments_interagente ON enrollments (interagente)",
-        "CREATE INDEX idx_enrollments_profissional ON enrollments (profissional)",
-        "CREATE INDEX idx_enrollments_status ON enrollments (status)"
-      ]
+      "indexes": ["CREATE INDEX idx_enrollments_status ON enrollments (status)"]
     },
     {
       "name": "persons",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
+        "list": "@request.auth.id != '' && @request.auth.status = 'active'",
+        "view": "@request.auth.id != '' && @request.auth.status = 'active'",
+        "create": "@request.auth.id != '' && @request.auth.status = 'active' && (@request.auth.user_roles_via_user_id.role ?= 'profissional' || @request.auth.user_roles_via_user_id.role ?= 'admin')",
+        "update": "@request.auth.id != '' && @request.auth.status = 'active' && (@request.auth.user_roles_via_user_id.role ?= 'profissional' || @request.auth.user_roles_via_user_id.role ?= 'admin' || users_via_person_id.id ?= @request.auth.id)",
         "delete": null
       },
       "fields": [
@@ -362,11 +306,11 @@
       "name": "professional_enrollment_access",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (professional_user_id = @request.auth.id || enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id)",
-        "view": "@request.auth.id != '' && (professional_user_id = @request.auth.id || enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id)",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != '' && professional_user_id = @request.auth.id",
-        "delete": "@request.auth.id != '' && professional_user_id = @request.auth.id"
+        "list": "@request.auth.id != '' && @request.auth.status = 'active' && (professional_user_id = @request.auth.id || enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || @request.auth.user_roles_via_user_id.role ?= 'admin')",
+        "view": "@request.auth.id != '' && @request.auth.status = 'active' && (professional_user_id = @request.auth.id || enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || @request.auth.user_roles_via_user_id.role ?= 'admin')",
+        "create": "@request.auth.id != '' && @request.auth.status = 'active' && (@request.auth.user_roles_via_user_id.role ?= 'admin' || (@request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.body.professional_user_id = @request.auth.id))",
+        "update": "@request.auth.id != '' && @request.auth.status = 'active' && (@request.auth.user_roles_via_user_id.role ?= 'admin' || professional_user_id = @request.auth.id)",
+        "delete": "@request.auth.id != '' && @request.auth.status = 'active' && (@request.auth.user_roles_via_user_id.role ?= 'admin' || professional_user_id = @request.auth.id)"
       },
       "fields": [
         {
@@ -421,10 +365,10 @@
       "name": "journey_states",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id)",
-        "view": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id)",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
+        "list": "@request.auth.id != '' && @request.auth.status = 'active' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active = true))",
+        "view": "@request.auth.id != '' && @request.auth.status = 'active' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active = true))",
+        "create": "@request.auth.id != '' && @request.auth.status = 'active' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.status = 'active' && (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active = true)",
         "delete": null
       },
       "fields": [
@@ -440,7 +384,7 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["acolhimento", "consciencia", "equilibrio_realizacao", "evolucao"]
+          "selectValues": ["onboarding", "consciousness", "equilibrium_realization"]
         },
         {
           "name": "stage_status",
@@ -468,10 +412,107 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "evolution_status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["not_started", "in_progress", "integrated"]
         }
       ],
       "indexes": [
         "CREATE UNIQUE INDEX idx_journey_state_enrollment ON journey_states (enrollment_id)"
+      ]
+    },
+    {
+      "name": "audit_events",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.user_roles_via_user_id.role ?= 'admin' || actor_user_id = @request.auth.id)",
+        "view": "@request.auth.id != '' && (@request.auth.user_roles_via_user_id.role ?= 'admin' || actor_user_id = @request.auth.id)",
+        "create": "@request.auth.id != ''",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "actor_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "action",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "resource_type",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "resource_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "timestamp",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "result",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["success", "failure", "denied"]
+        },
+        {
+          "name": "request_context",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_audit_actor ON audit_events (actor_user_id)",
+        "CREATE INDEX idx_audit_action ON audit_events (action)",
+        "CREATE INDEX idx_audit_created ON audit_events (created DESC)",
+        "CREATE INDEX idx_audit_enrollment ON audit_events (enrollment_id)"
       ]
     }
   ]

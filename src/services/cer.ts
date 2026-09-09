@@ -6,7 +6,49 @@ import type {
   EnrollmentRecord,
   ProfessionalEnrollmentAccessRecord,
   JourneyStateRecord,
+  AuditEventRecord,
+  EnrollmentStatus,
+  AuditAction,
 } from '@/types/cer'
+
+/**
+ * Serviço de Auditoria de Segurança (AUDIT_EVENT)
+ */
+export const auditService = {
+  async log(params: {
+    actor_user_id?: string
+    action: AuditAction | string
+    resource_type: string
+    resource_id?: string
+    enrollment_id?: string
+    result: 'success' | 'failure' | 'denied'
+    request_context?: string
+    metadata?: Record<string, unknown>
+  }): Promise<AuditEventRecord | null> {
+    try {
+      return await pb.collection('audit_events').create<AuditEventRecord>({
+        actor_user_id: params.actor_user_id || pb.authStore.record?.id || undefined,
+        action: params.action,
+        resource_type: params.resource_type,
+        resource_id: params.resource_id,
+        enrollment_id: params.enrollment_id,
+        timestamp: new Date().toISOString(),
+        result: params.result,
+        request_context: params.request_context || 'frontend_action',
+        metadata: params.metadata || {},
+      })
+    } catch {
+      // Auditoria não quebra a UX em caso de falha de gravação secundária
+      return null
+    }
+  },
+
+  async list(page = 1, perPage = 30): Promise<{ items: AuditEventRecord[]; totalItems: number }> {
+    return await pb.collection('audit_events').getList<AuditEventRecord>(page, perPage, {
+      sort: '-created',
+    })
+  },
+}
 
 /**
  * Serviço de Gerenciamento de Identidade Humana (PERSON)
@@ -88,13 +130,38 @@ export const enrollmentService = {
   },
 
   /**
+   * Atualizar status do enrollment com auditoria
+   */
+  async updateStatus(enrollmentId: string, newStatus: EnrollmentStatus): Promise<EnrollmentRecord> {
+    const updated = await pb.collection('enrollments').update<EnrollmentRecord>(enrollmentId, {
+      status: newStatus,
+    })
+
+    let auditAction: AuditAction = 'ENROLLMENT_PAUSED'
+    if (newStatus === 'active') auditAction = 'ENROLLMENT_RESUMED'
+    else if (newStatus === 'completed') auditAction = 'ENROLLMENT_COMPLETED'
+    else if (newStatus === 'cancelled') auditAction = 'ENROLLMENT_CANCELLED'
+
+    await auditService.log({
+      action: auditAction,
+      resource_type: 'enrollment',
+      resource_id: enrollmentId,
+      enrollment_id: enrollmentId,
+      result: 'success',
+      metadata: { newStatus },
+    })
+
+    return updated
+  },
+
+  /**
    * Fluxo da profissional para criar um acompanhamento/enrollment e convidar/vincular uma interagente:
    * 1. Cria a PERSON (identidade humana)
-   * 2. Cria a conta USER_ACCOUNT (com credencial temporária ou e-mail de acesso)
+   * 2. Cria a conta USER_ACCOUNT (com credencial temporária ou e-mail de acesso, status 'invited' ou 'active')
    * 3. Atribui USER_ROLE 'interagente'
-   * 4. Cria ENROLLMENT vinculado à PERSON e ao CER_PRODUCT
+   * 4. Cria ENROLLMENT vinculado à PERSON e ao CER_PRODUCT (status 'active')
    * 5. Cria PROFESSIONAL_ENROLLMENT_ACCESS para a profissional autenticada
-   * 6. Cria JOURNEY_STATE inicial em 'acolhimento'
+   * 6. Cria JOURNEY_STATE inicial em 'onboarding'
    */
   async createEnrollmentWithInteragente(params: {
     fullName: string
@@ -137,16 +204,25 @@ export const enrollmentService = {
         await pb.collection('users').update(existingUser.id, { person_id: person.id })
       }
     } catch {
-      // Criar nova conta com senha temporária
+      // Criar nova conta com senha temporária e status 'active' (ou 'invited')
       const newUser = await pb.collection('users').create({
         email: params.email,
         password: tempPassword,
         passwordConfirm: tempPassword,
         name: params.preferredName || params.fullName,
         verified: true,
+        status: 'active',
         person_id: person.id,
       })
       userRecordId = newUser.id
+
+      await auditService.log({
+        action: 'ACCOUNT_INVITED',
+        resource_type: 'user_account',
+        resource_id: newUser.id,
+        result: 'success',
+        metadata: { email: params.email },
+      })
     }
 
     // 3. Garantir USER_ROLE 'interagente'
@@ -164,18 +240,15 @@ export const enrollmentService = {
       }
     }
 
-    // 4. Criar ENROLLMENT
+    // 4. Criar ENROLLMENT (com status oficial 'active', sem campos legados)
     const enrollment = await pb.collection('enrollments').create<EnrollmentRecord>({
       person_id: person.id,
-      interagente: userRecordId || undefined,
-      profissional: params.professionalUserId,
       product_id: params.productId,
-      product: 'acompanhamento_individual_cer',
-      status: 'ativa',
+      status: 'active',
       notes: params.notes || '',
     })
 
-    // 5. Criar PROFESSIONAL_ENROLLMENT_ACCESS
+    // 5. Criar PROFESSIONAL_ENROLLMENT_ACCESS de forma autorizada
     await pb
       .collection('professional_enrollment_access')
       .create<ProfessionalEnrollmentAccessRecord>({
@@ -185,11 +258,11 @@ export const enrollmentService = {
         is_active: true,
       })
 
-    // 6. Criar JOURNEY_STATE inicial
+    // 6. Criar JOURNEY_STATE inicial em 'onboarding'
     await pb.collection('journey_states').create<JourneyStateRecord>({
       enrollment_id: enrollment.id,
-      current_stage: 'acolhimento',
-      stage_status: 'em_andamento',
+      current_stage: 'onboarding',
+      stage_status: 'nao_iniciado',
       metadata: {
         created_by_professional: params.professionalUserId,
         initialized_at: new Date().toISOString(),

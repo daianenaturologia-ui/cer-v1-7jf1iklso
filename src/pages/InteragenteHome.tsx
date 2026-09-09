@@ -97,7 +97,7 @@ export const InteragenteHome: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span>Status:</span>
                 <Badge variant="secondary" className="text-[10px] capitalize font-normal">
-                  {enrollment?.status || 'Pendente'}
+                  {enrollment?.status || 'invited'}
                 </Badge>
               </div>
               <p>
@@ -116,8 +116,10 @@ export const InteragenteHome: React.FC = () => {
                 <span>Estado da Jornada</span>
               </div>
               <CardTitle className="text-base font-medium capitalize">
-                {enrollment?.expand?.journey_states_via_enrollment_id?.[0]?.current_stage ||
-                  'Acolhimento'}
+                {enrollment?.expand?.journey_states_via_enrollment_id?.[0]?.current_stage?.replace(
+                  '_',
+                  ' ',
+                ) || 'onboarding'}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-1">

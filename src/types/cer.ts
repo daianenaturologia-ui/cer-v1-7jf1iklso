@@ -1,10 +1,9 @@
 /**
- * CER V1 — Constantes Constitucionais e Arquiteturais (BUILD 01)
+ * CER V1 — Constantes Constitucionais e Arquiteturais (BUILD 01 - Pacote de Correção)
  *
- * Este arquivo define as constantes invioláveis da metodologia e da plataforma CER,
- * incorporando a separação formal entre:
+ * Entidades canônicas:
  * PERSON, USER_ACCOUNT, USER_ROLE, CER_PRODUCT, ENROLLMENT,
- * PROFESSIONAL_ENROLLMENT_ACCESS e JOURNEY_STATE.
+ * PROFESSIONAL_ENROLLMENT_ACCESS, JOURNEY_STATE, AUDIT_EVENT.
  */
 
 /**
@@ -24,7 +23,7 @@ export type VisibilityClass = (typeof VISIBILITY_CLASSES)[keyof typeof VISIBILIT
 
 /**
  * As 6 Dimensões Congeladas da Consciência CER
- * Regra: Não criar novas dimensões.
+ * Regra: Não criar novas dimensões nem alterar nomenclatura.
  */
 export const CONSCIENCIA_DIMENSIONS = [
   {
@@ -69,6 +68,8 @@ export type ConscienciaDimensionId = (typeof CONSCIENCIA_DIMENSIONS)[number]['id
 
 /**
  * Papéis de usuário (USER_ROLE)
+ * Nota formal: 'admin' representa platform_admin (administrador técnico da plataforma),
+ * sem acesso clínico ou metodológico automático ao conteúdo de interagentes.
  */
 export const USER_ROLES = {
   INTERAGENTE: 'interagente',
@@ -78,20 +79,31 @@ export const USER_ROLES = {
 
 export type UserRoleType = (typeof USER_ROLES)[keyof typeof USER_ROLES]
 
-// Compatibilidade de leitura com prompt 00
-export const PROFILE_TYPES = {
-  INTERAGENTE: 'interagente',
-  PROFISSIONAL: 'profissional',
+/**
+ * Status da conta de autenticação (USER_ACCOUNT)
+ * Independente do status de enrollment!
+ */
+export const USER_ACCOUNT_STATUS = {
+  INVITED: 'invited',
+  ACTIVE: 'active',
+  SUSPENDED: 'suspended',
+  DISABLED: 'disabled',
 } as const
-export type ProfileType = (typeof PROFILE_TYPES)[keyof typeof PROFILE_TYPES]
+
+export type UserAccountStatus = (typeof USER_ACCOUNT_STATUS)[keyof typeof USER_ACCOUNT_STATUS]
 
 /**
- * Estados do ciclo de vida de Matrícula / Acompanhamento (Enrollment)
+ * Estados oficiais do ciclo de vida de Matrícula / Acompanhamento (ENROLLMENT)
+ * Nomenclatura em inglês oficializada no Build 01:
+ * invited, onboarding, active, paused, completed, cancelled.
  */
 export const ENROLLMENT_STATUS = {
-  PENDENTE: 'pendente',
-  ATIVA: 'ativa',
-  ENCERRADA: 'encerrada',
+  INVITED: 'invited',
+  ONBOARDING: 'onboarding',
+  ACTIVE: 'active',
+  PAUSED: 'paused',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
 } as const
 
 export type EnrollmentStatus = (typeof ENROLLMENT_STATUS)[keyof typeof ENROLLMENT_STATUS]
@@ -110,24 +122,56 @@ export type ProfessionalAccessRole =
 
 /**
  * Estágios estruturais da Jornada (JOURNEY_STATE)
- * Preparação sem antecipar módulos futuros
+ * Nomenclatura técnica canônica: onboarding, consciousness, equilibrium_realization.
+ * Evolution não é tratada como quarta etapa sequencial obrigatória, mas sim como eixo longitudinal.
  */
 export const JOURNEY_STAGES = {
-  ACOLHIMENTO: 'acolhimento',
-  CONSCIENCIA: 'consciencia',
-  EQUILIBRIO_REALIZACAO: 'equilibrio_realizacao',
-  EVOLUCAO: 'evolucao',
+  ONBOARDING: 'onboarding',
+  CONSCIOUSNESS: 'consciousness',
+  EQUILIBRIUM_REALIZATION: 'equilibrium_realization',
 } as const
 
 export type JourneyStage = (typeof JOURNEY_STAGES)[keyof typeof JOURNEY_STAGES]
 
 export const STAGE_STATUS = {
-  NAO_INICIADO: 'nao_iniciado',
-  EM_ANDAMENTO: 'em_andamento',
-  INTEGRADO: 'integrado',
+  NOT_STARTED: 'nao_iniciado',
+  IN_PROGRESS: 'em_andamento',
+  INTEGRATED: 'integrado',
 } as const
 
 export type StageStatus = (typeof STAGE_STATUS)[keyof typeof STAGE_STATUS]
+
+export const EVOLUTION_STATUS = {
+  NOT_STARTED: 'not_started',
+  IN_PROGRESS: 'in_progress',
+  INTEGRATED: 'integrated',
+} as const
+
+export type EvolutionStatus = (typeof EVOLUTION_STATUS)[keyof typeof EVOLUTION_STATUS]
+
+/**
+ * Ações auditadas em AUDIT_EVENT
+ */
+export const AUDIT_ACTIONS = {
+  ACCOUNT_INVITED: 'ACCOUNT_INVITED',
+  ACCOUNT_ACTIVATED: 'ACCOUNT_ACTIVATED',
+  LOGIN_SUCCESS: 'LOGIN_SUCCESS',
+  LOGIN_FAILED: 'LOGIN_FAILED',
+  LOGOUT: 'LOGOUT',
+  PASSWORD_RESET_REQUESTED: 'PASSWORD_RESET_REQUESTED',
+  PASSWORD_RESET_COMPLETED: 'PASSWORD_RESET_COMPLETED',
+  MFA_ENABLED: 'MFA_ENABLED',
+  MFA_DISABLED: 'MFA_DISABLED',
+  ENROLLMENT_CREATED: 'ENROLLMENT_CREATED',
+  ENROLLMENT_PAUSED: 'ENROLLMENT_PAUSED',
+  ENROLLMENT_RESUMED: 'ENROLLMENT_RESUMED',
+  ENROLLMENT_COMPLETED: 'ENROLLMENT_COMPLETED',
+  ENROLLMENT_CANCELLED: 'ENROLLMENT_CANCELLED',
+  PROFESSIONAL_ACCESS_GRANTED: 'PROFESSIONAL_ACCESS_GRANTED',
+  PROFESSIONAL_ACCESS_REVOKED: 'PROFESSIONAL_ACCESS_REVOKED',
+} as const
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
 
 /**
  * Produtos CER
@@ -167,6 +211,9 @@ export interface UserAccountRecord {
   name: string
   avatar?: string
   person_id?: string
+  status: UserAccountStatus
+  mfa_enabled?: boolean
+  mfa_secret?: string
   expand?: {
     person_id?: PersonRecord
     user_roles_via_user_id?: UserRoleRecord[]
@@ -204,14 +251,12 @@ export interface CerProductRecord {
 
 /**
  * ENROLLMENT: vínculo de acompanhamento de uma PERSON a um produto CER.
+ * Não contém mais colunas legadas 'interagente', 'profissional' ou 'product' texto livre.
  */
 export interface EnrollmentRecord {
   id: string
   person_id: string
-  interagente?: string // compatibilidade retroativa
-  profissional?: string // compatibilidade retroativa
   product_id?: string
-  product?: string
   status: EnrollmentStatus
   start_date?: string
   end_date?: string
@@ -251,19 +296,26 @@ export interface JourneyStateRecord {
   enrollment_id: string
   current_stage: JourneyStage
   stage_status: StageStatus
+  evolution_status?: EvolutionStatus
   metadata?: Record<string, unknown>
   created: string
   updated: string
 }
 
 /**
- * Compatibilidade legada provisória de ProfileRecord
+ * AUDIT_EVENT: evento imutável de auditoria de segurança e trilha de conformidade
  */
-export interface ProfileRecord {
+export interface AuditEventRecord {
   id: string
-  user: string
-  profile_type: ProfileType
-  full_name: string
+  actor_user_id?: string
+  action: AuditAction | string
+  resource_type: string
+  resource_id?: string
+  enrollment_id?: string
+  timestamp: string
+  result: 'success' | 'failure' | 'denied'
+  request_context?: string
+  metadata?: Record<string, unknown>
   created: string
   updated: string
 }
