@@ -49,6 +49,7 @@ onRecordAfterUpdateSuccess((e) => {
 
     let auditAction = null
 
+    // 1. Detectar transições de status de liberação ou reabertura
     if (oldStatus !== newStatus) {
       if (oldStatus === 'locked' && newStatus === 'available') {
         auditAction = 'EXPERIENCE_RELEASED'
@@ -67,11 +68,17 @@ onRecordAfterUpdateSuccess((e) => {
       }
     }
 
+    // 2. Se não detectou ação por release_status, verificar transições de progress_status
     if (!auditAction && oldProgress !== newProgress) {
       if (oldProgress === 'not_started' && newProgress === 'in_progress') {
         auditAction = 'EXPERIENCE_STARTED'
       } else if (newProgress === 'completed') {
         auditAction = 'EXPERIENCE_COMPLETED'
+      } else if (
+        oldProgress === 'completed' &&
+        (newProgress === 'in_progress' || newProgress === 'not_started')
+      ) {
+        auditAction = 'EXPERIENCE_REOPENED'
       }
     }
 

@@ -43,7 +43,7 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
     const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')
     expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
 
-    // Todos os 10 testes do Build 02 devem ser 'PASSOU'
+    // Todos os testes do Build 02 devem ser 'PASSOU'
     for (const r of results) {
       expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
     }
