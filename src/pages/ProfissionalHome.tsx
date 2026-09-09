@@ -28,6 +28,7 @@ import {
   Check,
 } from 'lucide-react'
 import { AuditSecurityPanel } from '@/components/AuditSecurityPanel'
+import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
 import { ProfessionalExperienceManager } from '@/components/experience'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -349,7 +350,23 @@ export const ProfissionalHome: React.FC = () => {
           </div>
         )}
 
-        {/* Painel Integrado de Auditoria e Testes RLS (Build 01 + Build 02) */}
+        {/* BUILD 03B: Conhecimento em Construção (Visualização Profissional Longitudinal) */}
+        {enrollments.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-serif font-semibold text-foreground">
+              Conhecimento em Construção (Build 03B)
+            </h2>
+            {enrollments.map((enr) => (
+              <ProfessionalKnowledgeBuilding
+                key={`kb-${enr.id}`}
+                enrollmentId={enr.id}
+                participantName={enr.expand?.person_id?.full_name || 'Interagente'}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Painel Integrado de Auditoria e Testes RLS (Build 01 + Build 02 + Build 03A + Build 03B) */}
         <AuditSecurityPanel />
       </main>
 

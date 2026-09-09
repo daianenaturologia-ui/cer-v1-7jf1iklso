@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T18:42:52.817Z",
+  "generatedAt": "2026-09-09T19:18:20.962Z",
   "collections": [
     {
       "name": "users",
@@ -1643,6 +1643,637 @@
         "CREATE INDEX idx_signals_enrollment ON cer_signals (enrollment_id)",
         "CREATE INDEX idx_signals_concept ON cer_signals (concept_key)",
         "CREATE INDEX idx_signals_source_resp ON cer_signals (source_response_id)"
+      ]
+    },
+    {
+      "name": "cer_associations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "update": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "concept_key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "association_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "recurrence",
+            "contrast",
+            "context_dependency",
+            "co_occurrence",
+            "change_over_time",
+            "possible_relationship"
+          ]
+        },
+        {
+          "name": "temporality",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "current",
+            "historical",
+            "recurring",
+            "context_dependent",
+            "longitudinal",
+            "undetermined"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["active", "archived", "superseded", "rejected"]
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared",
+            "professional_private",
+            "shared_care",
+            "administrative",
+            "system_internal"
+          ]
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_assoc_enrollment ON cer_associations (enrollment_id)",
+        "CREATE INDEX idx_assoc_concept ON cer_associations (concept_key)",
+        "CREATE INDEX idx_assoc_type ON cer_associations (association_type)"
+      ]
+    },
+    {
+      "name": "cer_association_evidence",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((association_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && association_id.access_class != 'professional_private') || ((association_id.access_class = 'shared_care' || association_id.access_class = 'participant_shared') && association_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && association_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((association_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && association_id.access_class != 'professional_private') || ((association_id.access_class = 'shared_care' || association_id.access_class = 'participant_shared') && association_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && association_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && (association_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (association_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && association_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "update": "@request.auth.id != '' && (association_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (association_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && association_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "association_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_associations"
+        },
+        {
+          "name": "signal_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_signals"
+        },
+        {
+          "name": "relation_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["supports", "contrasts", "qualifies", "contextualizes", "updates"]
+        },
+        {
+          "name": "evidence_group_key",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_assoc_ev_association ON cer_association_evidence (association_id)",
+        "CREATE INDEX idx_assoc_ev_signal ON cer_association_evidence (signal_id)"
+      ]
+    },
+    {
+      "name": "cer_knowledge_items",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "update": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "concept_key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "knowledge_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "reported_fact",
+            "resource",
+            "challenge",
+            "protection_pattern",
+            "current_state",
+            "value_meaning",
+            "realization_relevant",
+            "contextual_understanding",
+            "pattern_hypothesis",
+            "framework_reading",
+            "integrative_hypothesis"
+          ]
+        },
+        {
+          "name": "statement",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "epistemic_source",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_report",
+            "professional_observation",
+            "framework_reading",
+            "recurrence_association",
+            "cer_integrative_hypothesis",
+            "participant_recognition"
+          ]
+        },
+        {
+          "name": "temporality",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "current",
+            "historical",
+            "recurring",
+            "context_dependent",
+            "longitudinal",
+            "undetermined"
+          ]
+        },
+        {
+          "name": "primary_dimension_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_dimensions"
+        },
+        {
+          "name": "framework_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_frameworks"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "reported",
+            "observed",
+            "reviewed",
+            "updated",
+            "withdrawn",
+            "new",
+            "observing",
+            "supported",
+            "recognized",
+            "not_confirmed",
+            "discarded"
+          ]
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared",
+            "professional_private",
+            "shared_care",
+            "administrative",
+            "system_internal"
+          ]
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "reviewed_by_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "version",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_ki_enrollment ON cer_knowledge_items (enrollment_id)",
+        "CREATE INDEX idx_ki_concept ON cer_knowledge_items (concept_key)",
+        "CREATE INDEX idx_ki_type ON cer_knowledge_items (knowledge_type)",
+        "CREATE INDEX idx_ki_source ON cer_knowledge_items (epistemic_source)"
+      ]
+    },
+    {
+      "name": "cer_knowledge_evidence",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((knowledge_item_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && knowledge_item_id.access_class != 'professional_private') || ((knowledge_item_id.access_class = 'shared_care' || knowledge_item_id.access_class = 'participant_shared') && knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((knowledge_item_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && knowledge_item_id.access_class != 'professional_private') || ((knowledge_item_id.access_class = 'shared_care' || knowledge_item_id.access_class = 'participant_shared') && knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && (knowledge_item_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "update": "@request.auth.id != '' && (knowledge_item_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "knowledge_item_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_knowledge_items"
+        },
+        {
+          "name": "evidence_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "response",
+            "signal",
+            "association",
+            "participant_recognition",
+            "professional_observation"
+          ]
+        },
+        {
+          "name": "evidence_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "relation_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["supports", "contrasts", "qualifies", "contextualizes", "updates"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_ke_knowledge_item ON cer_knowledge_evidence (knowledge_item_id)",
+        "CREATE INDEX idx_ke_evidence_id ON cer_knowledge_evidence (evidence_id)"
+      ]
+    },
+    {
+      "name": "cer_participant_recognitions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && participant_user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && participant_user_id = @request.auth.id",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "knowledge_item_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_knowledge_items"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "recognition_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "makes_sense",
+            "partially_makes_sense",
+            "does_not_recognize",
+            "depends_on_context",
+            "wants_to_add"
+          ]
+        },
+        {
+          "name": "comment",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared",
+            "professional_private",
+            "shared_care",
+            "administrative",
+            "system_internal"
+          ]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_recog_enrollment ON cer_participant_recognitions (enrollment_id)",
+        "CREATE INDEX idx_recog_ki ON cer_participant_recognitions (knowledge_item_id)"
+      ]
+    },
+    {
+      "name": "cer_knowledge_item_versions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((knowledge_item_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((knowledge_item_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && knowledge_item_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "knowledge_item_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_knowledge_items"
+        },
+        {
+          "name": "version_number",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "statement",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "knowledge_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "reported_fact",
+            "resource",
+            "challenge",
+            "protection_pattern",
+            "current_state",
+            "value_meaning",
+            "realization_relevant",
+            "contextual_understanding",
+            "pattern_hypothesis",
+            "framework_reading",
+            "integrative_hypothesis"
+          ]
+        },
+        {
+          "name": "epistemic_source",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_report",
+            "professional_observation",
+            "framework_reading",
+            "recurrence_association",
+            "cer_integrative_hypothesis",
+            "participant_recognition"
+          ]
+        },
+        {
+          "name": "temporality",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "current",
+            "historical",
+            "recurring",
+            "context_dependent",
+            "longitudinal",
+            "undetermined"
+          ]
+        },
+        {
+          "name": "primary_dimension_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_dimensions"
+        },
+        {
+          "name": "framework_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_frameworks"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "reported",
+            "observed",
+            "reviewed",
+            "updated",
+            "withdrawn",
+            "new",
+            "observing",
+            "supported",
+            "recognized",
+            "not_confirmed",
+            "discarded"
+          ]
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared",
+            "professional_private",
+            "shared_care",
+            "administrative",
+            "system_internal"
+          ]
+        },
+        {
+          "name": "changed_by_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "change_reason",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_kiv_ki ON cer_knowledge_item_versions (knowledge_item_id)",
+        "CREATE INDEX idx_kiv_ver ON cer_knowledge_item_versions (knowledge_item_id, version_number)"
       ]
     }
   ]

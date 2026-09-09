@@ -2,10 +2,18 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
 import { enrollmentExperienceService, featureFlagService } from '@/services/experienceEngine'
-import type { EnrollmentRecord, EnrollmentExperienceRecord } from '@/types/cer'
+import { cerKnowledgeItemService, cerParticipantRecognitionService } from '@/services/cerKnowledge'
+import type {
+  EnrollmentRecord,
+  EnrollmentExperienceRecord,
+  CerKnowledgeItemRecord,
+  RecognitionType,
+} from '@/types/cer'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/hooks/use-toast'
 import {
   LogOut,
   User,
@@ -18,6 +26,7 @@ import {
   ArrowRight,
   Clock,
   CheckCircle2,
+  Brain,
 } from 'lucide-react'
 import { ExperienceEngine } from '@/components/experience'
 
@@ -28,6 +37,12 @@ export const InteragenteHome: React.FC = () => {
   const [engineEnabled, setEngineEnabled] = useState(true)
   const [availableExperiences, setAvailableExperiences] = useState<EnrollmentExperienceRecord[]>([])
   const [activeExperienceId, setActiveExperienceId] = useState<string | null>(null)
+  const [knowledgeItems, setKnowledgeItems] = useState<CerKnowledgeItemRecord[]>([])
+  const [selectedRecognitions, setSelectedRecognitions] = useState<
+    Record<string, { type: RecognitionType; comment: string; saved: boolean }>
+  >({})
+  const [submittingRecog, setSubmittingRecog] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const loadData = async () => {
     if (!person?.id) {
@@ -45,8 +60,24 @@ export const InteragenteHome: React.FC = () => {
       setEngineEnabled(isFlagActive)
 
       if (activeEnr?.id && isFlagActive) {
-        const exps = await enrollmentExperienceService.listByEnrollment(activeEnr.id)
+        const [exps, kiList, myRecogs] = await Promise.all([
+          enrollmentExperienceService.listByEnrollment(activeEnr.id),
+          cerKnowledgeItemService.listByEnrollment(activeEnr.id),
+          cerParticipantRecognitionService.listByEnrollment(activeEnr.id),
+        ])
         setAvailableExperiences(exps)
+        setKnowledgeItems(kiList)
+
+        const recogMap: Record<string, { type: RecognitionType; comment: string; saved: boolean }> =
+          {}
+        for (const r of myRecogs) {
+          recogMap[r.knowledge_item_id] = {
+            type: r.recognition_type,
+            comment: r.comment || '',
+            saved: true,
+          }
+        }
+        setSelectedRecognitions(recogMap)
       }
     } catch (err) {
       console.error('Erro ao carregar dados do interagente:', err)
@@ -237,6 +268,165 @@ export const InteragenteHome: React.FC = () => {
                   </Card>
                 )
               })}
+          </div>
+        )}
+
+        {/* BUILD 03B: Reconhecimento da Participante — DIRETRIZ: BACKEND PRECISO, FRONTEND HUMANO */}
+        {knowledgeItems.length > 0 && (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-lg font-serif font-semibold text-foreground flex items-center gap-2">
+                <Brain className="w-5 h-5 text-primary" />
+                <span>Percepções em Construção</span>
+              </h2>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Reflexões sobre o que fomos notando ao longo da sua jornada. Nenhuma delas é uma
+                conclusão fechada sobre você — são pistas para conversarmos.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {knowledgeItems.map((ki) => {
+                const existingRecog = selectedRecognitions[ki.id]
+                const currentType = existingRecog?.type
+                const currentComment = existingRecog?.comment || ''
+
+                const handleSaveRecognition = async () => {
+                  if (!currentType || !enrollment) return
+                  setSubmittingRecog(ki.id)
+                  try {
+                    await cerParticipantRecognitionService.createRecognition({
+                      enrollment_id: enrollment.id,
+                      knowledge_item_id: ki.id,
+                      recognition_type: currentType,
+                      comment: currentComment,
+                    })
+                    setSelectedRecognitions((prev) => ({
+                      ...prev,
+                      [ki.id]: {
+                        ...prev[ki.id],
+                        saved: true,
+                      },
+                    }))
+                    toast({
+                      title: 'Sua percepção foi acolhida',
+                      description: 'Obrigada por compartilhar. Isso ajuda a calibrar nosso olhar.',
+                    })
+                  } catch (e: unknown) {
+                    toast({
+                      title: 'Não conseguimos salvar agora',
+                      description: e instanceof Error ? e.message : 'Tente novamente em instantes.',
+                      variant: 'destructive',
+                    })
+                  } finally {
+                    setSubmittingRecog(null)
+                  }
+                }
+
+                return (
+                  <Card
+                    key={ki.id}
+                    className="border-border/70 shadow-sm bg-card/60 backdrop-blur-sm"
+                  >
+                    <CardHeader className="py-3.5 px-4 bg-muted/15 border-b border-border/30">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground text-[11px] tracking-wide uppercase">
+                          Olhando mais de perto
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">Revisão no tempo</span>
+                      </div>
+                      <p className="text-foreground text-sm font-serif italic pt-1.5 leading-relaxed text-balance">
+                        &ldquo;{ki.statement}&rdquo;
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-4">
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-foreground block">
+                          Isso conversa com a sua experiência?
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                          {[
+                            { value: 'makes_sense', label: 'Sim, me reconheço nisso' },
+                            {
+                              value: 'partially_makes_sense',
+                              label: 'Em parte. Tem mais coisa aí',
+                            },
+                            { value: 'does_not_recognize', label: 'Não é bem assim para mim' },
+                            { value: 'depends_on_context', label: 'Depende muito da situação' },
+                            { value: 'wants_to_add', label: 'Quero contar um pouco mais' },
+                          ].map((opt) => (
+                            <Button
+                              key={opt.value}
+                              type="button"
+                              variant={currentType === opt.value ? 'default' : 'outline'}
+                              size="sm"
+                              disabled={existingRecog?.saved}
+                              onClick={() => {
+                                setSelectedRecognitions((prev) => ({
+                                  ...prev,
+                                  [ki.id]: {
+                                    type: opt.value as RecognitionType,
+                                    comment: prev[ki.id]?.comment || '',
+                                    saved: false,
+                                  },
+                                }))
+                              }}
+                              className="justify-start text-xs h-9 px-3 text-left font-normal"
+                            >
+                              {opt.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Campo opcional humanizado: Quer acrescentar algo? */}
+                      <div className="space-y-1.5 pt-1">
+                        <label className="text-[11px] font-medium text-muted-foreground">
+                          Quer contar um pouco mais sobre como isso se dá no seu dia a dia?
+                          (Opcional)
+                        </label>
+                        <Textarea
+                          placeholder="Ex.: momentos em que isso acontece com mais frequência, o que ajuda quando pesa..."
+                          value={currentComment}
+                          disabled={existingRecog?.saved}
+                          onChange={(e) => {
+                            setSelectedRecognitions((prev) => ({
+                              ...prev,
+                              [ki.id]: {
+                                type: prev[ki.id]?.type || 'wants_to_add',
+                                comment: e.target.value,
+                                saved: false,
+                              },
+                            }))
+                          }}
+                          className="text-xs min-h-[64px]"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+                        <span className="text-[11px] text-muted-foreground italic">
+                          {existingRecog?.saved
+                            ? '✓ Sua percepção foi guardada com carinho e servirá de guia.'
+                            : 'O que você responde aqui complementa nossa conversa, sem rotular nada.'}
+                        </span>
+                        {!existingRecog?.saved && currentType && (
+                          <Button
+                            size="sm"
+                            disabled={submittingRecog === ki.id}
+                            onClick={handleSaveRecognition}
+                            className="text-xs h-8 px-4"
+                          >
+                            {submittingRecog === ki.id
+                              ? 'Guardando...'
+                              : 'Compartilhar o que sinto'}
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
           </div>
         )}
 

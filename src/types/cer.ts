@@ -219,6 +219,12 @@ export const AUDIT_ACTIONS = {
   EXPERIENCE_REOPENED: 'EXPERIENCE_REOPENED',
   // Ações de auditoria do Knowledge & Provenance Layer (Build 03A)
   SIGNAL_CREATED: 'SIGNAL_CREATED',
+  // Ações de auditoria do Conhecimento Longitudinal (Build 03B)
+  ASSOCIATION_CREATED: 'ASSOCIATION_CREATED',
+  KNOWLEDGE_ITEM_CREATED: 'KNOWLEDGE_ITEM_CREATED',
+  KNOWLEDGE_ITEM_UPDATED: 'KNOWLEDGE_ITEM_UPDATED',
+  KNOWLEDGE_ITEM_REVIEWED: 'KNOWLEDGE_ITEM_REVIEWED',
+  PARTICIPANT_RECOGNITION_CREATED: 'PARTICIPANT_RECOGNITION_CREATED',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -245,6 +251,209 @@ export interface PersonRecord {
   notes?: string
   created: string
   updated: string
+}
+
+// ------------------------------------------
+// ENTIDADES DO BUILD 03B — CONHECIMENTO LONGITUDINAL
+// ------------------------------------------
+
+export const ASSOCIATION_TYPES = {
+  RECURRENCE: 'recurrence',
+  CONTRAST: 'contrast',
+  CONTEXT_DEPENDENCY: 'context_dependency',
+  CO_OCCURRENCE: 'co_occurrence',
+  CHANGE_OVER_TIME: 'change_over_time',
+  POSSIBLE_RELATIONSHIP: 'possible_relationship',
+} as const
+
+export type AssociationType = (typeof ASSOCIATION_TYPES)[keyof typeof ASSOCIATION_TYPES]
+
+export const ASSOCIATION_STATUS = {
+  ACTIVE: 'active',
+  ARCHIVED: 'archived',
+  SUPERSEDED: 'superseded',
+  REJECTED: 'rejected',
+} as const
+
+export type AssociationStatus = (typeof ASSOCIATION_STATUS)[keyof typeof ASSOCIATION_STATUS]
+
+export const EVIDENCE_RELATION_TYPES = {
+  SUPPORTS: 'supports',
+  CONTRASTS: 'contrasts',
+  QUALIFIES: 'qualifies',
+  CONTEXTUALIZES: 'contextualizes',
+  UPDATES: 'updates',
+} as const
+
+export type EvidenceRelationType =
+  (typeof EVIDENCE_RELATION_TYPES)[keyof typeof EVIDENCE_RELATION_TYPES]
+
+export const KNOWLEDGE_TYPES = {
+  REPORTED_FACT: 'reported_fact',
+  RESOURCE: 'resource',
+  CHALLENGE: 'challenge',
+  PROTECTION_PATTERN: 'protection_pattern',
+  CURRENT_STATE: 'current_state',
+  VALUE_MEANING: 'value_meaning',
+  REALIZATION_RELEVANT: 'realization_relevant',
+  CONTEXTUAL_UNDERSTANDING: 'contextual_understanding',
+  PATTERN_HYPOTHESIS: 'pattern_hypothesis',
+  FRAMEWORK_READING: 'framework_reading',
+  INTEGRATIVE_HYPOTHESIS: 'integrative_hypothesis',
+} as const
+
+export type KnowledgeType = (typeof KNOWLEDGE_TYPES)[keyof typeof KNOWLEDGE_TYPES]
+
+export const KNOWLEDGE_STATUS = {
+  REPORTED: 'reported',
+  OBSERVED: 'observed',
+  REVIEWED: 'reviewed',
+  UPDATED: 'updated',
+  WITHDRAWN: 'withdrawn',
+  NEW: 'new',
+  OBSERVING: 'observing',
+  SUPPORTED: 'supported',
+  RECOGNIZED: 'recognized',
+  NOT_CONFIRMED: 'not_confirmed',
+  DISCARDED: 'discarded',
+} as const
+
+export type KnowledgeStatus = (typeof KNOWLEDGE_STATUS)[keyof typeof KNOWLEDGE_STATUS]
+
+export const RECOGNITION_TYPES = {
+  MAKES_SENSE: 'makes_sense',
+  PARTIALLY_MAKES_SENSE: 'partially_makes_sense',
+  DOES_NOT_RECOGNIZE: 'does_not_recognize',
+  DEPENDS_ON_CONTEXT: 'depends_on_context',
+  WANTS_TO_ADD: 'wants_to_add',
+} as const
+
+export type RecognitionType = (typeof RECOGNITION_TYPES)[keyof typeof RECOGNITION_TYPES]
+
+export const KNOWLEDGE_EVIDENCE_TYPES = {
+  RESPONSE: 'response',
+  SIGNAL: 'signal',
+  ASSOCIATION: 'association',
+  PARTICIPANT_RECOGNITION: 'participant_recognition',
+  PROFESSIONAL_OBSERVATION: 'professional_observation',
+} as const
+
+export type KnowledgeEvidenceType =
+  (typeof KNOWLEDGE_EVIDENCE_TYPES)[keyof typeof KNOWLEDGE_EVIDENCE_TYPES]
+
+export interface CerAssociationRecord {
+  id: string
+  enrollment_id: string
+  concept_key: string
+  association_type: AssociationType
+  temporality: SignalTemporality
+  status: AssociationStatus
+  access_class: VisibilityClass
+  created_by_user_id?: string
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    created_by_user_id?: UserAccountRecord
+    cer_association_evidence_via_association_id?: CerAssociationEvidenceRecord[]
+  }
+}
+
+export interface CerAssociationEvidenceRecord {
+  id: string
+  association_id: string
+  signal_id: string
+  relation_type: EvidenceRelationType
+  evidence_group_key?: string
+  created: string
+  updated: string
+  expand?: {
+    association_id?: CerAssociationRecord
+    signal_id?: CerSignalRecord
+  }
+}
+
+export interface CerKnowledgeItemRecord {
+  id: string
+  enrollment_id: string
+  concept_key: string
+  knowledge_type: KnowledgeType
+  statement: string
+  epistemic_source: SignalSourceType
+  temporality: SignalTemporality
+  primary_dimension_id?: string
+  framework_id?: string
+  status: KnowledgeStatus
+  access_class: VisibilityClass
+  created_by_user_id?: string
+  reviewed_by_user_id?: string
+  version: number
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    primary_dimension_id?: CerDimensionRecord
+    framework_id?: CerFrameworkRecord
+    created_by_user_id?: UserAccountRecord
+    reviewed_by_user_id?: UserAccountRecord
+    cer_knowledge_evidence_via_knowledge_item_id?: CerKnowledgeEvidenceRecord[]
+    cer_participant_recognitions_via_knowledge_item_id?: CerParticipantRecognitionRecord[]
+    cer_knowledge_item_versions_via_knowledge_item_id?: CerKnowledgeItemVersionRecord[]
+  }
+}
+
+export interface CerKnowledgeEvidenceRecord {
+  id: string
+  knowledge_item_id: string
+  evidence_type: KnowledgeEvidenceType
+  evidence_id: string
+  relation_type: EvidenceRelationType
+  created: string
+  updated: string
+  expand?: {
+    knowledge_item_id?: CerKnowledgeItemRecord
+  }
+}
+
+export interface CerParticipantRecognitionRecord {
+  id: string
+  enrollment_id: string
+  knowledge_item_id: string
+  participant_user_id: string
+  recognition_type: RecognitionType
+  comment?: string
+  access_class: VisibilityClass
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    knowledge_item_id?: CerKnowledgeItemRecord
+    participant_user_id?: UserAccountRecord
+  }
+}
+
+export interface CerKnowledgeItemVersionRecord {
+  id: string
+  knowledge_item_id: string
+  version_number: number
+  statement: string
+  knowledge_type: KnowledgeType
+  epistemic_source: SignalSourceType
+  temporality: SignalTemporality
+  primary_dimension_id?: string
+  framework_id?: string
+  status: KnowledgeStatus
+  access_class: VisibilityClass
+  changed_by_user_id?: string
+  change_reason?: string
+  created: string
+  updated: string
+  expand?: {
+    knowledge_item_id?: CerKnowledgeItemRecord
+    primary_dimension_id?: CerDimensionRecord
+    framework_id?: CerFrameworkRecord
+    changed_by_user_id?: UserAccountRecord
+  }
 }
 
 export interface UserAccountRecord {
