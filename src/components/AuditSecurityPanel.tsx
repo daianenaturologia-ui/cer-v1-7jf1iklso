@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react'
-import { runBuild01IsolationTests, type TestResult } from '@/services/tests'
+import { runBuild01IsolationTests, runBuild02EngineTests, type TestResult } from '@/services/tests'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ShieldCheck, Play, RefreshCw, CheckCircle2, XCircle } from 'lucide-react'
+import { ShieldCheck, Play, RefreshCw, CheckCircle2, XCircle, Sparkles } from 'lucide-react'
 
 export const AuditSecurityPanel: React.FC = () => {
-  const [results, setResults] = useState<TestResult[]>([])
+  const [b01Results, setB01Results] = useState<TestResult[]>([])
+  const [b02Results, setB02Results] = useState<TestResult[]>([])
   const [running, setRunning] = useState(false)
   const [hasRun, setHasRun] = useState(false)
 
   const handleRunTests = async () => {
     setRunning(true)
     try {
-      const res = await runBuild01IsolationTests()
-      setResults(res)
+      const [res01, res02] = await Promise.all([
+        runBuild01IsolationTests(),
+        runBuild02EngineTests(),
+      ])
+      setB01Results(res01)
+      setB02Results(res02)
       setHasRun(true)
     } catch (err) {
       console.error('Falha ao executar suíte de testes:', err)
@@ -28,22 +33,23 @@ export const AuditSecurityPanel: React.FC = () => {
     handleRunTests()
   }, [])
 
-  const passedCount = results.filter((r) => r.status === 'PASSOU').length
-  const totalCount = results.length
+  const allResults = [...b01Results, ...b02Results]
+  const passedCount = allResults.filter((r) => r.status === 'PASSOU').length
 
   return (
-    <Card className="border-border/80 shadow-none">
+    <Card className="border-border/80 shadow-none space-y-2">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-primary" />
               <CardTitle className="text-base font-semibold">
-                Auditoria de Segurança & Testes de Isolamento (Build 01)
+                Auditoria de Segurança, Isolamento e Experience Engine (Build 01 + Build 02)
               </CardTitle>
             </div>
             <CardDescription className="text-xs">
-              Execução real contra o backend PocketBase validando RLS, privacidade e segregação
+              Testes reais obrigatórios executados diretamente contra as regras de API/RLS e
+              serviços do backend
             </CardDescription>
           </div>
 
@@ -52,12 +58,13 @@ export const AuditSecurityPanel: React.FC = () => {
               <div className="flex items-center gap-1.5">
                 <Badge
                   variant={
-                    results.some((r) => r.status === 'NÃO PASSOU') ? 'destructive' : 'default'
+                    allResults.some((r) => r.status === 'NÃO PASSOU') ? 'destructive' : 'default'
                   }
                   className="text-xs font-mono"
                 >
                   {passedCount} PASSOU{' '}
-                  {results.some((r) => r.status === 'NÃO IMPLEMENTADO') && '• MFA NÃO IMPLEMENTADO'}
+                  {allResults.some((r) => r.status === 'NÃO IMPLEMENTADO') &&
+                    '• MFA NÃO IMPLEMENTADO'}
                 </Badge>
               </div>
             )}
@@ -73,52 +80,104 @@ export const AuditSecurityPanel: React.FC = () => {
               ) : (
                 <Play className="w-3.5 h-3.5" />
               )}
-              <span>{running ? 'Testando...' : 'Reexecutar Testes'}</span>
+              <span>{running ? 'Testando...' : 'Reexecutar Todos'}</span>
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {running && results.length === 0 ? (
+      <CardContent className="space-y-6">
+        {running && allResults.length === 0 ? (
           <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
             <RefreshCw className="w-5 h-5 animate-spin text-primary" />
-            <span>Executando testes reais contra o backend...</span>
+            <span>Executando testes reais contra o backend Skip Cloud...</span>
           </div>
         ) : (
-          <div className="space-y-2.5">
-            {results.map((t) => (
-              <div
-                key={t.id}
-                className="p-3 rounded-lg border border-border/50 bg-muted/20 flex flex-col gap-1.5 text-xs"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {t.status === 'PASSOU' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    ) : (
-                      <XCircle className="w-4 h-4 text-destructive shrink-0" />
-                    )}
-                    <span className="font-medium text-foreground">{t.name}</span>
-                  </div>
-                  <Badge
-                    variant={
-                      t.status === 'PASSOU'
-                        ? 'secondary'
-                        : t.status === 'NÃO IMPLEMENTADO'
-                          ? 'outline'
-                          : 'destructive'
-                    }
-                    className="text-[10px] uppercase font-mono tracking-wider shrink-0"
-                  >
-                    {t.status}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground text-[11px] pl-6 leading-relaxed">
-                  {t.details}
-                </p>
+          <>
+            {/* Bloco de Testes do Build 02 */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-medium text-foreground pb-1 border-b border-border/40">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span>
+                  Testes Obrigatórios do Build 02 — Experience Engine ({b02Results.length} testes)
+                </span>
               </div>
-            ))}
-          </div>
+              {b02Results.map((t) => (
+                <div
+                  key={t.id}
+                  className="p-3 rounded-lg border border-border/50 bg-muted/20 flex flex-col gap-1.5 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {t.status === 'PASSOU' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-destructive shrink-0" />
+                      )}
+                      <span className="font-medium text-foreground">{t.name}</span>
+                    </div>
+                    <Badge
+                      variant={
+                        t.status === 'PASSOU'
+                          ? 'secondary'
+                          : t.status === 'NÃO IMPLEMENTADO'
+                            ? 'outline'
+                            : 'destructive'
+                      }
+                      className="text-[10px] uppercase font-mono tracking-wider shrink-0"
+                    >
+                      {t.status}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-[11px] pl-6 leading-relaxed">
+                    {t.details}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Bloco de Testes do Build 01 */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-medium text-foreground pb-1 border-b border-border/40">
+                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                <span>
+                  Testes de Concessão, Isolamento e Governança do Build 01 ({b01Results.length}{' '}
+                  testes)
+                </span>
+              </div>
+              {b01Results.map((t) => (
+                <div
+                  key={t.id}
+                  className="p-3 rounded-lg border border-border/50 bg-muted/20 flex flex-col gap-1.5 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {t.status === 'PASSOU' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-destructive shrink-0" />
+                      )}
+                      <span className="font-medium text-foreground">{t.name}</span>
+                    </div>
+                    <Badge
+                      variant={
+                        t.status === 'PASSOU'
+                          ? 'secondary'
+                          : t.status === 'NÃO IMPLEMENTADO'
+                            ? 'outline'
+                            : 'destructive'
+                      }
+                      className="text-[10px] uppercase font-mono tracking-wider shrink-0"
+                    >
+                      {t.status}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-[11px] pl-6 leading-relaxed">
+                    {t.details}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

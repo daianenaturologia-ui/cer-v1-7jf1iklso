@@ -28,6 +28,7 @@ import {
   Check,
 } from 'lucide-react'
 import { AuditSecurityPanel } from '@/components/AuditSecurityPanel'
+import { ProfessionalExperienceManager } from '@/components/experience'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export const ProfissionalHome: React.FC = () => {
@@ -330,7 +331,25 @@ export const ProfissionalHome: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Painel Integrado de Auditoria e Testes RLS (Build 01) */}
+        {/* BUILD 02: Gestão de Experiências por Interagente Acompanhada */}
+        {enrollments.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-serif font-semibold text-foreground">
+              Acompanhamento de Experiências (Build 02)
+            </h2>
+            {enrollments.map((enr) => (
+              <div key={`exp-mgr-${enr.id}`} className="space-y-2">
+                <span className="text-xs font-medium text-muted-foreground block">
+                  Interagente: {enr.expand?.person_id?.full_name || 'Interagente'} (
+                  {enr.expand?.person_id?.email || '—'})
+                </span>
+                <ProfessionalExperienceManager enrollment={enr} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Painel Integrado de Auditoria e Testes RLS (Build 01 + Build 02) */}
         <AuditSecurityPanel />
       </main>
 

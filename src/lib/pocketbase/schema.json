@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T14:00:15.540Z",
+  "generatedAt": "2026-09-09T14:11:44.016Z",
   "collections": [
     {
       "name": "users",
@@ -513,6 +513,612 @@
         "CREATE INDEX idx_audit_action ON audit_events (action)",
         "CREATE INDEX idx_audit_created ON audit_events (created DESC)",
         "CREATE INDEX idx_audit_enrollment ON audit_events (enrollment_id)"
+      ]
+    },
+    {
+      "name": "feature_flags",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_enabled",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_feature_flags_key ON feature_flags (key)"]
+    },
+    {
+      "name": "cer_dimensions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "code",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "order_index",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_cer_dimensions_code ON cer_dimensions (code)",
+        "CREATE INDEX idx_cer_dimensions_order ON cer_dimensions (order_index)"
+      ]
+    },
+    {
+      "name": "cer_experiences",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "dimension_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_dimensions"
+        },
+        {
+          "name": "code",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "subtitle",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "order_index",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "is_pilot",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "opening_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "closing_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "version",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_cer_experiences_code ON cer_experiences (code)",
+        "CREATE INDEX idx_cer_experiences_dimension ON cer_experiences (dimension_id)"
+      ]
+    },
+    {
+      "name": "cer_prompts",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "experience_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_experiences"
+        },
+        {
+          "name": "step_order",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "step_title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "step_subtitle",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "component_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "ChoiceCards",
+            "MultiSelectCards",
+            "SimpleScale",
+            "Ordering",
+            "BodyMap",
+            "Timeline",
+            "FreeReflection",
+            "ScenarioChoice"
+          ]
+        },
+        {
+          "name": "prompt_text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "helper_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "schema_config",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "is_required",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "version",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cer_prompts_experience ON cer_prompts (experience_id)",
+        "CREATE INDEX idx_cer_prompts_order ON cer_prompts (experience_id, step_order)"
+      ]
+    },
+    {
+      "name": "enrollment_experiences",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)",
+        "update": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "experience_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_experiences"
+        },
+        {
+          "name": "release_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["locked", "available", "in_progress", "completed", "paused"]
+        },
+        {
+          "name": "progress_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["not_started", "in_progress", "completed"]
+        },
+        {
+          "name": "current_step_order",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "started_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "completed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_interaction_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "released_by_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_enr_exp_unique ON enrollment_experiences (enrollment_id, experience_id)",
+        "CREATE INDEX idx_enr_exp_status ON enrollment_experiences (enrollment_id, release_status)"
+      ]
+    },
+    {
+      "name": "experience_responses",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (respondent_user_id = @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && (respondent_user_id = @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && respondent_user_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
+        "update": "@request.auth.id != '' && respondent_user_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "experience_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_experiences"
+        },
+        {
+          "name": "prompt_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_prompts"
+        },
+        {
+          "name": "respondent_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "response_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "ChoiceCards",
+            "MultiSelectCards",
+            "SimpleScale",
+            "Ordering",
+            "BodyMap",
+            "Timeline",
+            "FreeReflection",
+            "ScenarioChoice"
+          ]
+        },
+        {
+          "name": "structured_value",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "free_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "prompt_version",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "version",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["draft", "saved", "revised"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_exp_resp_enrollment ON experience_responses (enrollment_id)",
+        "CREATE INDEX idx_exp_resp_prompt ON experience_responses (prompt_id)",
+        "CREATE UNIQUE INDEX idx_exp_resp_unique_active ON experience_responses (enrollment_id, prompt_id)"
+      ]
+    },
+    {
+      "name": "experience_response_versions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (respondent_user_id = @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && (respondent_user_id = @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && respondent_user_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "response_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "experience_responses"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "experience_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_experiences"
+        },
+        {
+          "name": "prompt_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_prompts"
+        },
+        {
+          "name": "respondent_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "response_type",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "structured_value",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "free_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "version_number",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "prompt_version",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "change_reason",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_exp_resp_ver_response ON experience_response_versions (response_id)",
+        "CREATE INDEX idx_exp_resp_ver_enrollment ON experience_response_versions (enrollment_id)"
       ]
     }
   ]

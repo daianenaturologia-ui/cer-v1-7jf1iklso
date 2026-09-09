@@ -1,9 +1,11 @@
 /**
- * CER V1 — Constantes Constitucionais e Arquiteturais (BUILD 01 - Pacote de Correção)
+ * CER V1 — Constantes Constitucionais e Arquiteturais (BUILD 01 + BUILD 02 EXPERIENCE ENGINE)
  *
  * Entidades canônicas:
  * PERSON, USER_ACCOUNT, USER_ROLE, CER_PRODUCT, ENROLLMENT,
- * PROFESSIONAL_ENROLLMENT_ACCESS, JOURNEY_STATE, AUDIT_EVENT.
+ * PROFESSIONAL_ENROLLMENT_ACCESS, JOURNEY_STATE, AUDIT_EVENT,
+ * CER_DIMENSION, CER_EXPERIENCE, CER_PROMPT, ENROLLMENT_EXPERIENCE,
+ * EXPERIENCE_RESPONSE, EXPERIENCE_RESPONSE_VERSION, FEATURE_FLAG.
  */
 
 /**
@@ -22,8 +24,9 @@ export const VISIBILITY_CLASSES = {
 export type VisibilityClass = (typeof VISIBILITY_CLASSES)[keyof typeof VISIBILITY_CLASSES]
 
 /**
- * As 6 Dimensões Congeladas da Consciência CER
+ * As 6 Dimensões Oficiais e Congeladas da Consciência CER
  * Regra: Não criar novas dimensões nem alterar nomenclatura.
+ * Energia, Consciência, Identidade e Evolução NÃO são dimensões separadas.
  */
 export const CONSCIENCIA_DIMENSIONS = [
   {
@@ -81,7 +84,6 @@ export type UserRoleType = (typeof USER_ROLES)[keyof typeof USER_ROLES]
 
 /**
  * Status da conta de autenticação (USER_ACCOUNT)
- * Independente do status de enrollment!
  */
 export const USER_ACCOUNT_STATUS = {
   INVITED: 'invited',
@@ -94,8 +96,6 @@ export type UserAccountStatus = (typeof USER_ACCOUNT_STATUS)[keyof typeof USER_A
 
 /**
  * Estados oficiais do ciclo de vida de Matrícula / Acompanhamento (ENROLLMENT)
- * Nomenclatura em inglês oficializada no Build 01:
- * invited, onboarding, active, paused, completed, cancelled.
  */
 export const ENROLLMENT_STATUS = {
   INVITED: 'invited',
@@ -122,8 +122,6 @@ export type ProfessionalAccessRole =
 
 /**
  * Estágios estruturais da Jornada (JOURNEY_STATE)
- * Nomenclatura técnica canônica: onboarding, consciousness, equilibrium_realization.
- * Evolution não é tratada como quarta etapa sequencial obrigatória, mas sim como eixo longitudinal.
  */
 export const JOURNEY_STAGES = {
   ONBOARDING: 'onboarding',
@@ -150,6 +148,50 @@ export const EVOLUTION_STATUS = {
 export type EvolutionStatus = (typeof EVOLUTION_STATUS)[keyof typeof EVOLUTION_STATUS]
 
 /**
+ * Progressive Release da EXPERIENCE (Estados permitidos)
+ */
+export const EXPERIENCE_RELEASE_STATUS = {
+  LOCKED: 'locked',
+  AVAILABLE: 'available',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  PAUSED: 'paused',
+} as const
+
+export type ExperienceReleaseStatus =
+  (typeof EXPERIENCE_RELEASE_STATUS)[keyof typeof EXPERIENCE_RELEASE_STATUS]
+
+/**
+ * Progresso técnico interno da EXPERIENCE
+ * Regra de UX: Na interface, evitar porcentagens de desempenho, rankings, pontos ou medalhas.
+ * Progresso significa somente posição dentro da experiência.
+ */
+export const EXPERIENCE_PROGRESS_STATUS = {
+  NOT_STARTED: 'not_started',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+} as const
+
+export type ExperienceProgressStatus =
+  (typeof EXPERIENCE_PROGRESS_STATUS)[keyof typeof EXPERIENCE_PROGRESS_STATUS]
+
+/**
+ * Os 8 tipos de componentes reutilizáveis do Experience Engine
+ */
+export const COMPONENT_TYPES = {
+  CHOICE_CARDS: 'ChoiceCards',
+  MULTI_SELECT_CARDS: 'MultiSelectCards',
+  SIMPLE_SCALE: 'SimpleScale',
+  ORDERING: 'Ordering',
+  BODY_MAP: 'BodyMap',
+  TIMELINE: 'Timeline',
+  FREE_REFLECTION: 'FreeReflection',
+  SCENARIO_CHOICE: 'ScenarioChoice',
+} as const
+
+export type ComponentType = (typeof COMPONENT_TYPES)[keyof typeof COMPONENT_TYPES]
+
+/**
  * Ações auditadas em AUDIT_EVENT
  */
 export const AUDIT_ACTIONS = {
@@ -169,6 +211,12 @@ export const AUDIT_ACTIONS = {
   ENROLLMENT_CANCELLED: 'ENROLLMENT_CANCELLED',
   PROFESSIONAL_ACCESS_GRANTED: 'PROFESSIONAL_ACCESS_GRANTED',
   PROFESSIONAL_ACCESS_REVOKED: 'PROFESSIONAL_ACCESS_REVOKED',
+  // Ações de auditoria do Experience Engine (Build 02)
+  EXPERIENCE_RELEASED: 'EXPERIENCE_RELEASED',
+  EXPERIENCE_STARTED: 'EXPERIENCE_STARTED',
+  EXPERIENCE_COMPLETED: 'EXPERIENCE_COMPLETED',
+  EXPERIENCE_PAUSED: 'EXPERIENCE_PAUSED',
+  EXPERIENCE_REOPENED: 'EXPERIENCE_REOPENED',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -186,9 +234,6 @@ export type CerProductId = (typeof CER_PRODUCTS)[keyof typeof CER_PRODUCTS]
 // INTERFACES DAS ENTIDADES DO BANCO DE DADOS
 // ==========================================
 
-/**
- * PERSON: a pessoa humana real, independente de conta de acesso.
- */
 export interface PersonRecord {
   id: string
   full_name: string
@@ -200,9 +245,6 @@ export interface PersonRecord {
   updated: string
 }
 
-/**
- * USER_ACCOUNT: conta de autenticação (coleção nativa 'users' do PocketBase)
- */
 export interface UserAccountRecord {
   id: string
   collectionId?: string
@@ -224,9 +266,6 @@ export interface UserAccountRecord {
 
 export type UserRecord = UserAccountRecord
 
-/**
- * USER_ROLE: papéis atribuídos a uma conta de acesso.
- */
 export interface UserRoleRecord {
   id: string
   user_id: string
@@ -236,9 +275,6 @@ export interface UserRoleRecord {
   updated: string
 }
 
-/**
- * CER_PRODUCT: catálogo de produtos/modalidades CER
- */
 export interface CerProductRecord {
   id: string
   code: string
@@ -249,10 +285,6 @@ export interface CerProductRecord {
   updated: string
 }
 
-/**
- * ENROLLMENT: vínculo de acompanhamento de uma PERSON a um produto CER.
- * Não contém mais colunas legadas 'interagente', 'profissional' ou 'product' texto livre.
- */
 export interface EnrollmentRecord {
   id: string
   person_id: string
@@ -271,9 +303,6 @@ export interface EnrollmentRecord {
   updated: string
 }
 
-/**
- * PROFESSIONAL_ENROLLMENT_ACCESS: permissão granular da profissional ao enrollment
- */
 export interface ProfessionalEnrollmentAccessRecord {
   id: string
   enrollment_id: string
@@ -288,9 +317,6 @@ export interface ProfessionalEnrollmentAccessRecord {
   updated: string
 }
 
-/**
- * JOURNEY_STATE: estado estrutural mínimo da jornada do enrollment
- */
 export interface JourneyStateRecord {
   id: string
   enrollment_id: string
@@ -302,9 +328,6 @@ export interface JourneyStateRecord {
   updated: string
 }
 
-/**
- * AUDIT_EVENT: evento imutável de auditoria de segurança e trilha de conformidade
- */
 export interface AuditEventRecord {
   id: string
   actor_user_id?: string
@@ -316,6 +339,121 @@ export interface AuditEventRecord {
   result: 'success' | 'failure' | 'denied'
   request_context?: string
   metadata?: Record<string, unknown>
+  created: string
+  updated: string
+}
+
+// ------------------------------------------
+// ENTIDADES DO EXPERIENCE ENGINE (BUILD 02)
+// ------------------------------------------
+
+export interface FeatureFlagRecord {
+  id: string
+  key: string
+  name: string
+  description?: string
+  is_enabled: boolean
+  metadata?: Record<string, unknown>
+  created: string
+  updated: string
+}
+
+export interface CerDimensionRecord {
+  id: string
+  code: string
+  title: string
+  order_index: number
+  description?: string
+  is_active: boolean
+  created: string
+  updated: string
+}
+
+export interface CerExperienceRecord {
+  id: string
+  dimension_id: string
+  code: string
+  title: string
+  subtitle?: string
+  order_index: number
+  is_pilot: boolean
+  opening_text?: string
+  closing_text?: string
+  version: number
+  expand?: {
+    dimension_id?: CerDimensionRecord
+  }
+  created: string
+  updated: string
+}
+
+export interface CerPromptRecord {
+  id: string
+  experience_id: string
+  step_order: number
+  step_title: string
+  step_subtitle?: string
+  component_type: ComponentType
+  prompt_text: string
+  helper_text?: string
+  schema_config: Record<string, unknown>
+  is_required: boolean
+  version: number
+  created: string
+  updated: string
+}
+
+export interface EnrollmentExperienceRecord {
+  id: string
+  enrollment_id: string
+  experience_id: string
+  release_status: ExperienceReleaseStatus
+  progress_status: ExperienceProgressStatus
+  current_step_order?: number
+  started_at?: string
+  completed_at?: string
+  last_interaction_at?: string
+  released_by_user_id?: string
+  expand?: {
+    experience_id?: CerExperienceRecord
+    enrollment_id?: EnrollmentRecord
+  }
+  created: string
+  updated: string
+}
+
+export interface ExperienceResponseRecord {
+  id: string
+  enrollment_id: string
+  experience_id: string
+  prompt_id: string
+  respondent_user_id: string
+  response_type: ComponentType
+  structured_value?: unknown
+  free_text?: string
+  prompt_version: number
+  version: number
+  status: 'draft' | 'saved' | 'revised'
+  expand?: {
+    prompt_id?: CerPromptRecord
+  }
+  created: string
+  updated: string
+}
+
+export interface ExperienceResponseVersionRecord {
+  id: string
+  response_id: string
+  enrollment_id: string
+  experience_id: string
+  prompt_id: string
+  respondent_user_id: string
+  response_type: string
+  structured_value?: unknown
+  free_text?: string
+  version_number: number
+  prompt_version: number
+  change_reason?: string
   created: string
   updated: string
 }

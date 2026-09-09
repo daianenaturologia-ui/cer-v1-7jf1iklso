@@ -1,26 +1,62 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
-import type { EnrollmentRecord } from '@/types/cer'
+import { enrollmentExperienceService, featureFlagService } from '@/services/experienceEngine'
+import type { EnrollmentRecord, EnrollmentExperienceRecord } from '@/types/cer'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { LogOut, User, Compass, Calendar, Layers, ShieldCheck, HeartHandshake } from 'lucide-react'
+import {
+  LogOut,
+  User,
+  Compass,
+  Calendar,
+  Layers,
+  ShieldCheck,
+  HeartHandshake,
+  Sparkles,
+  ArrowRight,
+  Clock,
+  CheckCircle2,
+} from 'lucide-react'
+import { ExperienceEngine } from '@/components/experience'
 
 export const InteragenteHome: React.FC = () => {
   const { user, person, logout } = useAuth()
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [loading, setLoading] = useState(true)
+  const [engineEnabled, setEngineEnabled] = useState(true)
+  const [availableExperiences, setAvailableExperiences] = useState<EnrollmentExperienceRecord[]>([])
+  const [activeExperienceId, setActiveExperienceId] = useState<string | null>(null)
 
-  useEffect(() => {
-    const loadEnrollment = async () => {
-      if (person?.id) {
-        const active = await enrollmentService.getByPersonId(person.id)
-        setEnrollment(active)
+  const loadData = async () => {
+    if (!person?.id) {
+      setLoading(false)
+      return
+    }
+
+    try {
+      const [activeEnr, isFlagActive] = await Promise.all([
+        enrollmentService.getByPersonId(person.id),
+        featureFlagService.isEnabled('experience_engine'),
+      ])
+
+      setEnrollment(activeEnr)
+      setEngineEnabled(isFlagActive)
+
+      if (activeEnr?.id && isFlagActive) {
+        const exps = await enrollmentExperienceService.listByEnrollment(activeEnr.id)
+        setAvailableExperiences(exps)
       }
+    } catch (err) {
+      console.error('Erro ao carregar dados do interagente:', err)
+    } finally {
       setLoading(false)
     }
-    loadEnrollment()
+  }
+
+  useEffect(() => {
+    loadData()
   }, [person])
 
   return (
@@ -136,6 +172,91 @@ export const InteragenteHome: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* BUILD 02: Banner de Experiência Disponível (UX da Interagente) */}
+        {engineEnabled && enrollment && !activeExperienceId && (
+          <div className="space-y-4">
+            {availableExperiences
+              .filter(
+                (ee) =>
+                  ee.release_status === 'available' ||
+                  ee.release_status === 'in_progress' ||
+                  ee.release_status === 'completed',
+              )
+              .map((ee) => {
+                const exp = ee.expand?.experience_id
+                const isCompleted = ee.release_status === 'completed'
+                const isInProgress = ee.release_status === 'in_progress'
+
+                return (
+                  <Card
+                    key={ee.id}
+                    className="border-primary/40 bg-gradient-to-r from-primary/5 via-card to-card shadow-sm hover:border-primary/60 transition-all duration-200"
+                  >
+                    <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-2 w-2 rounded-full bg-primary" />
+                          <Badge variant="outline" className="text-[10px] uppercase font-normal">
+                            {isCompleted
+                              ? 'Experiência Concluída'
+                              : isInProgress
+                                ? 'Em Andamento'
+                                : 'Nova Experiência Disponível'}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground font-mono">
+                            Momento {ee.current_step_order || 1}
+                          </span>
+                        </div>
+
+                        <h2 className="text-lg font-serif font-semibold text-foreground">
+                          {exp?.title || 'Conhecendo meu momento'}
+                        </h2>
+
+                        <p className="text-xs text-muted-foreground max-w-lg leading-relaxed">
+                          {exp?.subtitle ||
+                            'Uma breve pausa para você se perceber e reconhecer seu ritmo de hoje.'}
+                        </p>
+                      </div>
+
+                      <Button
+                        onClick={() => setActiveExperienceId(ee.experience_id)}
+                        className="text-xs gap-1.5 shrink-0 self-start sm:self-center h-9 px-4"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>
+                          {isCompleted
+                            ? 'Revisitar Experiência'
+                            : isInProgress
+                              ? 'Continuar de onde parei'
+                              : 'Abrir Experiência'}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+          </div>
+        )}
+
+        {/* Modal / Visão em Tela Cheia do Experience Engine */}
+        {activeExperienceId && enrollment && user?.id && (
+          <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-y-auto p-4 sm:p-6 flex flex-col justify-start">
+            <ExperienceEngine
+              experienceId={activeExperienceId}
+              enrollmentId={enrollment.id}
+              respondentUserId={user.id}
+              onClose={() => {
+                setActiveExperienceId(null)
+                loadData()
+              }}
+              onCompleted={() => {
+                loadData()
+              }}
+            />
+          </div>
+        )}
 
         {/* Estado Real do Vínculo e Acompanhamento */}
         <Card className="border-border/80">

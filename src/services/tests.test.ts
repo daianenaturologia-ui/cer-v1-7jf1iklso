@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { runBuild01IsolationTests } from './tests'
+import { runBuild01IsolationTests, runBuild02EngineTests } from './tests'
 
-describe('Gate Final de Segurança - Build 01 CER V1', () => {
-  it('executa suíte de isolamento, concessão e integridade contra o backend real', async () => {
+describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
+  it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {
     const results = await runBuild01IsolationTests()
     console.log(
       'Test results summary:',
@@ -34,5 +34,22 @@ describe('Gate Final de Segurança - Build 01 CER V1', () => {
 
     const mfaGate = results.find((r) => r.id === 'MFA_SECURITY_GATE_STATUS')
     expect(mfaGate?.status).toBe('NÃO IMPLEMENTADO')
+  })
+
+  it('executa suíte obrigatória do Build 02 — Experience Engine contra o backend real', async () => {
+    const results = await runBuild02EngineTests()
+    console.log(
+      'Build 02 test results summary:',
+      results.map((r) => `${r.name}: ${r.status}`),
+    )
+
+    // NENHUM teste do Build 02 deve ter status 'NÃO PASSOU'
+    const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')
+    expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
+
+    // Todos os 10 testes do Build 02 devem ser 'PASSOU'
+    for (const r of results) {
+      expect(r.status).toBe('PASSOU')
+    }
   })
 })
