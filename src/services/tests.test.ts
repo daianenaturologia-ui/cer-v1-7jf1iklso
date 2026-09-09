@@ -4,6 +4,7 @@ import { runBuild03AKnowledgeTests, runBuild03BLongitudinalTests } from './tests
 import { runBuild03CPostAuditTests } from './testsKnowledge03c'
 import { runBuild04ASessionTests } from './testsSession'
 import { runBuild04BSessionKnowledgeTests } from './testsSession04b'
+import { runBuild04CPresentationTests } from './testsPresentation04c'
 
 describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
   it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {
@@ -133,6 +134,23 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
     expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
 
     // Todos os testes do 04B devem ser 'PASSOU'
+    for (const r of results) {
+      expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
+    }
+  }, 90000)
+
+  it('executa suíte completa de testes adversariais do Build 04C (Presentation & Continuity: F1–F20, P1–P10, M1–M7)', async () => {
+    const results = await runBuild04CPresentationTests()
+    console.log(
+      'Build 04C test results summary:',
+      results.map((r) => `${r.name}: ${r.status}`),
+    )
+
+    // NENHUM teste do Build 04C pode falhar
+    const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')
+    expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
+
+    // Todos os testes do 04C devem ser 'PASSOU'
     for (const r of results) {
       expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
     }

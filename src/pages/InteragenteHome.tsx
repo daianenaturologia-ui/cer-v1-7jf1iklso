@@ -2,11 +2,16 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
 import { enrollmentExperienceService, featureFlagService } from '@/services/experienceEngine'
-import { cerKnowledgeItemService, cerParticipantRecognitionService } from '@/services/cerKnowledge'
-import type {
+import {
+  cerKnowledgeItemService,
+  cerParticipantRecognitionService,
+  cerKnowledgePresentationService,
+} from '@/services/cerKnowledge'
+import {
   EnrollmentRecord,
   EnrollmentExperienceRecord,
   CerKnowledgeItemRecord,
+  CerKnowledgePresentationRecord,
   RecognitionType,
 } from '@/types/cer'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
@@ -38,10 +43,15 @@ export const InteragenteHome: React.FC = () => {
   const [availableExperiences, setAvailableExperiences] = useState<EnrollmentExperienceRecord[]>([])
   const [activeExperienceId, setActiveExperienceId] = useState<string | null>(null)
   const [knowledgeItems, setKnowledgeItems] = useState<CerKnowledgeItemRecord[]>([])
+  const [presentations, setPresentations] = useState<CerKnowledgePresentationRecord[]>([])
   const [selectedRecognitions, setSelectedRecognitions] = useState<
     Record<string, { type: RecognitionType; comment: string; saved: boolean }>
   >({})
+  const [selectedPresRecognitions, setSelectedPresRecognitions] = useState<
+    Record<string, { type: RecognitionType; comment: string; saved: boolean }>
+  >({})
   const [submittingRecog, setSubmittingRecog] = useState<string | null>(null)
+  const [submittingPresRecog, setSubmittingPresRecog] = useState<string | null>(null)
   const { toast } = useToast()
 
   const loadData = async () => {
@@ -60,24 +70,39 @@ export const InteragenteHome: React.FC = () => {
       setEngineEnabled(isFlagActive)
 
       if (activeEnr?.id && isFlagActive) {
-        const [exps, kiList, myRecogs] = await Promise.all([
+        const [exps, kiList, myRecogs, presList] = await Promise.all([
           enrollmentExperienceService.listByEnrollment(activeEnr.id),
           cerKnowledgeItemService.listByEnrollment(activeEnr.id),
           cerParticipantRecognitionService.listByEnrollment(activeEnr.id),
+          cerKnowledgePresentationService.listPresentedByEnrollment(activeEnr.id),
         ])
         setAvailableExperiences(exps)
         setKnowledgeItems(kiList)
+        setPresentations(presList)
 
         const recogMap: Record<string, { type: RecognitionType; comment: string; saved: boolean }> =
           {}
+        const presRecogMap: Record<
+          string,
+          { type: RecognitionType; comment: string; saved: boolean }
+        > = {}
+
         for (const r of myRecogs) {
           recogMap[r.knowledge_item_id] = {
             type: r.recognition_type,
             comment: r.comment || '',
             saved: true,
           }
+          if (r.presentation_id) {
+            presRecogMap[r.presentation_id] = {
+              type: r.recognition_type,
+              comment: r.comment || '',
+              saved: true,
+            }
+          }
         }
         setSelectedRecognitions(recogMap)
+        setSelectedPresRecognitions(presRecogMap)
       }
     } catch (err) {
       console.error('Erro ao carregar dados do interagente:', err)
@@ -271,7 +296,181 @@ export const InteragenteHome: React.FC = () => {
           </div>
         )}
 
-        {/* BUILD 03B: Reconhecimento da Participante — DIRETRIZ: BACKEND PRECISO, FRONTEND HUMANO */}
+        {/* BUILD 04C: Uma percepção para você olhar (Knowledge Presentations Apresentadas no App) */}
+        {presentations.filter((p) => p.channel === 'app').length > 0 && (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-lg font-serif font-semibold text-foreground flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span>Uma percepção para você olhar</span>
+              </h2>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Compartilhamentos trazidos com carinho pela sua profissional para refletirmos
+                juntas. Sua resposta ajuda a guiar o nosso diálogo.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {presentations
+                .filter((p) => p.channel === 'app')
+                .map((pres) => {
+                  const existingPresRecog = selectedPresRecognitions[pres.id]
+                  const currentType = existingPresRecog?.type
+                  const currentComment = existingPresRecog?.comment || ''
+
+                  const handleSavePresRecognition = async () => {
+                    if (!currentType || !enrollment) return
+                    setSubmittingPresRecog(pres.id)
+                    try {
+                      await cerParticipantRecognitionService.createRecognition({
+                        enrollment_id: enrollment.id,
+                        knowledge_item_id: pres.knowledge_item_id,
+                        presentation_id: pres.id,
+                        recognition_type: currentType,
+                        comment: currentComment,
+                      })
+                      setSelectedPresRecognitions((prev) => ({
+                        ...prev,
+                        [pres.id]: {
+                          ...prev[pres.id],
+                          saved: true,
+                        },
+                      }))
+                      toast({
+                        title: 'Sua percepção foi acolhida',
+                        description:
+                          'Obrigada por compartilhar. Isso ajuda a calibrar nosso diálogo.',
+                      })
+                    } catch (e: unknown) {
+                      toast({
+                        title: 'Não conseguimos salvar agora',
+                        description:
+                          e instanceof Error ? e.message : 'Tente novamente em instantes.',
+                        variant: 'destructive',
+                      })
+                    } finally {
+                      setSubmittingPresRecog(null)
+                    }
+                  }
+
+                  return (
+                    <Card
+                      key={pres.id}
+                      className="border-primary/30 shadow-sm bg-card/70 backdrop-blur-sm"
+                    >
+                      <CardHeader className="py-3.5 px-4 bg-primary/5 border-b border-primary/15">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span className="font-medium text-primary text-[11px] tracking-wide uppercase">
+                            Para conversarmos
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {pres.presented_at
+                              ? new Date(pres.presented_at).toLocaleDateString('pt-BR')
+                              : 'Recente'}
+                          </span>
+                        </div>
+                        <p className="text-foreground text-sm font-sans italic pt-1.5 leading-relaxed text-balance">
+                          &ldquo;{pres.presentation_text}&rdquo;
+                        </p>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-4">
+                        <div className="space-y-2">
+                          <span className="text-xs font-medium text-foreground block">
+                            Isso conversa com a sua experiência?
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            {[
+                              { value: 'makes_sense', label: 'Sim, me reconheço nisso.' },
+                              {
+                                value: 'partially_makes_sense',
+                                label: 'Em parte. Tem mais coisa aí.',
+                              },
+                              {
+                                value: 'does_not_recognize',
+                                label: 'Não é bem assim para mim.',
+                              },
+                              {
+                                value: 'depends_on_context',
+                                label: 'Depende muito da situação.',
+                              },
+                              { value: 'wants_to_add', label: 'Quero contar um pouco mais.' },
+                            ].map((opt) => (
+                              <Button
+                                key={opt.value}
+                                type="button"
+                                variant={currentType === opt.value ? 'default' : 'outline'}
+                                size="sm"
+                                disabled={existingPresRecog?.saved}
+                                onClick={() => {
+                                  setSelectedPresRecognitions((prev) => ({
+                                    ...prev,
+                                    [pres.id]: {
+                                      type: opt.value as RecognitionType,
+                                      comment: prev[pres.id]?.comment || '',
+                                      saved: false,
+                                    },
+                                  }))
+                                }}
+                                className="justify-start text-xs h-9 px-3 text-left font-normal"
+                              >
+                                {opt.label}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Campo para quer contar mais */}
+                        <div className="space-y-1.5 pt-1">
+                          <label className="text-[11px] font-medium text-muted-foreground">
+                            Quer contar um pouco mais sobre como isso se dá no seu dia a dia?
+                            (Opcional)
+                          </label>
+                          <Textarea
+                            placeholder="Escreva livremente aqui..."
+                            value={currentComment}
+                            disabled={existingPresRecog?.saved}
+                            onChange={(e) => {
+                              setSelectedPresRecognitions((prev) => ({
+                                ...prev,
+                                [pres.id]: {
+                                  type: prev[pres.id]?.type || 'wants_to_add',
+                                  comment: e.target.value,
+                                  saved: false,
+                                },
+                              }))
+                            }}
+                            className="text-xs min-h-[64px]"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+                          <span className="text-[11px] text-muted-foreground italic">
+                            {existingPresRecog?.saved
+                              ? '✓ Sua percepção foi guardada com carinho e servirá de guia.'
+                              : 'O que você responde aqui complementa nossa conversa, sem rotular nada.'}
+                          </span>
+                          {!existingPresRecog?.saved && currentType && (
+                            <Button
+                              size="sm"
+                              disabled={submittingPresRecog === pres.id}
+                              onClick={handleSavePresRecognition}
+                              className="text-xs h-8 px-4"
+                            >
+                              {submittingPresRecog === pres.id
+                                ? 'Guardando...'
+                                : 'Compartilhar o que sinto'}
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+            </div>
+          </div>
+        )}
+
+        {/* BUILD 03B: Reconhecimento da Participante Legado (Percepções em Construção) */}
         {knowledgeItems.length > 0 && (
           <div className="space-y-4">
             <div className="space-y-1">

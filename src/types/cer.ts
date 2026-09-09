@@ -232,6 +232,11 @@ export const AUDIT_ACTIONS = {
   SESSION_CANCELLED: 'SESSION_CANCELLED',
   SESSION_NOTE_CREATED: 'SESSION_NOTE_CREATED',
   SESSION_NOTE_UPDATED: 'SESSION_NOTE_UPDATED',
+  // Ações de auditoria de Presentation & Continuity (Build 04C)
+  PRESENTATION_CREATED: 'PRESENTATION_CREATED',
+  PRESENTATION_UPDATED_DRAFT: 'PRESENTATION_UPDATED_DRAFT',
+  PRESENTATION_PRESENTED: 'PRESENTATION_PRESENTED',
+  PRESENTATION_WITHDRAWN: 'PRESENTATION_WITHDRAWN',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -345,6 +350,12 @@ export interface SessionPreparationData {
   recentKnowledgeItems: CerKnowledgeItemRecord[]
   recentRecognitions: CerParticipantRecognitionRecord[]
   recentCompletedExperiences: EnrollmentExperienceRecord[]
+  // Build 04C aditivo: Continuity
+  recentPresentations: CerKnowledgePresentationRecord[]
+  continuityHighlights: {
+    criticalRecognitions: CerParticipantRecognitionRecord[]
+    supportiveRecognitions: CerParticipantRecognitionRecord[]
+  }
 }
 
 // ------------------------------------------
@@ -510,11 +521,58 @@ export interface CerKnowledgeEvidenceRecord {
   }
 }
 
+export const PRESENTATION_STATUS = {
+  DRAFT: 'draft',
+  PRESENTED: 'presented',
+  WITHDRAWN: 'withdrawn',
+} as const
+
+export type PresentationStatus = (typeof PRESENTATION_STATUS)[keyof typeof PRESENTATION_STATUS]
+
+export const PRESENTATION_CHANNELS = {
+  APP: 'app',
+  SESSION: 'session',
+} as const
+
+export type PresentationChannel = (typeof PRESENTATION_CHANNELS)[keyof typeof PRESENTATION_CHANNELS]
+
+export const RECOGNITION_RECORD_MODES = {
+  PARTICIPANT_SELF: 'participant_self',
+  PROFESSIONAL_RECORDED_PARTICIPANT_RESPONSE: 'professional_recorded_participant_response',
+} as const
+
+export type RecognitionRecordMode =
+  (typeof RECOGNITION_RECORD_MODES)[keyof typeof RECOGNITION_RECORD_MODES]
+
+export interface CerKnowledgePresentationRecord {
+  id: string
+  knowledge_item_id: string
+  knowledge_version_number: number
+  knowledge_version_id?: string
+  enrollment_id: string
+  created_by_user_id: string
+  presentation_text: string
+  status: PresentationStatus
+  channel: PresentationChannel
+  presented_at?: string
+  created: string
+  updated: string
+  expand?: {
+    knowledge_item_id?: CerKnowledgeItemRecord
+    knowledge_version_id?: CerKnowledgeItemVersionRecord
+    enrollment_id?: EnrollmentRecord
+    created_by_user_id?: UserAccountRecord
+    cer_participant_recognitions_via_presentation_id?: CerParticipantRecognitionRecord[]
+  }
+}
+
 export interface CerParticipantRecognitionRecord {
   id: string
   enrollment_id: string
   knowledge_item_id: string
   participant_user_id: string
+  presentation_id?: string
+  record_mode: RecognitionRecordMode
   recognition_type: RecognitionType
   comment?: string
   access_class: VisibilityClass
@@ -523,6 +581,7 @@ export interface CerParticipantRecognitionRecord {
   expand?: {
     enrollment_id?: EnrollmentRecord
     knowledge_item_id?: CerKnowledgeItemRecord
+    presentation_id?: CerKnowledgePresentationRecord
     participant_user_id?: UserAccountRecord
   }
 }

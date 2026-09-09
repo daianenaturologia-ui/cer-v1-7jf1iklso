@@ -337,15 +337,31 @@ onRecordAfterUpdateSuccess((e) => {
   } catch (_) {}
 }, 'cer_knowledge_items')
 
-// Validação e Auditoria em cer_participant_recognitions:
+// Validação e Auditoria em cer_participant_recognitions (Atualizado para Build 04C):
 // 1. Valida que recognition_type pertence ao vocabulário oficial
 // 2. Valida que enrollment_id corresponde ao do Knowledge Item
-// 3. Salva audit event PARTICIPANT_RECOGNITION_CREATED sem vazar comment nem statement
-// 4. Cria automaticamente uma Knowledge Evidence do tipo 'participant_recognition' para o Knowledge Item
+// 3. Valida presentation_id (se presente):
+//    - Presentation deve existir
+//    - Presentation.status deve ser 'presented' (draft ou withdrawn -> NEGADO)
+//    - Presentation.enrollment_id deve ser idêntico a recog.enrollment_id
+//    - Presentation.knowledge_item_id deve ser idêntico a recog.knowledge_item_id
+// 4. record_mode atribuído server-side de acordo com o ator autenticado:
+//    - Se ator autenticado for a própria participante -> participant_self
+//    - Se ator for profissional humano autorizado -> professional_recorded_participant_response
+//    - Spoof do cliente é estritamente ignorado/corrigido ou negado
+//    - Para professional_recorded_participant_response, Presentation deve ter channel = 'session'
+// 5. Determinação de participant_user_id:
+//    - SEMPRE é o usuário interagente do enrollment (se não vier, preenche do enrollment)
+// 6. access_class:
+//    - Se vinculado a Presentation -> SEMPRE 'shared_care' server-side
+//    - Se legado (sem presentation_id) -> herda access_class do Knowledge Item (ou shared_care)
+// 7. Salva audit event PARTICIPANT_RECOGNITION_CREATED sem vazar comment nem statement
+// 8. Cria automaticamente uma Knowledge Evidence do tipo 'participant_recognition' para o Knowledge Item
 onRecordCreate((e) => {
   const recog = e.record
   const kiId = recog.getString('knowledge_item_id')
   const enrollmentId = recog.getString('enrollment_id')
+  const presId = recog.getString('presentation_id')
 
   let ki = null
   try {
@@ -360,14 +376,119 @@ onRecordCreate((e) => {
     )
   }
 
-  // Preencher access_class se ausente (herda do Knowledge Item ou participant_shared)
-  if (!recog.getString('access_class')) {
-    recog.set('access_class', ki.getString('access_class') || 'shared_care')
+  // Identificar a participante dona do enrollment
+  let enrollmentParticipantUserId = ''
+  try {
+    const enr = $app.findFirstRecordByData('enrollments', 'id', enrollmentId)
+    const personId = enr.getString('person_id')
+    if (personId) {
+      const pUser = $app.findFirstRecordByData('users', 'person_id', personId)
+      enrollmentParticipantUserId = pUser.id
+    }
+  } catch (_) {}
+
+  // Determinar e validar autor autenticado
+  const authId = e.auth ? e.auth.id : ''
+  const isAuthParticipant = authId && authId === enrollmentParticipantUserId
+
+  let isAuthProfessionalLinked = false
+  if (authId && !isAuthParticipant) {
+    try {
+      const links = $app.findRecordsByFilter(
+        'professional_enrollment_access',
+        'enrollment_id = "' +
+          enrollmentId +
+          '" && professional_user_id = "' +
+          authId +
+          '" && is_active = true',
+        '',
+        1,
+        0,
+      )
+      if (links && links.length > 0) {
+        isAuthProfessionalLinked = true
+      }
+    } catch (_) {}
   }
 
-  // Preencher participant_user_id se ausente
-  if (!recog.getString('participant_user_id') && e.auth) {
-    recog.set('participant_user_id', e.auth.id)
+  // Atribuição e validação de record_mode e participant_user_id
+  if (isAuthParticipant) {
+    // Participante respondendo diretamente
+    recog.set('record_mode', 'participant_self')
+    recog.set('participant_user_id', authId)
+  } else if (isAuthProfessionalLinked) {
+    // Profissional registrando resposta da participante
+    recog.set('record_mode', 'professional_recorded_participant_response')
+    // participant_user_id continua sendo a participante do enrollment
+    if (enrollmentParticipantUserId) {
+      recog.set('participant_user_id', enrollmentParticipantUserId)
+    }
+  } else if (e.auth) {
+    throw new BadRequestError(
+      'Usuário sem vínculo de autorização para registrar este reconhecimento.',
+    )
+  } else {
+    // Sem auth (migrações/seeds server-side): garantir defaults válidos
+    if (!recog.getString('record_mode')) {
+      recog.set('record_mode', 'participant_self')
+    }
+    if (!recog.getString('participant_user_id') && enrollmentParticipantUserId) {
+      recog.set('participant_user_id', enrollmentParticipantUserId)
+    }
+  }
+
+  // Validações rigorosas quando presentation_id está presente:
+  if (presId) {
+    let pres = null
+    try {
+      pres = $app.findFirstRecordByData('cer_knowledge_presentations', 'id', presId)
+    } catch (_) {
+      throw new BadRequestError('Presentation referenciada não foi encontrada.')
+    }
+
+    const presStatus = pres.getString('status')
+    if (presStatus === 'draft') {
+      throw new BadRequestError(
+        'Não é permitido registrar reconhecimento para uma Presentation em draft.',
+      )
+    }
+    if (presStatus === 'withdrawn') {
+      throw new BadRequestError(
+        'Não é permitido registrar reconhecimento para uma Presentation retirada (withdrawn).',
+      )
+    }
+    if (presStatus !== 'presented') {
+      throw new BadRequestError(
+        'Presentation deve estar no status "presented" para receber reconhecimento.',
+      )
+    }
+
+    if (pres.getString('enrollment_id') !== enrollmentId) {
+      throw new BadRequestError('Presentation pertence a outro enrollment.')
+    }
+
+    if (pres.getString('knowledge_item_id') !== kiId) {
+      throw new BadRequestError('Presentation vinculada aponta para outro Knowledge Item.')
+    }
+
+    // Regra do record_mode com channel:
+    // Profissional registrando em sessão exige channel = 'session'
+    const actualRecordMode = recog.getString('record_mode')
+    if (actualRecordMode === 'professional_recorded_participant_response') {
+      if (pres.getString('channel') !== 'session') {
+        throw new BadRequestError(
+          'Profissional só pode registrar resposta verbal da participante para Presentations do canal "session".',
+        )
+      }
+    }
+
+    // DECISÃO CONGELADA BUILD 04C: Recognition com Presentation apresentada nasce SEMPRE shared_care
+    recog.set('access_class', 'shared_care')
+  } else {
+    // Comportamento legado (sem presentation_id): herda do KI ou shared_care
+    if (!recog.getString('access_class')) {
+      recog.set('access_class', ki.getString('access_class') || 'shared_care')
+    }
   }
 
   e.next()
@@ -392,9 +513,9 @@ onRecordAfterCreateSuccess((e) => {
     // 1. Auditoria PARTICIPANT_RECOGNITION_CREATED (metadados puramente técnicos, SEM comentário!)
     const auditCol = $app.findCollectionByNameOrId('audit_events')
     const audit = new Record(auditCol)
-    const participantId = recog.getString('participant_user_id')
-    if (participantId) {
-      audit.set('actor_user_id', participantId)
+    let actorId = e.auth ? e.auth.id : recog.getString('participant_user_id')
+    if (actorId) {
+      audit.set('actor_user_id', actorId)
     }
     audit.set('action', 'PARTICIPANT_RECOGNITION_CREATED')
     audit.set('resource_type', 'cer_participant_recognitions')
@@ -410,6 +531,8 @@ onRecordAfterCreateSuccess((e) => {
         knowledge_item_id: kiId,
         recognition_type: recogType,
         access_class: recog.getString('access_class'),
+        presentation_id: recog.getString('presentation_id') || undefined,
+        record_mode: recog.getString('record_mode') || undefined,
       }),
     )
     $app.save(audit)

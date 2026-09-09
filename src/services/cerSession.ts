@@ -10,6 +10,7 @@ import type {
   CerKnowledgeItemRecord,
   CerParticipantRecognitionRecord,
   EnrollmentExperienceRecord,
+  CerKnowledgePresentationRecord,
 } from '@/types/cer'
 
 /**
@@ -267,6 +268,35 @@ export async function computeSessionPreparation(
     recentCompletedExperiences = []
   }
 
+  // 6. BUILD 04C — CONTINUITY (aditivo, sem persistência, sem scoring, sem IA):
+  // Incluir Presentations recentes status=presented e Recognitions vinculados.
+  // Destacar deterministicamente para preparação:
+  // - criticalRecognitions: partially_makes_sense, does_not_recognize, depends_on_context, wants_to_add
+  // - supportiveRecognitions: makes_sense de forma secundária
+  let recentPresentations: CerKnowledgePresentationRecord[] = []
+  try {
+    const presList = await pb
+      .collection('cer_knowledge_presentations')
+      .getList<CerKnowledgePresentationRecord>(1, 6, {
+        filter: `enrollment_id = "${enrollmentId}" && status = "presented"`,
+        sort: '-presented_at,-created',
+        expand: 'knowledge_item_id',
+      })
+    recentPresentations = presList.items
+  } catch {
+    recentPresentations = []
+  }
+
+  const criticalRecognitions = recentRecognitions.filter((r) =>
+    ['partially_makes_sense', 'does_not_recognize', 'depends_on_context', 'wants_to_add'].includes(
+      r.recognition_type,
+    ),
+  )
+
+  const supportiveRecognitions = recentRecognitions.filter(
+    (r) => r.recognition_type === 'makes_sense',
+  )
+
   return {
     enrollment,
     participantName,
@@ -275,5 +305,10 @@ export async function computeSessionPreparation(
     recentKnowledgeItems,
     recentRecognitions,
     recentCompletedExperiences,
+    recentPresentations,
+    continuityHighlights: {
+      criticalRecognitions,
+      supportiveRecognitions,
+    },
   }
 }

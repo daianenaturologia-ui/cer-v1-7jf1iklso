@@ -442,32 +442,68 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                 )}
               </div>
 
-              {/* Bloco 3: Desde o último encontro / Reconhecimentos e Experiências */}
+              {/* Bloco 3: Desde o último encontro / Continuidade & Reconhecimentos (Build 04C) */}
               <div className="p-3 rounded-lg border border-border/60 bg-background space-y-2">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                   <History className="w-3.5 h-3.5 text-primary" />
-                  <span>Desde o último encontro</span>
+                  <span>Continuidade & Diálogo</span>
                 </div>
-                {preparation?.recentRecognitions && preparation.recentRecognitions.length > 0 ? (
+
+                {/* Destaques Críticos de Continuidade (sem IA, puramente determinístico) */}
+                {preparation?.continuityHighlights?.criticalRecognitions &&
+                preparation.continuityHighlights.criticalRecognitions.length > 0 ? (
                   <div className="space-y-1.5">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase">
-                      Reconhecimentos da Interagente:
+                    <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                      Pontos para retomar no diálogo:
                     </p>
-                    {preparation.recentRecognitions.slice(0, 2).map((rec) => (
-                      <div
-                        key={rec.id}
-                        className="text-[11px] p-1.5 rounded bg-muted/30 border border-border/30"
-                      >
-                        <span className="font-medium text-primary capitalize">
-                          {rec.recognition_type.replace(/_/g, ' ')}
-                        </span>
-                        {rec.comment && (
-                          <p className="text-muted-foreground italic text-[10px] mt-0.5">
-                            "{rec.comment}"
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                    {preparation.continuityHighlights.criticalRecognitions
+                      .slice(0, 3)
+                      .map((rec) => (
+                        <div
+                          key={rec.id}
+                          className="text-[11px] p-1.5 rounded bg-amber-500/10 border border-amber-500/20 space-y-0.5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-foreground">
+                              {rec.recognition_type === 'partially_makes_sense' &&
+                                'Em parte. Tem mais coisa aí'}
+                              {rec.recognition_type === 'does_not_recognize' && 'Não é bem assim'}
+                              {rec.recognition_type === 'depends_on_context' &&
+                                'Depende da situação'}
+                              {rec.recognition_type === 'wants_to_add' && 'Quis contar mais'}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground font-mono">
+                              {rec.record_mode === 'participant_self'
+                                ? 'respondido no app'
+                                : 'em sessão'}
+                            </span>
+                          </div>
+                          {rec.comment && (
+                            <p className="text-muted-foreground italic text-[10px]">
+                              &ldquo;{rec.comment}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                ) : preparation?.continuityHighlights?.supportiveRecognitions &&
+                  preparation.continuityHighlights.supportiveRecognitions.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 uppercase">
+                      Reconhecimentos alinhados:
+                    </p>
+                    {preparation.continuityHighlights.supportiveRecognitions
+                      .slice(0, 2)
+                      .map((rec) => (
+                        <div
+                          key={rec.id}
+                          className="text-[11px] p-1.5 rounded bg-emerald-500/10 border border-emerald-500/20"
+                        >
+                          <span className="font-medium text-foreground">
+                            Sim, me reconheço nisso
+                          </span>
+                        </div>
+                      ))}
                   </div>
                 ) : preparation?.recentCompletedExperiences &&
                   preparation.recentCompletedExperiences.length > 0 ? (

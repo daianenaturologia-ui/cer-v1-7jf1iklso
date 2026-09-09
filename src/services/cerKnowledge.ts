@@ -199,13 +199,111 @@ export const cerKnowledgeItemService = {
 /**
  * Service de Reconhecimento pela Participante (Checkpoint 03B)
  */
+import type {
+  CerKnowledgePresentationRecord,
+  PresentationStatus,
+  PresentationChannel,
+  RecognitionRecordMode,
+} from '@/types/cer'
+
+/**
+ * Service de Knowledge Presentations (Build 04C - Presentation & Continuity)
+ * Compartilhar uma Presentation NÃO compartilha o KI, Evidence, Session Observation ou provenance privada.
+ */
+export const cerKnowledgePresentationService = {
+  async listByEnrollment(enrollmentId: string): Promise<CerKnowledgePresentationRecord[]> {
+    return pb
+      .collection('cer_knowledge_presentations')
+      .getFullList<CerKnowledgePresentationRecord>({
+        filter: `enrollment_id = "${enrollmentId}"`,
+        expand: 'knowledge_item_id,knowledge_version_id,created_by_user_id',
+        sort: '-created',
+      })
+  },
+
+  async listPresentedByEnrollment(enrollmentId: string): Promise<CerKnowledgePresentationRecord[]> {
+    return pb
+      .collection('cer_knowledge_presentations')
+      .getFullList<CerKnowledgePresentationRecord>({
+        filter: `enrollment_id = "${enrollmentId}" && status = "presented"`,
+        expand: 'created_by_user_id',
+        sort: '-presented_at,-created',
+      })
+  },
+
+  async getById(id: string): Promise<CerKnowledgePresentationRecord> {
+    return pb.collection('cer_knowledge_presentations').getOne<CerKnowledgePresentationRecord>(id, {
+      expand: 'knowledge_item_id,knowledge_version_id,created_by_user_id',
+    })
+  },
+
+  async createDraft(data: {
+    knowledge_item_id: string
+    knowledge_version_number: number
+    knowledge_version_id?: string
+    enrollment_id: string
+    presentation_text: string
+    channel: PresentationChannel
+  }): Promise<CerKnowledgePresentationRecord> {
+    return pb.collection('cer_knowledge_presentations').create<CerKnowledgePresentationRecord>({
+      ...data,
+      status: 'draft',
+      created_by_user_id: pb.authStore.record?.id,
+    })
+  },
+
+  async createAndPresent(data: {
+    knowledge_item_id: string
+    knowledge_version_number: number
+    knowledge_version_id?: string
+    enrollment_id: string
+    presentation_text: string
+    channel: PresentationChannel
+  }): Promise<CerKnowledgePresentationRecord> {
+    return pb.collection('cer_knowledge_presentations').create<CerKnowledgePresentationRecord>({
+      ...data,
+      status: 'presented',
+      presented_at: new Date().toISOString(),
+      created_by_user_id: pb.authStore.record?.id,
+    })
+  },
+
+  async updateDraft(
+    id: string,
+    data: {
+      presentation_text?: string
+      channel?: PresentationChannel
+    },
+  ): Promise<CerKnowledgePresentationRecord> {
+    return pb
+      .collection('cer_knowledge_presentations')
+      .update<CerKnowledgePresentationRecord>(id, data)
+  },
+
+  async markAsPresented(id: string): Promise<CerKnowledgePresentationRecord> {
+    return pb.collection('cer_knowledge_presentations').update<CerKnowledgePresentationRecord>(id, {
+      status: 'presented',
+      presented_at: new Date().toISOString(),
+    })
+  },
+
+  async withdraw(id: string): Promise<CerKnowledgePresentationRecord> {
+    return pb.collection('cer_knowledge_presentations').update<CerKnowledgePresentationRecord>(id, {
+      status: 'withdrawn',
+    })
+  },
+}
+
+/**
+ * Service de Reconhecimento pela Participante (Checkpoint 03B + Build 04C)
+ */
 export const cerParticipantRecognitionService = {
   async listByEnrollment(enrollmentId: string): Promise<CerParticipantRecognitionRecord[]> {
     return pb
       .collection('cer_participant_recognitions')
       .getFullList<CerParticipantRecognitionRecord>({
         filter: `enrollment_id = "${enrollmentId}"`,
-        expand: 'knowledge_item_id,participant_user_id',
+        expand: 'knowledge_item_id,presentation_id,participant_user_id',
         sort: '-created',
       })
   },
@@ -213,14 +311,17 @@ export const cerParticipantRecognitionService = {
   async createRecognition(data: {
     enrollment_id: string
     knowledge_item_id: string
+    presentation_id?: string
     participant_user_id?: string
+    record_mode?: RecognitionRecordMode
     recognition_type: RecognitionType
     comment?: string
     access_class?: VisibilityClass
   }): Promise<CerParticipantRecognitionRecord> {
     return pb.collection('cer_participant_recognitions').create<CerParticipantRecognitionRecord>({
       ...data,
-      access_class: data.access_class || 'shared_care',
+      // record_mode e access_class são estritamente governados e validados pelo hook server-side
+      access_class: data.presentation_id ? 'shared_care' : data.access_class || 'shared_care',
     })
   },
 }

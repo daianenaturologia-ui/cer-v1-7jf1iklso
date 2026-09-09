@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T20:31:55.304Z",
+  "generatedAt": "2026-09-09T20:49:03.336Z",
   "collections": [
     {
       "name": "users",
@@ -2041,7 +2041,7 @@
       "apiRules": {
         "list": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
         "view": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
-        "create": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && participant_user_id = @request.auth.id",
+        "create": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && participant_user_id = @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
         "update": null,
         "delete": null
       },
@@ -2113,11 +2113,26 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "presentation_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_knowledge_presentations"
+        },
+        {
+          "name": "record_mode",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["participant_self", "professional_recorded_participant_response"]
         }
       ],
       "indexes": [
         "CREATE INDEX idx_recog_enrollment ON cer_participant_recognitions (enrollment_id)",
-        "CREATE INDEX idx_recog_ki ON cer_participant_recognitions (knowledge_item_id)"
+        "CREATE INDEX idx_recog_ki ON cer_participant_recognitions (knowledge_item_id)",
+        "CREATE INDEX `idx_recog_presentation` ON `cer_participant_recognitions` (presentation_id)"
       ]
     },
     {
@@ -2486,6 +2501,98 @@
         "CREATE INDEX idx_cso_enrollment ON cer_session_observations (enrollment_id)",
         "CREATE INDEX idx_cso_author ON cer_session_observations (recorded_by_user_id)",
         "CREATE INDEX idx_cso_type ON cer_session_observations (observation_type)"
+      ]
+    },
+    {
+      "name": "cer_knowledge_presentations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((status = 'presented' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true && (status != 'draft' || created_by_user_id = @request.auth.id)))",
+        "view": "@request.auth.id != '' && ((status = 'presented' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true && (status != 'draft' || created_by_user_id = @request.auth.id)))",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "knowledge_item_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_knowledge_items"
+        },
+        {
+          "name": "knowledge_version_number",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "knowledge_version_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_knowledge_item_versions"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "presentation_text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["draft", "presented", "withdrawn"]
+        },
+        {
+          "name": "channel",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["app", "session"]
+        },
+        {
+          "name": "presented_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_kp_ki ON cer_knowledge_presentations (knowledge_item_id)",
+        "CREATE INDEX idx_kp_enrollment ON cer_knowledge_presentations (enrollment_id)",
+        "CREATE INDEX idx_kp_status ON cer_knowledge_presentations (status)"
       ]
     }
   ]
