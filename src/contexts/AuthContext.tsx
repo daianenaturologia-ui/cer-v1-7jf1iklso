@@ -1,62 +1,88 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import pb from '@/lib/pocketbase/client'
 import type { RecordAuthResponse, RecordModel } from 'pocketbase'
-import type { ProfileRecord } from '@/types/cer'
+import type { UserAccountRecord, PersonRecord, UserRoleRecord, UserRoleType } from '@/types/cer'
 
 interface AuthContextType {
-  user: RecordModel | null
-  profile: ProfileRecord | null
+  user: UserAccountRecord | RecordModel | null
+  person: PersonRecord | null
+  roles: UserRoleType[]
   isLoading: boolean
   isAuthenticated: boolean
   isInteragente: boolean
   isProfissional: boolean
+  isAdmin: boolean
   login: (email: string, pass: string) => Promise<RecordAuthResponse<RecordModel>>
   logout: () => void
-  refreshProfile: () => Promise<void>
+  refreshAuthData: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<RecordModel | null>(pb.authStore.record)
-  const [profile, setProfile] = useState<ProfileRecord | null>(null)
+  const [person, setPerson] = useState<PersonRecord | null>(null)
+  const [roles, setRoles] = useState<UserRoleType[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
-  const fetchProfile = async (userId: string) => {
+  const fetchUserData = async (userId: string) => {
     try {
-      const records = await pb.collection('profiles').getList<ProfileRecord>(1, 1, {
-        filter: `user = "${userId}"`,
-      })
-      if (records.items.length > 0) {
-        setProfile(records.items[0])
+      // 1. Obter usuário com expand ou dados atualizados
+      const freshUser = await pb.collection('users').getOne(userId)
+      setUser(freshUser)
+
+      // 2. Buscar PERSON associada
+      if (freshUser.person_id) {
+        try {
+          const personRec = await pb.collection('persons').getOne<PersonRecord>(freshUser.person_id)
+          setPerson(personRec)
+        } catch {
+          setPerson(null)
+        }
       } else {
-        setProfile(null)
+        // Tentar buscar por e-mail se person_id não estiver setado
+        try {
+          const personRec = await pb
+            .collection('persons')
+            .getFirstListItem<PersonRecord>(`email = "${freshUser.email}"`)
+          setPerson(personRec)
+        } catch {
+          setPerson(null)
+        }
       }
+
+      // 3. Buscar USER_ROLES associados
+      const roleRecords = await pb.collection('user_roles').getFullList<UserRoleRecord>({
+        filter: `user_id = "${userId}" && is_active = true`,
+      })
+
+      const extractedRoles = roleRecords.map((r) => r.role)
+      setRoles(extractedRoles)
     } catch {
-      setProfile(null)
+      setPerson(null)
+      setRoles([])
     }
   }
 
   useEffect(() => {
-    // Initial check
     const currentUser = pb.authStore.record
     setUser(currentUser)
 
     if (currentUser?.id) {
-      fetchProfile(currentUser.id).finally(() => {
+      fetchUserData(currentUser.id).finally(() => {
         setIsLoading(false)
       })
     } else {
       setIsLoading(false)
     }
 
-    // Subscribe to auth state changes
     const unsubscribe = pb.authStore.onChange((_token, model) => {
       setUser(model)
       if (model?.id) {
-        fetchProfile(model.id)
+        fetchUserData(model.id)
       } else {
-        setProfile(null)
+        setPerson(null)
+        setRoles([])
       }
     })
 
@@ -69,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const authData = await pb.collection('users').authWithPassword(email, pass)
     setUser(authData.record)
     if (authData.record?.id) {
-      await fetchProfile(authData.record.id)
+      await fetchUserData(authData.record.id)
     }
     return authData
   }
@@ -77,28 +103,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     pb.authStore.clear()
     setUser(null)
-    setProfile(null)
+    setPerson(null)
+    setRoles([])
   }
 
-  const refreshProfile = async () => {
+  const refreshAuthData = async () => {
     if (user?.id) {
-      await fetchProfile(user.id)
+      await fetchUserData(user.id)
     }
   }
 
   const value = useMemo(
     () => ({
       user,
-      profile,
+      person,
+      roles,
       isLoading,
       isAuthenticated: Boolean(user),
-      isInteragente: profile?.profile_type === 'interagente',
-      isProfissional: profile?.profile_type === 'profissional',
+      isInteragente: roles.includes('interagente'),
+      isProfissional: roles.includes('profissional'),
+      isAdmin: roles.includes('admin'),
       login,
       logout,
-      refreshProfile,
+      refreshAuthData,
     }),
-    [user, profile, isLoading],
+    [user, person, roles, isLoading],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T13:30:09.617Z",
+  "generatedAt": "2026-09-09T13:39:44.206Z",
   "collections": [
     {
       "name": "users",
@@ -37,6 +37,13 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "person_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "persons"
         }
       ],
       "indexes": [
@@ -99,10 +106,10 @@
       "name": "enrollments",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (interagente = @request.auth.id || profissional = @request.auth.id)",
-        "view": "@request.auth.id != '' && (interagente = @request.auth.id || profissional = @request.auth.id)",
-        "create": "@request.auth.id != '' && interagente = @request.auth.id",
-        "update": "@request.auth.id != '' && profissional = @request.auth.id",
+        "list": "@request.auth.id != '' && (person_id.users_via_person_id.id ?= @request.auth.id || professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id || @request.auth.id = profissional || @request.auth.id = interagente)",
+        "view": "@request.auth.id != '' && (person_id.users_via_person_id.id ?= @request.auth.id || professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id || @request.auth.id = profissional || @request.auth.id = interagente)",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id || @request.auth.id = profissional)",
         "delete": null
       },
       "fields": [
@@ -158,12 +165,313 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "person_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "persons"
+        },
+        {
+          "name": "product_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_products"
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_enrollments_interagente ON enrollments (interagente)",
         "CREATE INDEX idx_enrollments_profissional ON enrollments (profissional)",
         "CREATE INDEX idx_enrollments_status ON enrollments (status)"
+      ]
+    },
+    {
+      "name": "persons",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "full_name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "preferred_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_persons_full_name ON persons (full_name)",
+        "CREATE INDEX idx_persons_email ON persons (email)"
+      ]
+    },
+    {
+      "name": "user_roles",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.user_roles_via_user_id.role ?= 'admin' || @request.auth.user_roles_via_user_id.role ?= 'profissional')",
+        "view": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.user_roles_via_user_id.role ?= 'admin' || @request.auth.user_roles_via_user_id.role ?= 'profissional')",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["interagente", "profissional", "admin"]
+        },
+        {
+          "name": "is_active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_user_roles_user ON user_roles (user_id)",
+        "CREATE INDEX idx_user_roles_role ON user_roles (role)",
+        "CREATE UNIQUE INDEX idx_user_roles_user_role ON user_roles (user_id, role)"
+      ]
+    },
+    {
+      "name": "cer_products",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "code",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_cer_products_code ON cer_products (code)"]
+    },
+    {
+      "name": "professional_enrollment_access",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (professional_user_id = @request.auth.id || enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id)",
+        "view": "@request.auth.id != '' && (professional_user_id = @request.auth.id || enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id)",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && professional_user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && professional_user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "professional_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "access_role",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["primary", "collaborator", "supervisor"]
+        },
+        {
+          "name": "is_active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_prof_access_enrollment ON professional_enrollment_access (enrollment_id)",
+        "CREATE INDEX idx_prof_access_user ON professional_enrollment_access (professional_user_id)",
+        "CREATE UNIQUE INDEX idx_prof_access_unique ON professional_enrollment_access (enrollment_id, professional_user_id)"
+      ]
+    },
+    {
+      "name": "journey_states",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id)",
+        "view": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id)",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "current_stage",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["acolhimento", "consciencia", "equilibrio_realizacao", "evolucao"]
+        },
+        {
+          "name": "stage_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["nao_iniciado", "em_andamento", "integrado"]
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_journey_state_enrollment ON journey_states (enrollment_id)"
       ]
     }
   ]

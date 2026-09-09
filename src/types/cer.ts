@@ -1,7 +1,10 @@
 /**
- * CER V1 — Constantes Constitucionais e Arquiteturais
+ * CER V1 — Constantes Constitucionais e Arquiteturais (BUILD 01)
  *
- * Este arquivo define as constantes invioláveis da metodologia e da plataforma CER.
+ * Este arquivo define as constantes invioláveis da metodologia e da plataforma CER,
+ * incorporando a separação formal entre:
+ * PERSON, USER_ACCOUNT, USER_ROLE, CER_PRODUCT, ENROLLMENT,
+ * PROFESSIONAL_ENROLLMENT_ACCESS e JOURNEY_STATE.
  */
 
 /**
@@ -65,17 +68,25 @@ export const CONSCIENCIA_DIMENSIONS = [
 export type ConscienciaDimensionId = (typeof CONSCIENCIA_DIMENSIONS)[number]['id']
 
 /**
- * Tipos de perfil suportados pela plataforma
+ * Papéis de usuário (USER_ROLE)
  */
+export const USER_ROLES = {
+  INTERAGENTE: 'interagente',
+  PROFISSIONAL: 'profissional',
+  ADMIN: 'admin',
+} as const
+
+export type UserRoleType = (typeof USER_ROLES)[keyof typeof USER_ROLES]
+
+// Compatibilidade de leitura com prompt 00
 export const PROFILE_TYPES = {
   INTERAGENTE: 'interagente',
   PROFISSIONAL: 'profissional',
 } as const
-
 export type ProfileType = (typeof PROFILE_TYPES)[keyof typeof PROFILE_TYPES]
 
 /**
- * Estados do ciclo de vida de Matrícula (Enrollment)
+ * Estados do ciclo de vida de Matrícula / Acompanhamento (Enrollment)
  */
 export const ENROLLMENT_STATUS = {
   PENDENTE: 'pendente',
@@ -86,6 +97,39 @@ export const ENROLLMENT_STATUS = {
 export type EnrollmentStatus = (typeof ENROLLMENT_STATUS)[keyof typeof ENROLLMENT_STATUS]
 
 /**
+ * Níveis de Acesso da Profissional ao Enrollment (PROFESSIONAL_ENROLLMENT_ACCESS)
+ */
+export const PROFESSIONAL_ACCESS_ROLES = {
+  PRIMARY: 'primary',
+  COLLABORATOR: 'collaborator',
+  SUPERVISOR: 'supervisor',
+} as const
+
+export type ProfessionalAccessRole =
+  (typeof PROFESSIONAL_ACCESS_ROLES)[keyof typeof PROFESSIONAL_ACCESS_ROLES]
+
+/**
+ * Estágios estruturais da Jornada (JOURNEY_STATE)
+ * Preparação sem antecipar módulos futuros
+ */
+export const JOURNEY_STAGES = {
+  ACOLHIMENTO: 'acolhimento',
+  CONSCIENCIA: 'consciencia',
+  EQUILIBRIO_REALIZACAO: 'equilibrio_realizacao',
+  EVOLUCAO: 'evolucao',
+} as const
+
+export type JourneyStage = (typeof JOURNEY_STAGES)[keyof typeof JOURNEY_STAGES]
+
+export const STAGE_STATUS = {
+  NAO_INICIADO: 'nao_iniciado',
+  EM_ANDAMENTO: 'em_andamento',
+  INTEGRADO: 'integrado',
+} as const
+
+export type StageStatus = (typeof STAGE_STATUS)[keyof typeof STAGE_STATUS]
+
+/**
  * Produtos CER
  */
 export const CER_PRODUCTS = {
@@ -94,35 +138,132 @@ export const CER_PRODUCTS = {
 
 export type CerProductId = (typeof CER_PRODUCTS)[keyof typeof CER_PRODUCTS]
 
+// ==========================================
+// INTERFACES DAS ENTIDADES DO BANCO DE DADOS
+// ==========================================
+
 /**
- * Tipos de Modelos de Dados Fundamentais
+ * PERSON: a pessoa humana real, independente de conta de acesso.
  */
-export interface UserRecord {
+export interface PersonRecord {
   id: string
-  email: string
-  name: string
-  avatar?: string
+  full_name: string
+  preferred_name?: string
+  email?: string
+  phone?: string
+  notes?: string
   created: string
   updated: string
 }
 
+/**
+ * USER_ACCOUNT: conta de autenticação (coleção nativa 'users' do PocketBase)
+ */
+export interface UserAccountRecord {
+  id: string
+  collectionId?: string
+  collectionName?: string
+  email: string
+  name: string
+  avatar?: string
+  person_id?: string
+  expand?: {
+    person_id?: PersonRecord
+    user_roles_via_user_id?: UserRoleRecord[]
+  }
+  created: string
+  updated: string
+}
+
+export type UserRecord = UserAccountRecord
+
+/**
+ * USER_ROLE: papéis atribuídos a uma conta de acesso.
+ */
+export interface UserRoleRecord {
+  id: string
+  user_id: string
+  role: UserRoleType
+  is_active: boolean
+  created: string
+  updated: string
+}
+
+/**
+ * CER_PRODUCT: catálogo de produtos/modalidades CER
+ */
+export interface CerProductRecord {
+  id: string
+  code: string
+  name: string
+  description?: string
+  is_active: boolean
+  created: string
+  updated: string
+}
+
+/**
+ * ENROLLMENT: vínculo de acompanhamento de uma PERSON a um produto CER.
+ */
+export interface EnrollmentRecord {
+  id: string
+  person_id: string
+  interagente?: string // compatibilidade retroativa
+  profissional?: string // compatibilidade retroativa
+  product_id?: string
+  product?: string
+  status: EnrollmentStatus
+  start_date?: string
+  end_date?: string
+  notes?: string
+  expand?: {
+    person_id?: PersonRecord
+    product_id?: CerProductRecord
+    professional_enrollment_access_via_enrollment_id?: ProfessionalEnrollmentAccessRecord[]
+    journey_states_via_enrollment_id?: JourneyStateRecord[]
+  }
+  created: string
+  updated: string
+}
+
+/**
+ * PROFESSIONAL_ENROLLMENT_ACCESS: permissão granular da profissional ao enrollment
+ */
+export interface ProfessionalEnrollmentAccessRecord {
+  id: string
+  enrollment_id: string
+  professional_user_id: string
+  access_role: ProfessionalAccessRole
+  is_active: boolean
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    professional_user_id?: UserAccountRecord
+  }
+  created: string
+  updated: string
+}
+
+/**
+ * JOURNEY_STATE: estado estrutural mínimo da jornada do enrollment
+ */
+export interface JourneyStateRecord {
+  id: string
+  enrollment_id: string
+  current_stage: JourneyStage
+  stage_status: StageStatus
+  metadata?: Record<string, unknown>
+  created: string
+  updated: string
+}
+
+/**
+ * Compatibilidade legada provisória de ProfileRecord
+ */
 export interface ProfileRecord {
   id: string
   user: string
   profile_type: ProfileType
   full_name: string
-  created: string
-  updated: string
-}
-
-export interface EnrollmentRecord {
-  id: string
-  interagente: string
-  profissional?: string
-  product: string
-  status: EnrollmentStatus
-  start_date?: string
-  end_date?: string
   created: string
   updated: string
 }
