@@ -34,6 +34,9 @@ import {
   Brain,
 } from 'lucide-react'
 import { ExperienceEngine } from '@/components/experience'
+import { ParticipantMapDisplay } from '@/components/ParticipantMapDisplay'
+import { cerMapService } from '@/services/cerMapService'
+import type { CerMapRecord, CerMapItemRecord } from '@/types/cer'
 
 export const InteragenteHome: React.FC = () => {
   const { user, person, logout } = useAuth()
@@ -44,6 +47,9 @@ export const InteragenteHome: React.FC = () => {
   const [activeExperienceId, setActiveExperienceId] = useState<string | null>(null)
   const [knowledgeItems, setKnowledgeItems] = useState<CerKnowledgeItemRecord[]>([])
   const [presentations, setPresentations] = useState<CerKnowledgePresentationRecord[]>([])
+  const [currentMap, setCurrentMap] = useState<
+    (CerMapRecord & { items: CerMapItemRecord[] }) | null
+  >(null)
   const [selectedRecognitions, setSelectedRecognitions] = useState<
     Record<string, { type: RecognitionType; comment: string; saved: boolean }>
   >({})
@@ -70,15 +76,17 @@ export const InteragenteHome: React.FC = () => {
       setEngineEnabled(isFlagActive)
 
       if (activeEnr?.id && isFlagActive) {
-        const [exps, kiList, myRecogs, presList] = await Promise.all([
+        const [exps, kiList, myRecogs, presList, mapData] = await Promise.all([
           enrollmentExperienceService.listByEnrollment(activeEnr.id),
           cerKnowledgeItemService.listByEnrollment(activeEnr.id),
           cerParticipantRecognitionService.listByEnrollment(activeEnr.id),
           cerKnowledgePresentationService.listPresentedByEnrollment(activeEnr.id),
+          cerMapService.getCurrentPublishedMap(activeEnr.id),
         ])
         setAvailableExperiences(exps)
         setKnowledgeItems(kiList)
         setPresentations(presList)
+        setCurrentMap(mapData)
 
         const recogMap: Record<string, { type: RecognitionType; comment: string; saved: boolean }> =
           {}
@@ -228,6 +236,13 @@ export const InteragenteHome: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* BUILD 06: Meu Mapa CER — Síntese Viva e Reconhecível */}
+        {currentMap && (
+          <div className="space-y-4">
+            <ParticipantMapDisplay map={currentMap} />
+          </div>
+        )}
 
         {/* BUILD 02: Banner de Experiência Disponível (UX da Interagente) */}
         {engineEnabled && enrollment && !activeExperienceId && (

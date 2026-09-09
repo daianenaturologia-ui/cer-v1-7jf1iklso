@@ -30,6 +30,7 @@ import {
 import { AuditSecurityPanel } from '@/components/AuditSecurityPanel'
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
 import { ProfessionalAiWorkspace } from '@/components/ProfessionalAiWorkspace'
+import { ProfessionalMapEditor } from '@/components/ProfessionalMapEditor'
 import { ProfessionalSessionManager } from '@/components/ProfessionalSessionManager'
 import { ProfessionalExperienceManager } from '@/components/experience'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -385,6 +386,24 @@ export const ProfissionalHome: React.FC = () => {
                 enrollmentId={enr.id}
                 participantName={enr.expand?.person_id?.full_name || 'Interagente'}
               />
+            ))}
+          </div>
+        )}
+
+        {/* BUILD 06: Mapa CER V1 — Síntese Viva de Compreensão */}
+        {enrollments.length > 0 && user && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-serif font-semibold text-foreground">
+              Mapa CER V1 — Síntese Viva (Build 06)
+            </h2>
+            {enrollments.map((enr) => (
+              <div key={`map-editor-${enr.id}`} className="space-y-2">
+                <ProfessionalMapEditor
+                  enrollmentId={enr.id}
+                  participantName={enr.expand?.person_id?.full_name || 'Interagente'}
+                  professionalUserId={user.id}
+                />
+              </div>
             ))}
           </div>
         )}

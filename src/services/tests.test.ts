@@ -6,6 +6,7 @@ import { runBuild04ASessionTests } from './testsSession'
 import { runBuild04BSessionKnowledgeTests } from './testsSession04b'
 import { runBuild04CPresentationTests } from './testsPresentation04c'
 import { runBuild05AiCoreTests } from './testsAi05'
+import { runBuild06MapTests } from './testsMap06'
 
 describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
   it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {
@@ -169,6 +170,23 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
     expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
 
     // Todos os testes do 05 devem ser 'PASSOU'
+    for (const r of results) {
+      expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
+    }
+  }, 90000)
+
+  it('executa suíte completa de testes do Build 06 (Mapa CER V1: F1–F20, E1–E20, V1–V10)', async () => {
+    const results = await runBuild06MapTests()
+    console.log(
+      'Build 06 test results summary:',
+      results.map((r) => `${r.name}: ${r.status}`),
+    )
+
+    // NENHUM teste do Build 06 pode falhar
+    const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')
+    expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
+
+    // Todos os testes do 06 devem ser 'PASSOU'
     for (const r of results) {
       expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
     }

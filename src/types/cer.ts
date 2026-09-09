@@ -272,6 +272,131 @@ export interface PersonRecord {
 }
 
 // ------------------------------------------
+// ENTIDADES DO BUILD 06 — MAPA CER V1
+// ------------------------------------------
+
+export const CER_MAP_STATUS = {
+  DRAFT: 'draft',
+  PUBLISHED: 'published',
+  SUPERSEDED: 'superseded',
+  DISCARDED: 'discarded',
+} as const
+
+export type CerMapStatus = (typeof CER_MAP_STATUS)[keyof typeof CER_MAP_STATUS]
+
+export const CER_MAP_SECTIONS = {
+  MINHA_NATUREZA: 'minha_natureza',
+  MEU_MOMENTO: 'meu_momento',
+  QUANDO_ESTOU_NO_MEU_EIXO: 'quando_estou_no_meu_eixo',
+  QUANDO_SAIO_DO_MEU_EIXO: 'quando_saio_do_meu_eixo',
+  O_QUE_ME_MOBILIZA: 'o_que_me_mobiliza',
+  MEUS_PADROES: 'meus_padroes',
+  MEUS_RECURSOS: 'meus_recursos',
+  MINHAS_RELACOES: 'minhas_relacoes',
+  MINHA_HISTORIA: 'minha_historia',
+  O_QUE_TEM_SENTIDO_PARA_MIM: 'o_que_tem_sentido_para_mim',
+  O_QUE_RECONHECI_SOBRE_MIM: 'o_que_reconheci_sobre_mim',
+} as const
+
+export type CerMapSection = (typeof CER_MAP_SECTIONS)[keyof typeof CER_MAP_SECTIONS]
+
+export const CER_MAP_SECTION_LABELS: Record<CerMapSection, string> = {
+  minha_natureza: 'Minha Natureza',
+  meu_momento: 'Meu Momento',
+  quando_estou_no_meu_eixo: 'Quando estou no meu eixo',
+  quando_saio_do_meu_eixo: 'Quando saio do meu eixo',
+  o_que_me_mobiliza: 'O que me mobiliza',
+  meus_padroes: 'Meus Padrões',
+  meus_recursos: 'Meus Recursos',
+  minhas_relacoes: 'Minhas Relações',
+  minha_historia: 'Minha História',
+  o_que_tem_sentido_para_mim: 'O que tem sentido para mim',
+  o_que_reconheci_sobre_mim: 'O que reconheci sobre mim',
+}
+
+export const CER_MAP_SECTION_DESCRIPTIONS: Record<CerMapSection, string> = {
+  minha_natureza: 'Traços mais perenes, ritmo intrínseco e tendências essenciais.',
+  meu_momento: 'O estado e as circunstâncias atuais pelas quais você está passando.',
+  quando_estou_no_meu_eixo:
+    'Como você se sente, age e vive quando está em equilíbrio consigo mesma.',
+  quando_saio_do_meu_eixo:
+    'Sinais e manifestações que surgem quando o ritmo ou o estresse desequilibram.',
+  o_que_me_mobiliza:
+    'Motivações vitais, interesses profundos e o que desperta sua energia de ação.',
+  meus_padroes: 'Padrões recorrentes observados e compreendidos ao longo do processo.',
+  meus_recursos: 'Fontes de suporte, forças internas, práticas e apoios que fortalecem você.',
+  minhas_relacoes: 'Dinâmicas relacionais, limites e conexão com as pessoas ao redor.',
+  minha_historia: 'Marcos, continuidades e raízes que ajudam a entender onde você está hoje.',
+  o_que_tem_sentido_para_mim: 'Valores centrais, propósito e direções de significado pessoal.',
+  o_que_reconheci_sobre_mim:
+    'Percepções e revelações que você mesma acolheu e reconheceu como suas.',
+}
+
+export const CER_MAP_SOURCE_TYPES = {
+  KNOWLEDGE_ITEM: 'knowledge_item',
+  PARTICIPANT_RECOGNITION: 'participant_recognition',
+  PRESENTATION_CONTEXT: 'presentation_context',
+} as const
+
+export type CerMapSourceType = (typeof CER_MAP_SOURCE_TYPES)[keyof typeof CER_MAP_SOURCE_TYPES]
+
+export interface CerMapRecord {
+  id: string
+  enrollment_id: string
+  version_number: number
+  status: CerMapStatus
+  created_by_user_id: string
+  published_by_user_id?: string
+  published_at?: string
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    created_by_user_id?: UserAccountRecord
+    published_by_user_id?: UserAccountRecord
+    cer_map_items_via_map_id?: CerMapItemRecord[]
+  }
+}
+
+export interface CerMapItemRecord {
+  id: string
+  map_id: string
+  section: CerMapSection
+  item_text: string
+  position: number
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    map_id?: CerMapRecord
+    created_by_user_id?: UserAccountRecord
+    cer_map_item_sources_via_map_item_id?: CerMapItemSourceRecord[]
+  }
+}
+
+export interface CerMapItemSourceRecord {
+  id: string
+  map_item_id: string
+  source_type: CerMapSourceType
+  knowledge_item_id?: string
+  recognition_id?: string
+  presentation_id?: string
+  knowledge_version_number?: number
+  knowledge_version_id?: string
+  created: string
+  updated: string
+  expand?: {
+    map_item_id?: CerMapItemRecord
+    knowledge_item_id?: CerKnowledgeItemRecord
+    recognition_id?: CerParticipantRecognitionRecord
+    presentation_id?: CerKnowledgePresentationRecord
+    knowledge_version_id?: CerKnowledgeItemVersionRecord
+  }
+}
+
+export const MAP_EMPTY_MICROCOPY = 'Ainda estou descobrindo isso.'
+
+// ------------------------------------------
 // ENTIDADES DO BUILD 05 — AI CORE V1
 // ------------------------------------------
 

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T21:08:54.879Z",
+  "generatedAt": "2026-09-09T22:25:54.648Z",
   "collections": [
     {
       "name": "users",
@@ -2809,6 +2809,232 @@
         "CREATE INDEX idx_aips_proposal ON cer_ai_proposal_sources (proposal_id)",
         "CREATE INDEX idx_aips_source ON cer_ai_proposal_sources (source_id)",
         "CREATE INDEX idx_aips_type ON cer_ai_proposal_sources (source_type)"
+      ]
+    },
+    {
+      "name": "cer_maps",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((status = 'published' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((status = 'published' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "version_number",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["draft", "published", "superseded", "discarded"]
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "published_by_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "published_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cer_maps_enrollment_version ON cer_maps (enrollment_id, version_number)",
+        "CREATE INDEX idx_cer_maps_enrollment_status ON cer_maps (enrollment_id, status)"
+      ]
+    },
+    {
+      "name": "cer_map_items",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((map_id.status = 'published' && map_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((map_id.status = 'published' && map_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "map_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_maps"
+        },
+        {
+          "name": "section",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "minha_natureza",
+            "meu_momento",
+            "quando_estou_no_meu_eixo",
+            "quando_saio_do_meu_eixo",
+            "o_que_me_mobiliza",
+            "meus_padroes",
+            "meus_recursos",
+            "minhas_relacoes",
+            "minha_historia",
+            "o_que_tem_sentido_para_mim",
+            "o_que_reconheci_sobre_mim"
+          ]
+        },
+        {
+          "name": "item_text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "position",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cer_map_items_order ON cer_map_items (map_id, section, position)"
+      ]
+    },
+    {
+      "name": "cer_map_item_sources",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && map_item_id.map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && map_item_id.map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && map_item_id.map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && map_item_id.map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && map_item_id.map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && map_item_id.map_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "map_item_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_map_items"
+        },
+        {
+          "name": "source_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["knowledge_item", "participant_recognition", "presentation_context"]
+        },
+        {
+          "name": "knowledge_item_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_knowledge_items"
+        },
+        {
+          "name": "recognition_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_participant_recognitions"
+        },
+        {
+          "name": "presentation_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_knowledge_presentations"
+        },
+        {
+          "name": "knowledge_version_number",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "knowledge_version_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_knowledge_item_versions"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cer_mis_item ON cer_map_item_sources (map_item_id)",
+        "CREATE INDEX idx_cer_mis_type ON cer_map_item_sources (source_type)",
+        "CREATE INDEX idx_cer_mis_ki ON cer_map_item_sources (knowledge_item_id)"
       ]
     }
   ]
