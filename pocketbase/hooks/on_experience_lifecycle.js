@@ -1,7 +1,40 @@
-// Hook para auditar o ciclo de vida das experiências em enrollment_experiences
-// Ações permitidas na auditoria:
+// Hook server-side do ciclo de vida das experiências em enrollment_experiences
+// Ações de auditoria permitidas:
 // EXPERIENCE_RELEASED, EXPERIENCE_STARTED, EXPERIENCE_COMPLETED, EXPERIENCE_PAUSED, EXPERIENCE_REOPENED
 // ATENÇÃO: NUNCA registrar conteúdo sensível de respostas em audit_events!
+
+onRecordAfterCreateSuccess((e) => {
+  e.next()
+
+  try {
+    const record = e.record
+    const releaseStatus = record.getString('release_status')
+
+    if (releaseStatus === 'available' || releaseStatus === 'in_progress') {
+      const auditCol = $app.findCollectionByNameOrId('audit_events')
+      const auditRec = new Record(auditCol)
+
+      if (e.auth && e.auth.id) {
+        auditRec.set('actor_user_id', e.auth.id)
+      }
+      auditRec.set('action', 'EXPERIENCE_RELEASED')
+      auditRec.set('resource_type', 'experience')
+      auditRec.set('resource_id', record.getString('experience_id'))
+      auditRec.set('enrollment_id', record.getString('enrollment_id'))
+      auditRec.set('timestamp', new Date().toISOString())
+      auditRec.set('result', 'success')
+      auditRec.set(
+        'metadata',
+        JSON.stringify({
+          release_status: releaseStatus,
+          enrollment_experience_id: record.id,
+        }),
+      )
+      $app.save(auditRec)
+    }
+  } catch (_) {}
+}, 'enrollment_experiences')
+
 onRecordAfterUpdateSuccess((e) => {
   e.next()
 

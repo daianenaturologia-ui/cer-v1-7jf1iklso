@@ -387,9 +387,28 @@ export interface CerExperienceRecord {
   updated: string
 }
 
+export interface CerExperienceMomentRecord {
+  id: string
+  experience_id: string
+  moment_key: string
+  title: string
+  subtitle?: string
+  order_index: number
+  is_active: boolean
+  version: number
+  expand?: {
+    experience_id?: CerExperienceRecord
+    cer_prompts_via_moment_id?: CerPromptRecord[]
+  }
+  created: string
+  updated: string
+}
+
 export interface CerPromptRecord {
   id: string
   experience_id: string
+  moment_id?: string
+  prompt_order?: number
   step_order: number
   step_title: string
   step_subtitle?: string
@@ -399,6 +418,25 @@ export interface CerPromptRecord {
   schema_config: Record<string, unknown>
   is_required: boolean
   version: number
+  expand?: {
+    moment_id?: CerExperienceMomentRecord
+    experience_id?: CerExperienceRecord
+  }
+  created: string
+  updated: string
+}
+
+export interface CerPromptVersionRecord {
+  id: string
+  prompt_id: string
+  moment_id: string
+  version_number: number
+  prompt_type: string
+  prompt_text: string
+  helper_text?: string
+  schema_config: Record<string, unknown>
+  is_required: boolean
+  change_reason?: string
   created: string
   updated: string
 }
@@ -429,6 +467,7 @@ export interface ExperienceResponseRecord {
   prompt_id: string
   respondent_user_id: string
   response_type: ComponentType
+  access_class: VisibilityClass
   structured_value?: unknown
   free_text?: string
   prompt_version: number
@@ -449,6 +488,7 @@ export interface ExperienceResponseVersionRecord {
   prompt_id: string
   respondent_user_id: string
   response_type: string
+  access_class: VisibilityClass
   structured_value?: unknown
   free_text?: string
   version_number: number

@@ -2,7 +2,9 @@ import pb from '@/lib/pocketbase/client'
 import type {
   CerDimensionRecord,
   CerExperienceRecord,
+  CerExperienceMomentRecord,
   CerPromptRecord,
+  CerPromptVersionRecord,
   EnrollmentExperienceRecord,
   ExperienceResponseRecord,
   ExperienceResponseVersionRecord,
@@ -10,6 +12,7 @@ import type {
   ExperienceReleaseStatus,
   ExperienceProgressStatus,
   ComponentType,
+  VisibilityClass,
 } from '@/types/cer'
 
 /**
@@ -80,10 +83,32 @@ export const experienceCatalogService = {
     })
   },
 
+  async listMomentsByExperience(experienceId: string): Promise<CerExperienceMomentRecord[]> {
+    return await pb.collection('cer_experience_moments').getFullList<CerExperienceMomentRecord>({
+      filter: `experience_id = "${experienceId}" && is_active = true`,
+      sort: 'order_index',
+    })
+  },
+
   async listPromptsByExperience(experienceId: string): Promise<CerPromptRecord[]> {
     return await pb.collection('cer_prompts').getFullList<CerPromptRecord>({
       filter: `experience_id = "${experienceId}"`,
       sort: 'step_order',
+      expand: 'moment_id',
+    })
+  },
+
+  async listPromptsByMoment(momentId: string): Promise<CerPromptRecord[]> {
+    return await pb.collection('cer_prompts').getFullList<CerPromptRecord>({
+      filter: `moment_id = "${momentId}"`,
+      sort: 'prompt_order',
+    })
+  },
+
+  async listPromptVersions(promptId: string): Promise<CerPromptVersionRecord[]> {
+    return await pb.collection('cer_prompt_versions').getFullList<CerPromptVersionRecord>({
+      filter: `prompt_id = "${promptId}"`,
+      sort: '-version_number',
     })
   },
 }
@@ -262,77 +287,35 @@ export const experienceResponseService = {
     promptVersion: number
     structuredValue?: unknown
     freeText?: string
+    accessClass?: VisibilityClass
     changeReason?: string
   }): Promise<ExperienceResponseRecord> {
     const existing = await this.getResponse(params.enrollmentId, params.promptId)
 
+    // O versionamento e snapshot temporal são garantidos 100% SERVER-SIDE via hook PocketBase
+    // (onRecordAfterCreateSuccess e onRecordUpdate em experience_responses).
+    // O cliente envia a criação ou atualização diretamente, sem duplicar lógica de histórico no frontend.
     if (!existing) {
-      // 1. Criar novo registro canônico v1
-      const createdResponse = await pb
-        .collection('experience_responses')
-        .create<ExperienceResponseRecord>({
-          enrollment_id: params.enrollmentId,
-          experience_id: params.experienceId,
-          prompt_id: params.promptId,
-          respondent_user_id: params.respondentUserId,
-          response_type: params.responseType,
-          structured_value: params.structuredValue,
-          free_text: params.freeText || '',
-          prompt_version: params.promptVersion,
-          version: 1,
-          status: 'saved',
-        })
-
-      // Gravar histórico de versão 1 inicial
-      try {
-        await pb.collection('experience_response_versions').create({
-          response_id: createdResponse.id,
-          enrollment_id: params.enrollmentId,
-          experience_id: params.experienceId,
-          prompt_id: params.promptId,
-          respondent_user_id: params.respondentUserId,
-          response_type: params.responseType,
-          structured_value: params.structuredValue,
-          free_text: params.freeText || '',
-          version_number: 1,
-          prompt_version: params.promptVersion,
-          change_reason: params.changeReason || 'Registro inicial',
-        })
-      } catch (err) {
-        console.warn('Falha ao registrar versão inicial:', err)
-      }
-
-      return createdResponse
+      return await pb.collection('experience_responses').create<ExperienceResponseRecord>({
+        enrollment_id: params.enrollmentId,
+        experience_id: params.experienceId,
+        prompt_id: params.promptId,
+        respondent_user_id: params.respondentUserId,
+        response_type: params.responseType,
+        access_class: params.accessClass || 'shared_care',
+        structured_value: params.structuredValue,
+        free_text: params.freeText || '',
+        prompt_version: params.promptVersion,
+        version: 1,
+        status: 'saved',
+      })
     } else {
-      // 2. Resposta já existia — arquivar versão anterior antes de atualizar
-      try {
-        await pb.collection('experience_response_versions').create({
-          response_id: existing.id,
-          enrollment_id: existing.enrollment_id,
-          experience_id: existing.experience_id,
-          prompt_id: existing.prompt_id,
-          respondent_user_id: existing.respondent_user_id,
-          response_type: existing.response_type,
-          structured_value: existing.structured_value,
-          free_text: existing.free_text || '',
-          version_number: existing.version,
-          prompt_version: existing.prompt_version,
-          change_reason: params.changeReason || 'Revisão de resposta',
-        })
-      } catch (err) {
-        console.warn('Falha ao arquivar versão anterior:', err)
-      }
-
-      const nextVersion = (existing.version || 1) + 1
-
-      // Atualizar resposta canônica
       return await pb
         .collection('experience_responses')
         .update<ExperienceResponseRecord>(existing.id, {
           structured_value: params.structuredValue,
           free_text: params.freeText !== undefined ? params.freeText : existing.free_text,
-          version: nextVersion,
-          status: 'revised',
+          ...(params.accessClass ? { access_class: params.accessClass } : {}),
         })
     }
   },

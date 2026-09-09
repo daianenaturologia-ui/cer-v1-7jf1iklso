@@ -77,8 +77,27 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
     }
   }
 
+  const handleRelease = async (enrExp: EnrollmentExperienceRecord) => {
+    try {
+      await enrollmentExperienceService.updateReleaseStatus(enrExp.id, 'available')
+      await loadExperiences()
+    } catch (err) {
+      console.error('Falha ao liberar experiência:', err)
+    }
+  }
+
   const handleReopen = async (enrExp: EnrollmentExperienceRecord) => {
     try {
+      // Correção do estado contraditório:
+      // Ao reabrir:
+      // - release_status = 'available'
+      // - progress_status = 'in_progress' (ou 'not_started' se preferir recomeço com respostas mantidas)
+      // - current_step_order = 1 (permite retomar desde o momento 1)
+      // - preserva respostas anteriores e seu histórico imutável
+      await enrollmentExperienceService.updateProgress(enrExp.id, {
+        stepOrder: 1,
+        progressStatus: 'in_progress',
+      })
       await enrollmentExperienceService.updateReleaseStatus(enrExp.id, 'available')
       await loadExperiences()
     } catch (err) {
@@ -203,6 +222,18 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
                       <Eye className="w-3.5 h-3.5" />
                       <span>Ver Respostas</span>
                     </Button>
+
+                    {isLocked && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleRelease(ee)}
+                        className="text-xs h-8 px-2.5 gap-1.5"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                        <span>Liberar</span>
+                      </Button>
+                    )}
 
                     {isPaused ? (
                       <Button

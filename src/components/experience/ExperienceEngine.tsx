@@ -6,6 +6,7 @@ import {
 } from '@/services/experienceEngine'
 import type {
   CerExperienceRecord,
+  CerExperienceMomentRecord,
   CerPromptRecord,
   EnrollmentExperienceRecord,
   ExperienceResponseRecord,
@@ -55,9 +56,11 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   onCompleted,
 }) => {
   const [experience, setExperience] = useState<CerExperienceRecord | null>(null)
+  const [moments, setMoments] = useState<CerExperienceMomentRecord[]>([])
   const [prompts, setPrompts] = useState<CerPromptRecord[]>([])
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
   const [responsesMap, setResponsesMap] = useState<Record<string, ExperienceResponseRecord>>({})
+  const [orderingInteracted, setOrderingInteracted] = useState(false)
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [engineStage, setEngineStage] = useState<EngineStage>('opening')
@@ -77,8 +80,9 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     const loadEngineData = async () => {
       setLoading(true)
       try {
-        const [exp, promptList, enrExp, existingResponses] = await Promise.all([
+        const [exp, momentList, promptList, enrExp, existingResponses] = await Promise.all([
           experienceCatalogService.getExperienceById(experienceId),
+          experienceCatalogService.listMomentsByExperience(experienceId),
           experienceCatalogService.listPromptsByExperience(experienceId),
           enrollmentExperienceService.getByEnrollmentAndExperience(enrollmentId, experienceId),
           experienceResponseService.listResponsesByExperience(enrollmentId, experienceId),
@@ -87,6 +91,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         if (!isMounted) return
 
         setExperience(exp)
+        setMoments(momentList)
         setPrompts(promptList)
         setEnrollmentExp(enrExp)
 
@@ -129,19 +134,18 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     const currentPrompt = prompts[currentStepIndex]
     if (currentPrompt) {
       const existing = responsesMap[currentPrompt.id]
+      setOrderingInteracted(false)
       if (existing) {
         setCurrentDraftValue(existing.structured_value)
         setCurrentDraftText(existing.free_text || '')
+        if (currentPrompt.component_type === 'Ordering') {
+          setOrderingInteracted(true)
+        }
       } else {
-        // Valores default conforme o componente
-        if (currentPrompt.component_type === 'SimpleScale') {
-          const cfg = currentPrompt.schema_config as {
-            defaultValue?: number
-            min?: number
-            max?: number
-          }
-          setCurrentDraftValue(cfg?.defaultValue ?? 3)
-        } else if (
+        // Correção de defaults metodológicos:
+        // SimpleScale: NÃO iniciar pré-selecionado (inicia como null)
+        // Ordering: exibe itens configurados, mas sem auto-confirmação
+        if (
           currentPrompt.component_type === 'MultiSelectCards' ||
           currentPrompt.component_type === 'BodyMap'
         ) {
@@ -149,6 +153,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         } else if (currentPrompt.component_type === 'Ordering') {
           const cfg = currentPrompt.schema_config as { items?: { id: string }[] }
           setCurrentDraftValue(cfg?.items?.map((i) => i.id) || [])
+          setOrderingInteracted(false)
         } else {
           setCurrentDraftValue(null)
         }
@@ -172,6 +177,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     const currentPrompt = prompts[currentStepIndex]
     if (!currentPrompt) return
 
+    // Se SimpleScale não teve valor selecionado e não é required, salvar null
+    // Se for Ordering e o usuário não interagiu, preserva apenas se já salvo
+    const valToSave = currentDraftValue
+
     setSaving(true)
     try {
       const saved = await experienceResponseService.saveResponse({
@@ -181,11 +190,12 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         respondentUserId,
         responseType: currentPrompt.component_type,
         promptVersion: currentPrompt.version,
-        structuredValue: currentDraftValue,
+        structuredValue: valToSave,
         freeText:
           currentPrompt.component_type === 'FreeReflection'
             ? (currentDraftValue as string) || currentDraftText
             : currentDraftText,
+        accessClass: 'shared_care',
         changeReason: responsesMap[currentPrompt.id]
           ? 'Atualização pelo interagente durante a experiência'
           : 'Primeiro registro de resposta',
@@ -450,7 +460,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           <Ordering
             config={schema as any}
             value={currentDraftValue as string[]}
-            onChange={(val) => setCurrentDraftValue(val)}
+            onChange={(val) => {
+              setOrderingInteracted(true)
+              setCurrentDraftValue(val)
+            }}
           />
         )
       case 'BodyMap':
@@ -546,20 +559,37 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         ))}
       </div>
 
-      {/* Bloco do Prompt Atual */}
+      {/* Bloco do Momento & Prompt Atual */}
       <div className="space-y-3 pt-2">
         <div className="space-y-1">
-          <Badge variant="outline" className="text-[10px] font-normal tracking-wide">
-            {currentPrompt.step_title}
-          </Badge>
-          <h2 className="text-xl sm:text-2xl font-serif font-medium text-foreground leading-snug">
-            {currentPrompt.prompt_text}
-          </h2>
-          {currentPrompt.step_subtitle && (
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {currentPrompt.step_subtitle}
-            </p>
-          )}
+          {(() => {
+            const momentData =
+              (currentPrompt.expand?.moment_id as CerExperienceMomentRecord) ||
+              moments.find((m) => m.id === currentPrompt.moment_id)
+            const momentTitle = momentData?.title || currentPrompt.step_title
+            const momentSubtitle = momentData?.subtitle || currentPrompt.step_subtitle
+
+            return (
+              <>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] font-normal tracking-wide">
+                    {momentTitle}
+                  </Badge>
+                  {currentPrompt.prompt_order && currentPrompt.prompt_order > 1 && (
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      Pergunta {currentPrompt.prompt_order}
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-xl sm:text-2xl font-serif font-medium text-foreground leading-snug">
+                  {currentPrompt.prompt_text}
+                </h2>
+                {momentSubtitle && (
+                  <p className="text-xs text-muted-foreground leading-relaxed">{momentSubtitle}</p>
+                )}
+              </>
+            )
+          })()}
         </div>
         {currentPrompt.helper_text && (
           <p className="text-[11px] text-muted-foreground/80 italic">{currentPrompt.helper_text}</p>

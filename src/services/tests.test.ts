@@ -40,7 +40,7 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
     const results = await runBuild02EngineTests()
     console.log(
       'Build 02 test results summary:',
-      results.map((r) => `${r.name}: ${r.status}`),
+      results.map((r) => `${r.name}: ${r.status} - ${r.details}`),
     )
 
     // NENHUM teste do Build 02 deve ter status 'NÃO PASSOU'
@@ -49,7 +49,7 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
 
     // Todos os 10 testes do Build 02 devem ser 'PASSOU'
     for (const r of results) {
-      expect(r.status).toBe('PASSOU')
+      expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
     }
   })
 })

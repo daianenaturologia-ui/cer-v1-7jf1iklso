@@ -28,8 +28,7 @@ export const SimpleScale: React.FC<SimpleScaleProps> = ({
   const max = config?.max ?? 5
   const step = config?.step ?? 1
 
-  const currentValue =
-    typeof value === 'number' ? value : (config?.defaultValue ?? Math.round((min + max) / 2))
+  const currentValue = typeof value === 'number' ? value : null
 
   const stepsCount = Math.round((max - min) / step) + 1
   const stepValues = Array.from({ length: stepsCount }, (_, i) => min + i * step)
@@ -67,7 +66,7 @@ export const SimpleScale: React.FC<SimpleScaleProps> = ({
           min={min}
           max={max}
           step={step}
-          value={currentValue}
+          value={currentValue ?? Math.round((min + max) / 2)}
           disabled={disabled}
           onChange={(e) => onChange(Number(e.target.value))}
           className="w-full accent-primary h-2 bg-muted rounded-lg appearance-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
