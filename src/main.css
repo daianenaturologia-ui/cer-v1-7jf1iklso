@@ -1,0 +1,303 @@
+/* Global styles - Theme, font, utilities, animations and global components */
+
+/* Fonte Humanista Lora para todo o sistema CER V1 */
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Paleta CER V1: Orgânica, quente, acolhedora e legível */
+    /* Background #FAF7F2 -> hsl(38, 38%, 96%) */
+    --background: 38 38% 96%;
+    /* Foreground #2D2A26 -> hsl(34, 8%, 16%) */
+    --foreground: 34 8% 16%;
+
+    /* Surface #FFFFFF */
+    --card: 0 0% 100%;
+    --card-foreground: 34 8% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 34 8% 16%;
+
+    /* Primary #1F6B5C -> hsl(168, 55%, 27%) */
+    --primary: 168 55% 27%;
+    --primary-foreground: 40 40% 98%;
+
+    /* Secondary / Terracotta #D98E5F -> hsl(23, 63%, 61%) */
+    --secondary: 23 63% 61%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted #F0ECE1 and #6B655D */
+    --muted: 38 25% 91%;
+    --muted-foreground: 34 7% 39%;
+
+    --accent: 38 30% 92%;
+    --accent-foreground: 168 55% 27%;
+
+    /* Earthy Red #B4453A */
+    --destructive: 5 51% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 36 20% 88%;
+    --input: 36 20% 88%;
+    --ring: 23 63% 61%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 222.2 84% 4.9%;
+
+    --sidebar-primary: 222.2 84% 4.9%;
+
+    --sidebar-primary-foreground: 0 0% 100%;
+
+    --sidebar-accent: 210 40% 98%;
+
+    --sidebar-accent-foreground: 222.2 84% 4.9%;
+
+    --sidebar-border: 214.3 31.8% 91.4%;
+
+    --sidebar-ring: 222.2 84% 4.9%;
+
+    --chart-1: 34 100% 44%;
+    --chart-2: 189 100% 38%;
+    --chart-3: 209 100% 32%;
+    --chart-4: 42 100% 50%;
+    --chart-5: 33 100% 50%;
+  }
+
+  .dark {
+    --background: 34 15% 10%;
+    --foreground: 38 25% 92%;
+
+    --card: 34 14% 14%;
+    --card-foreground: 38 25% 92%;
+
+    --popover: 34 14% 14%;
+    --popover-foreground: 38 25% 92%;
+
+    --primary: 168 45% 42%;
+    --primary-foreground: 38 38% 96%;
+
+    --secondary: 23 55% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 34 10% 20%;
+    --muted-foreground: 34 10% 65%;
+
+    --accent: 34 10% 22%;
+    --accent-foreground: 38 25% 92%;
+
+    --destructive: 5 51% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 34 10% 24%;
+    --input: 34 10% 24%;
+    --ring: 23 63% 61%;
+    --sidebar-background: 34 14% 12%;
+    --sidebar-foreground: 38 25% 92%;
+    --sidebar-primary: 168 45% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 34 10% 20%;
+    --sidebar-accent-foreground: 38 25% 92%;
+    --sidebar-border: 34 10% 24%;
+    --sidebar-ring: 23 63% 61%;
+
+    --chart-1: 168 55% 27%;
+    --chart-2: 23 63% 61%;
+    --chart-3: 38 25% 50%;
+    --chart-4: 340 50% 50%;
+    --chart-5: 10 50% 50%;
+  }
+
+  body {
+    font-family: 'Lora', Georgia, serif;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+    line-height: 1.7;
+  }
+
+  /* NEVER REMOVE THIS */
+  section[aria-label='Notifications alt+T'] {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+@layer utilities {
+  /* KEEP ALL THE ANIMATIONS CLASSES THAT ARE USED BELOW */
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-down {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-out-up {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes fade-out-down {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-down {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes spotlight {
+    from {
+      opacity: 0;
+      transform: translate(-72%, -62%) scale(0.5);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -40%) scale(1);
+    }
+  }
+
+  .animate-accordion-down {
+    animation: accordion-down 0.2s ease-out;
+  }
+
+  .animate-accordion-up {
+    animation: accordion-up 0.2s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+  }
+
+  .animate-fade-out {
+    animation: fade-out 0.5s ease-out;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out;
+  }
+
+  .animate-fade-in-down {
+    animation: fade-in-down 0.6s ease-out;
+  }
+
+  .animate-fade-out-up {
+    animation: fade-out-up 0.6s ease-out;
+  }
+
+  .animate-fade-out-down {
+    animation: fade-out-down 0.6s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.6s ease-out;
+  }
+
+  .animate-slide-down {
+    animation: slide-down 0.6s ease-out;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-spotlight {
+    animation: spotlight 2s ease forwards;
+  }
+}
