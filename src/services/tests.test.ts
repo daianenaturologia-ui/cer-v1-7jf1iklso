@@ -38,10 +38,6 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
 
   it('executa suíte obrigatória do Build 02 — Experience Engine contra o backend real', async () => {
     const results = await runBuild02EngineTests()
-    console.log(
-      'Build 02 test results summary:',
-      results.map((r) => `${r.name}: ${r.status} - ${r.details}`),
-    )
 
     // NENHUM teste do Build 02 deve ter status 'NÃO PASSOU'
     const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')
@@ -51,5 +47,5 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
     for (const r of results) {
       expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
     }
-  })
+  }, 60000)
 })

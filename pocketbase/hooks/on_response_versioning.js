@@ -90,32 +90,79 @@ onRecordUpdate((e) => {
   const orig = record.original()
 
   if (orig) {
-    // Impedir adulteração de enrollment_id, respondent_user_id ou experience_id
-    if (orig.getString('enrollment_id') !== record.getString('enrollment_id')) {
+    // Impedir adulteração de enrollment_id, respondent_user_id ou prompt_id quando fornecidos
+    const newEnrollment = record.getString('enrollment_id')
+    const origEnrollment = orig.getString('enrollment_id')
+    if (newEnrollment && origEnrollment && newEnrollment !== origEnrollment) {
       throw new BadRequestError('Não é permitido alterar o enrollment_id da resposta.')
+    } else if (!newEnrollment && origEnrollment) {
+      record.set('enrollment_id', origEnrollment)
     }
-    if (orig.getString('respondent_user_id') !== record.getString('respondent_user_id')) {
+
+    const newRespondent = record.getString('respondent_user_id')
+    const origRespondent = orig.getString('respondent_user_id')
+    if (newRespondent && origRespondent && newRespondent !== origRespondent) {
       throw new BadRequestError('Não é permitido alterar o respondent_user_id da resposta.')
+    } else if (!newRespondent && origRespondent) {
+      record.set('respondent_user_id', origRespondent)
     }
-    if (orig.getString('prompt_id') !== record.getString('prompt_id')) {
+
+    const newPrompt = record.getString('prompt_id')
+    const origPrompt = orig.getString('prompt_id')
+    if (newPrompt && origPrompt && newPrompt !== origPrompt) {
       throw new BadRequestError('Não é permitido alterar o prompt_id da resposta.')
+    } else if (!newPrompt && origPrompt) {
+      record.set('prompt_id', origPrompt)
     }
+
+    // Buscar o estado original fresco do banco usando o ID do registro
+    // para garantir valores precisos de campos JSON/texto
+    let origData = orig
+    try {
+      origData = $app.findFirstRecordByData('experience_responses', 'id', record.id)
+    } catch (_) {}
+
+    const respId = record.id
+    const enrollmentId =
+      (origData ? origData.getString('enrollment_id') : '') || record.getString('enrollment_id')
+    const experienceId =
+      (origData ? origData.getString('experience_id') : '') || record.getString('experience_id')
+    const promptId =
+      (origData ? origData.getString('prompt_id') : '') || record.getString('prompt_id')
+    const respondentUserId =
+      (origData ? origData.getString('respondent_user_id') : '') ||
+      record.getString('respondent_user_id')
+    const responseType =
+      (origData ? origData.getString('response_type') : '') || record.getString('response_type')
+    const origStructVal = origData ? origData.get('structured_value') : orig.get('structured_value')
+    const origFreeText = origData ? origData.getString('free_text') : orig.getString('free_text')
+    const origVer = (origData ? origData.getInt('version') : 0) || orig.getInt('version') || 1
+    const origPromptVer =
+      (origData ? origData.getInt('prompt_version') : 0) ||
+      orig.getInt('prompt_version') ||
+      record.getInt('prompt_version') ||
+      1
+    const origAccessClass =
+      (origData ? origData.getString('access_class') : '') ||
+      orig.getString('access_class') ||
+      record.getString('access_class') ||
+      'shared_care'
 
     // Arquivar o snapshot do estado original ANTES de aplicar o novo estado
     try {
       const versionsCol = $app.findCollectionByNameOrId('experience_response_versions')
       const verRec = new Record(versionsCol)
-      verRec.set('response_id', orig.id)
-      verRec.set('enrollment_id', orig.getString('enrollment_id'))
-      verRec.set('experience_id', orig.getString('experience_id'))
-      verRec.set('prompt_id', orig.getString('prompt_id'))
-      verRec.set('respondent_user_id', orig.getString('respondent_user_id'))
-      verRec.set('response_type', orig.getString('response_type'))
-      verRec.set('structured_value', orig.get('structured_value'))
-      verRec.set('free_text', orig.getString('free_text'))
-      verRec.set('version_number', orig.getInt('version') || 1)
-      verRec.set('prompt_version', orig.getInt('prompt_version') || 1)
-      verRec.set('access_class', orig.getString('access_class') || 'shared_care')
+      verRec.set('response_id', respId)
+      verRec.set('enrollment_id', enrollmentId)
+      verRec.set('experience_id', experienceId)
+      verRec.set('prompt_id', promptId)
+      verRec.set('respondent_user_id', respondentUserId)
+      verRec.set('response_type', responseType)
+      verRec.set('structured_value', origStructVal)
+      verRec.set('free_text', origFreeText)
+      verRec.set('version_number', origVer)
+      verRec.set('prompt_version', origPromptVer)
+      verRec.set('access_class', origAccessClass)
       verRec.set('change_reason', 'Snapshot server-side antes de alteração')
       $app.save(verRec)
     } catch (saveErr) {
@@ -124,8 +171,7 @@ onRecordUpdate((e) => {
     }
 
     // Incrementar a versão da resposta corrente
-    const currentVer = orig.getInt('version') || 1
-    record.set('version', currentVer + 1)
+    record.set('version', origVer + 1)
     record.set('status', 'revised')
 
     // Preservar access_class se o novo não for fornecido

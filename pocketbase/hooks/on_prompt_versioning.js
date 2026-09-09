@@ -10,14 +10,22 @@ onRecordUpdate((e) => {
     const origVer = orig.getInt('version') || 1
     const newVer = record.getInt('version') || origVer
 
-    // Se a versão mudou ou se o texto/schema_config foi alterado
-    const textChanged = orig.getString('prompt_text') !== record.getString('prompt_text')
+    let origData = orig
+    try {
+      origData = $app.findFirstRecordByData('cer_prompts', 'id', record.id)
+    } catch (_) {}
+
+    const textChanged =
+      (origData ? origData.getString('prompt_text') : orig.getString('prompt_text')) !==
+      record.getString('prompt_text')
     const schemaChanged =
-      JSON.stringify(orig.get('schema_config')) !== JSON.stringify(record.get('schema_config'))
-    const typeChanged = orig.getString('component_type') !== record.getString('component_type')
+      JSON.stringify(origData ? origData.get('schema_config') : orig.get('schema_config')) !==
+      JSON.stringify(record.get('schema_config'))
+    const typeChanged =
+      (origData ? origData.getString('component_type') : orig.getString('component_type')) !==
+      record.getString('component_type')
 
     if (textChanged || schemaChanged || typeChanged || newVer > origVer) {
-      // Se a versão não foi explicitamente incrementada pelo chamador, incrementamos
       if (newVer <= origVer) {
         record.set('version', origVer + 1)
       }
@@ -25,14 +33,36 @@ onRecordUpdate((e) => {
       try {
         const versionsCol = $app.findCollectionByNameOrId('cer_prompt_versions')
         const pvRec = new Record(versionsCol)
-        pvRec.set('prompt_id', orig.id)
-        pvRec.set('moment_id', orig.getString('moment_id'))
+        pvRec.set('prompt_id', record.id)
+        pvRec.set(
+          'moment_id',
+          (origData ? origData.getString('moment_id') : '') ||
+            orig.getString('moment_id') ||
+            record.getString('moment_id'),
+        )
         pvRec.set('version_number', origVer)
-        pvRec.set('prompt_type', orig.getString('component_type'))
-        pvRec.set('prompt_text', orig.getString('prompt_text'))
-        pvRec.set('helper_text', orig.getString('helper_text'))
-        pvRec.set('schema_config', orig.get('schema_config'))
-        pvRec.set('is_required', orig.getBool('is_required'))
+        pvRec.set(
+          'prompt_type',
+          (origData ? origData.getString('component_type') : '') ||
+            orig.getString('component_type') ||
+            record.getString('component_type'),
+        )
+        pvRec.set(
+          'prompt_text',
+          (origData ? origData.getString('prompt_text') : '') || orig.getString('prompt_text'),
+        )
+        pvRec.set(
+          'helper_text',
+          (origData ? origData.getString('helper_text') : '') || orig.getString('helper_text'),
+        )
+        pvRec.set(
+          'schema_config',
+          origData ? origData.get('schema_config') : orig.get('schema_config'),
+        )
+        pvRec.set(
+          'is_required',
+          origData ? origData.getBool('is_required') : orig.getBool('is_required'),
+        )
         pvRec.set('change_reason', 'Snapshot metodológico histórico pré-edição')
         $app.save(pvRec)
       } catch (err) {

@@ -60,7 +60,7 @@ export const SimpleScale: React.FC<SimpleScaleProps> = ({
       </div>
 
       {/* Slider Visual de Ajuste Fino */}
-      <div className="max-w-md mx-auto px-2">
+      <div className="max-w-md mx-auto px-2 space-y-2">
         <input
           type="range"
           min={min}
@@ -69,8 +69,19 @@ export const SimpleScale: React.FC<SimpleScaleProps> = ({
           value={currentValue ?? Math.round((min + max) / 2)}
           disabled={disabled}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full accent-primary h-2 bg-muted rounded-lg appearance-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className={cn(
+            'w-full h-2 rounded-lg appearance-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-opacity',
+            currentValue === null
+              ? 'opacity-40 accent-muted-foreground bg-muted/60'
+              : 'opacity-100 accent-primary bg-muted',
+          )}
         />
+        {currentValue === null && (
+          <p className="text-[11px] text-muted-foreground/80 text-center italic">
+            Nenhum valor selecionado ainda. Clique em um número ou mova a barra para definir seu
+            ritmo.
+          </p>
+        )}
       </div>
 
       {/* Âncoras Textuais Configuráveis */}
