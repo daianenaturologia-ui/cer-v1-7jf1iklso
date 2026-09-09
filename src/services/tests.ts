@@ -844,6 +844,9 @@ export async function runBuild02EngineTests(): Promise<TestResult[]> {
     let t8Status: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
     let t8Details = ''
     try {
+      // Pequena pausa para garantir que os hooks de ciclo de vida completem a gravação em audit_events
+      await new Promise((r) => setTimeout(r, 400))
+
       await pb.collection('users').authWithPassword('admin.cer@cer.app', 'Skip@Pass')
       const auditList = await pb.collection('audit_events').getList(1, 30, {
         filter: 'resource_type = "experience"',

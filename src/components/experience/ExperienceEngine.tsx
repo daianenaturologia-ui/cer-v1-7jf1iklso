@@ -183,6 +183,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
     setSaving(true)
     try {
+      // FreeReflection suporta privacidade participante (participant_private)
+      const targetAccessClass =
+        currentPrompt.component_type === 'FreeReflection' ? 'participant_private' : 'shared_care'
+
       const saved = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
@@ -195,7 +199,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           currentPrompt.component_type === 'FreeReflection'
             ? (currentDraftValue as string) || currentDraftText
             : currentDraftText,
-        accessClass: 'shared_care',
+        accessClass: targetAccessClass,
         changeReason: responsesMap[currentPrompt.id]
           ? 'Atualização pelo interagente durante a experiência'
           : 'Primeiro registro de resposta',
