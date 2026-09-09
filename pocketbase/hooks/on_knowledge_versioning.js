@@ -22,6 +22,137 @@ onRecordUpdate((e) => {
       ki.set('enrollment_id', origEnrollment)
     }
 
+    // 1b. Proibir alteração de concept_key (CER-03C-03)
+    const newConcept = ki.getString('concept_key')
+    const origConcept = orig.getString('concept_key')
+    if (newConcept && origConcept && newConcept !== origConcept) {
+      throw new BadRequestError(
+        'Não é permitido alterar o concept_key do Knowledge Item após a criação.',
+      )
+    }
+
+    // 1c. Derived Privacy / Anti-Privacy Laundering (CER-03C-01)
+    // NENHUM Knowledge Item pode, por UPDATE, tornar-se mais permissivo do que as evidências que efetivamente o sustentam.
+    const newAccess =
+      ki.getString('access_class') || orig.getString('access_class') || 'shared_care'
+
+    let keRecords = []
+    try {
+      keRecords = $app.findRecordsByFilter(
+        'cer_knowledge_evidence',
+        'knowledge_item_id = "' + ki.id + '"',
+        '',
+        100,
+        0,
+      )
+    } catch (_) {}
+
+    if (keRecords && keRecords.length > 0) {
+      for (let i = 0; i < keRecords.length; i++) {
+        const keRec = keRecords[i]
+        const evType = keRec.getString('evidence_type')
+        const evId = keRec.getString('evidence_id')
+
+        let evAccess = 'shared_care'
+        if (evType === 'signal') {
+          try {
+            const s = $app.findFirstRecordByData('cer_signals', 'id', evId)
+            evAccess = s.getString('access_class') || 'shared_care'
+          } catch (_) {}
+        } else if (evType === 'response') {
+          try {
+            const r = $app.findFirstRecordByData('experience_responses', 'id', evId)
+            evAccess = r.getString('access_class') || 'shared_care'
+          } catch (_) {}
+        } else if (evType === 'association') {
+          try {
+            const a = $app.findFirstRecordByData('cer_associations', 'id', evId)
+            evAccess = a.getString('access_class') || 'shared_care'
+          } catch (_) {}
+        } else if (evType === 'participant_recognition') {
+          try {
+            const pr = $app.findFirstRecordByData('cer_participant_recognitions', 'id', evId)
+            evAccess = pr.getString('access_class') || 'shared_care'
+          } catch (_) {}
+        }
+
+        // Se a evidência for participant_private, o Knowledge Item SÓ pode ser participant_private
+        if (evAccess === 'participant_private' && newAccess !== 'participant_private') {
+          throw new BadRequestError(
+            'Violação de privacidade derivada (anti-laundering): o Knowledge Item está vinculado a evidência participant_private e não pode ter access_class "' +
+              newAccess +
+              '".',
+          )
+        }
+
+        // Se a evidência for professional_private, o Knowledge Item NÃO pode ser participant_shared, participant_private ou shared_care
+        if (
+          evAccess === 'professional_private' &&
+          (newAccess === 'participant_private' ||
+            newAccess === 'participant_shared' ||
+            newAccess === 'shared_care')
+        ) {
+          throw new BadRequestError(
+            'Violação de privacidade derivada (anti-laundering): o Knowledge Item está vinculado a evidência professional_private e não pode ter access_class visível ao participante ("' +
+              newAccess +
+              '").',
+          )
+        }
+      }
+    }
+
+    // Validar vínculos de autorização para o autor do update (se autenticado)
+    if (e.auth) {
+      const authId = e.auth.id
+      const enrollmentId = origEnrollment || newEnrollment
+
+      let isParticipant = false
+      try {
+        const enr = $app.findFirstRecordByData('enrollments', 'id', enrollmentId)
+        const personId = enr.getString('person_id')
+        if (personId) {
+          const pUser = $app.findFirstRecordByData('users', 'person_id', personId)
+          if (pUser.id === authId) {
+            isParticipant = true
+          }
+        }
+      } catch (_) {}
+
+      let isProfessionalLinked = false
+      try {
+        const links = $app.findRecordsByFilter(
+          'professional_enrollment_access',
+          'enrollment_id = "' +
+            enrollmentId +
+            '" && professional_user_id = "' +
+            authId +
+            '" && is_active = true',
+          '',
+          1,
+          0,
+        )
+        if (links && links.length > 0) {
+          isProfessionalLinked = true
+        }
+      } catch (_) {}
+
+      if (!isParticipant && !isProfessionalLinked) {
+        throw new BadRequestError('Usuário sem vínculo autorizado para este enrollment.')
+      }
+
+      if (!isParticipant && isProfessionalLinked && newAccess === 'participant_private') {
+        throw new BadRequestError(
+          'Profissional não pode definir Knowledge Item como participant_private.',
+        )
+      }
+
+      if (isParticipant && newAccess === 'professional_private') {
+        throw new BadRequestError(
+          'Participante não pode definir Knowledge Item como professional_private.',
+        )
+      }
+    }
+
     // 2. Proibir alteração forjada manual de version
     const newVer = ki.getInt('version')
     const origVer = orig.getInt('version') || 1
@@ -229,6 +360,14 @@ onRecordCreate((e) => {
   }
 
   e.next()
+}, 'cer_participant_recognitions')
+
+// CER-03C-02: Participant Recognition é um evento longitudinal imutável.
+// NENHUM update é permitido após o create (bloqueio server-side irrevogável).
+onRecordUpdate((e) => {
+  throw new BadRequestError(
+    'Participant Recognition é um evento longitudinal imutável e não permite atualização. Registre um novo reconhecimento com timestamp próprio.',
+  )
 }, 'cer_participant_recognitions')
 
 onRecordAfterCreateSuccess((e) => {

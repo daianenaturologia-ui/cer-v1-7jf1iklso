@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T19:18:20.962Z",
+  "generatedAt": "2026-09-09T19:34:23.402Z",
   "collections": [
     {
       "name": "users",
@@ -1808,8 +1808,8 @@
       "name": "cer_knowledge_items",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
-        "view": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "list": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && (access_class = 'participant_private' || access_class = 'participant_shared' || access_class = 'shared_care')) || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && (access_class = 'participant_private' || access_class = 'participant_shared' || access_class = 'shared_care')) || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
         "create": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
         "update": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
         "delete": null
@@ -2041,7 +2041,7 @@
         "list": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
         "view": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && access_class != 'professional_private') || ((access_class = 'shared_care' || access_class = 'participant_shared') && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
         "create": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && participant_user_id = @request.auth.id",
-        "update": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && participant_user_id = @request.auth.id",
+        "update": null,
         "delete": null
       },
       "fields": [

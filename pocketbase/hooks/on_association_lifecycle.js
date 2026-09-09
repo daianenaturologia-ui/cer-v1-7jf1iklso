@@ -85,9 +85,134 @@ onRecordUpdate((e) => {
   const orig = assoc.original()
 
   if (orig) {
-    // Proibir alteração de enrollment_id
+    // 1. Proibir alteração de enrollment_id (CER-03C-03)
     if (assoc.getString('enrollment_id') !== orig.getString('enrollment_id')) {
       throw new BadRequestError('Não é permitido alterar o enrollment_id da associação.')
+    }
+
+    // 2. Proibir alteração de concept_key (CER-03C-03)
+    const newConcept = assoc.getString('concept_key')
+    const origConcept = orig.getString('concept_key')
+    if (newConcept && origConcept && newConcept !== origConcept) {
+      throw new BadRequestError(
+        'Não é permitido alterar o concept_key da associação após a criação.',
+      )
+    }
+
+    // 3. Proibir alteração de association_type (CER-03C-03)
+    const newType = assoc.getString('association_type')
+    const origType = orig.getString('association_type')
+    if (newType && origType && newType !== origType) {
+      throw new BadRequestError(
+        'Não é permitido alterar o association_type da associação após a criação.',
+      )
+    }
+
+    // 4. Derived Privacy / Anti-Privacy Laundering (CER-03C-01)
+    // NENHUMA Association pode, por UPDATE, tornar-se mais permissiva do que as evidências que efetivamente a sustentam.
+    const newAccess = assoc.getString('access_class') || 'shared_care'
+    const origAccess = orig.getString('access_class') || 'shared_care'
+
+    // Buscar todas as evidências ligadas a esta associação em cer_association_evidence
+    let evRecords = []
+    try {
+      evRecords = $app.findRecordsByFilter(
+        'cer_association_evidence',
+        'association_id = "' + assoc.id + '"',
+        '',
+        100,
+        0,
+      )
+    } catch (_) {}
+
+    if (evRecords && evRecords.length > 0) {
+      for (let i = 0; i < evRecords.length; i++) {
+        const evRec = evRecords[i]
+        const sigId = evRec.getString('signal_id')
+        let sig = null
+        try {
+          sig = $app.findFirstRecordByData('cer_signals', 'id', sigId)
+        } catch (_) {}
+
+        if (sig) {
+          const sigAccess = sig.getString('access_class') || 'shared_care'
+
+          // Se a evidência é participant_private, a associação SÓ pode ser participant_private
+          if (sigAccess === 'participant_private' && newAccess !== 'participant_private') {
+            throw new BadRequestError(
+              'Violação de privacidade derivada (anti-laundering): a associação está vinculada a evidência participant_private e não pode ter access_class "' +
+                newAccess +
+                '".',
+            )
+          }
+
+          // Se a evidência é professional_private, a associação NÃO pode ser participant_shared, participant_private ou shared_care
+          if (
+            sigAccess === 'professional_private' &&
+            (newAccess === 'participant_private' ||
+              newAccess === 'participant_shared' ||
+              newAccess === 'shared_care')
+          ) {
+            throw new BadRequestError(
+              'Violação de privacidade derivada (anti-laundering): a associação está vinculada a evidência professional_private e não pode ter access_class visível ao participante ("' +
+                newAccess +
+                '").',
+            )
+          }
+        }
+      }
+    }
+
+    // Validar também os bloqueios de autorização de acordo com o autor do update (se autenticado)
+    if (e.auth) {
+      const authId = e.auth.id
+      const enrollmentId = assoc.getString('enrollment_id')
+
+      let isParticipant = false
+      try {
+        const enr = $app.findFirstRecordByData('enrollments', 'id', enrollmentId)
+        const personId = enr.getString('person_id')
+        if (personId) {
+          const pUser = $app.findFirstRecordByData('users', 'person_id', personId)
+          if (pUser.id === authId) {
+            isParticipant = true
+          }
+        }
+      } catch (_) {}
+
+      let isProfessionalLinked = false
+      try {
+        const links = $app.findRecordsByFilter(
+          'professional_enrollment_access',
+          'enrollment_id = "' +
+            enrollmentId +
+            '" && professional_user_id = "' +
+            authId +
+            '" && is_active = true',
+          '',
+          1,
+          0,
+        )
+        if (links && links.length > 0) {
+          isProfessionalLinked = true
+        }
+      } catch (_) {}
+
+      if (!isParticipant && !isProfessionalLinked) {
+        throw new BadRequestError('Usuário sem vínculo autorizado para este enrollment.')
+      }
+
+      if (!isParticipant && isProfessionalLinked && newAccess === 'participant_private') {
+        throw new BadRequestError(
+          'Profissional não pode definir registro como participant_private.',
+        )
+      }
+
+      if (isParticipant && newAccess === 'professional_private') {
+        throw new BadRequestError(
+          'Participante não pode definir registro como professional_private.',
+        )
+      }
     }
   }
 
