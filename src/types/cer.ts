@@ -225,6 +225,13 @@ export const AUDIT_ACTIONS = {
   KNOWLEDGE_ITEM_UPDATED: 'KNOWLEDGE_ITEM_UPDATED',
   KNOWLEDGE_ITEM_REVIEWED: 'KNOWLEDGE_ITEM_REVIEWED',
   PARTICIPANT_RECOGNITION_CREATED: 'PARTICIPANT_RECOGNITION_CREATED',
+  // Ações de auditoria do Session Core (Build 04A)
+  SESSION_CREATED: 'SESSION_CREATED',
+  SESSION_STARTED: 'SESSION_STARTED',
+  SESSION_COMPLETED: 'SESSION_COMPLETED',
+  SESSION_CANCELLED: 'SESSION_CANCELLED',
+  SESSION_NOTE_CREATED: 'SESSION_NOTE_CREATED',
+  SESSION_NOTE_UPDATED: 'SESSION_NOTE_UPDATED',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -251,6 +258,64 @@ export interface PersonRecord {
   notes?: string
   created: string
   updated: string
+}
+
+// ------------------------------------------
+// ENTIDADES DO BUILD 04A — SESSION CORE
+// ------------------------------------------
+
+export const SESSION_STATUS = {
+  SCHEDULED: 'scheduled',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+} as const
+
+export type SessionStatus = (typeof SESSION_STATUS)[keyof typeof SESSION_STATUS]
+
+export interface CerSessionRecord {
+  id: string
+  enrollment_id: string
+  professional_user_id: string
+  scheduled_at?: string
+  started_at?: string
+  completed_at?: string
+  status: SessionStatus
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    professional_user_id?: UserAccountRecord
+    cer_session_notes_via_session_id?: CerSessionNoteRecord[]
+  }
+}
+
+export interface CerSessionNoteRecord {
+  id: string
+  session_id: string
+  enrollment_id: string
+  author_user_id: string
+  text?: string
+  created: string
+  updated: string
+  expand?: {
+    session_id?: CerSessionRecord
+    enrollment_id?: EnrollmentRecord
+    author_user_id?: UserAccountRecord
+  }
+}
+
+/**
+ * Estrutura determinística de preparação pré-encontro (sem persistência)
+ */
+export interface SessionPreparationData {
+  enrollment: EnrollmentRecord
+  participantName: string
+  lastCompletedSession?: CerSessionRecord
+  lastSessionNote?: CerSessionNoteRecord
+  recentKnowledgeItems: CerKnowledgeItemRecord[]
+  recentRecognitions: CerParticipantRecognitionRecord[]
+  recentCompletedExperiences: EnrollmentExperienceRecord[]
 }
 
 // ------------------------------------------

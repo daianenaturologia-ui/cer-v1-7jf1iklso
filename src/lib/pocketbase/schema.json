@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T19:34:23.402Z",
+  "generatedAt": "2026-09-09T19:51:39.710Z",
   "collections": [
     {
       "name": "users",
@@ -310,7 +310,7 @@
         "view": "@request.auth.id != '' && @request.auth.status = 'active' && (professional_user_id = @request.auth.id || enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || @request.auth.user_roles_via_user_id.role ?= 'admin')",
         "create": "@request.auth.id != '' && @request.auth.status = 'active' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
         "update": "@request.auth.id != '' && @request.auth.status = 'active' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
-        "delete": "@request.auth.id != '' && @request.auth.status = 'active' && @request.auth.user_roles_via_user_id.role ?= 'admin'"
+        "delete": null
       },
       "fields": [
         {
@@ -2274,6 +2274,136 @@
       "indexes": [
         "CREATE INDEX idx_kiv_ki ON cer_knowledge_item_versions (knowledge_item_id)",
         "CREATE INDEX idx_kiv_ver ON cer_knowledge_item_versions (knowledge_item_id, version_number)"
+      ]
+    },
+    {
+      "name": "cer_sessions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "professional_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "scheduled_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "started_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "completed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["scheduled", "in_progress", "completed", "cancelled"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cer_sessions_enrollment ON cer_sessions (enrollment_id)",
+        "CREATE INDEX idx_cer_sessions_professional ON cer_sessions (professional_user_id)",
+        "CREATE INDEX idx_cer_sessions_status ON cer_sessions (status)"
+      ]
+    },
+    {
+      "name": "cer_session_notes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "session_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_sessions"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "author_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_cer_session_notes_session ON cer_session_notes (session_id)",
+        "CREATE INDEX idx_cer_session_notes_enrollment ON cer_session_notes (enrollment_id)",
+        "CREATE INDEX idx_cer_session_notes_author ON cer_session_notes (author_user_id)"
       ]
     }
   ]
