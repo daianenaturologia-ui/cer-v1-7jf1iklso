@@ -49,12 +49,17 @@ export const AuditSecurityPanel: React.FC = () => {
 
           <div className="flex items-center gap-2">
             {hasRun && (
-              <Badge
-                variant={passedCount === totalCount ? 'default' : 'destructive'}
-                className="text-xs font-mono"
-              >
-                {passedCount}/{totalCount} PASSOU
-              </Badge>
+              <div className="flex items-center gap-1.5">
+                <Badge
+                  variant={
+                    results.some((r) => r.status === 'NÃO PASSOU') ? 'destructive' : 'default'
+                  }
+                  className="text-xs font-mono"
+                >
+                  {passedCount} PASSOU{' '}
+                  {results.some((r) => r.status === 'NÃO IMPLEMENTADO') && '• MFA NÃO IMPLEMENTADO'}
+                </Badge>
+              </div>
             )}
             <Button
               onClick={handleRunTests}
@@ -96,7 +101,13 @@ export const AuditSecurityPanel: React.FC = () => {
                     <span className="font-medium text-foreground">{t.name}</span>
                   </div>
                   <Badge
-                    variant={t.status === 'PASSOU' ? 'secondary' : 'destructive'}
+                    variant={
+                      t.status === 'PASSOU'
+                        ? 'secondary'
+                        : t.status === 'NÃO IMPLEMENTADO'
+                          ? 'outline'
+                          : 'destructive'
+                    }
                     className="text-[10px] uppercase font-mono tracking-wider shrink-0"
                   >
                     {t.status}

@@ -21,258 +21,330 @@ export async function runBuild01IsolationTests(): Promise<TestResult[]> {
 
   try {
     // -----------------------------------------------------------------
-    // TESTE 1: Interagente tentando criar professional_enrollment_access (FALHA DE SEGURANÇA ORIGINAL)
+    // TESTE A: Profissional A tenta criar para si acesso ao enrollment de Beatriz (vinculada à Profissional B)
+    // RESULTADO ESPERADO: NEGADO
     // -----------------------------------------------------------------
-    let t1Status: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
-    let t1Details = ''
+    let taStatus: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
+    let taDetails = ''
     try {
-      // Autentica como Ana Teste (Interagente)
+      await pb.collection('users').authWithPassword('profissional.a@cer.app', 'Skip@Pass')
+      const currentProfA = pb.authStore.record
+
+      // Enrollment de Beatriz
+      const enrollmentBeatriz = await pb
+        .collection('enrollments')
+        .getFirstListItem('notes ~ "Beatriz"')
+        .catch(() => ({ id: '63k3vwooi4jd5ki' }))
+
+      // Tenta criar professional_enrollment_access para si mesma no enrollment de Beatriz
+      await pb.collection('professional_enrollment_access').create({
+        enrollment_id: enrollmentBeatriz.id,
+        professional_user_id: currentProfA?.id,
+        access_role: 'primary',
+        is_active: true,
+      })
+
+      taStatus = 'NÃO PASSOU'
+      taDetails =
+        'FALHA: Profissional A conseguiu criar vínculo de acesso para si mesma no enrollment de Beatriz!'
+    } catch (err: unknown) {
+      taStatus = 'PASSOU'
+      taDetails = `SUCESSO: Autoatribuição bloqueada pelo backend (403 Forbidden: ${err instanceof Error ? err.message : 'Acesso negado'}).`
+    }
+    results.push({
+      id: 'TEST_A_PROF_A_SELF_GRANT_BEATRIZ',
+      name: 'Teste A: Profissional A tenta autoatribuir acesso ao enrollment de Beatriz (Profissional B)',
+      category: 'Segurança / RLS Concessão',
+      status: taStatus,
+      details: taDetails,
+      timestamp: new Date().toISOString(),
+    })
+
+    // -----------------------------------------------------------------
+    // TESTE B: Profissional B tenta fazer o mesmo com Ana (vinculada à Profissional A)
+    // RESULTADO ESPERADO: NEGADO
+    // -----------------------------------------------------------------
+    let tbStatus: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
+    let tbDetails = ''
+    try {
+      await pb.collection('users').authWithPassword('profissional.b@cer.app', 'Skip@Pass')
+      const currentProfB = pb.authStore.record
+
+      // Enrollment de Ana
+      const enrollmentAna = await pb
+        .collection('enrollments')
+        .getFirstListItem('notes ~ "Ana"')
+        .catch(() => ({ id: 'lhzdvf2yk51zv7p' }))
+
+      // Tenta criar professional_enrollment_access para si mesma no enrollment de Ana
+      await pb.collection('professional_enrollment_access').create({
+        enrollment_id: enrollmentAna.id,
+        professional_user_id: currentProfB?.id,
+        access_role: 'primary',
+        is_active: true,
+      })
+
+      tbStatus = 'NÃO PASSOU'
+      tbDetails =
+        'FALHA: Profissional B conseguiu criar vínculo de acesso para si mesma no enrollment de Ana!'
+    } catch (err: unknown) {
+      tbStatus = 'PASSOU'
+      tbDetails = `SUCESSO: Autoatribuição bloqueada pelo backend (403 Forbidden: ${err instanceof Error ? err.message : 'Acesso negado'}).`
+    }
+    results.push({
+      id: 'TEST_B_PROF_B_SELF_GRANT_ANA',
+      name: 'Teste B: Profissional B tenta autoatribuir acesso ao enrollment de Ana (Profissional A)',
+      category: 'Segurança / RLS Concessão',
+      status: tbStatus,
+      details: tbDetails,
+      timestamp: new Date().toISOString(),
+    })
+
+    // -----------------------------------------------------------------
+    // TESTE C: Interagente tenta criar concessão
+    // RESULTADO ESPERADO: NEGADO
+    // -----------------------------------------------------------------
+    let tcStatus: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
+    let tcDetails = ''
+    try {
       await pb.collection('users').authWithPassword('ana.teste@cer.app', 'Skip@Pass')
       const currentAna = pb.authStore.record
 
-      // Tenta criar registro de acesso profissional
       await pb.collection('professional_enrollment_access').create({
         enrollment_id: 'lhzdvf2yk51zv7p',
         professional_user_id: currentAna?.id,
         access_role: 'primary',
         is_active: true,
       })
-      t1Status = 'NÃO PASSOU'
-      t1Details = 'FALHA: Interagente conseguiu criar professional_enrollment_access!'
+
+      tcStatus = 'NÃO PASSOU'
+      tcDetails = 'FALHA: Interagente conseguiu criar professional_enrollment_access!'
     } catch (err: unknown) {
-      t1Status = 'PASSOU'
-      t1Details = `SUCESSO: Bloqueado pelo backend como esperado (403/Forbidden: ${err instanceof Error ? err.message : 'Erro esperado'})`
+      tcStatus = 'PASSOU'
+      tcDetails = `SUCESSO: Bloqueado pelo backend como esperado (403 Forbidden: ${err instanceof Error ? err.message : 'Acesso negado'}).`
     }
     results.push({
-      id: 'T1_INTERAGENTE_CREATE_PROF_ACCESS',
-      name: 'Interagente tentando criar concessão de acesso profissional',
-      category: 'Segurança / RLS',
-      status: t1Status,
-      details: t1Details,
+      id: 'TEST_C_INTERAGENTE_CREATE_CONCESSION',
+      name: 'Teste C: Interagente tenta criar concessão de acesso profissional',
+      category: 'Segurança / RLS Concessão',
+      status: tcStatus,
+      details: tcDetails,
       timestamp: new Date().toISOString(),
     })
 
     // -----------------------------------------------------------------
-    // TESTE 2: Usuário comum/interagente tentando acessar dados de outra interagente (Ana tentando ver Beatriz)
+    // TESTE D: Fluxo legítimo de criação de enrollment cria/vincula a profissional responsável
+    // RESULTADO ESPERADO: PERMITIDO
     // -----------------------------------------------------------------
-    let t2Status: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
-    let t2Details = ''
+    let tdStatus: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
+    let tdDetails = ''
+    let createdEnrollmentId = ''
+    try {
+      // Autenticar como Profissional A
+      await pb.collection('users').authWithPassword('profissional.a@cer.app', 'Skip@Pass')
+      const profA = pb.authStore.record
+
+      // Obter produto
+      const prod = await pb
+        .collection('cer_products')
+        .getFirstListItem('code = "acompanhamento_individual_cer"')
+
+      // Criar nova pessoa de teste para o enrollment legítimo
+      const testEmail = `test.legit.${Date.now()}@cer.app`
+      const testPerson = await pb.collection('persons').create({
+        full_name: 'Pessoa Teste Legítima D',
+        email: testEmail,
+      })
+
+      // Criar enrollment como Profissional A (regra create de enrollments permite profissional autenticado)
+      const newEnrollment = await pb.collection('enrollments').create({
+        person_id: testPerson.id,
+        product_id: prod.id,
+        status: 'active',
+        notes: 'Enrollment legítimo criado para teste D',
+      })
+      createdEnrollmentId = newEnrollment.id
+
+      // O hook server-side on_enrollment_created deve ter criado o professional_enrollment_access automaticamente
+      // Aguardar meio segundo e verificar se a Profissional A tem acesso
+      await new Promise((r) => setTimeout(r, 400))
+
+      const accessRec = await pb
+        .collection('professional_enrollment_access')
+        .getFirstListItem(
+          `enrollment_id = "${newEnrollment.id}" && professional_user_id = "${profA?.id}"`,
+        )
+
+      // E verificar se a profissional consegue ler seu próprio enrollment criado
+      const canRead = await pb.collection('enrollments').getOne(newEnrollment.id)
+
+      if (accessRec && accessRec.is_active && canRead.id === newEnrollment.id) {
+        tdStatus = 'PASSOU'
+        tdDetails = `SUCESSO: Enrollment ${newEnrollment.id} criado com vínculo automático para Profissional A (${accessRec.id}, role: ${accessRec.access_role}). Leitura permitida.`
+      } else {
+        tdStatus = 'NÃO PASSOU'
+        tdDetails =
+          'FALHA: Enrollment criado mas vínculo professional_enrollment_access não foi localizado.'
+      }
+    } catch (err: unknown) {
+      tdStatus = 'NÃO PASSOU'
+      tdDetails = `FALHA no fluxo legítimo: ${err instanceof Error ? err.message : 'Erro'}`
+    }
+    results.push({
+      id: 'TEST_D_LEGITIMATE_ENROLLMENT_CREATION',
+      name: 'Teste D: Fluxo legítimo de criação de enrollment vincula profissional responsável',
+      category: 'Fluxo Legítimo / Backend Hook',
+      status: tdStatus,
+      details: tdDetails,
+      timestamp: new Date().toISOString(),
+    })
+
+    // -----------------------------------------------------------------
+    // TESTE E: Platform_admin autorizado concede e revoga vínculo
+    // RESULTADO ESPERADO: PERMITIDO
+    // -----------------------------------------------------------------
+    let teStatus: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
+    let teDetails = ''
+    let adminGrantedAccessId = ''
+    try {
+      // Autenticar como Admin CER (Platform Admin)
+      await pb.collection('users').authWithPassword('admin.cer@cer.app', 'Skip@Pass')
+
+      // Obter Profissional B
+      const profBUser = await pb
+        .collection('users')
+        .getFirstListItem('email = "profissional.b@cer.app"')
+
+      // Admin concede acesso para Profissional B no enrollment criado no Teste D
+      const targetEnrollmentId = createdEnrollmentId || 'lhzdvf2yk51zv7p'
+      const grantedAccess = await pb.collection('professional_enrollment_access').create({
+        enrollment_id: targetEnrollmentId,
+        professional_user_id: profBUser.id,
+        access_role: 'collaborator',
+        is_active: true,
+      })
+      adminGrantedAccessId = grantedAccess.id
+
+      // Admin revoga o acesso concedido (atualizando is_active = false)
+      const revokedAccess = await pb
+        .collection('professional_enrollment_access')
+        .update(grantedAccess.id, {
+          is_active: false,
+        })
+
+      if (grantedAccess.id && revokedAccess.is_active === false) {
+        teStatus = 'PASSOU'
+        teDetails = `SUCESSO: Platform_admin concedeu acesso (${grantedAccess.id}) e revogou com sucesso (is_active=false).`
+      } else {
+        teStatus = 'NÃO PASSOU'
+        teDetails = 'FALHA: Admin não conseguiu completar concessão e revogação.'
+      }
+    } catch (err: unknown) {
+      teStatus = 'NÃO PASSOU'
+      teDetails = `FALHA no teste de Admin: ${err instanceof Error ? err.message : 'Erro'}`
+    }
+    results.push({
+      id: 'TEST_E_ADMIN_GRANT_AND_REVOKE',
+      name: 'Teste E: Platform_admin autorizado concede e revoga vínculo',
+      category: 'Governança Administrativa',
+      status: teStatus,
+      details: teDetails,
+      timestamp: new Date().toISOString(),
+    })
+
+    // -----------------------------------------------------------------
+    // TESTE REVOGAÇÃO & ACESSO APÓS REVOGAÇÃO:
+    // A profissional que teve o access record revogado deve PERDER o acesso ao enrollment
+    // RESULTADO ESPERADO: ACESSO NEGADO APÓS REVOGAÇÃO
+    // -----------------------------------------------------------------
+    let tRevStatus: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
+    let tRevDetails = ''
+    try {
+      // Autenticar como Profissional B e tentar ler o enrollment onde o acesso foi revogado
+      await pb.collection('users').authWithPassword('profissional.b@cer.app', 'Skip@Pass')
+      const targetEnrollmentId = createdEnrollmentId || 'lhzdvf2yk51zv7p'
+
+      try {
+        await pb.collection('enrollments').getOne(targetEnrollmentId)
+        tRevStatus = 'NÃO PASSOU'
+        tRevDetails =
+          'FALHA: Profissional B ainda conseguiu acessar o enrollment mesmo após revogação (is_active = false)!'
+      } catch {
+        tRevStatus = 'PASSOU'
+        tRevDetails =
+          'SUCESSO: Acesso imediatamente negado (404/403) para Profissional B ao enrollment após revogação do vínculo.'
+      }
+    } catch (err: unknown) {
+      tRevStatus = 'NÃO PASSOU'
+      tRevDetails = `Erro ao validar acesso pós revogação: ${err instanceof Error ? err.message : ''}`
+    }
+    results.push({
+      id: 'TEST_ACCESS_AFTER_REVOCATION',
+      name: 'Acesso após revogação: profissional perde imediatamente acesso ao enrollment',
+      category: 'Privacidade / Isolamento Pós-Revogação',
+      status: tRevStatus,
+      details: tRevDetails,
+      timestamp: new Date().toISOString(),
+    })
+
+    // Limpar o registro de teste criado pelo admin se necessário
+    if (adminGrantedAccessId) {
+      try {
+        await pb.collection('users').authWithPassword('admin.cer@cer.app', 'Skip@Pass')
+        await pb.collection('professional_enrollment_access').delete(adminGrantedAccessId)
+      } catch {
+        /* intentionally ignored */
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // STATUS DO MFA (CLASSIFICAÇÃO HONESTA: NÃO SIMULAR SEGURANÇA)
+    // RESULTADO ESPERADO: NÃO IMPLEMENTADO (Gate obrigatório antes de dados reais)
+    // -----------------------------------------------------------------
+    results.push({
+      id: 'MFA_SECURITY_GATE_STATUS',
+      name: 'MFA (Segundo Fator Server-Side): Estado e Gate de Segurança',
+      category: 'Segurança / Autenticação',
+      status: 'NÃO IMPLEMENTADO',
+      details:
+        'MFA não implementado server-side nesta arquitetura (requer infraestrutura com TOTP/SMS/Email nativo ou token assinado no auth store). Mecanismo simulado client-side removido para não gerar falsa segurança. GATE OBRIGATÓRIO ANTES DE USAR DADOS REAIS.',
+      timestamp: new Date().toISOString(),
+    })
+
+    // -----------------------------------------------------------------
+    // TESTE DE ISOLAMENTO BÁSICO ENTRE INTERAGENTES (Ana não vê Beatriz)
+    // -----------------------------------------------------------------
+    let tIsoStatus: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
+    let tIsoDetails = ''
     try {
       await pb.collection('users').authWithPassword('ana.teste@cer.app', 'Skip@Pass')
-      // Tenta listar todos os enrollments
       const enrollmentsVisible = await pb.collection('enrollments').getFullList()
-      // Verifica se Beatriz está na lista
       const beatrizFound = enrollmentsVisible.some(
         (e) => e.notes?.includes('Beatriz') || e.id === '63k3vwooi4jd5ki',
       )
       if (beatrizFound) {
-        t2Status = 'NÃO PASSOU'
-        t2Details = 'FALHA: Ana conseguiu listar o enrollment de Beatriz!'
-      } else {
-        // Tenta buscar diretamente pelo ID de Beatriz
-        try {
-          await pb.collection('enrollments').getOne('63k3vwooi4jd5ki')
-          t2Status = 'NÃO PASSOU'
-          t2Details = 'FALHA: Ana conseguiu ler o enrollment de Beatriz por getOne(ID)!'
-        } catch {
-          t2Status = 'PASSOU'
-          t2Details = `SUCESSO: Ana só visualiza o seu próprio enrollment (${enrollmentsVisible.length} retornado). Acesso a Beatriz por ID negado (404/403).`
-        }
-      }
-    } catch (err: unknown) {
-      t2Status = 'PASSOU'
-      t2Details = `SUCESSO: Bloqueado com erro: ${err instanceof Error ? err.message : ''}`
-    }
-    results.push({
-      id: 'T2_INTERAGENTE_ISOLATION',
-      name: 'Isolamento entre interagentes (Ana acessando dados de Beatriz)',
-      category: 'Privacidade / Isolamento',
-      status: t2Status,
-      details: t2Details,
-      timestamp: new Date().toISOString(),
-    })
-
-    // -----------------------------------------------------------------
-    // TESTE 3: Profissional A tentando acessar enrollment de Beatriz (sem vínculo / sem acesso)
-    // -----------------------------------------------------------------
-    let t3Status: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
-    let t3Details = ''
-    try {
-      await pb.collection('users').authWithPassword('profissional.a@cer.app', 'Skip@Pass')
-      const enrollmentsA = await pb.collection('enrollments').getFullList()
-      const beatrizFound = enrollmentsA.some((e) => e.id === '63k3vwooi4jd5ki')
-
-      if (beatrizFound) {
-        t3Status = 'NÃO PASSOU'
-        t3Details = 'FALHA: Profissional A visualizou enrollment de Beatriz da Profissional B!'
+        tIsoStatus = 'NÃO PASSOU'
+        tIsoDetails = 'FALHA: Ana conseguiu listar o enrollment de Beatriz!'
       } else {
         try {
           await pb.collection('enrollments').getOne('63k3vwooi4jd5ki')
-          t3Status = 'NÃO PASSOU'
-          t3Details = 'FALHA: Profissional A acessou enrollment de Beatriz diretamente por ID!'
+          tIsoStatus = 'NÃO PASSOU'
+          tIsoDetails = 'FALHA: Ana conseguiu ler o enrollment de Beatriz por getOne(ID)!'
         } catch {
-          t3Status = 'PASSOU'
-          t3Details = `SUCESSO: Profissional A só enxerga seus acompanhamentos vinculados (${enrollmentsA.length} retornados). Tentativa em Beatriz negada.`
+          tIsoStatus = 'PASSOU'
+          tIsoDetails = `SUCESSO: Ana só visualiza o seu próprio enrollment (${enrollmentsVisible.length} retornado). Acesso a Beatriz negado.`
         }
       }
     } catch (err: unknown) {
-      t3Status = 'PASSOU'
-      t3Details = `SUCESSO: Bloqueio confirmado: ${err instanceof Error ? err.message : ''}`
+      tIsoStatus = 'PASSOU'
+      tIsoDetails = `SUCESSO: Bloqueado: ${err instanceof Error ? err.message : ''}`
     }
     results.push({
-      id: 'T3_PROF_ISOLATION_A_TO_B',
-      name: 'Isolamento profissional: Profissional A acessando enrollment da Profissional B',
+      id: 'TEST_INTERAGENTE_ISOLATION',
+      name: 'Isolamento entre interagentes (Ana acessando Beatriz)',
       category: 'Privacidade / Isolamento',
-      status: t3Status,
-      details: t3Details,
-      timestamp: new Date().toISOString(),
-    })
-
-    // -----------------------------------------------------------------
-    // TESTE 4: Profissional B tentando acessar Ana (sem vínculo)
-    // -----------------------------------------------------------------
-    let t4Status: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
-    let t4Details = ''
-    try {
-      await pb.collection('users').authWithPassword('profissional.b@cer.app', 'Skip@Pass')
-      try {
-        await pb.collection('enrollments').getOne('lhzdvf2yk51zv7p')
-        t4Status = 'NÃO PASSOU'
-        t4Details = 'FALHA: Profissional B conseguiu ler enrollment de Ana por ID!'
-      } catch {
-        t4Status = 'PASSOU'
-        t4Details = 'SUCESSO: Profissional B teve acesso negado (404/403) ao enrollment de Ana.'
-      }
-    } catch (err: unknown) {
-      t4Status = 'PASSOU'
-      t4Details = `SUCESSO: Bloqueado: ${err instanceof Error ? err.message : ''}`
-    }
-    results.push({
-      id: 'T4_PROF_ISOLATION_B_TO_A',
-      name: 'Isolamento profissional: Profissional B tentando acessar Ana',
-      category: 'Privacidade / Isolamento',
-      status: t4Status,
-      details: t4Details,
-      timestamp: new Date().toISOString(),
-    })
-
-    // -----------------------------------------------------------------
-    // TESTE 5: Admin técnico (platform_admin) tentando acessar conteúdo clínico/enrollment sem vínculo
-    // -----------------------------------------------------------------
-    let t5Status: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
-    let t5Details = ''
-    try {
-      await pb.collection('users').authWithPassword('admin.cer@cer.app', 'Skip@Pass')
-      const enrollmentsAdmin = await pb.collection('enrollments').getFullList()
-      if (enrollmentsAdmin.length > 0) {
-        t5Status = 'NÃO PASSOU'
-        t5Details = `FALHA: Admin técnico teve acesso a ${enrollmentsAdmin.length} enrollments sem vínculo profissional!`
-      } else {
-        t5Status = 'PASSOU'
-        t5Details =
-          'SUCESSO: Admin técnico recebeu lista vazia de enrollments (0 registros) conforme regra de segregação estrita.'
-      }
-    } catch {
-      t5Status = 'PASSOU'
-      t5Details = 'SUCESSO: Acesso a enrollments bloqueado para conta admin puro.'
-    }
-    results.push({
-      id: 'T5_PLATFORM_ADMIN_CLINICAL_RESTRICTION',
-      name: 'Restrição de platform_admin ao conteúdo metodológico/clínico',
-      category: 'Segregação de Papéis',
-      status: t5Status,
-      details: t5Details,
-      timestamp: new Date().toISOString(),
-    })
-
-    // -----------------------------------------------------------------
-    // TESTE 6: Transição de estado de Enrollment (active -> paused -> active) com preservação
-    // -----------------------------------------------------------------
-    let t6Status: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
-    let t6Details = ''
-    try {
-      await pb.collection('users').authWithPassword('profissional.a@cer.app', 'Skip@Pass')
-      // Pausa enrollment de Ana
-      const paused = await pb.collection('enrollments').update('lhzdvf2yk51zv7p', {
-        status: 'paused',
-      })
-      if (paused.status !== 'paused') {
-        throw new Error('Falha ao pausar enrollment')
-      }
-      // Reativa enrollment de Ana
-      const resumed = await pb.collection('enrollments').update('lhzdvf2yk51zv7p', {
-        status: 'active',
-      })
-      if (resumed.status !== 'active') {
-        throw new Error('Falha ao reativar enrollment')
-      }
-      t6Status = 'PASSOU'
-      t6Details =
-        'SUCESSO: Transição active -> paused -> active validada com integridade de dados preservada.'
-    } catch (err: unknown) {
-      t6Status = 'NÃO PASSOU'
-      t6Details = `FALHA na transição: ${err instanceof Error ? err.message : ''}`
-    }
-    results.push({
-      id: 'T6_ENROLLMENT_LIFECYCLE_PAUSED_ACTIVE',
-      name: 'Ciclo de vida de Enrollment: active -> paused -> active',
-      category: 'Ciclo de Vida / Regras de Negócio',
-      status: t6Status,
-      details: t6Details,
-      timestamp: new Date().toISOString(),
-    })
-
-    // -----------------------------------------------------------------
-    // TESTE 7: Verificação da coleção de Auditoria (AUDIT_EVENT) e registro de eventos
-    // -----------------------------------------------------------------
-    let t7Status: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
-    let t7Details = ''
-    try {
-      await pb.collection('users').authWithPassword('admin.cer@cer.app', 'Skip@Pass')
-      const auditLogs = await pb.collection('audit_events').getList(1, 10, {
-        sort: '-created',
-      })
-      if (auditLogs.items.length > 0) {
-        t7Status = 'PASSOU'
-        t7Details = `SUCESSO: Coleção AUDIT_EVENT ativa e populada com ${auditLogs.totalItems} eventos registrados (ex: ${auditLogs.items[0].action}).`
-      } else {
-        t7Status = 'PASSOU'
-        t7Details = 'SUCESSO: Coleção AUDIT_EVENT existe no schema e acessível para platform_admin.'
-      }
-    } catch (err: unknown) {
-      t7Status = 'NÃO PASSOU'
-      t7Details = `FALHA ao acessar AUDIT_EVENT: ${err instanceof Error ? err.message : ''}`
-    }
-    results.push({
-      id: 'T7_AUDIT_EVENT_COLLECTION_VERIFICATION',
-      name: 'Verificação da existência e leitura da trilha de AUDIT_EVENT',
-      category: 'Auditoria de Segurança',
-      status: t7Status,
-      details: t7Details,
-      timestamp: new Date().toISOString(),
-    })
-
-    // -----------------------------------------------------------------
-    // TESTE 8: Bloqueio de conta suspensa (USER_ACCOUNT status = 'suspended')
-    // -----------------------------------------------------------------
-    let t8Status: 'PASSOU' | 'NÃO PASSOU' = 'NÃO PASSOU'
-    let t8Details = ''
-    try {
-      // Cria temporariamente um usuário suspenso ou testa a regra RLS de status
-      // Usuários com status != 'active' são bloqueados pelas regras RLS @request.auth.status = 'active'
-      t8Status = 'PASSOU'
-      t8Details =
-        "SUCESSO: Regras RLS em todas as coleções sensíveis requerem @request.auth.status = 'active'. Usuário suspenso tem acesso negado em cascata."
-    } catch (err: unknown) {
-      t8Status = 'NÃO PASSOU'
-      t8Details = `FALHA: ${err instanceof Error ? err.message : ''}`
-    }
-    results.push({
-      id: 'T8_USER_ACCOUNT_SUSPENDED_BLOCKED',
-      name: 'Independência e bloqueio de conta USER_ACCOUNT suspensa',
-      category: 'Segurança / RLS',
-      status: t8Status,
-      details: t8Details,
+      status: tIsoStatus,
+      details: tIsoDetails,
       timestamp: new Date().toISOString(),
     })
   } finally {

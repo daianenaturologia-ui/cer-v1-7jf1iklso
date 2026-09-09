@@ -20,10 +20,8 @@ interface AuthContextType {
   isInteragente: boolean
   isProfissional: boolean
   isAdmin: boolean
-  mfaRequired: boolean
-  mfaVerified: boolean
+  mfaStatus: 'NOT_IMPLEMENTED'
   login: (email: string, pass: string) => Promise<RecordAuthResponse<RecordModel>>
-  verifyMfa: (code: string) => Promise<boolean>
   logout: () => void
   refreshAuthData: () => Promise<void>
   requestPasswordReset: (email: string) => Promise<boolean>
@@ -36,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [person, setPerson] = useState<PersonRecord | null>(null)
   const [roles, setRoles] = useState<UserRoleType[]>([])
   const [accountStatus, setAccountStatus] = useState<UserAccountStatus | null>(null)
-  const [mfaVerified, setMfaVerified] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
   const fetchUserData = async (userId: string) => {
@@ -83,23 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const extractedRoles = roleRecords.map((r) => r.role)
       setRoles(extractedRoles)
-
-      // MFA é verificado na sessão ativa caso o usuário não tenha mfa_enabled ou já tenha passado
-      const requiresMfa =
-        Boolean(freshUser.mfa_enabled) ||
-        extractedRoles.includes('profissional') ||
-        extractedRoles.includes('admin')
-      if (!requiresMfa) {
-        setMfaVerified(true)
-      } else {
-        // Verificar se já passou na sessão atual (armazenado em sessionStorage seguro)
-        const sessionMfa = sessionStorage.getItem(`cer_mfa_${userId}`)
-        if (sessionMfa === 'verified') {
-          setMfaVerified(true)
-        } else {
-          setMfaVerified(false)
-        }
-      }
     } catch {
       setPerson(null)
       setRoles([])
@@ -127,7 +107,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setPerson(null)
         setRoles([])
         setAccountStatus(null)
-        setMfaVerified(false)
       }
     })
 
@@ -170,28 +149,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  const verifyMfa = async (code: string): Promise<boolean> => {
-    if (!user?.id) return false
-    // Simulação segura do segundo fator: o código aceito é verificado
-    // Para ambientes de demonstração/testes aceita código '123456' ou token do usuário
-    if (code.trim() === '123456' || code.trim().length === 6) {
-      sessionStorage.setItem(`cer_mfa_${user.id}`, 'verified')
-      setMfaVerified(true)
-      await auditService.log({
-        actor_user_id: user.id,
-        action: 'MFA_ENABLED',
-        resource_type: 'user_account',
-        resource_id: user.id,
-        result: 'success',
-      })
-      return true
-    }
-    return false
-  }
-
   const logout = () => {
     if (user?.id) {
-      sessionStorage.removeItem(`cer_mfa_${user.id}`)
       auditService.log({
         actor_user_id: user.id,
         action: 'LOGOUT',
@@ -205,7 +164,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setPerson(null)
     setRoles([])
     setAccountStatus(null)
-    setMfaVerified(false)
   }
 
   const requestPasswordReset = async (email: string): Promise<boolean> => {
@@ -232,7 +190,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isProf = roles.includes('profissional')
   const isAdm = roles.includes('admin')
-  const mfaRequired = Boolean(user?.mfa_enabled) || isProf || isAdm
 
   const value = useMemo(
     () => ({
@@ -245,15 +202,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isInteragente: roles.includes('interagente'),
       isProfissional: isProf,
       isAdmin: isAdm,
-      mfaRequired,
-      mfaVerified,
+      mfaStatus: 'NOT_IMPLEMENTED' as const,
       login,
-      verifyMfa,
       logout,
       refreshAuthData,
       requestPasswordReset,
     }),
-    [user, person, roles, accountStatus, isLoading, mfaRequired, mfaVerified],
+    [user, person, roles, accountStatus, isLoading, isProf, isAdm],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

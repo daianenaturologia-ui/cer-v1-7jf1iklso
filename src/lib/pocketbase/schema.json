@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T13:53:50.077Z",
+  "generatedAt": "2026-09-09T14:00:15.540Z",
   "collections": [
     {
       "name": "users",
@@ -308,9 +308,9 @@
       "apiRules": {
         "list": "@request.auth.id != '' && @request.auth.status = 'active' && (professional_user_id = @request.auth.id || enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || @request.auth.user_roles_via_user_id.role ?= 'admin')",
         "view": "@request.auth.id != '' && @request.auth.status = 'active' && (professional_user_id = @request.auth.id || enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || @request.auth.user_roles_via_user_id.role ?= 'admin')",
-        "create": "@request.auth.id != '' && @request.auth.status = 'active' && (@request.auth.user_roles_via_user_id.role ?= 'admin' || (@request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.body.professional_user_id = @request.auth.id))",
-        "update": "@request.auth.id != '' && @request.auth.status = 'active' && (@request.auth.user_roles_via_user_id.role ?= 'admin' || professional_user_id = @request.auth.id)",
-        "delete": "@request.auth.id != '' && @request.auth.status = 'active' && (@request.auth.user_roles_via_user_id.role ?= 'admin' || professional_user_id = @request.auth.id)"
+        "create": "@request.auth.id != '' && @request.auth.status = 'active' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
+        "update": "@request.auth.id != '' && @request.auth.status = 'active' && @request.auth.user_roles_via_user_id.role ?= 'admin'",
+        "delete": "@request.auth.id != '' && @request.auth.status = 'active' && @request.auth.user_roles_via_user_id.role ?= 'admin'"
       },
       "fields": [
         {

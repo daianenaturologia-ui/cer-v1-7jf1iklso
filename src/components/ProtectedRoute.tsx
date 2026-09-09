@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
-  const { isAuthenticated, isLoading, roles, mfaRequired, mfaVerified, accountStatus } = useAuth()
+  const { isAuthenticated, isLoading, roles, accountStatus } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
@@ -25,11 +25,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
 
   if (!isAuthenticated || accountStatus !== 'active') {
     return <Navigate to="/login" state={{ from: location }} replace />
-  }
-
-  // Barreira mandatória de MFA para papéis profissionais e admin
-  if (mfaRequired && !mfaVerified) {
-    return <Navigate to="/login" state={{ from: location, requiresMfa: true }} replace />
   }
 
   if (requiredRole && !roles.includes(requiredRole)) {

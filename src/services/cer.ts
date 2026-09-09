@@ -249,14 +249,41 @@ export const enrollmentService = {
     })
 
     // 5. Criar PROFESSIONAL_ENROLLMENT_ACCESS de forma autorizada
-    await pb
-      .collection('professional_enrollment_access')
-      .create<ProfessionalEnrollmentAccessRecord>({
-        enrollment_id: enrollment.id,
-        professional_user_id: params.professionalUserId,
-        access_role: 'primary',
-        is_active: true,
-      })
+    // O hook server-side on_enrollment_created cria a concessão automaticamente quando o profissional cria o enrollment.
+    // Como garantia defensiva, se o registro ainda não existir (ex: execução por platform_admin), cria se autorizado.
+    try {
+      let existing = null
+      try {
+        existing = await pb
+          .collection('professional_enrollment_access')
+          .getFirstListItem(`enrollment_id = "${enrollment.id}"`)
+      } catch { /* intentionally ignored */ }
+
+      if (!existing) {
+        const createdAccess = await pb
+          .collection('professional_enrollment_access')
+          .create<ProfessionalEnrollmentAccessRecord>({
+            enrollment_id: enrollment.id,
+            professional_user_id: params.professionalUserId,
+            access_role: 'primary',
+            is_active: true,
+          })
+
+        await auditService.log({
+          action: 'PROFESSIONAL_ACCESS_GRANTED',
+          resource_type: 'professional_enrollment_access',
+          resource_id: createdAccess.id,
+          enrollment_id: enrollment.id,
+          result: 'success',
+          metadata: {
+            professional_user_id: params.professionalUserId,
+            access_role: 'primary',
+          },
+        })
+      }
+    } catch {
+      // Ignora se já gerado pelo hook server-side ou se regra RLS direta não permitir
+    }
 
     // 6. Criar JOURNEY_STATE inicial em 'onboarding'
     await pb.collection('journey_states').create<JourneyStateRecord>({

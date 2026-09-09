@@ -18,14 +18,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [mfaCode, setMfaCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showForgot, setShowForgot] = useState(false)
   const [resetSent, setResetSent] = useState(false)
 
-  const { login, verifyMfa, mfaRequired, mfaVerified, user, requestPasswordReset } = useAuth()
+  const { login, requestPasswordReset } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -38,31 +37,11 @@ export const Login: React.FC = () => {
 
     try {
       await login(email.trim(), password)
-      // Se não requer MFA, navega direto
-      // Se requer MFA, o estado mudará e exibirá a tela de verificação
+      navigate(from, { replace: true })
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : 'Credenciais inválidas. Verifique seu e-mail e senha.'
       setError(msg)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleMfaSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    try {
-      const ok = await verifyMfa(mfaCode.trim())
-      if (ok) {
-        navigate(from, { replace: true })
-      } else {
-        setError('Código de verificação de dois fatores incorreto. Tente novamente.')
-      }
-    } catch {
-      setError('Falha ao validar segundo fator de autenticação.')
     } finally {
       setLoading(false)
     }
@@ -94,9 +73,6 @@ export const Login: React.FC = () => {
     setPassword('Skip@Pass')
   }
 
-  // Se o usuário está autenticado no primeiro fator, mas precisa do segundo fator MFA:
-  const isAwaitingMfa = Boolean(user) && mfaRequired && !mfaVerified
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-6">
@@ -108,62 +84,7 @@ export const Login: React.FC = () => {
         </div>
 
         <Card className="border-border/80 shadow-sm">
-          {isAwaitingMfa ? (
-            // ============================================
-            // TELA DE VERIFICAÇÃO DE SEGUNDO FATOR (MFA)
-            // ============================================
-            <div>
-              <CardHeader className="space-y-1">
-                <div className="flex items-center gap-2 text-primary">
-                  <ShieldCheck className="h-5 w-5" />
-                  <CardTitle className="text-lg font-semibold">Segundo Fator (MFA)</CardTitle>
-                </div>
-                <CardDescription className="text-xs">
-                  Autenticação em dois fatores obrigatória para acesso profissional e
-                  administrativo.
-                </CardDescription>
-              </CardHeader>
-              <form onSubmit={handleMfaSubmit}>
-                <CardContent className="space-y-4">
-                  {error && (
-                    <Alert variant="destructive" className="py-2 text-xs">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="mfaCode" className="text-xs font-medium">
-                      Código de Verificação (6 dígitos)
-                    </Label>
-                    <div className="relative">
-                      <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="mfaCode"
-                        type="text"
-                        placeholder="Ex: 123456"
-                        maxLength={6}
-                        value={mfaCode}
-                        onChange={(e) => setMfaCode(e.target.value)}
-                        required
-                        className="pl-9 text-sm font-mono tracking-widest text-center"
-                      />
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Ambiente de teste: digite{' '}
-                      <code className="font-mono text-primary">123456</code>
-                    </p>
-                  </div>
-                </CardContent>
-
-                <CardFooter className="flex flex-col gap-3">
-                  <Button type="submit" className="w-full text-sm" disabled={loading}>
-                    {loading ? 'Validando...' : 'Confirmar e Acessar'}
-                  </Button>
-                </CardFooter>
-              </form>
-            </div>
-          ) : showForgot ? (
+          {showForgot ? (
             // ============================================
             // TELA DE RECUPERAÇÃO DE SENHA
             // ============================================
@@ -321,7 +242,7 @@ export const Login: React.FC = () => {
                         className="h-6 text-[10px] px-1.5 truncate"
                         onClick={() => fillCredentials('profissional.a@cer.app')}
                       >
-                        Profissional A (MFA)
+                        Profissional A
                       </Button>
                       <Button
                         type="button"
@@ -330,7 +251,7 @@ export const Login: React.FC = () => {
                         className="h-6 text-[10px] px-1.5 truncate"
                         onClick={() => fillCredentials('profissional.b@cer.app')}
                       >
-                        Profissional B (MFA)
+                        Profissional B
                       </Button>
                       <Button
                         type="button"
