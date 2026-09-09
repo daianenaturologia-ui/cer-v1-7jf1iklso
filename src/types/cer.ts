@@ -217,6 +217,8 @@ export const AUDIT_ACTIONS = {
   EXPERIENCE_COMPLETED: 'EXPERIENCE_COMPLETED',
   EXPERIENCE_PAUSED: 'EXPERIENCE_PAUSED',
   EXPERIENCE_REOPENED: 'EXPERIENCE_REOPENED',
+  // Ações de auditoria do Knowledge & Provenance Layer (Build 03A)
+  SIGNAL_CREATED: 'SIGNAL_CREATED',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -494,6 +496,122 @@ export interface ExperienceResponseVersionRecord {
   version_number: number
   prompt_version: number
   change_reason?: string
+  created: string
+  updated: string
+}
+
+// ------------------------------------------
+// ENTIDADES DO BUILD 03A — KNOWLEDGE & PROVENANCE LAYER
+// ------------------------------------------
+
+export const FRAMEWORK_TYPES = {
+  SCIENTIFIC: 'scientific',
+  CLINICAL_FRAMEWORK: 'clinical_framework',
+  TRADITIONAL_SYSTEM: 'traditional_system',
+  SELF_REPORT_MODEL: 'self_report_model',
+  CER_INTEGRATIVE_MODEL: 'cer_integrative_model',
+} as const
+
+export type FrameworkType = (typeof FRAMEWORK_TYPES)[keyof typeof FRAMEWORK_TYPES]
+
+export const SIGNAL_TYPES = {
+  RESOURCE: 'resource',
+  CHALLENGE: 'challenge',
+  PROTECTION_PATTERN: 'protection_pattern',
+  CURRENT_STATE: 'current_state',
+  VALUE_MEANING: 'value_meaning',
+  REALIZATION_RELEVANT: 'realization_relevant',
+  CONTEXT: 'context',
+} as const
+
+export type SignalType = (typeof SIGNAL_TYPES)[keyof typeof SIGNAL_TYPES]
+
+export const SIGNAL_TEMPORALITIES = {
+  CURRENT: 'current',
+  HISTORICAL: 'historical',
+  RECURRING: 'recurring',
+  CONTEXT_DEPENDENT: 'context_dependent',
+  LONGITUDINAL: 'longitudinal',
+  UNDETERMINED: 'undetermined',
+} as const
+
+export type SignalTemporality = (typeof SIGNAL_TEMPORALITIES)[keyof typeof SIGNAL_TEMPORALITIES]
+
+export const SIGNAL_SOURCE_TYPES = {
+  PARTICIPANT_REPORT: 'participant_report',
+  PROFESSIONAL_OBSERVATION: 'professional_observation',
+  FRAMEWORK_READING: 'framework_reading',
+  RECURRENCE_ASSOCIATION: 'recurrence_association',
+  CER_INTEGRATIVE_HYPOTHESIS: 'cer_integrative_hypothesis',
+  PARTICIPANT_RECOGNITION: 'participant_recognition',
+} as const
+
+export type SignalSourceType = (typeof SIGNAL_SOURCE_TYPES)[keyof typeof SIGNAL_SOURCE_TYPES]
+
+export const SIGNAL_STATUS = {
+  ACTIVE: 'active',
+  ARCHIVED: 'archived',
+  SUPERSEDED: 'superseded',
+  REJECTED: 'rejected',
+} as const
+
+export type SignalStatus = (typeof SIGNAL_STATUS)[keyof typeof SIGNAL_STATUS]
+
+export interface CerFrameworkRecord {
+  id: string
+  framework_key: string
+  name: string
+  framework_type: FrameworkType
+  description?: string
+  is_active: boolean
+  created: string
+  updated: string
+}
+
+export interface CerPromptSignalRuleRecord {
+  id: string
+  prompt_id: string
+  prompt_version: number
+  response_match: string
+  signal_type: SignalType
+  concept_key: string
+  dimension_id?: string
+  temporality_default: SignalTemporality
+  framework_id?: string
+  is_active: boolean
+  expand?: {
+    prompt_id?: CerPromptRecord
+    framework_id?: CerFrameworkRecord
+    dimension_id?: CerDimensionRecord
+  }
+  created: string
+  updated: string
+}
+
+export interface CerSignalRecord {
+  id: string
+  enrollment_id: string
+  signal_type: SignalType
+  concept_key: string
+  dimension_id?: string
+  temporality: SignalTemporality
+  source_type: SignalSourceType
+  source_response_id?: string
+  source_prompt_id?: string
+  source_experience_id?: string
+  framework_id?: string
+  created_by_user_id?: string
+  access_class: VisibilityClass
+  status: SignalStatus
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    dimension_id?: CerDimensionRecord
+    source_response_id?: ExperienceResponseRecord
+    source_prompt_id?: CerPromptRecord
+    source_experience_id?: CerExperienceRecord
+    framework_id?: CerFrameworkRecord
+    created_by_user_id?: UserAccountRecord
+  }
   created: string
   updated: string
 }

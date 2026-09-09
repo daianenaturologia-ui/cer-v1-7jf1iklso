@@ -1,25 +1,37 @@
 import React, { useState, useEffect } from 'react'
 import { runBuild01IsolationTests, runBuild02EngineTests, type TestResult } from '@/services/tests'
+import { runBuild03AKnowledgeTests } from '@/services/testsKnowledge'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ShieldCheck, Play, RefreshCw, CheckCircle2, XCircle, Sparkles } from 'lucide-react'
+import {
+  ShieldCheck,
+  Play,
+  RefreshCw,
+  CheckCircle2,
+  XCircle,
+  Sparkles,
+  Database,
+} from 'lucide-react'
 
 export const AuditSecurityPanel: React.FC = () => {
   const [b01Results, setB01Results] = useState<TestResult[]>([])
   const [b02Results, setB02Results] = useState<TestResult[]>([])
+  const [b03aResults, setB03aResults] = useState<TestResult[]>([])
   const [running, setRunning] = useState(false)
   const [hasRun, setHasRun] = useState(false)
 
   const handleRunTests = async () => {
     setRunning(true)
     try {
-      const [res01, res02] = await Promise.all([
+      const [res01, res02, res03a] = await Promise.all([
         runBuild01IsolationTests(),
         runBuild02EngineTests(),
+        runBuild03AKnowledgeTests(),
       ])
       setB01Results(res01)
       setB02Results(res02)
+      setB03aResults(res03a)
       setHasRun(true)
     } catch (err) {
       console.error('Falha ao executar suíte de testes:', err)
@@ -33,7 +45,7 @@ export const AuditSecurityPanel: React.FC = () => {
     handleRunTests()
   }, [])
 
-  const allResults = [...b01Results, ...b02Results]
+  const allResults = [...b01Results, ...b02Results, ...b03aResults]
   const passedCount = allResults.filter((r) => r.status === 'PASSOU').length
 
   return (
@@ -44,12 +56,12 @@ export const AuditSecurityPanel: React.FC = () => {
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-primary" />
               <CardTitle className="text-base font-semibold">
-                Auditoria de Segurança, Isolamento e Experience Engine (Build 01 + Build 02)
+                Auditoria de Segurança, Engine & Knowledge Layer (Builds 01, 02 e 03A)
               </CardTitle>
             </div>
             <CardDescription className="text-xs">
-              Testes reais obrigatórios executados diretamente contra as regras de API/RLS e
-              serviços do backend
+              Testes reais obrigatórios executados diretamente contra as regras de API/RLS, hooks e
+              integridade do backend Skip Cloud
             </CardDescription>
           </div>
 
@@ -93,6 +105,49 @@ export const AuditSecurityPanel: React.FC = () => {
           </div>
         ) : (
           <>
+            {/* Bloco de Testes do Build 03A */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-medium text-foreground pb-1 border-b border-border/40">
+                <Database className="w-3.5 h-3.5 text-primary" />
+                <span>
+                  Testes Obrigatórios do Build 03A — Knowledge & Provenance Layer (
+                  {b03aResults.length} testes)
+                </span>
+              </div>
+              {b03aResults.map((t) => (
+                <div
+                  key={t.id}
+                  className="p-3 rounded-lg border border-border/50 bg-muted/20 flex flex-col gap-1.5 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {t.status === 'PASSOU' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-destructive shrink-0" />
+                      )}
+                      <span className="font-medium text-foreground">{t.name}</span>
+                    </div>
+                    <Badge
+                      variant={
+                        t.status === 'PASSOU'
+                          ? 'secondary'
+                          : t.status === 'NÃO IMPLEMENTADO'
+                            ? 'outline'
+                            : 'destructive'
+                      }
+                      className="text-[10px] uppercase font-mono tracking-wider shrink-0"
+                    >
+                      {t.status}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-[11px] pl-6 leading-relaxed">
+                    {t.details}
+                  </p>
+                </div>
+              ))}
+            </div>
+
             {/* Bloco de Testes do Build 02 */}
             <div className="space-y-2.5">
               <div className="flex items-center gap-2 text-xs font-medium text-foreground pb-1 border-b border-border/40">

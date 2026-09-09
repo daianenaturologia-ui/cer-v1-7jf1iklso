@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { runBuild01IsolationTests, runBuild02EngineTests } from './tests'
+import { runBuild03AKnowledgeTests } from './testsKnowledge'
 
 describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
   it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {
@@ -48,4 +49,21 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
       expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
     }
   }, 60000)
+
+  it('executa suíte obrigatória do Checkpoint 03A — Knowledge & Provenance Layer contra o backend real', async () => {
+    const results = await runBuild03AKnowledgeTests()
+    console.log(
+      'Checkpoint 03A test results summary:',
+      results.map((r) => `${r.name}: ${r.status}`),
+    )
+
+    // NENHUM teste do Checkpoint 03A pode falhar
+    const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')
+    expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
+
+    // Todos os testes do 03A devem ser 'PASSOU'
+    for (const r of results) {
+      expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
+    }
+  }, 90000)
 })
