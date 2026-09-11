@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-11T17:43:04.765Z",
+  "generatedAt": "2026-09-11T18:08:52.146Z",
   "collections": [
     {
       "name": "users",
@@ -2629,7 +2629,8 @@
             "association_suggestion",
             "knowledge_suggestion",
             "integrative_hypothesis",
-            "priority_suggestion"
+            "priority_suggestion",
+            "practice_candidate_suggestion"
           ]
         },
         {
@@ -3737,6 +3738,1295 @@
         "CREATE INDEX idx_coapn_acceptance ON cer_operational_acceptance_private_notes (acceptance_id)",
         "CREATE INDEX idx_coapn_participant ON cer_operational_acceptance_private_notes (participant_user_id)",
         "CREATE INDEX idx_coapn_status ON cer_operational_acceptance_private_notes (status)"
+      ]
+    },
+    {
+      "name": "cer_practices",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "internal_name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "participant_facing_name_base",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "family",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "target_concept_keys",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "governance_modes",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "self_guided",
+            "group_guided",
+            "professional_guided",
+            "supervised_only",
+            "session_only"
+          ]
+        },
+        {
+          "name": "is_system_curated",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "provenance_editorial",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["draft", "active", "deprecated", "retired"]
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cp_internal_name ON cer_practices (internal_name)",
+        "CREATE INDEX idx_cp_family ON cer_practices (family)",
+        "CREATE INDEX idx_cp_status ON cer_practices (status)"
+      ]
+    },
+    {
+      "name": "cer_practice_versions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practices"
+        },
+        {
+          "name": "version_number",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "previous_version_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "participant_title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "participant_summary",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "instructions",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "preparation",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "stop_conditions",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "grounding",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "integration",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "intent_goal",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "context_tags",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "morning",
+            "evening",
+            "during_overload",
+            "after_conflict",
+            "home",
+            "work",
+            "in_session",
+            "paired_with_practice",
+            "accompanied_only",
+            "stable_only",
+            "other_context"
+          ]
+        },
+        {
+          "name": "other_context_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "duration",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "frequency",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "repetitions",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "quantity",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "time_window",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "progression",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "rest",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "max_exposure",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "guidance_requirements",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "intensity",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["low", "moderate", "high", "expansive"]
+        },
+        {
+          "name": "consent_required",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["not_required", "required", "conditional"]
+        },
+        {
+          "name": "author_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "reviewer_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "safety_reviewed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "review_due_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["draft", "active", "deprecated", "retired"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cpv_practice ON cer_practice_versions (practice_id)",
+        "CREATE INDEX idx_cpv_version ON cer_practice_versions (practice_id, version_number)",
+        "CREATE INDEX idx_cpv_status ON cer_practice_versions (status)"
+      ]
+    },
+    {
+      "name": "cer_practice_variants",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "variant_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["ideal", "adapted", "minimal_possible"]
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "duration",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "frequency",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "repetitions",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "quantity",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cvar_version ON cer_practice_variants (practice_version_id)",
+        "CREATE INDEX idx_cvar_type ON cer_practice_variants (variant_type)"
+      ]
+    },
+    {
+      "name": "cer_practice_frameworks",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "framework_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_frameworks"
+        },
+        {
+          "name": "usage_role",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["origin", "indication", "adaptation", "safety_framework"]
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cpf_version ON cer_practice_frameworks (practice_version_id)",
+        "CREATE INDEX idx_cpf_framework ON cer_practice_frameworks (framework_id)"
+      ]
+    },
+    {
+      "name": "cer_practice_evidence",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "evidence_basis_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "scientific_research",
+            "traditional_knowledge",
+            "clinical_practice_framework",
+            "experiential_support",
+            "cer_professional_hypothesis"
+          ]
+        },
+        {
+          "name": "confidence",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["high", "moderate", "low", "uncertain"]
+        },
+        {
+          "name": "maturity",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["established", "developing", "preliminary"]
+        },
+        {
+          "name": "population_context_applicability",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "safety_evidence_note",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "supported_claim_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "author_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "reviewer_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "review_due_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cpe_version ON cer_practice_evidence (practice_version_id)",
+        "CREATE INDEX idx_cpe_basis ON cer_practice_evidence (evidence_basis_type)",
+        "CREATE INDEX idx_cpe_confidence ON cer_practice_evidence (confidence)"
+      ]
+    },
+    {
+      "name": "cer_practice_evidence_sources",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "evidence_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_evidence"
+        },
+        {
+          "name": "citation_title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "author_source",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "publication_year",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "url_identifier",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "evidence_type",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "reviewed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_cpes_evidence ON cer_practice_evidence_sources (evidence_id)"]
+    },
+    {
+      "name": "cer_practice_safety_profiles",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "intensity_implications",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "consent_required",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["not_required", "required", "conditional"]
+        },
+        {
+          "name": "supervision_requirements",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "monitoring",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aftercare",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "regulatory_profile",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "none",
+            "health_adjacent",
+            "regulated_product",
+            "medical_coordination_required"
+          ]
+        },
+        {
+          "name": "safety_requirements",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "required_dynamic_inputs",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "informed_choice",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "orientation",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "body_contact_policy",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "capacity_to_stop",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "return_grounding",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "integration",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "daily_life_reorientation",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "escalation_pathway",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "reviewed_by_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cpsp_version ON cer_practice_safety_profiles (practice_version_id)"
+      ]
+    },
+    {
+      "name": "cer_practice_safety_rules",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "rule_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "absolute_contraindication",
+            "relative_contraindication",
+            "caution",
+            "requires_medical_clearance",
+            "requires_professional_assessment"
+          ]
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "participant_facing_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "source_of_rule",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "evidence_source",
+            "professional_policy",
+            "traditional_framework",
+            "regulatory_guidance",
+            "manufacturer",
+            "cer_safety_policy"
+          ]
+        },
+        {
+          "name": "source_ref",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cpsr_version ON cer_practice_safety_rules (practice_version_id)",
+        "CREATE INDEX idx_cpsr_type ON cer_practice_safety_rules (rule_type)"
+      ]
+    },
+    {
+      "name": "cer_practice_safety_checks",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "outcome",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "eligible",
+            "eligible_with_caution",
+            "requires_professional_review",
+            "requires_supervision",
+            "not_currently_indicated",
+            "insufficient_information"
+          ]
+        },
+        {
+          "name": "reviewed_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "professional_rationale",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "reviewed_at",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "record_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["current", "superseded"]
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cpsc_enrollment ON cer_practice_safety_checks (enrollment_id)",
+        "CREATE INDEX idx_cpsc_version ON cer_practice_safety_checks (practice_version_id)",
+        "CREATE INDEX idx_cpsc_status ON cer_practice_safety_checks (record_status)"
+      ]
+    },
+    {
+      "name": "cer_practice_safety_check_sources",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "safety_check_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_safety_checks"
+        },
+        {
+          "name": "source_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "experience_response",
+            "signal",
+            "association",
+            "knowledge_item",
+            "participant_recognition",
+            "session_observation"
+          ]
+        },
+        {
+          "name": "source_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "source_version_anchor",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared",
+            "professional_private",
+            "shared_care",
+            "administrative",
+            "system_internal"
+          ]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cpscs_check ON cer_practice_safety_check_sources (safety_check_id)",
+        "CREATE INDEX idx_cpscs_enrollment ON cer_practice_safety_check_sources (enrollment_id)",
+        "CREATE INDEX idx_cpscs_source ON cer_practice_safety_check_sources (source_type, source_id)"
+      ]
+    },
+    {
+      "name": "cer_practice_consents",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((participant_user_id = @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((participant_user_id = @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "consent_text_version_ref",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "risks_cautions_shown",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "understanding_response",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "understood",
+            "want_to_ask",
+            "did_not_understand",
+            "do_not_want",
+            "want_alternative"
+          ]
+        },
+        {
+          "name": "decision",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["accepted", "declined"]
+        },
+        {
+          "name": "questions_opportunity",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "context_notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "record_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["current", "withdrawn", "superseded"]
+        },
+        {
+          "name": "withdrawn_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "withdrawal_reason",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cpc_version ON cer_practice_consents (practice_version_id)",
+        "CREATE INDEX idx_cpc_participant ON cer_practice_consents (participant_user_id)",
+        "CREATE INDEX idx_cpc_enrollment ON cer_practice_consents (enrollment_id)",
+        "CREATE INDEX idx_cpc_status ON cer_practice_consents (record_status)"
+      ]
+    },
+    {
+      "name": "cer_practice_consent_private_notes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "consent_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_consents"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "note_text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["current", "superseded"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cpcn_consent ON cer_practice_consent_private_notes (consent_id)",
+        "CREATE INDEX idx_cpcn_participant ON cer_practice_consent_private_notes (participant_user_id)",
+        "CREATE INDEX idx_cpcn_status ON cer_practice_consent_private_notes (status)"
       ]
     }
   ]

@@ -248,6 +248,23 @@ export const AUDIT_ACTIONS = {
   ORCHESTRATION_RUNTIME_INVALID: 'ORCHESTRATION_RUNTIME_INVALID',
   REUSED_CONTEXT_PRESENTED: 'REUSED_CONTEXT_PRESENTED',
   SKIP_DECLARED: 'SKIP_DECLARED',
+  // Ações de auditoria do Practice Library & Safety Gates (Build 08C)
+  PRACTICE_CREATED: 'PRACTICE_CREATED',
+  PRACTICE_VERSION_PUBLISHED: 'PRACTICE_VERSION_PUBLISHED',
+  PRACTICE_VERSION_DEPRECATED: 'PRACTICE_VERSION_DEPRECATED',
+  PRACTICE_RETIRED: 'PRACTICE_RETIRED',
+  SAFETY_PROFILE_UPDATED: 'SAFETY_PROFILE_UPDATED',
+  SAFETY_RULE_ADDED: 'SAFETY_RULE_ADDED',
+  EVIDENCE_REVIEWED: 'EVIDENCE_REVIEWED',
+  SAFETY_CHECK_RECORDED: 'SAFETY_CHECK_RECORDED',
+  SAFETY_CHECK_SOURCE_ADDED: 'SAFETY_CHECK_SOURCE_ADDED',
+  CONSENT_PRESENTED: 'CONSENT_PRESENTED',
+  CONSENT_ACCEPTED: 'CONSENT_ACCEPTED',
+  CONSENT_DECLINED: 'CONSENT_DECLINED',
+  CONSENT_WITHDRAWN: 'CONSENT_WITHDRAWN',
+  PROFESSIONAL_CLEARANCE_RECORDED: 'PROFESSIONAL_CLEARANCE_RECORDED',
+  PRACTICE_CANDIDATE_PROPOSED: 'PRACTICE_CANDIDATE_PROPOSED',
+  PRACTICE_CANDIDATE_REVIEWED: 'PRACTICE_CANDIDATE_REVIEWED',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -409,6 +426,8 @@ export const AI_PROPOSAL_TYPES = {
   ASSOCIATION_SUGGESTION: 'association_suggestion',
   KNOWLEDGE_SUGGESTION: 'knowledge_suggestion',
   INTEGRATIVE_HYPOTHESIS: 'integrative_hypothesis',
+  PRIORITY_SUGGESTION: 'priority_suggestion',
+  PRACTICE_CANDIDATE_SUGGESTION: 'practice_candidate_suggestion',
 } as const
 
 export type AiProposalType = (typeof AI_PROPOSAL_TYPES)[keyof typeof AI_PROPOSAL_TYPES]
@@ -1541,5 +1560,469 @@ export interface CerOperationalAcceptancePrivateNoteRecord {
     acceptance_id?: CerOperationalAcceptanceRecord
     enrollment_id?: EnrollmentRecord
     participant_user_id?: UserAccountRecord
+  }
+}
+
+// ==========================================
+// ENTIDADES DO BUILD 08C — PRACTICE LIBRARY & SAFETY GATES
+// ==========================================
+
+export const PRACTICE_STATUS = {
+  DRAFT: 'draft',
+  ACTIVE: 'active',
+  DEPRECATED: 'deprecated',
+  RETIRED: 'retired',
+} as const
+
+export type PracticeStatus = (typeof PRACTICE_STATUS)[keyof typeof PRACTICE_STATUS]
+
+export const PRACTICE_GOVERNANCE_MODES = {
+  SELF_GUIDED: 'self_guided',
+  GROUP_GUIDED: 'group_guided',
+  PROFESSIONAL_GUIDED: 'professional_guided',
+  SUPERVISED_ONLY: 'supervised_only',
+  SESSION_ONLY: 'session_only',
+} as const
+
+export type PracticeGovernanceMode =
+  (typeof PRACTICE_GOVERNANCE_MODES)[keyof typeof PRACTICE_GOVERNANCE_MODES]
+
+export const PRACTICE_INTENSITY = {
+  LOW: 'low',
+  MODERATE: 'moderate',
+  HIGH: 'high',
+  EXPANSIVE: 'expansive',
+} as const
+
+export type PracticeIntensity = (typeof PRACTICE_INTENSITY)[keyof typeof PRACTICE_INTENSITY]
+
+export const PRACTICE_CONSENT_REQUIREMENT = {
+  NOT_REQUIRED: 'not_required',
+  REQUIRED: 'required',
+  CONDITIONAL: 'conditional',
+} as const
+
+export type PracticeConsentRequirement =
+  (typeof PRACTICE_CONSENT_REQUIREMENT)[keyof typeof PRACTICE_CONSENT_REQUIREMENT]
+
+export const PRACTICE_CONTEXT_TAGS = {
+  MORNING: 'morning',
+  EVENING: 'evening',
+  DURING_OVERLOAD: 'during_overload',
+  AFTER_CONFLICT: 'after_conflict',
+  HOME: 'home',
+  WORK: 'work',
+  IN_SESSION: 'in_session',
+  PAIRED_WITH_PRACTICE: 'paired_with_practice',
+  ACCOMPANIED_ONLY: 'accompanied_only',
+  STABLE_ONLY: 'stable_only',
+  OTHER_CONTEXT: 'other_context',
+} as const
+
+export type PracticeContextTag = (typeof PRACTICE_CONTEXT_TAGS)[keyof typeof PRACTICE_CONTEXT_TAGS]
+
+export const PRACTICE_VARIANT_TYPES = {
+  IDEAL: 'ideal',
+  ADAPTED: 'adapted',
+  MINIMAL_POSSIBLE: 'minimal_possible',
+} as const
+
+export type PracticeVariantType =
+  (typeof PRACTICE_VARIANT_TYPES)[keyof typeof PRACTICE_VARIANT_TYPES]
+
+export const PRACTICE_FRAMEWORK_USAGE_ROLES = {
+  ORIGIN: 'origin',
+  INDICATION: 'indication',
+  ADAPTATION: 'adaptation',
+  SAFETY_FRAMEWORK: 'safety_framework',
+} as const
+
+export type PracticeFrameworkUsageRole =
+  (typeof PRACTICE_FRAMEWORK_USAGE_ROLES)[keyof typeof PRACTICE_FRAMEWORK_USAGE_ROLES]
+
+export const EVIDENCE_BASIS_TYPES = {
+  SCIENTIFIC_RESEARCH: 'scientific_research',
+  TRADITIONAL_KNOWLEDGE: 'traditional_knowledge',
+  CLINICAL_PRACTICE_FRAMEWORK: 'clinical_practice_framework',
+  EXPERIENTIAL_SUPPORT: 'experiential_support',
+  CER_PROFESSIONAL_HYPOTHESIS: 'cer_professional_hypothesis',
+} as const
+
+export type EvidenceBasisType = (typeof EVIDENCE_BASIS_TYPES)[keyof typeof EVIDENCE_BASIS_TYPES]
+
+export const EVIDENCE_CONFIDENCE = {
+  HIGH: 'high',
+  MODERATE: 'moderate',
+  LOW: 'low',
+  UNCERTAIN: 'uncertain',
+} as const
+
+export type EvidenceConfidence = (typeof EVIDENCE_CONFIDENCE)[keyof typeof EVIDENCE_CONFIDENCE]
+
+export const EVIDENCE_MATURITY = {
+  ESTABLISHED: 'established',
+  DEVELOPING: 'developing',
+  PRELIMINARY: 'preliminary',
+} as const
+
+export type EvidenceMaturity = (typeof EVIDENCE_MATURITY)[keyof typeof EVIDENCE_MATURITY]
+
+export const REGULATORY_PROFILES = {
+  NONE: 'none',
+  HEALTH_ADJACENT: 'health_adjacent',
+  REGULATED_PRODUCT: 'regulated_product',
+  MEDICAL_COORDINATION_REQUIRED: 'medical_coordination_required',
+} as const
+
+export type RegulatoryProfile = (typeof REGULATORY_PROFILES)[keyof typeof REGULATORY_PROFILES]
+
+export const SAFETY_RULE_TYPES = {
+  ABSOLUTE_CONTRAINDICATION: 'absolute_contraindication',
+  RELATIVE_CONTRAINDICATION: 'relative_contraindication',
+  CAUTION: 'caution',
+  REQUIRES_MEDICAL_CLEARANCE: 'requires_medical_clearance',
+  REQUIRES_PROFESSIONAL_ASSESSMENT: 'requires_professional_assessment',
+} as const
+
+export type SafetyRuleType = (typeof SAFETY_RULE_TYPES)[keyof typeof SAFETY_RULE_TYPES]
+
+export const SAFETY_RULE_SOURCES = {
+  EVIDENCE_SOURCE: 'evidence_source',
+  PROFESSIONAL_POLICY: 'professional_policy',
+  TRADITIONAL_FRAMEWORK: 'traditional_framework',
+  REGULATORY_GUIDANCE: 'regulatory_guidance',
+  MANUFACTURER: 'manufacturer',
+  CER_SAFETY_POLICY: 'cer_safety_policy',
+} as const
+
+export type SafetyRuleSource = (typeof SAFETY_RULE_SOURCES)[keyof typeof SAFETY_RULE_SOURCES]
+
+export const SAFETY_CHECK_OUTCOMES = {
+  ELIGIBLE: 'eligible',
+  ELIGIBLE_WITH_CAUTION: 'eligible_with_caution',
+  REQUIRES_PROFESSIONAL_REVIEW: 'requires_professional_review',
+  REQUIRES_SUPERVISION: 'requires_supervision',
+  NOT_CURRENTLY_INDICATED: 'not_currently_indicated',
+  INSUFFICIENT_INFORMATION: 'insufficient_information',
+} as const
+
+export type SafetyCheckOutcome = (typeof SAFETY_CHECK_OUTCOMES)[keyof typeof SAFETY_CHECK_OUTCOMES]
+
+export const SAFETY_CHECK_SOURCE_TYPES = {
+  EXPERIENCE_RESPONSE: 'experience_response',
+  SIGNAL: 'signal',
+  ASSOCIATION: 'association',
+  KNOWLEDGE_ITEM: 'knowledge_item',
+  PARTICIPANT_RECOGNITION: 'participant_recognition',
+  SESSION_OBSERVATION: 'session_observation',
+} as const
+
+export type SafetyCheckSourceType =
+  (typeof SAFETY_CHECK_SOURCE_TYPES)[keyof typeof SAFETY_CHECK_SOURCE_TYPES]
+
+export const CONSENT_UNDERSTANDING_RESPONSES = {
+  UNDERSTOOD: 'understood',
+  WANT_TO_ASK: 'want_to_ask',
+  DID_NOT_UNDERSTAND: 'did_not_understand',
+  DO_NOT_WANT: 'do_not_want',
+  WANT_ALTERNATIVE: 'want_alternative',
+} as const
+
+export type ConsentUnderstandingResponse =
+  (typeof CONSENT_UNDERSTANDING_RESPONSES)[keyof typeof CONSENT_UNDERSTANDING_RESPONSES]
+
+export const CONSENT_DECISIONS = {
+  ACCEPTED: 'accepted',
+  DECLINED: 'declined',
+} as const
+
+export type ConsentDecision = (typeof CONSENT_DECISIONS)[keyof typeof CONSENT_DECISIONS]
+
+export const CONSENT_RECORD_STATUS = {
+  CURRENT: 'current',
+  WITHDRAWN: 'withdrawn',
+  SUPERSEDED: 'superseded',
+} as const
+
+export type ConsentRecordStatus = (typeof CONSENT_RECORD_STATUS)[keyof typeof CONSENT_RECORD_STATUS]
+
+// 1. cer_practices
+export interface CerPracticeRecord {
+  id: string
+  internal_name: string
+  participant_facing_name_base: string
+  family: string
+  target_concept_keys?: string[]
+  governance_modes: PracticeGovernanceMode[]
+  is_system_curated: boolean
+  provenance_editorial?: Record<string, unknown>
+  status: PracticeStatus
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    created_by_user_id?: UserAccountRecord
+    cer_practice_versions_via_practice_id?: CerPracticeVersionRecord[]
+  }
+}
+
+// 2. cer_practice_versions
+export interface CerPracticeVersionRecord {
+  id: string
+  practice_id: string
+  version_number: number
+  previous_version_id?: string
+  participant_title: string
+  participant_summary?: string
+  description?: string
+  instructions?: string
+  preparation?: string
+  stop_conditions?: string
+  grounding?: string
+  integration?: string
+  intent_goal?: string
+  context_tags?: PracticeContextTag[]
+  other_context_text?: string
+  duration?: string
+  frequency?: string
+  repetitions?: string
+  quantity?: string
+  time_window?: string
+  progression?: string
+  rest?: string
+  max_exposure?: string
+  guidance_requirements?: string
+  intensity: PracticeIntensity
+  consent_required: PracticeConsentRequirement
+  author_user_id: string
+  reviewer_user_id?: string
+  reviewed_at?: string
+  safety_reviewed_at?: string
+  review_due_at?: string
+  status: PracticeStatus
+  created: string
+  updated: string
+  expand?: {
+    practice_id?: CerPracticeRecord
+    author_user_id?: UserAccountRecord
+    reviewer_user_id?: UserAccountRecord
+    cer_practice_variants_via_practice_version_id?: CerPracticeVariantRecord[]
+    cer_practice_frameworks_via_practice_version_id?: CerPracticeFrameworkRecord[]
+    cer_practice_evidence_via_practice_version_id?: CerPracticeEvidenceRecord[]
+    cer_practice_safety_profiles_via_practice_version_id?: CerPracticeSafetyProfileRecord[]
+    cer_practice_safety_rules_via_practice_version_id?: CerPracticeSafetyRuleRecord[]
+  }
+}
+
+// 3. cer_practice_variants
+export interface CerPracticeVariantRecord {
+  id: string
+  practice_version_id: string
+  variant_type: PracticeVariantType
+  title: string
+  description?: string
+  duration?: string
+  frequency?: string
+  repetitions?: string
+  quantity?: string
+  notes?: string
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    practice_version_id?: CerPracticeVersionRecord
+    created_by_user_id?: UserAccountRecord
+  }
+}
+
+// 4. cer_practice_frameworks
+export interface CerPracticeFrameworkRecord {
+  id: string
+  practice_version_id: string
+  framework_id: string
+  usage_role: PracticeFrameworkUsageRole
+  notes?: string
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    practice_version_id?: CerPracticeVersionRecord
+    framework_id?: CerFrameworkRecord
+    created_by_user_id?: UserAccountRecord
+  }
+}
+
+// 5. cer_practice_evidence
+export interface CerPracticeEvidenceRecord {
+  id: string
+  practice_version_id: string
+  evidence_basis_type: EvidenceBasisType
+  confidence: EvidenceConfidence
+  maturity: EvidenceMaturity
+  population_context_applicability?: string
+  safety_evidence_note?: string
+  supported_claim_text?: string
+  author_user_id: string
+  reviewer_user_id?: string
+  reviewed_at?: string
+  review_due_at?: string
+  created: string
+  updated: string
+  expand?: {
+    practice_version_id?: CerPracticeVersionRecord
+    author_user_id?: UserAccountRecord
+    reviewer_user_id?: UserAccountRecord
+    cer_practice_evidence_sources_via_evidence_id?: CerPracticeEvidenceSourceRecord[]
+  }
+}
+
+// 6. cer_practice_evidence_sources
+export interface CerPracticeEvidenceSourceRecord {
+  id: string
+  evidence_id: string
+  citation_title: string
+  author_source: string
+  publication_year?: number
+  url_identifier?: string
+  evidence_type?: string
+  notes?: string
+  reviewed_at?: string
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    evidence_id?: CerPracticeEvidenceRecord
+    created_by_user_id?: UserAccountRecord
+  }
+}
+
+// 7. cer_practice_safety_profiles
+export interface CerPracticeSafetyProfileRecord {
+  id: string
+  practice_version_id: string
+  intensity_implications?: string
+  consent_required: PracticeConsentRequirement
+  supervision_requirements?: string
+  monitoring?: string
+  aftercare?: string
+  regulatory_profile: RegulatoryProfile
+  safety_requirements?: string
+  required_dynamic_inputs?: string[]
+  informed_choice?: string
+  orientation?: string
+  body_contact_policy?: string
+  capacity_to_stop?: string
+  return_grounding?: string
+  integration?: string
+  daily_life_reorientation?: string
+  escalation_pathway?: string
+  reviewed_by_user_id?: string
+  reviewed_at?: string
+  created: string
+  updated: string
+  expand?: {
+    practice_version_id?: CerPracticeVersionRecord
+    reviewed_by_user_id?: UserAccountRecord
+  }
+}
+
+// 8. cer_practice_safety_rules
+export interface CerPracticeSafetyRuleRecord {
+  id: string
+  practice_version_id: string
+  rule_type: SafetyRuleType
+  description: string
+  participant_facing_text?: string
+  source_of_rule: SafetyRuleSource
+  source_ref?: string
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    practice_version_id?: CerPracticeVersionRecord
+    created_by_user_id?: UserAccountRecord
+  }
+}
+
+// 9. cer_practice_safety_checks
+export interface CerPracticeSafetyCheckRecord {
+  id: string
+  practice_version_id: string
+  enrollment_id: string
+  outcome: SafetyCheckOutcome
+  reviewed_by_user_id: string
+  professional_rationale?: string
+  reviewed_at: string
+  record_status: 'current' | 'superseded'
+  metadata?: {
+    evaluated_safety_inputs?: string[]
+    is_professional_clearance?: boolean
+    [key: string]: unknown
+  }
+  created: string
+  updated: string
+  expand?: {
+    practice_version_id?: CerPracticeVersionRecord
+    enrollment_id?: EnrollmentRecord
+    reviewed_by_user_id?: UserAccountRecord
+    cer_practice_safety_check_sources_via_safety_check_id?: CerPracticeSafetyCheckSourceRecord[]
+  }
+}
+
+// 10. cer_practice_safety_check_sources
+export interface CerPracticeSafetyCheckSourceRecord {
+  id: string
+  safety_check_id: string
+  source_type: SafetyCheckSourceType
+  source_id: string
+  source_version_anchor?: string
+  enrollment_id: string
+  access_class: VisibilityClass
+  created: string
+  updated: string
+  expand?: {
+    safety_check_id?: CerPracticeSafetyCheckRecord
+    enrollment_id?: EnrollmentRecord
+  }
+}
+
+// 11. cer_practice_consents
+export interface CerPracticeConsentRecord {
+  id: string
+  practice_version_id: string
+  participant_user_id: string
+  enrollment_id: string
+  consent_text_version_ref?: string
+  risks_cautions_shown?: string[]
+  understanding_response: ConsentUnderstandingResponse
+  decision: ConsentDecision
+  questions_opportunity?: boolean
+  context_notes?: string
+  record_status: ConsentRecordStatus
+  withdrawn_at?: string
+  withdrawal_reason?: string
+  created: string
+  updated: string
+  expand?: {
+    practice_version_id?: CerPracticeVersionRecord
+    participant_user_id?: UserAccountRecord
+    enrollment_id?: EnrollmentRecord
+  }
+}
+
+// 12. cer_practice_consent_private_notes
+export interface CerPracticeConsentPrivateNoteRecord {
+  id: string
+  consent_id: string
+  participant_user_id: string
+  enrollment_id: string
+  note_text: string
+  status: 'current' | 'superseded'
+  created: string
+  updated: string
+  expand?: {
+    consent_id?: CerPracticeConsentRecord
+    participant_user_id?: UserAccountRecord
+    enrollment_id?: EnrollmentRecord
   }
 }
