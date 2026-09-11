@@ -23,6 +23,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { cerPracticeService } from '@/services/cerPracticeService'
+import pb from '@/lib/pocketbase/client'
 import type {
   CerPracticeRecord,
   CerPracticeVersionRecord,

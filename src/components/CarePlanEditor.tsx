@@ -245,9 +245,21 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
   // Aceitar / Rejeitar sugestão de IA
   const handleAcceptAiSuggestion = (proposal: CerAiProposalRecord) => {
-    const rawProposal = (proposal.proposal_content || {}) as any
-    setPrioTitle(rawProposal?.title || 'Prioridade sugerida')
-    setPrioDescription(rawProposal?.description || '')
+    let parsedTitle = 'Prioridade sugerida'
+    let parsedDescription = proposal.edited_text || proposal.proposal_text || ''
+
+    try {
+      if (proposal.proposal_text && proposal.proposal_text.trim().startsWith('{')) {
+        const json = JSON.parse(proposal.proposal_text)
+        if (json.title) parsedTitle = json.title
+        if (json.description) parsedDescription = json.description
+      }
+    } catch {
+      // Se não for JSON, o texto da proposta é a descrição
+    }
+
+    setPrioTitle(parsedTitle)
+    setPrioDescription(parsedDescription)
     setPrioTherapeutic(true)
     setPrioPossibleNow(true)
     setPrioProfessionalRationale('Origem da sugestão: Proposta de IA revisada clinicamente.')
@@ -460,18 +472,29 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                 </p>
                 <div className="space-y-2">
                   {aiProposals.map((prop) => {
-                    const raw = (prop.proposal_content || {}) as any
+                    let propTitle = 'Sugestão de Prioridade'
+                    let propDescription =
+                      prop.edited_text || prop.proposal_text || prop.proposal_type
+
+                    try {
+                      if (prop.proposal_text && prop.proposal_text.trim().startsWith('{')) {
+                        const json = JSON.parse(prop.proposal_text)
+                        if (json.title) propTitle = json.title
+                        if (json.description) propDescription = json.description
+                      }
+                    } catch {
+                      // Usar fallback de texto
+                    }
+
                     return (
                       <div
                         key={prop.id}
                         className="p-2.5 rounded border border-purple-200/80 bg-background flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
                       >
                         <div className="space-y-0.5">
-                          <span className="font-semibold text-foreground">
-                            {raw?.title || 'Sugestão'}
-                          </span>
+                          <span className="font-semibold text-foreground">{propTitle}</span>
                           <p className="text-muted-foreground text-[11px] leading-relaxed">
-                            {raw?.description || prop.proposal_type}
+                            {propDescription}
                           </p>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">

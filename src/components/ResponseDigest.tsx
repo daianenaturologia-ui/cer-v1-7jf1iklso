@@ -82,33 +82,11 @@ export const ResponseDigest: React.FC<ResponseDigestProps> = ({
       setActiveCycle(cycle)
 
       // 3. Digest descritivo (sem percentuais artificiais de eficácia)
-      if (cycle) {
-        const descDigest = await cerCycleReviewService.computeDescriptiveDigest(
-          cycle.id,
-          enrollmentId,
-        )
-        setDigest(descDigest)
-      } else {
-        // Digest aproximado do histórico geral
-        const helps = resps.filter((r) => r.response_type === 'helped').length
-        const difficult = resps.filter(
-          (r) => r.response_type === 'difficult' || r.response_type === 'was_too_much',
-        ).length
-        const neutral = resps.filter((r) => r.response_type === 'neutral').length
+      // Filtrar respostas pertencentes ao ciclo ativo, se houver; senão, utilizar resps gerais
+      const relevantResponses = cycle ? resps.filter((r) => r.care_cycle_id === cycle.id) : resps
 
-        setDigest({
-          total_responses: resps.length,
-          responses_by_type: { helped: helps, difficult, neutral },
-          was_too_much_count: resps.filter((r) => r.response_type === 'was_too_much').length,
-          needs_review_count: resps.filter((r) => r.safety_flag === 'needs_review').length,
-          escalation_required_count: resps.filter((r) => r.safety_flag === 'escalation_required')
-            .length,
-          narrative_summary:
-            resps.length > 0
-              ? `Histórico recente: ${resps.length} registro(s) de prática; ${helps} relataram ajuda; ${difficult} relataram dificuldade/limite; ${neutral} foram neutros.`
-              : 'Nenhum registro de prática no ciclo atual.',
-        })
-      }
+      const descDigest = cerCycleReviewService.generateDescriptiveDigest(relevantResponses)
+      setDigest(descDigest)
     } catch (err) {
       console.error('Erro ao carregar digest de respostas:', err)
     } finally {
@@ -125,14 +103,16 @@ export const ResponseDigest: React.FC<ResponseDigestProps> = ({
     if (!activeCycle) return
     setActionLoading(true)
     try {
-      await cerCycleReviewService.createCycleReview({
+      const authUser = pb.authStore.record
+      await cerCycleReviewService.createReview({
         care_cycle_id: activeCycle.id,
         enrollment_id: enrollmentId,
-        summary:
+        created_by_user_id: authUser?.id || '',
+        status: 'completed',
+        decision: cycleDecision,
+        professional_summary:
           reviewSummary.trim() ||
           `Revisão deliberada do Ciclo #${activeCycle.cycle_number} com decisão de ${cycleDecision}.`,
-        next_cycle_decision: cycleDecision,
-        assignments_digest: digest?.narrative_summary,
       })
       setFeedbackMsg('Decisão clínica do ciclo registrada com fidelidade.')
       setReviewModalOpen(false)
@@ -221,26 +201,29 @@ export const ResponseDigest: React.FC<ResponseDigestProps> = ({
                 </span>
               </div>
               <p className="text-sm font-medium text-foreground leading-relaxed">
-                {digest.narrative_summary}
+                {digest.summary_text}
               </p>
 
               {/* Contadores Textuais Qualitativos (NUNCA percentuais de eficácia) */}
               <div className="flex items-center gap-3 pt-2 text-xs flex-wrap border-t border-border/40">
                 <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-medium">
                   <ThumbsUp className="w-3.5 h-3.5" />
-                  {digest.responses_by_type?.helped || 0} relato(s) de ajuda
+                  {(digest.distribution_by_type?.['helped'] || 0) +
+                    (digest.distribution_by_type?.['helped_a_bit'] || 0)}{' '}
+                  relato(s) de ajuda
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-medium">
                   <AlertCircle className="w-3.5 h-3.5" />
-                  {digest.was_too_much_count} sinalização(ões) de excesso (too much)
+                  {digest.distribution_by_type?.['was_too_much'] || 0} sinalização(ões) de excesso
+                  (too much)
                 </span>
-                {digest.escalation_required_count > 0 && (
+                {digest.safety_flags_count.escalation_required > 0 && (
                   <>
                     <span>•</span>
                     <span className="flex items-center gap-1.5 text-red-600 font-bold">
                       <ShieldAlert className="w-3.5 h-3.5" />
-                      {digest.escalation_required_count} protocolo(s) de segurança
+                      {digest.safety_flags_count.escalation_required} protocolo(s) de segurança
                     </span>
                   </>
                 )}
