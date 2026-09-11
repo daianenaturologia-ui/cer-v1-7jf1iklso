@@ -3,7 +3,7 @@
  * Ancoragem estrita, verificação de gates, dose/bounds e confirmação.
  */
 
-import { pb } from '@/lib/pocketbase/client'
+import pb from '@/lib/pocketbase/client'
 import type {
   CerPracticeAssignmentRecord,
   PracticeAssignmentStatus,

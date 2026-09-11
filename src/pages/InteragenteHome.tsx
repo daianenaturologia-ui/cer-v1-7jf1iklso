@@ -7,12 +7,18 @@ import {
   cerParticipantRecognitionService,
   cerKnowledgePresentationService,
 } from '@/services/cerKnowledge'
+import { useNavigate } from 'react-router-dom'
 import {
   EnrollmentRecord,
   EnrollmentExperienceRecord,
   CerKnowledgeItemRecord,
   CerKnowledgePresentationRecord,
   RecognitionType,
+  CerMapRecord,
+  CerMapItemRecord,
+  CerPracticeAssignmentRecord,
+  CerPlannerItemRecord,
+  CapacityResponseValue,
 } from '@/types/cer'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -32,21 +38,18 @@ import {
   Clock,
   CheckCircle2,
   Brain,
+  Calendar as CalendarIcon,
 } from 'lucide-react'
 import { ExperienceEngine } from '@/components/experience'
 import { ParticipantMapDisplay } from '@/components/ParticipantMapDisplay'
 import { cerMapService } from '@/services/cerMapService'
 import { cerPracticeAssignmentService } from '@/services/cerPracticeAssignmentService'
 import { cerPlannerService } from '@/services/cerPlannerService'
-import type {
-  CerMapRecord,
-  CerMapItemRecord,
-  CerPracticeAssignmentRecord,
-  CerPlannerItemRecord,
-  CapacityResponseValue,
-} from '@/types/cer'
+import { ExperimentCard } from '@/components/ExperimentCard'
+import { MandalaStructuredView } from '@/components/MandalaStructuredView'
 
 export const InteragenteHome: React.FC = () => {
+  const navigate = useNavigate()
   const { user, person, logout } = useAuth()
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [loading, setLoading] = useState(true)
@@ -198,8 +201,26 @@ export const InteragenteHome: React.FC = () => {
               Interagente
             </Badge>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground hidden sm:inline">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/mandala')}
+              className="gap-1.5 text-xs h-8 text-primary border-primary/30 hover:bg-primary/5"
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Mandala</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/planner')}
+              className="gap-1.5 text-xs h-8"
+            >
+              <CalendarIcon className="w-3.5 h-3.5" />
+              <span>Planner</span>
+            </Button>
+            <span className="text-xs text-muted-foreground hidden sm:inline ml-2">
               {person?.preferred_name || person?.full_name || user?.name || user?.email}
             </span>
             <Button
@@ -747,116 +768,23 @@ export const InteragenteHome: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {assignments.map((asgn) => {
-                const isActive = asgn.status === 'active'
-                const isPaused = asgn.status === 'paused'
-                const isStopped = asgn.status === 'stopped'
-
                 return (
-                  <Card
+                  <ExperimentCard
                     key={asgn.id}
-                    className="border-border/70 hover:border-border transition-colors"
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <CardTitle className="text-base font-medium text-foreground">
-                            {asgn.participant_safe_title}
-                          </CardTitle>
-                          {asgn.participant_safe_summary && (
-                            <CardDescription className="text-xs mt-1 text-muted-foreground">
-                              {asgn.participant_safe_summary}
-                            </CardDescription>
-                          )}
-                        </div>
-                        <Badge
-                          variant={isActive ? 'default' : isPaused ? 'secondary' : 'outline'}
-                          className="text-[11px] capitalize shrink-0"
-                        >
-                          {isActive
-                            ? 'Em experimento'
-                            : isPaused
-                              ? 'Em pausa'
-                              : isStopped
-                                ? 'Interrompido'
-                                : asgn.status}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3 pt-0">
-                      <div className="bg-muted/30 p-2.5 rounded text-xs space-y-1 border border-border/40">
-                        {asgn.assigned_frequency && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Ritmo sugerido:</span>
-                            <span className="font-medium text-foreground">
-                              {asgn.assigned_frequency}
-                            </span>
-                          </div>
-                        )}
-                        {asgn.assigned_duration && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Duração:</span>
-                            <span className="font-medium text-foreground">
-                              {asgn.assigned_duration}
-                            </span>
-                          </div>
-                        )}
-                        {asgn.capacity_response && (
-                          <div className="flex justify-between pt-1 border-t border-border/30">
-                            <span className="text-muted-foreground">Como cabe no seu momento:</span>
-                            <span className="font-medium text-foreground capitalize">
-                              {asgn.capacity_response.replace(/_/g, ' ')}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Confirmação do participante */}
-                      {isActive && !asgn.confirmed_at && (
-                        <div className="space-y-2 pt-1 border-t border-border/40">
-                          <span className="text-xs text-muted-foreground block">
-                            Como essa proposta conversa com o seu momento atual?
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs h-7"
-                              onClick={() => handleConfirmExperiment(asgn.id, 'cabe_bem')}
-                            >
-                              Cabe bem
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs h-7"
-                              onClick={() => handleConfirmExperiment(asgn.id, 'cabe_se_adaptar')}
-                            >
-                              Cabe se adaptar
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs h-7"
-                              onClick={() => handleConfirmExperiment(asgn.id, 'parece_demais')}
-                            >
-                              Parece demais
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs h-7"
-                              onClick={() => handleConfirmExperiment(asgn.id, 'nao_cabe_agora')}
-                            >
-                              Não cabe agora
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                    assignment={asgn}
+                    onConfirm={handleConfirmExperiment}
+                    onResponseRecorded={loadData}
+                  />
                 )
               })}
             </div>
+          </div>
+        )}
+
+        {/* Mandala V1 Estruturada (Build 08E — Read-Model) */}
+        {enrollment && (
+          <div className="space-y-4 pt-4 border-t border-border/40">
+            <MandalaStructuredView enrollmentId={enrollment.id} onRefreshRequested={loadData} />
           </div>
         )}
 

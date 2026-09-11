@@ -2179,3 +2179,173 @@ export interface CerPlannerItemRecord {
     created_by?: UserAccountRecord
   }
 }
+
+// ==========================================
+// BUILD 08E: Resposta ao Experimento, Ajuste & Mandala V1
+// ==========================================
+
+export const PRACTICE_RESPONSE_TYPES = {
+  HELPED: 'helped',
+  HELPED_A_BIT: 'helped_a_bit',
+  NO_PERCEIVED_DIFFERENCE: 'no_perceived_difference',
+  WAS_DIFFICULT: 'was_difficult',
+  WAS_TOO_MUCH: 'was_too_much',
+  COULD_NOT_DO: 'could_not_do',
+  CHOSE_NOT_TO_DO: 'chose_not_to_do',
+  ADAPTED: 'adapted',
+  DID_NOT_MAKE_SENSE: 'did_not_make_sense',
+  WANTS_TO_TELL: 'wants_to_tell',
+} as const
+
+export type PracticeResponseType =
+  (typeof PRACTICE_RESPONSE_TYPES)[keyof typeof PRACTICE_RESPONSE_TYPES]
+
+export const PRACTICE_RESPONSE_SAFETY_FLAGS = {
+  NONE: 'none',
+  NEEDS_REVIEW: 'needs_review',
+  ESCALATION_REQUIRED: 'escalation_required',
+} as const
+
+export type PracticeResponseSafetyFlag =
+  (typeof PRACTICE_RESPONSE_SAFETY_FLAGS)[keyof typeof PRACTICE_RESPONSE_SAFETY_FLAGS]
+
+export const PRACTICE_RESPONSE_STATUS = {
+  CURRENT: 'current',
+  SUPERSEDED: 'superseded',
+} as const
+
+export type PracticeResponseStatus =
+  (typeof PRACTICE_RESPONSE_STATUS)[keyof typeof PRACTICE_RESPONSE_STATUS]
+
+export const CYCLE_REVIEW_STATUS = {
+  DRAFT: 'draft',
+  COMPLETED: 'completed',
+} as const
+
+export type CycleReviewStatus = (typeof CYCLE_REVIEW_STATUS)[keyof typeof CYCLE_REVIEW_STATUS]
+
+export const CYCLE_REVIEW_DECISIONS = {
+  CONTINUE: 'continue',
+  EXTEND: 'extend',
+  ADAPT: 'adapt',
+  CLOSE: 'close',
+  CARRY_FORWARD: 'carry_forward',
+  CHANGE_PRIORITY: 'change_priority',
+  REVIEW_PLAN: 'review_plan',
+} as const
+
+export type CycleReviewDecision =
+  (typeof CYCLE_REVIEW_DECISIONS)[keyof typeof CYCLE_REVIEW_DECISIONS]
+
+// 1. cer_practice_responses
+export interface CerPracticeResponseRecord {
+  id: string
+  assignment_id: string
+  planner_item_id?: string
+  participant_user_id: string
+  enrollment_id: string
+  care_cycle_id: string
+  practice_version_id: string
+  response_type: PracticeResponseType
+  perceived_helpfulness?: number
+  difficulty?: number
+  adaptation_used?: string
+  wants_to_continue?: boolean
+  safety_flag: PracticeResponseSafetyFlag
+  shared_reflection?: string
+  record_status: PracticeResponseStatus
+  previous_response_id?: string
+  created: string
+  updated: string
+  expand?: {
+    assignment_id?: CerPracticeAssignmentRecord
+    planner_item_id?: CerPlannerItemRecord
+    participant_user_id?: UserAccountRecord
+    enrollment_id?: EnrollmentRecord
+    care_cycle_id?: CerCareCycleRecord
+    practice_version_id?: CerPracticeVersionRecord
+  }
+}
+
+// 2. cer_practice_response_private_notes (participant-only estrito)
+export interface CerPracticeResponsePrivateNoteRecord {
+  id: string
+  response_id: string
+  participant_user_id: string
+  enrollment_id: string
+  note_text: string
+  status: 'current' | 'superseded'
+  created: string
+  updated: string
+}
+
+// 3. cer_cycle_reviews
+export interface CerCycleReviewRecord {
+  id: string
+  enrollment_id: string
+  care_cycle_id: string
+  created_by_user_id: string
+  status: CycleReviewStatus
+  decision?: CycleReviewDecision
+  participant_highlights?: string
+  professional_summary?: string
+  participant_review_invited_at?: string
+  participant_review_completed_at?: string
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    care_cycle_id?: CerCareCycleRecord
+    created_by_user_id?: UserAccountRecord
+  }
+}
+
+// Mandala Read-Model (Zero tabela, zero score, zero questionário)
+export interface MandalaReadModel {
+  enrollment_id: string
+  care_cycle?: {
+    id: string
+    cycle_number: number
+    status: string
+    focus_summary?: string
+  }
+  direction?: {
+    mode: string
+    statement?: string
+  }
+  active_priorities: Array<{
+    id: string
+    title: string
+    description?: string
+    is_therapeutic_priority: boolean
+    is_possible_now: boolean
+  }>
+  active_experiments: Array<{
+    assignment_id: string
+    safe_title: string
+    safe_summary?: string
+    frequency?: string
+    duration?: string
+    status: string
+  }>
+  recognized_resources: Array<{
+    id: string
+    statement: string
+    concept_key?: string
+  }>
+  current_capacity: {
+    last_response?: CapacityResponseValue
+    summary: string
+  }
+  recent_movement: {
+    total_recorded_responses: number
+    descriptive_digest: string
+    recent_responses: Array<{
+      id: string
+      safe_title: string
+      response_type: PracticeResponseType
+      date: string
+    }>
+  }
+  evolution_highlights: string[]
+}

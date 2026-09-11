@@ -9,6 +9,10 @@ import HomeDispatcher from './pages/HomeDispatcher'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
+import ExperimentosPage from './pages/ExperimentosPage'
+import PlannerPage from './pages/PlannerPage'
+import CycleReviewPage from './pages/CycleReviewPage'
+import MandalaPage from './pages/MandalaPage'
 
 const App = () => (
   <BrowserRouter>
@@ -24,6 +28,38 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <HomeDispatcher />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/experimentos"
+              element={
+                <ProtectedRoute>
+                  <ExperimentosPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/planner"
+              element={
+                <ProtectedRoute>
+                  <PlannerPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reviews/:cycleId"
+              element={
+                <ProtectedRoute>
+                  <CycleReviewPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mandala"
+              element={
+                <ProtectedRoute>
+                  <MandalaPage />
                 </ProtectedRoute>
               }
             />

@@ -3,7 +3,7 @@
  * Projeta ocorrências na janela corrente, preserva histórico imutável, gerencia timezone e contextual resources.
  */
 
-import { pb } from '@/lib/pocketbase/client'
+import pb from '@/lib/pocketbase/client'
 import type {
   CerPlannerItemRecord,
   PlannerItemType,

@@ -304,4 +304,17 @@ export const enrollmentService = {
       tempPasswordGenerated: tempPassword,
     }
   },
+
+  async getActiveForUser(userId: string): Promise<EnrollmentRecord | null> {
+    try {
+      const records = await pb.collection('enrollments').getList<EnrollmentRecord>(1, 1, {
+        filter: `person_id.user_account_id = "${userId}"`,
+        sort: '-created',
+        expand: 'product_id,person_id',
+      })
+      return records.items[0] || null
+    } catch {
+      return null
+    }
+  },
 }

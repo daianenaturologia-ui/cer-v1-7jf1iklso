@@ -258,6 +258,29 @@ onRecordAfterCreateSuccess((e) => {
       action = 'ASSIGNMENT_ADAPTED'
     }
 
+    // Build 08E: Se adaptado com proveniência de resposta
+    if (a.getString('previous_assignment_id')) {
+      try {
+        const auditAdapted = new Record(auditCol)
+        if (actorId) auditAdapted.set('actor_user_id', actorId)
+        auditAdapted.set('action', 'ASSIGNMENT_ADAPTED_FROM_RESPONSE')
+        auditAdapted.set('resource_type', 'cer_practice_assignments')
+        auditAdapted.set('resource_id', a.id)
+        auditAdapted.set('enrollment_id', a.getString('enrollment_id'))
+        auditAdapted.set('timestamp', new Date().toISOString())
+        auditAdapted.set('result', 'success')
+        auditAdapted.set('request_context', 'server_assignment_lifecycle')
+        auditAdapted.set(
+          'metadata',
+          JSON.stringify({
+            assignment_id: a.id,
+            previous_assignment_id: a.getString('previous_assignment_id'),
+          }),
+        )
+        $app.save(auditAdapted)
+      } catch (_) {}
+    }
+
     audit.set('action', action)
     audit.set('resource_type', 'cer_practice_assignments')
     audit.set('resource_id', a.id)

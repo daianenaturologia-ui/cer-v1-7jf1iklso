@@ -9,6 +9,7 @@
 // 5. Ciclo exige plano active para transitar para 'active'.
 // 6. Multiplos ciclos sequenciais permitidos por plano, no máximo 1 active simultâneo por enrollment.
 // 7. Audit: CYCLE_STARTED, CYCLE_EXTENDED, CYCLE_PAUSED, CYCLE_RESUMED, CYCLE_CLOSED.
+// 8. Build 08E: Close deixa de ser gatilho obrigatório de review — review pode ocorrer antes ou durante active/paused.
 
 onRecordCreate((e) => {
   const cycle = e.record
