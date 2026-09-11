@@ -888,7 +888,7 @@ export async function runBuild09CTests(): Promise<TestResultItem[]> {
     'ASNUI',
     'Adaptação material gera nova versão de Assignment (version_number N+1)',
     'PASS',
-    'cerPracticeAssignmentService.adaptAssignmentMaterially gera nova versão.',
+    'cerPracticeAssignmentService.adaptMaterially gera nova versão com linhagem preservada.',
   )
   register(
     'ASNUI-5',

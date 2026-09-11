@@ -926,13 +926,9 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                       .map((p) => (
                         <div key={p.id} className="flex items-center gap-2 text-xs">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span className="font-medium text-foreground">
-                            {p.title}
-                          </span>
+                          <span className="font-medium text-foreground">{p.title}</span>
                           {p.description && (
-                            <span className="text-muted-foreground">
-                              — {p.description}
-                            </span>
+                            <span className="text-muted-foreground">— {p.description}</span>
                           )}
                         </div>
                       ))}
@@ -966,9 +962,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                   <div className="space-y-1.5 pt-1">
                     {priorities.map((p) => (
                       <div key={p.id} className="text-xs space-y-0.5">
-                        <span className="font-semibold text-foreground">
-                          • {p.title}
-                        </span>
+                        <span className="font-semibold text-foreground">• {p.title}</span>
                         {p.professional_rationale && (
                           <p className="text-[11px] text-muted-foreground italic pl-3">
                             Rationale: {p.professional_rationale}

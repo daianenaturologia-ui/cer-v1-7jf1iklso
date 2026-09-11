@@ -91,8 +91,7 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
         if (published) {
           versMap[p.id] = published
           evMap[p.id] = allEvidence.filter((e) => e.practice_version_id === published.id)
-          sfMap[p.id] =
-            allSafety.find((s) => s.practice_version_id === published.id) || null
+          sfMap[p.id] = allSafety.find((s) => s.practice_version_id === published.id) || null
           vrMap[p.id] = allVariants.filter((v) => v.practice_version_id === published.id)
         }
       }
@@ -508,9 +507,7 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground leading-relaxed">
-                            {vr.description ||
-                              vr.notes ||
-                              'Sem descrição específica.'}
+                            {vr.description || vr.notes || 'Sem descrição específica.'}
                           </p>
                         </div>
                       ))

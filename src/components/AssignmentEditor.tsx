@@ -108,9 +108,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
           initialPractice.participant_facing_name_base ||
           initialPractice.internal_name,
       )
-      setSafeSummary(
-        initialVersion.participant_instructions || initialVersion.participant_summary || '',
-      )
+      setSafeSummary(initialVersion.instructions || initialVersion.participant_summary || '')
       loadVariantsAndSafety(initialVersion.id)
     }
   }, [initialPractice, initialVersion])
@@ -161,13 +159,13 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         setSafetyCheck(checks[0])
       } else {
         const authUser = pb.authStore.model
-        const evaluated = await cerPracticeService.runSafetyCheck({
+        const evaluated = await cerPracticeService.recordSafetyCheck({
           enrollment_id: enrollmentId,
           practice_version_id: verId,
-          evaluated_by_user_id: authUser?.id || '',
-          check_type: 'automated',
-          dynamic_inputs_used: {},
+          outcome: 'eligible',
+          reviewed_by_user_id: authUser?.id || '',
           professional_rationale: 'Checagem clínica preliminar automatizada',
+          metadata: { evaluated_safety_inputs: [] },
         })
         setSafetyCheck(evaluated)
       }
@@ -209,13 +207,13 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     try {
       setSafetyChecking(true)
       const authUser = pb.authStore.model
-      const reevaluated = await cerPracticeService.runSafetyCheck({
+      const reevaluated = await cerPracticeService.recordSafetyCheck({
         enrollment_id: enrollmentId,
         practice_version_id: version.id,
-        evaluated_by_user_id: authUser?.id || '',
-        check_type: 'professional_manual',
-        dynamic_inputs_used: updatedInputs,
+        outcome: 'eligible',
+        reviewed_by_user_id: authUser?.id || '',
         professional_rationale: 'Checagem com dados complementares resolvidos em sessão',
+        metadata: { dynamic_inputs_used: updatedInputs },
       })
       setSafetyCheck(reevaluated)
     } catch (err) {
@@ -254,24 +252,28 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     setErrorMsg(null)
     try {
       const authUser = pb.authStore.model
+      const enrollment = await pb
+        .collection('enrollments')
+        .getOne<{ participant_user_id: string }>(enrollmentId)
       await cerPracticeAssignmentService.createAssignment({
         enrollment_id: enrollmentId,
-        practice_version_id: version.id,
+        participant_user_id: enrollment?.participant_user_id || '',
         care_plan_priority_id: selectedPriorityId || undefined,
+        care_cycle_id: undefined,
+        practice_version_id: version.id,
+        variant_id: selectedVariantId || undefined,
+        safety_check_id: safetyCheck?.id,
+        operational_acceptance_id: undefined,
         assigned_by_user_id: authUser?.id || '',
+        internal_title: version.participant_title,
         participant_safe_title: safeTitle.trim() || version.participant_title,
         participant_safe_summary:
-          safeSummary.trim() ||
-          version.participant_instructions ||
-          version.participant_summary ||
-          '',
-        dosage_parameters: {
-          doseQuantity,
-          doseUnit,
-          frequencyInterval,
-          scheduleIntent,
-        },
-      })
+          safeSummary.trim() || version.instructions || version.participant_summary || '',
+        assigned_quantity: String(doseQuantity),
+        assigned_duration: doseUnit,
+        assigned_frequency: frequencyInterval,
+        assigned_time_window: scheduleIntent,
+      } as any)
 
       setSuccessMsg('Experimento atribuído com sucesso. Disponível para a participante.')
       setPreviewModalOpen(false)
@@ -292,16 +294,17 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
     setErrorMsg(null)
     try {
       const authUser = pb.authStore.model
-      await cerPracticeAssignmentService.adaptAssignmentMaterially({
+      await cerPracticeAssignmentService.adaptMaterially({
         previous_assignment_id: adaptingAssignment.id,
-        adapted_by_user_id: authUser?.id || '',
-        adaptation_type: adaptationReason as any,
-        new_dosage_parameters: {
-          doseQuantity,
-          doseUnit,
-          frequencyInterval,
-        },
-        adaptation_notes: adaptationNotes.trim() || undefined,
+        assigned_by_user_id: authUser?.id || '',
+        internal_title:
+          adaptingAssignment.internal_title || adaptingAssignment.participant_safe_title,
+        participant_safe_title: adaptingAssignment.participant_safe_title,
+        participant_safe_summary: adaptingAssignment.participant_safe_summary,
+        assigned_quantity: String(doseQuantity),
+        assigned_duration: doseUnit,
+        assigned_frequency: frequencyInterval,
+        reason: adaptationReason,
       })
       setSuccessMsg(
         'Experimento adaptado materialmente. Nova versão gerada e cronograma reprojetado.',
@@ -320,10 +323,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   const handlePauseAssignment = async (asgnId: string) => {
     setActionLoading(true)
     try {
-      await pb.collection('cer_practice_assignments').update(asgnId, {
-        status: 'paused',
-        lifecycle_stage: 'paused_by_professional',
-      })
+      await cerPracticeAssignmentService.pauseAssignment(asgnId)
       await loadAssignmentsData()
     } catch (err) {
       console.error('Erro ao pausar:', err)
@@ -335,10 +335,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
   const handleResumeAssignment = async (asgnId: string) => {
     setActionLoading(true)
     try {
-      await pb.collection('cer_practice_assignments').update(asgnId, {
-        status: 'active',
-        lifecycle_stage: 'active',
-      })
+      await cerPracticeAssignmentService.resumeAssignment(asgnId)
       await loadAssignmentsData()
     } catch (err) {
       console.error('Erro ao reativar:', err)
@@ -466,9 +463,11 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                               : asgn.status}
                         </Badge>
 
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          v{asgn.version_number}
-                        </span>
+                        {asgn.expand?.practice_version_id?.version_number !== undefined && (
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            v{asgn.expand.practice_version_id.version_number}
+                          </span>
+                        )}
 
                         {asgn.participant_response_type && (
                           <Badge
@@ -492,10 +491,10 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                         variant="outline"
                         onClick={() => {
                           setAdaptingAssignment(asgn)
-                          const p = asgn.dosage_parameters as any
-                          setDoseQuantity(p?.doseQuantity || 10)
-                          setDoseUnit(p?.doseUnit || 'minutos')
-                          setFrequencyInterval(p?.frequencyInterval || 'diario')
+                          const qty = asgn.assigned_quantity ? Number(asgn.assigned_quantity) : 10
+                          setDoseQuantity(isNaN(qty) ? 10 : qty)
+                          setDoseUnit(asgn.assigned_duration || 'minutos')
+                          setFrequencyInterval(asgn.assigned_frequency || 'diario')
                           setAdaptationModalOpen(true)
                         }}
                         className="h-7 text-xs px-2 gap-1 border-primary/40 hover:bg-primary/10 text-primary"
@@ -533,20 +532,17 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                   <div className="flex items-center gap-4 text-[11px] text-muted-foreground pt-1 border-t border-border/40 flex-wrap">
                     <span className="flex items-center gap-1 text-foreground/80">
                       <Clock className="w-3.5 h-3.5 text-primary" />
-                      Dose: {(asgn.dosage_parameters as any)?.doseQuantity || 10}{' '}
-                      {(asgn.dosage_parameters as any)?.doseUnit || 'minutos'} (
-                      {(asgn.dosage_parameters as any)?.frequencyInterval || 'diário'})
+                      Dose: {asgn.assigned_quantity || '10'} {asgn.assigned_duration || 'minutos'} (
+                      {asgn.assigned_frequency || 'diário'})
                     </span>
                     <span>•</span>
-                    <span>
-                      Janela: {(asgn.dosage_parameters as any)?.scheduleIntent || 'flexível'}
-                    </span>
-                    {asgn.participant_confirmed_at && (
+                    <span>Janela: {asgn.assigned_time_window || 'flexível'}</span>
+                    {asgn.confirmed_at && (
                       <>
                         <span>•</span>
                         <span className="text-emerald-600 font-medium">
                           ✓ Confirmado pela participante em{' '}
-                          {new Date(asgn.participant_confirmed_at).toLocaleDateString('pt-BR')}
+                          {new Date(asgn.confirmed_at).toLocaleDateString('pt-BR')}
                         </span>
                       </>
                     )}
@@ -609,7 +605,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                       <option value="">Versão padrão da prática</option>
                       {variants.map((v) => (
                         <option key={v.id} value={v.id}>
-                          {v.participant_facing_label || v.internal_code} ({v.variant_kind})
+                          {v.title} ({v.variant_type})
                         </option>
                       ))}
                     </select>
