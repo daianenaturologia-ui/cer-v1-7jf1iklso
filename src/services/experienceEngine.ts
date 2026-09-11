@@ -74,10 +74,15 @@ export const experienceCatalogService = {
         const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
         list.push(CORPO_FISIOLOGIA_EXPERIENCE)
       }
+      if (!list.some((e) => e.id === 'exp-sexualidade-07e' || e.code === 'sexualidade_cer')) {
+        const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
+        list.push(SEXUALIDADE_EXPERIENCE)
+      }
       return list
     } catch {
       const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
-      return [CORPO_FISIOLOGIA_EXPERIENCE]
+      const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
+      return [CORPO_FISIOLOGIA_EXPERIENCE, SEXUALIDADE_EXPERIENCE]
     }
   },
 
@@ -92,6 +97,10 @@ export const experienceCatalogService = {
     if (code === 'corpo_fisiologia_ayurveda') {
       const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
       return CORPO_FISIOLOGIA_EXPERIENCE
+    }
+    if (code === 'sexualidade_cer') {
+      const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
+      return SEXUALIDADE_EXPERIENCE
     }
     try {
       return await pb
@@ -109,6 +118,10 @@ export const experienceCatalogService = {
       const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
       return CORPO_FISIOLOGIA_EXPERIENCE
     }
+    if (id === 'exp-sexualidade-07e') {
+      const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
+      return SEXUALIDADE_EXPERIENCE
+    }
     return await pb.collection('cer_experiences').getOne<CerExperienceRecord>(id, {
       expand: 'dimension_id',
     })
@@ -118,6 +131,10 @@ export const experienceCatalogService = {
     if (experienceId === 'exp-corpo-fisiologia-07b') {
       const { CORPO_FISIOLOGIA_MOMENTS } = await import('./build07bPrompts')
       return CORPO_FISIOLOGIA_MOMENTS
+    }
+    if (experienceId === 'exp-sexualidade-07e') {
+      const { SEXUALIDADE_MOMENTS } = await import('./build07ePrompts')
+      return SEXUALIDADE_MOMENTS
     }
     return await pb.collection('cer_experience_moments').getFullList<CerExperienceMomentRecord>({
       filter: `experience_id = "${experienceId}" && is_active = true`,
@@ -129,6 +146,10 @@ export const experienceCatalogService = {
     if (experienceId === 'exp-corpo-fisiologia-07b') {
       const { BUILD_07B_PROMPTS } = await import('./build07bPrompts')
       return BUILD_07B_PROMPTS
+    }
+    if (experienceId === 'exp-sexualidade-07e') {
+      const { BUILD_07E_SEXUALIDADE_PROMPTS } = await import('./build07ePrompts')
+      return BUILD_07E_SEXUALIDADE_PROMPTS
     }
     return await pb.collection('cer_prompts').getFullList<CerPromptRecord>({
       filter: `experience_id = "${experienceId}"`,
