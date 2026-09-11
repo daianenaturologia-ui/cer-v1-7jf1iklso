@@ -33,7 +33,7 @@ export const MandalaPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground py-8 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div>
+        <div className="flex items-center justify-between border-b border-border/40 pb-4">
           <Button
             variant="ghost"
             size="sm"
@@ -43,6 +43,24 @@ export const MandalaPage: React.FC = () => {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Voltar ao Início</span>
           </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/experimentos')}
+              className="text-xs h-8"
+            >
+              Experimentos
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/planner')}
+              className="text-xs h-8"
+            >
+              Planner
+            </Button>
+          </div>
         </div>
 
         {loading ? (

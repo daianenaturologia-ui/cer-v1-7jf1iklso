@@ -898,7 +898,7 @@ export const InteragenteHome: React.FC = () => {
           </div>
         )}
 
-        {/* Experimentos de Cuidado (Build 08D — Practice Assignment) */}
+        {/* Experimentos de Cuidado */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -942,14 +942,14 @@ export const InteragenteHome: React.FC = () => {
           )}
         </div>
 
-        {/* Mandala V1 Estruturada (Build 08E — Read-Model) */}
+        {/* Mandala Estruturada */}
         {enrollment && (
           <div className="space-y-4 pt-4 border-t border-border/40">
             <MandalaStructuredView enrollmentId={enrollment.id} onRefreshRequested={loadData} />
           </div>
         )}
 
-        {/* Planner Mínimo da Semana (Build 08D — cer_planner_items) */}
+        {/* Planner Mínimo da Semana */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>

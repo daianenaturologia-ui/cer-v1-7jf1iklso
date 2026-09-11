@@ -90,6 +90,24 @@ export const ExperimentosPage: React.FC = () => {
               </h1>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/planner')}
+              className="text-xs h-8"
+            >
+              Planner
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/mandala')}
+              className="text-xs h-8"
+            >
+              Mandala
+            </Button>
+          </div>
         </div>
 
         {loading ? (
