@@ -377,6 +377,72 @@ export function resolveExperienceOrchestration(params: {
     }
   }
 
+  // 3.5. Avaliar Regras de Convergência Determinística (ex.: Branch Observacional de Ama — Build 07B)
+  // Mínimo de 2 categorias distintas current/confirmed.
+  // Contribuintes aprovados:
+  // 1. peso/lentidão recorrente pós-refeição (post_meal_heaviness_recurrence)
+  // 2. 2+ reações pós-refeição distintas recorrentes (post_meal_reactions)
+  // 3. alteração recorrente de eliminação (elimination_recurrent_pattern)
+  // 4. sensação relatada de digestão incompleta na narrativa da refeição
+  // 5. lentidão/embotamento/cansaço acordando cansada (sleep_heaviness)
+  const amaContributors = new Set<string>()
+
+  // Verificar respostas dadas para computar categorias ativas
+  const posReacoesResp = responseByPromptKey.get('refeicao_pos_reacoes_a5')
+  if (posReacoesResp) {
+    const sVal = posReacoesResp.structured_value as any
+    const choices: string[] = Array.isArray(sVal)
+      ? sVal
+      : Array.isArray(sVal?.value)
+        ? sVal.value
+        : Array.isArray(sVal?.choice)
+          ? sVal.choice
+          : []
+
+    if (choices.includes('peso_lentidao')) {
+      amaContributors.add('cat_post_meal_heaviness')
+    }
+    if (choices.filter((c) => c !== 'peso_lentidao').length >= 2) {
+      amaContributors.add('cat_multiple_post_meal_reactions')
+    }
+    if (choices.includes('digestao_incompleta')) {
+      amaContributors.add('cat_incomplete_digestion')
+    }
+  }
+
+  const eliminacaoResp = responseByPromptKey.get('refeicao_eliminacao_a6')
+  if (eliminacaoResp) {
+    const sVal = eliminacaoResp.structured_value as any
+    const val =
+      sVal?.choice ||
+      sVal?.value ||
+      sVal?.selectedOptionId ||
+      (typeof sVal === 'string' ? sVal : '')
+    if (val === 'lento_pesado' || val === 'muito_oscilante') {
+      amaContributors.add('cat_elimination_irregularity')
+    }
+  }
+
+  const descansoResp = responseByPromptKey.get('descanso_status')
+  if (descansoResp) {
+    const sVal = descansoResp.structured_value as any
+    const val =
+      sVal?.choice ||
+      sVal?.value ||
+      sVal?.selectedOptionId ||
+      (typeof sVal === 'string' ? sVal : '')
+    if (val === 'acorda_cansado') {
+      amaContributors.add('cat_morning_heaviness')
+    }
+  }
+
+  // Convergência Ama: mínimo de 2 categorias distintas ativas
+  const hasAmaConvergence = amaContributors.size >= 2
+  if (hasAmaConvergence) {
+    openSet.add('ama_observacao_lingua')
+    openSet.add('ama_observacao_peso_matinal')
+  }
+
   // 4. Calcular conjunto de prompts elegíveis
   // Regra: prompt ∉ skip_set ∧ (path_role === 'essential' ∨ key ∈ open_set)
   const eligiblePrompts: CerPromptRecord[] = []
