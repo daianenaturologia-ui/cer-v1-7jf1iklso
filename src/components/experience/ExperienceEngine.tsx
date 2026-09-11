@@ -17,6 +17,7 @@ import {
   SimpleScale,
   Ordering,
   BodyMap,
+  RelationalOrbitMap,
   ScenarioChoice,
   Timeline,
   FreeReflection,
@@ -701,6 +702,14 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             config={schema as any}
             value={currentDraftValue as string[]}
             onChange={(val) => setCurrentDraftValue(val)}
+          />
+        )
+      case 'RelationalOrbitMap':
+        return (
+          <RelationalOrbitMap
+            config={schema as any}
+            value={Array.isArray(currentDraftValue) ? (currentDraftValue as any) : []}
+            onChange={(val) => setCurrentDraftValue(val as any)}
           />
         )
       case 'ScenarioChoice':

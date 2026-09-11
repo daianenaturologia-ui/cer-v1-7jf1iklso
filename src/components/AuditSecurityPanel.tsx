@@ -10,6 +10,7 @@ import { runBuild06MapTests } from '@/services/testsMap06'
 import { runBuild07AOrchestrationTests } from '@/services/testsOrchestration07a'
 import { runBuild07BOrchestrationTests } from '@/services/testsBuild07b'
 import { runBuild07COrchestrationTests } from '@/services/testsBuild07c'
+import { runBuild07DOrchestrationTests } from '@/services/testsBuild07d'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -37,6 +38,7 @@ export const AuditSecurityPanel: React.FC = () => {
   const [b07aResults, setB07aResults] = useState<TestResult[]>([])
   const [b07bResults, setB07bResults] = useState<TestResult[]>([])
   const [b07cResults, setB07cResults] = useState<TestResult[]>([])
+  const [b07dResults, setB07dResults] = useState<TestResult[]>([])
   const [running, setRunning] = useState(false)
   const [hasRun, setHasRun] = useState(false)
 
@@ -57,6 +59,7 @@ export const AuditSecurityPanel: React.FC = () => {
         res07a,
         res07b,
         res07c,
+        res07d,
       ] = await Promise.all([
         runBuild01IsolationTests(),
         runBuild02EngineTests(),
@@ -71,6 +74,7 @@ export const AuditSecurityPanel: React.FC = () => {
         runBuild07AOrchestrationTests(),
         runBuild07BOrchestrationTests(),
         runBuild07COrchestrationTests(),
+        runBuild07DOrchestrationTests(),
       ])
       setB01Results(res01)
       setB02Results(res02)
@@ -85,6 +89,7 @@ export const AuditSecurityPanel: React.FC = () => {
       setB07aResults(res07a)
       setB07bResults(res07b)
       setB07cResults(res07c)
+      setB07dResults(res07d)
       setHasRun(true)
     } catch (err) {
       console.error('Falha ao executar suíte de testes:', err)
@@ -112,6 +117,7 @@ export const AuditSecurityPanel: React.FC = () => {
     ...b07aResults,
     ...b07bResults,
     ...b07cResults,
+    ...b07dResults,
   ]
   const passedCount = allResults.filter((r) => r.status === 'PASSOU').length
 
@@ -173,6 +179,50 @@ export const AuditSecurityPanel: React.FC = () => {
           </div>
         ) : (
           <>
+            {/* Bloco de Testes do Build 07D — RELAÇÕES & VÍNCULOS */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-medium text-foreground pb-1 border-b border-border/40">
+                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                <span>
+                  Testes Obrigatórios do Build 07D — Relações & Vínculos (REL1–REL20, APE1–APE15,
+                  RU-D1–RU-D15, PR-D1–PR-D15, REP1–REP12, EC-D1–EC-D10, UX-D1–UX-D10,
+                  ACC-D1–ACC-D10, E2E-07D-1–8, Personas A–E) ({b07dResults.length} testes)
+                </span>
+              </div>
+              {b07dResults.map((t) => (
+                <div
+                  key={t.id}
+                  className="p-3 rounded-lg border border-border/50 bg-muted/20 flex flex-col gap-1.5 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {t.status === 'PASSOU' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-destructive shrink-0" />
+                      )}
+                      <span className="font-medium text-foreground">{t.name}</span>
+                    </div>
+                    <Badge
+                      variant={
+                        t.status === 'PASSOU'
+                          ? 'secondary'
+                          : t.status === 'NÃO IMPLEMENTADO'
+                            ? 'outline'
+                            : 'destructive'
+                      }
+                      className="text-[10px] uppercase font-mono tracking-wider shrink-0"
+                    >
+                      {t.status}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-[11px] pl-6 leading-relaxed">
+                    {t.details}
+                  </p>
+                </div>
+              ))}
+            </div>
+
             {/* Bloco de Testes do Build 07C — MENTE & EMOÇÕES + REGULAÇÃO & PADRÕES DE RESPOSTA */}
             <div className="space-y-2.5">
               <div className="flex items-center gap-2 text-xs font-medium text-foreground pb-1 border-b border-border/40">

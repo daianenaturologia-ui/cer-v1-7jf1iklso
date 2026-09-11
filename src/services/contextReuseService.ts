@@ -58,9 +58,13 @@ export const contextReuseService = {
     }
 
     // P0 ANTI-LAUNDERING: concept_key que represente pensamento associado
-    // ou qualquer fonte participant_private não pode ser exibido para participant_shared/shared_care
+    // ou qualquer fonte participant_private (ex: narrativa privada sobre relação/terceiro)
+    // não pode ser exibido para participant_shared/shared_care
     const isRestrictedPrivateConcept =
-      conceptKey === 'associated_thought_pattern' || conceptKey === 'self_dialogue_after_mistake'
+      conceptKey === 'associated_thought_pattern' ||
+      conceptKey === 'self_dialogue_after_mistake' ||
+      conceptKey === 'private_relational_narrative'
+
     if (
       isRestrictedPrivateConcept &&
       requestingAccessDestination &&

@@ -184,6 +184,7 @@ export const COMPONENT_TYPES = {
   SIMPLE_SCALE: 'SimpleScale',
   ORDERING: 'Ordering',
   BODY_MAP: 'BodyMap',
+  RELATIONAL_ORBIT_MAP: 'RelationalOrbitMap',
   TIMELINE: 'Timeline',
   FREE_REFLECTION: 'FreeReflection',
   SCENARIO_CHOICE: 'ScenarioChoice',

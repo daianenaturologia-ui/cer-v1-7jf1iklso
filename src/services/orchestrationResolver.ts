@@ -650,6 +650,7 @@ export function deriveEvidenceCurrency(params: {
 
   // Build 07C: Se sequence_recognition for "não é bem assim", a evidence de função perde currency
   let functionRejectedInSequence = false
+  // Build 07D: Se resposta ao afastamento ou reparação não abrir branch, branches anteriores perdem currency
   for (const resp of responses) {
     const p = prompts.find((pr) => pr.id === resp.prompt_id)
     const pKey = p ? getPromptKey(p) : ''
