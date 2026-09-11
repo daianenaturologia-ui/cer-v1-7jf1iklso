@@ -57,6 +57,24 @@ export const contextReuseService = {
       return { hasMatch: false, isDisplayableToParticipant: false, denialReason: 'not_found' }
     }
 
+    // P0 ANTI-LAUNDERING: concept_key que represente pensamento associado
+    // ou qualquer fonte participant_private não pode ser exibido para participant_shared/shared_care
+    const isRestrictedPrivateConcept =
+      conceptKey === 'associated_thought_pattern' || conceptKey === 'self_dialogue_after_mistake'
+    if (
+      isRestrictedPrivateConcept &&
+      requestingAccessDestination &&
+      requestingAccessDestination !== 'participant_private'
+    ) {
+      return {
+        hasMatch: true,
+        conceptKey,
+        isDisplayableToParticipant: false,
+        denialReason: 'privacy_gate_participant_private',
+        readOnlyValue: null,
+      }
+    }
+
     try {
       // 1. Buscar Signals estruturados correspondentes ao concept_key no enrollment
       let filter = `enrollment_id = "${enrollmentId}" && concept_key = "${conceptKey}" && status = "active"`

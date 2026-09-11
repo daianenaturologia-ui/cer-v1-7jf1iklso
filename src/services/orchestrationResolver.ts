@@ -127,6 +127,25 @@ export function evaluateCondition(
   // Operador equals (default)
   const op = cond.operator || 'equals'
   if (op === 'equals') {
+    if (cond.field === 'selected_count_gte') {
+      const arr = Array.isArray(extractedVal)
+        ? extractedVal
+        : Array.isArray(structVal?.value)
+          ? structVal.value
+          : Array.isArray(structVal?.choice)
+            ? structVal.choice
+            : []
+      return arr.length >= Number(cond.value)
+    }
+
+    if (cond.field === 'has_dual_overlap') {
+      return Boolean(extractedVal || structVal?.has_dual_overlap)
+    }
+
+    if (cond.field === 'urge_different_from_enacted') {
+      return Boolean(extractedVal || structVal?.urge_different_from_enacted)
+    }
+
     if (extractedVal === cond.value) return true
     if (structVal && typeof structVal === 'object') {
       if (structVal.selectedOptionId === cond.value) return true
@@ -134,6 +153,10 @@ export function evaluateCondition(
       if (structVal.choice === cond.value) return true
       if (structVal.id === cond.value) return true
       if (structVal.skip_reason === cond.value) return true
+      // Se structured_value for array (ex.: MultiSelectCards) e o cond.value estiver contido
+      if (Array.isArray(structVal) && structVal.includes(cond.value)) return true
+      if (Array.isArray(structVal.value) && structVal.value.includes(cond.value)) return true
+      if (Array.isArray(structVal.choice) && structVal.choice.includes(cond.value)) return true
     }
     if (typeof structVal === 'string' && structVal === cond.value) {
       return true
@@ -443,6 +466,70 @@ export function resolveExperienceOrchestration(params: {
     openSet.add('ama_observacao_peso_matinal')
   }
 
+  // 3.6. Regras de Orquestração do Build 07C:
+  // a) PM1: emocoes_recorrentes com 2+ emoções selecionadas -> abre emocoes_espaco_expressao_branch
+  const emocoesRecResp = responseByPromptKey.get('emocoes_recorrentes')
+  if (emocoesRecResp) {
+    const sVal = emocoesRecResp.structured_value as any
+    const list = Array.isArray(sVal)
+      ? sVal
+      : Array.isArray(sVal?.value)
+        ? sVal.value
+        : Array.isArray(sVal?.choice)
+          ? sVal.choice
+          : []
+    if (list.length >= 2) {
+      openSet.add('emocoes_espaco_expressao_branch')
+    }
+  }
+
+  // b) PM3: Sobreposição entre mente_movimento_ajuda e mente_movimento_cansa -> abre mente_movimento_profundidade_branch
+  const ajudaResp = responseByPromptKey.get('mente_movimento_ajuda')
+  const cansaResp = responseByPromptKey.get('mente_movimento_cansa')
+  if (ajudaResp && cansaResp) {
+    const getItems = (r: ExperienceResponseRecord) => {
+      const v = r.structured_value as any
+      return Array.isArray(v)
+        ? v
+        : Array.isArray(v?.value)
+          ? v.value
+          : Array.isArray(v?.choice)
+            ? v.choice
+            : []
+    }
+    const ajudaItems = getItems(ajudaResp)
+    const cansaItems = getItems(cansaResp)
+    const hasOverlap = ajudaItems.some(
+      (item: string) => item !== 'nenhuma_especial' && cansaItems.includes(item),
+    )
+    if (hasOverlap) {
+      openSet.add('mente_movimento_profundidade_branch')
+    }
+  }
+
+  // c) PR2: resposta_tendencia com urge ≠ enacted não claro -> abre vontade_x_comportamento_r4
+  const respTendencia = responseByPromptKey.get('resposta_tendencia')
+  if (respTendencia) {
+    const sVal = respTendencia.structured_value as any
+    if (sVal?.urge_different_from_enacted === true) {
+      openSet.add('vontade_x_comportamento_r4')
+    }
+  }
+
+  // d) PR3: known_return_resource com recurso nomeado -> abre resource_access_under_stress_layer
+  const recursoResp = responseByPromptKey.get('known_return_resource')
+  if (recursoResp) {
+    const sVal = recursoResp.structured_value as any
+    const ch =
+      sVal?.choice ||
+      sVal?.value ||
+      sVal?.selectedOptionId ||
+      (typeof sVal === 'string' ? sVal : '')
+    if (ch && ch !== 'as_vezes_nao_sei' && ch !== 'nao_sei') {
+      openSet.add('resource_access_under_stress_layer')
+    }
+  }
+
   // 4. Calcular conjunto de prompts elegíveis
   // Regra: prompt ∉ skip_set ∧ (path_role === 'essential' ∨ key ∈ open_set)
   const eligiblePrompts: CerPromptRecord[] = []
@@ -561,9 +648,35 @@ export function deriveEvidenceCurrency(params: {
   const currentResponseIds = new Set<string>()
   const historicalResponseIds = new Set<string>()
 
+  // Build 07C: Se sequence_recognition for "não é bem assim", a evidence de função perde currency
+  let functionRejectedInSequence = false
   for (const resp of responses) {
+    const p = prompts.find((pr) => pr.id === resp.prompt_id)
+    const pKey = p ? getPromptKey(p) : ''
+    if (pKey === 'sequence_recognition') {
+      const sVal = resp.structured_value as any
+      const choice =
+        sVal?.choice ||
+        sVal?.value ||
+        sVal?.selectedOptionId ||
+        (typeof sVal === 'string' ? sVal : '')
+      if (choice === 'nao_e_bem_assim') {
+        functionRejectedInSequence = true
+      }
+    }
+  }
+
+  for (const resp of responses) {
+    const p = prompts.find((pr) => pr.id === resp.prompt_id)
+    const pKey = p ? getPromptKey(p) : ''
+
     if (eligiblePromptIds.has(resp.prompt_id)) {
-      currentResponseIds.add(resp.id)
+      // Se a participante rejeitou a sequência em PR4 ("não é bem assim"), a resposta de função perde currency
+      if (functionRejectedInSequence && pKey === 'funcao_percebida') {
+        historicalResponseIds.add(resp.id)
+      } else {
+        currentResponseIds.add(resp.id)
+      }
     } else {
       historicalResponseIds.add(resp.id)
     }
@@ -577,13 +690,21 @@ export function deriveEvidenceCurrency(params: {
       // Signal não originado de resposta individual (ex: observação profissional em sessão)
       currentSignalIds.add(sig.id)
     } else if (currentResponseIds.has(sig.source_response_id)) {
-      currentSignalIds.add(sig.id)
+      // Se a função foi rejeitada na sequência e o signal for sobre a função percebida, perde currency
+      if (
+        functionRejectedInSequence &&
+        (sig.concept_key === 'perceived_response_function' ||
+          sig.concept_key === 'perceived_short_term_benefit')
+      ) {
+        historicalSignalIds.add(sig.id)
+      } else {
+        currentSignalIds.add(sig.id)
+      }
     } else {
       // Originado de branch que não é mais elegível -> Mantido historicamente, mas fora do corrente
       historicalSignalIds.add(sig.id)
     }
   }
-
   return {
     currentResponseIds,
     historicalResponseIds,

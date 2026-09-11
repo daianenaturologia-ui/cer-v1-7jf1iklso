@@ -869,6 +869,44 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             </span>
           </div>
         )}
+
+        {/* Build 07C: Espelho Composto da Sequência (PR4) */}
+        {pSchema.composite_mirror?.enabled && (
+          <div className="p-4 rounded-xl bg-card border border-border/70 space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span>Sua sequência percebida:</span>
+            </div>
+            <div className="space-y-2 text-xs">
+              {(pSchema.composite_mirror.steps || []).map((st: any, sIdx: number) => {
+                const targetPrompt = prompts.find(
+                  (pr) => (pr.schema_config as any)?.prompt_key === st.prompt_ref,
+                )
+                const resp = targetPrompt ? responsesMap[targetPrompt.id] : null
+                const sVal = resp?.structured_value as any
+                let displayVal = 'Não registrado'
+                if (sVal) {
+                  displayVal =
+                    sVal.choice ||
+                    sVal.value ||
+                    sVal.selectedOptionId ||
+                    (typeof sVal === 'string' ? sVal : JSON.stringify(sVal))
+                }
+                return (
+                  <div
+                    key={sIdx}
+                    className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2 p-2 rounded-lg bg-muted/30"
+                  >
+                    <span className="text-[10px] font-mono font-medium text-primary uppercase shrink-0">
+                      {st.label}:
+                    </span>
+                    <span className="text-foreground/90 italic">{displayVal}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Renderização do Componente de Interação */}
