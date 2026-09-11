@@ -18,6 +18,7 @@ import { runBuild08BCarePlanTests } from './testsCarePlan08b'
 import { runBuild08CPracticeTests } from './testsPractice08c'
 import { runBuild08DTests } from './testsPracticeAssignment08d'
 import { runBuild08ETests } from './testsBuild08e'
+import { runBuild09CTests } from './testsBuild09c'
 
 describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
   it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {
@@ -356,4 +357,14 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
       expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
     }
   }, 90000)
+
+  it('executa suíte de testes de UI do Build 09C (Professional Care Loop UI)', async () => {
+    const results = await runBuild09CTests()
+    console.log(
+      'BUILD 09C RESULTS:',
+      results.map((r) => `${r.id}: ${r.passed ? 'PASSOU' : 'NÃO PASSOU'}`),
+    )
+    const failedTests = results.filter((r) => !r.passed)
+    expect(failedTests.length).toBe(0)
+  }, 60000)
 })

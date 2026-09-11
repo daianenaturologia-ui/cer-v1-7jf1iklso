@@ -13,6 +13,8 @@ import ExperimentosPage from './pages/ExperimentosPage'
 import PlannerPage from './pages/PlannerPage'
 import CycleReviewPage from './pages/CycleReviewPage'
 import MandalaPage from './pages/MandalaPage'
+import { ParticipantWorkspace } from './components/ParticipantWorkspace'
+import { BibliotecaPage } from './pages/BibliotecaPage'
 
 const App = () => (
   <BrowserRouter>
@@ -28,6 +30,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <HomeDispatcher />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profissional"
+              element={
+                <ProtectedRoute>
+                  <HomeDispatcher />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profissional/participantes/:enrollmentId"
+              element={
+                <ProtectedRoute>
+                  <ParticipantWorkspace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profissional/biblioteca"
+              element={
+                <ProtectedRoute>
+                  <BibliotecaPage />
                 </ProtectedRoute>
               }
             />

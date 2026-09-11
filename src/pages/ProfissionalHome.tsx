@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService, productService } from '@/services/cer'
+import { attentionService, AttentionItem } from '@/services/attentionService'
 import type { EnrollmentRecord, CerProductRecord } from '@/types/cer'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -16,34 +18,43 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import {
-  LogOut,
-  UserPlus,
   Users,
   Compass,
   ShieldCheck,
-  CheckCircle2,
+  UserPlus,
+  LogOut,
   Copy,
-  Pause,
-  Play,
-  Check,
+  CheckCircle2,
+  Calendar,
+  BookOpen,
+  Bot,
+  AlertCircle,
+  Sparkles,
 } from 'lucide-react'
 import { AuditSecurityPanel } from '@/components/AuditSecurityPanel'
-import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
-import { ProfessionalAiWorkspace } from '@/components/ProfessionalAiWorkspace'
-import { ProfessionalMapEditor } from '@/components/ProfessionalMapEditor'
+import { ParticipantList, ParticipantListItemData } from '@/components/ParticipantList'
+import { AttentionPanel } from '@/components/AttentionPanel'
+import { PracticeSelector } from '@/components/PracticeSelector'
 import { ProfessionalSessionManager } from '@/components/ProfessionalSessionManager'
-import { ProfessionalExperienceManager } from '@/components/experience'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ProfessionalAiWorkspace } from '@/components/ProfessionalAiWorkspace'
+import pb from '@/lib/pocketbase/client'
 
 export const ProfissionalHome: React.FC = () => {
   const { user, person, logout } = useAuth()
   const [enrollments, setEnrollments] = useState<EnrollmentRecord[]>([])
   const [products, setProducts] = useState<CerProductRecord[]>([])
+  const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Estado do Modal de Criação / Vinculação
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  // Navegação Principal Profissional (Build 09C):
+  // Participantes · Sessões · Biblioteca · IA · Auditoria
+  const [activeMainTab, setActiveMainTab] = useState<
+    'participantes' | 'sessoes' | 'biblioteca' | 'ai' | 'auditoria'
+  >('participantes')
+
+  // Modal de vincular nova interagente
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [fullName, setFullName] = useState('')
   const [preferredName, setPreferredName] = useState('')
   const [email, setEmail] = useState('')
@@ -69,6 +80,10 @@ export const ProfissionalHome: React.FC = () => {
       if (prods.length > 0 && !selectedProductId) {
         setSelectedProductId(prods[0].id)
       }
+
+      // Carregar read-model de atenção
+      const attn = await attentionService.computeAttentionItems()
+      setAttentionItems(attn)
     } catch (err) {
       console.error('Erro ao carregar dados profissionais:', err)
     } finally {
@@ -132,15 +147,50 @@ export const ProfissionalHome: React.FC = () => {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  // Montagem dos dados de ParticipantList com atenção acoplada
+  const participantListItems: ParticipantListItemData[] = enrollments.map((enr) => {
+    const personData = enr.expand?.person_id
+    const journeyData = enr.expand?.journey_states_via_enrollment_id?.[0]
+    const pAttn = attentionItems.filter((i) => i.enrollmentId === enr.id)
+
+    const secCount = pAttn.filter((i) => i.category === 'SEGURANÇA').length
+    const revCount = pAttn.filter((i) => i.category === 'REVISAR').length
+
+    let nextStep = 'Aguardando início de acolhimento'
+    if (journeyData?.current_stage === 'consciousness') {
+      nextStep =
+        journeyData.stage_status === 'integrado'
+          ? 'Consciência concluída — formular Plano de Cuidado'
+          : 'Acompanhar respostas das experiências e Mandala'
+    } else if (journeyData?.current_stage === 'equilibrium_realization') {
+      nextStep = 'Acompanhar experimentos ativos e Cycle Review'
+    }
+
+    return {
+      enrollment: enr,
+      fullName: personData?.full_name || 'Participante',
+      preferredName: personData?.preferred_name,
+      email: personData?.email || '—',
+      status: enr.status,
+      currentStage: journeyData?.current_stage || 'onboarding',
+      stageStatus: journeyData?.stage_status || 'nao_iniciado',
+      nextStep,
+      attentionCount: {
+        security: secCount,
+        review: revCount,
+      },
+    }
+  })
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Header Provisório */}
-      <header className="border-b border-border/60 bg-card/40 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+      {/* Top Header Limpo */}
+      <header className="border-b border-border/60 bg-card/40 backdrop-blur-sm sticky top-0 z-30">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-serif font-bold text-lg tracking-tight">CER</span>
+            <span className="font-serif font-bold text-lg tracking-tight text-foreground">CER</span>
             <Badge variant="outline" className="text-[10px] font-normal uppercase tracking-wider">
-              Profissional
+              Profissional de Cuidado
             </Badge>
           </div>
           <div className="flex items-center gap-3">
@@ -161,275 +211,147 @@ export const ProfissionalHome: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground font-serif">
-              Painel de Acompanhamento
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              Acompanhamento Individual CER e gestão de vínculos de interagentes
-            </p>
-          </div>
+      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        {/* Navegação Principal Profissional (Build 09C): Participantes · Sessões · Biblioteca · Auditoria */}
+        <div className="flex border-b border-border/60 pb-2 space-x-2 overflow-x-auto">
+          <Button
+            variant={activeMainTab === 'participantes' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveMainTab('participantes')}
+            className="text-xs gap-1.5"
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Participantes</span>
+          </Button>
 
-          <Button onClick={handleOpenModal} size="sm" className="gap-1.5 text-xs">
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>Vincular Nova Interagente</span>
+          <Button
+            variant={activeMainTab === 'sessoes' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveMainTab('sessoes')}
+            className="text-xs gap-1.5"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Sessões</span>
+          </Button>
+
+          <Button
+            variant={activeMainTab === 'biblioteca' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveMainTab('biblioteca')}
+            className="text-xs gap-1.5"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Biblioteca de Práticas</span>
+          </Button>
+
+          <Button
+            variant={activeMainTab === 'ai' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveMainTab('ai')}
+            className="text-xs gap-1.5"
+          >
+            <Bot className="w-3.5 h-3.5" />
+            <span>Assistência IA</span>
+          </Button>
+
+          <Button
+            variant={activeMainTab === 'auditoria' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveMainTab('auditoria')}
+            className="text-xs gap-1.5"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Auditoria & Segurança</span>
           </Button>
         </div>
 
-        {/* Resumo Institucional e Separação Metodológica */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-border/60 shadow-none">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                <Users className="w-3.5 h-3.5 text-primary" />
-                <span>Interagentes Acompanhadas</span>
-              </div>
-              <CardTitle className="text-2xl font-semibold">{enrollments.length}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground">
-              Acessos concedidos via{' '}
-              <code className="text-[10px]">PROFESSIONAL_ENROLLMENT_ACCESS</code>
-            </CardContent>
-          </Card>
+        {/* ABA 1: PARTICIPANTES & HOME COTIDIANA */}
+        {activeMainTab === 'participantes' && (
+          <div className="space-y-6">
+            {/* Bloco B: Hoje / Painel de Atenção e Cuidado */}
+            <AttentionPanel items={attentionItems} loading={loading} />
 
-          <Card className="border-border/60 shadow-none">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                <Compass className="w-3.5 h-3.5 text-primary" />
-                <span>Produto Metodológico</span>
-              </div>
-              <CardTitle className="text-base font-medium">Acompanhamento Individual CER</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground">
-              Relação genérica de desenvolvimento humano (não clínica).
-            </CardContent>
-          </Card>
+            {/* Bloco A: Participantes Centrados na Pessoa */}
+            <ParticipantList
+              participants={participantListItems}
+              loading={loading}
+              onNewParticipantClick={handleOpenModal}
+            />
+          </div>
+        )}
 
-          <Card className="border-border/60 shadow-none">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-                <span>Isolamento e Privacidade</span>
-              </div>
-              <CardTitle className="text-base font-medium">Privacy by Design</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground">
-              Regras no banco garantem que cada profissional só veja seus vínculos.
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Lista Real de Enrollments */}
-        <Card className="border-border/80">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-base font-medium">
-                  Interagentes em Acompanhamento
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Entidades reais vinculadas à sua credencial profissional
-                </CardDescription>
-              </div>
-              <Badge variant="outline" className="text-xs">
-                {enrollments.length} {enrollments.length === 1 ? 'registro' : 'registros'}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-xs text-muted-foreground py-4 text-center">
-                Carregando acompanhamentos...
-              </p>
-            ) : enrollments.length === 0 ? (
-              <div className="text-center py-8 space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  Nenhum acompanhamento vinculado até o momento.
-                </p>
-                <Button onClick={handleOpenModal} variant="outline" size="sm" className="text-xs">
-                  Criar primeiro acompanhamento
-                </Button>
-              </div>
-            ) : (
-              <div className="divide-y divide-border/50">
-                {enrollments.map((enr) => {
-                  const personData = enr.expand?.person_id
-                  const productData = enr.expand?.product_id
-                  const journeyData = enr.expand?.journey_states_via_enrollment_id?.[0]
-
-                  return (
-                    <div
-                      key={enr.id}
-                      className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/20 px-2 rounded-lg transition-colors"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm text-foreground">
-                            {personData?.full_name || 'Interagente'}
-                          </span>
-                          {personData?.preferred_name && (
-                            <span className="text-xs text-muted-foreground">
-                              ({personData.preferred_name})
-                            </span>
-                          )}
-                          <Badge variant="secondary" className="text-[10px] capitalize font-normal">
-                            {enr.status}
-                          </Badge>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          <span>{personData?.email || 'Sem e-mail'}</span>
-                          <span>•</span>
-                          <span>{productData?.name || 'Acompanhamento Individual CER'}</span>
-                          <span>•</span>
-                          <span className="capitalize">
-                            Jornada: {journeyData?.current_stage || 'onboarding'} (
-                            {journeyData?.stage_status || 'em andamento'})
-                          </span>
-                        </div>
-                        {enr.notes && (
-                          <p className="text-[11px] text-muted-foreground/80 italic pt-0.5">
-                            Nota: {enr.notes}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 self-start sm:self-center">
-                        <div className="text-right text-[10px] text-muted-foreground font-mono">
-                          ID: {enr.id.slice(0, 7)}
-                        </div>
-                        {enr.status === 'active' ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-[10px] gap-1 px-2"
-                            onClick={async () => {
-                              await enrollmentService.updateStatus(enr.id, 'paused')
-                              await loadData()
-                            }}
-                          >
-                            <Pause className="w-3 h-3" />
-                            <span>Pausar</span>
-                          </Button>
-                        ) : enr.status === 'paused' ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-[10px] gap-1 px-2"
-                            onClick={async () => {
-                              await enrollmentService.updateStatus(enr.id, 'active')
-                              await loadData()
-                            }}
-                          >
-                            <Play className="w-3 h-3" />
-                            <span>Reativar</span>
-                          </Button>
-                        ) : null}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* BUILD 04A: Gestão de Sessões Longitudinais & Espaço de Presença */}
-        {enrollments.length > 0 && (
+        {/* ABA 2: SESSÕES */}
+        {activeMainTab === 'sessoes' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-serif font-semibold text-foreground">
-              Encontros & Espaço de Presença (Build 04A)
-            </h2>
-            {enrollments.map((enr) => (
-              <div key={`sess-mgr-${enr.id}`} className="space-y-2">
+            <div className="space-y-1">
+              <h2 className="text-lg font-serif font-semibold text-foreground">
+                Espaço de Presença & Preparação de Sessões
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Acompanhe o que mudou, notas privadas, o Mapa atual e os temas trazidos pelos
+                participantes
+              </p>
+            </div>
+
+            {enrollments.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-8 text-center">
+                Nenhum participante vinculado para preparar sessão.
+              </p>
+            ) : (
+              enrollments.map((enr) => (
                 <ProfessionalSessionManager
+                  key={`sess-page-${enr.id}`}
                   enrollmentId={enr.id}
                   participantName={
                     enr.expand?.person_id?.preferred_name ||
                     enr.expand?.person_id?.full_name ||
-                    'Interagente'
+                    'Participante'
                   }
                 />
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
-        {/* BUILD 02: Gestão de Experiências por Interagente Acompanhada */}
-        {enrollments.length > 0 && (
+        {/* ABA 3: BIBLIOTECA */}
+        {activeMainTab === 'biblioteca' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-serif font-semibold text-foreground">
-              Acompanhamento de Experiências (Build 02)
-            </h2>
-            {enrollments.map((enr) => (
-              <div key={`exp-mgr-${enr.id}`} className="space-y-2">
-                <span className="text-xs font-medium text-muted-foreground block">
-                  Interagente: {enr.expand?.person_id?.full_name || 'Interagente'} (
-                  {enr.expand?.person_id?.email || '—'})
-                </span>
-                <ProfessionalExperienceManager enrollment={enr} />
-              </div>
-            ))}
+            <PracticeSelector />
           </div>
         )}
 
-        {/* BUILD 03B: Conhecimento em Construção (Visualização Profissional Longitudinal) */}
-        {enrollments.length > 0 && (
+        {/* ABA 4: ASSISTÊNCIA IA */}
+        {activeMainTab === 'ai' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-serif font-semibold text-foreground">
-              Conhecimento em Construção (Build 03B)
-            </h2>
-            {enrollments.map((enr) => (
-              <ProfessionalKnowledgeBuilding
-                key={`kb-${enr.id}`}
-                enrollmentId={enr.id}
-                participantName={enr.expand?.person_id?.full_name || 'Interagente'}
-              />
-            ))}
+            {enrollments.length === 0 || !user ? (
+              <p className="text-xs text-muted-foreground py-8 text-center">
+                Nenhum participante vinculado para briefing assistido.
+              </p>
+            ) : (
+              enrollments.map((enr) => (
+                <div key={`ai-ws-page-${enr.id}`} className="space-y-2">
+                  <span className="text-xs font-semibold text-foreground">
+                    Participante:{' '}
+                    {enr.expand?.person_id?.preferred_name ||
+                      enr.expand?.person_id?.full_name ||
+                      'Participante'}
+                  </span>
+                  <ProfessionalAiWorkspace humanUserId={user.id} enrollmentId={enr.id} />
+                </div>
+              ))
+            )}
           </div>
         )}
 
-        {/* BUILD 06: Mapa CER V1 — Síntese Viva de Compreensão */}
-        {enrollments.length > 0 && user && (
+        {/* ABA 5: AUDITORIA & ADMIN (Fora da Superfície Clínica Cotidiana) */}
+        {activeMainTab === 'auditoria' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-serif font-semibold text-foreground">
-              Mapa CER V1 — Síntese Viva (Build 06)
-            </h2>
-            {enrollments.map((enr) => (
-              <div key={`map-editor-${enr.id}`} className="space-y-2">
-                <ProfessionalMapEditor
-                  enrollmentId={enr.id}
-                  participantName={enr.expand?.person_id?.full_name || 'Interagente'}
-                  professionalUserId={user.id}
-                />
-              </div>
-            ))}
+            <AuditSecurityPanel />
           </div>
         )}
-
-        {/* BUILD 05: AI Core V1 — Assistência Profissional (Briefing, Ask CER & Proposal Engine) */}
-        {enrollments.length > 0 && user && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-serif font-semibold text-foreground">
-              AI Core V1 — Assistência Profissional (Build 05)
-            </h2>
-            {enrollments.map((enr) => (
-              <div key={`ai-ws-${enr.id}`} className="space-y-2">
-                <span className="text-xs font-medium text-muted-foreground block">
-                  Interagente: {enr.expand?.person_id?.full_name || 'Interagente'}
-                </span>
-                <ProfessionalAiWorkspace humanUserId={user.id} enrollmentId={enr.id} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Painel Integrado de Auditoria e Testes RLS (Build 01 + Build 02 + Build 03A + Build 03B) */}
-        <AuditSecurityPanel />
       </main>
 
-      {/* Dialog Modal: Vincular Nova Interagente (Entrada sob convite da profissional) */}
+      {/* Dialog Modal: Vincular Nova Interagente */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
