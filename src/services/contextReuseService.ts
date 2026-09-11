@@ -59,7 +59,8 @@ export const contextReuseService = {
 
     // P0 ANTI-LAUNDERING: concept_key que represente pensamento associado
     // ou qualquer fonte participant_private (ex: narrativa privada sobre relação/terceiro,
-    // espiritualidade pessoal, relato expandido/incomum ou interpretação pessoal)
+    // espiritualidade pessoal, relato expandido/incomum, interpretação pessoal,
+    // ou formulações integrativas privadas de proteção/direção)
     // não pode ser exibido para participant_shared/shared_care
     const isRestrictedPrivateConcept =
       conceptKey === 'associated_thought_pattern' ||
@@ -72,7 +73,10 @@ export const contextReuseService = {
       conceptKey === 'reported_extrasensory_experience' ||
       conceptKey === 'expanded_experience_impact' ||
       conceptKey === 'expanded_experience_integration' ||
-      conceptKey === 'spiritual_experience_personal_interpretation'
+      conceptKey === 'spiritual_experience_personal_interpretation' ||
+      conceptKey === 'possible_protective_pattern' ||
+      conceptKey === 'perceived_protective_cost' ||
+      conceptKey === 'participant_integration_correction'
 
     if (
       isRestrictedPrivateConcept &&

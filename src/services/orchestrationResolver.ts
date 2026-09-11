@@ -599,6 +599,106 @@ export function resolveExperienceOrchestration(params: {
     }
   }
 
+  // 3.7. BUILD 07G — Condicionalidade do Momento I4 ("O que isso faz por mim — e o que às vezes custa"):
+  // Gate obrigatório: quarteto Contexto + Resposta + Função Percebida + Consequência (Custo/Benefício).
+  // Sem o quarteto completo, I4 NÃO abre (permanece fora do open_set / ausência silenciosa).
+  let hasQuartetContext = false
+  let hasQuartetResponse = false
+  let hasQuartetFunction = false
+  let hasQuartetConsequence = false
+
+  // Verificar em respostas respondidas neste ou em outros momentos
+  for (const [, resp] of responseByPromptKey.entries()) {
+    const sVal = resp.structured_value as any
+    const p = promptById.get(resp.prompt_id)
+    const pKey = p ? getPromptKey(p) : ''
+    const cKey = (p?.schema_config as any)?.concept_key || ''
+
+    if (
+      sVal?.trigger_context ||
+      sVal?.context ||
+      cKey === 'stress_trigger_context' ||
+      cKey === 'relational_boundary_context' ||
+      cKey === 'challenge_context' ||
+      cKey === 'self_disconnection_context' ||
+      pKey === 'resposta_gatilho_r1' ||
+      pKey === 'desafios_contexto_manifestacao_i3'
+    ) {
+      hasQuartetContext = true
+    }
+
+    if (
+      sVal?.urge ||
+      sVal?.enacted ||
+      sVal?.choice ||
+      cKey === 'immediate_response_tendency' ||
+      cKey === 'enacted_response_pattern' ||
+      cKey === 'relational_response_pattern' ||
+      pKey === 'resposta_tendencia' ||
+      pKey === 'vontade_x_comportamento_r4'
+    ) {
+      hasQuartetResponse = true
+    }
+
+    if (
+      sVal?.function ||
+      sVal?.perceived_function ||
+      cKey === 'perceived_response_function' ||
+      cKey === 'possible_protective_pattern' ||
+      pKey === 'funcao_percebida'
+    ) {
+      hasQuartetFunction = true
+    }
+
+    if (
+      sVal?.cost ||
+      sVal?.benefit ||
+      sVal?.consequence ||
+      cKey === 'perceived_short_term_benefit' ||
+      cKey === 'perceived_protective_cost' ||
+      cKey === 'response_consequence' ||
+      pKey === 'custo_percebido' ||
+      pKey === 'beneficio_imediato'
+    ) {
+      hasQuartetConsequence = true
+    }
+  }
+
+  // Também verificar se o enrollment já possui o quarteto em concept_keys existentes
+  if (
+    existingConceptKeys.has('stress_trigger_context') ||
+    existingConceptKeys.has('relational_boundary_context') ||
+    existingConceptKeys.has('self_disconnection_context')
+  ) {
+    hasQuartetContext = true
+  }
+  if (
+    existingConceptKeys.has('immediate_response_tendency') ||
+    existingConceptKeys.has('relational_response_pattern') ||
+    existingConceptKeys.has('enacted_response_pattern')
+  ) {
+    hasQuartetResponse = true
+  }
+  if (
+    existingConceptKeys.has('perceived_response_function') ||
+    existingConceptKeys.has('possible_protective_pattern')
+  ) {
+    hasQuartetFunction = true
+  }
+  if (
+    existingConceptKeys.has('perceived_short_term_benefit') ||
+    existingConceptKeys.has('perceived_protective_cost')
+  ) {
+    hasQuartetConsequence = true
+  }
+
+  const hasFullQuartet =
+    hasQuartetContext && hasQuartetResponse && hasQuartetFunction && hasQuartetConsequence
+
+  if (hasFullQuartet) {
+    openSet.add('compreensao_funcional_respostas_i4')
+  }
+
   // 4. Calcular conjunto de prompts elegíveis
   // Regra: prompt ∉ skip_set ∧ (path_role === 'essential' ∨ key ∈ open_set)
   const eligiblePrompts: CerPromptRecord[] = []
