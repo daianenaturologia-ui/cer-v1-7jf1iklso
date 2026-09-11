@@ -249,6 +249,44 @@ onRecordAfterUpdateSuccess((e) => {
         )
         $app.save(audit)
       }
+
+      // Build 08D: Se uma PracticeVersion for aposentada (retired = recall),
+      // interromper com segurança assignments ativas e cancelar planner items futuros
+      if (newStatus === 'retired') {
+        try {
+          const activeAssignments = $app.findRecordsByFilter(
+            'cer_practice_assignments',
+            'practice_version_id = "' +
+              version.id +
+              '" && (status = "active" || status = "draft" || status = "paused")',
+            '',
+            100,
+            0,
+          )
+          for (let i = 0; i < activeAssignments.length; i++) {
+            const asgn = activeAssignments[i]
+            asgn.set('status', 'stopped')
+            asgn.set('stop_reason_code', 'practice_retired')
+            $app.save(asgn)
+
+            // Cancelar itens projetados/futuros do planner para esta assignment
+            try {
+              const items = $app.findRecordsByFilter(
+                'cer_planner_items',
+                'assignment_id = "' + asgn.id + '" && (status = "planned" || status = "active")',
+                '',
+                100,
+                0,
+              )
+              for (let j = 0; j < items.length; j++) {
+                const item = items[j]
+                item.set('status', 'cancelled')
+                $app.save(item)
+              }
+            } catch (_) {}
+          }
+        } catch (_) {}
+      }
     }
   } catch (_) {}
 }, 'cer_practice_versions')

@@ -165,6 +165,45 @@ onRecordAfterUpdateSuccess((e) => {
         }),
       )
       $app.save(audit)
+
+      // Build 08D: Consent withdrawal durante assignment ativa:
+      // Transitar Assignment ativa para paused IMEDIATAMENTE (NUNCA resistência);
+      // Cancelar itens projetados futuros do planner;
+      // Itens históricos concluídos permanecem intactos.
+      try {
+        const activeAssignments = $app.findRecordsByFilter(
+          'cer_practice_assignments',
+          'enrollment_id = "' +
+            c.getString('enrollment_id') +
+            '" && practice_version_id = "' +
+            c.getString('practice_version_id') +
+            '" && status = "active"',
+          '',
+          100,
+          0,
+        )
+        for (let i = 0; i < activeAssignments.length; i++) {
+          const asgn = activeAssignments[i]
+          asgn.set('status', 'paused')
+          $app.save(asgn)
+
+          // Cancelar itens futuros/projetados do planner
+          try {
+            const items = $app.findRecordsByFilter(
+              'cer_planner_items',
+              'assignment_id = "' + asgn.id + '" && (status = "planned" || status = "active")',
+              '',
+              100,
+              0,
+            )
+            for (let j = 0; j < items.length; j++) {
+              const item = items[j]
+              item.set('status', 'cancelled')
+              $app.save(item)
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
     }
   } catch (_) {}
 }, 'cer_practice_consents')

@@ -170,5 +170,42 @@ onRecordAfterUpdateSuccess((e) => {
       )
       $app.save(audit)
     }
+
+    // Build 08D: Regras de ciclo sobre assignments e planner
+    // 1. Cycle CLOSE: assignment ativa -> stopped com stop_reason_code = 'cycle_closed'.
+    // NUNCA paused, NUNCA completed automático.
+    // Cancelar itens futuros/projetados do planner.
+    if (newStatus === 'closed' && origStatus !== 'closed') {
+      try {
+        const activeAssignments = $app.findRecordsByFilter(
+          'cer_practice_assignments',
+          'care_cycle_id = "' + cycle.id + '" && status = "active"',
+          '',
+          100,
+          0,
+        )
+        for (let i = 0; i < activeAssignments.length; i++) {
+          const asgn = activeAssignments[i]
+          asgn.set('status', 'stopped')
+          asgn.set('stop_reason_code', 'cycle_closed')
+          $app.save(asgn)
+
+          try {
+            const items = $app.findRecordsByFilter(
+              'cer_planner_items',
+              'assignment_id = "' + asgn.id + '" && (status = "planned" || status = "active")',
+              '',
+              100,
+              0,
+            )
+            for (let j = 0; j < items.length; j++) {
+              const item = items[j]
+              item.set('status', 'cancelled')
+              $app.save(item)
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
   } catch (_) {}
 }, 'cer_care_cycles')

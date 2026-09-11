@@ -289,6 +289,7 @@ export interface PersonRecord {
   email?: string
   phone?: string
   notes?: string
+  timezone?: string // IANA, ex: 'America/Sao_Paulo'
   created: string
   updated: string
 }
@@ -428,6 +429,7 @@ export const AI_PROPOSAL_TYPES = {
   INTEGRATIVE_HYPOTHESIS: 'integrative_hypothesis',
   PRIORITY_SUGGESTION: 'priority_suggestion',
   PRACTICE_CANDIDATE_SUGGESTION: 'practice_candidate_suggestion',
+  ASSIGNMENT_ADAPTATION_SUGGESTION: 'assignment_adaptation_suggestion',
 } as const
 
 export type AiProposalType = (typeof AI_PROPOSAL_TYPES)[keyof typeof AI_PROPOSAL_TYPES]
@@ -2024,5 +2026,156 @@ export interface CerPracticeConsentPrivateNoteRecord {
     consent_id?: CerPracticeConsentRecord
     participant_user_id?: UserAccountRecord
     enrollment_id?: EnrollmentRecord
+  }
+}
+
+// ------------------------------------------
+// ENTIDADES DO BUILD 08D — ASSIGNMENT E PLANNER MÍNIMO
+// ------------------------------------------
+
+export const PRACTICE_ASSIGNMENT_STATUS = {
+  DRAFT: 'draft',
+  ACTIVE: 'active',
+  PAUSED: 'paused',
+  COMPLETED: 'completed',
+  STOPPED: 'stopped',
+  SUPERSEDED: 'superseded',
+} as const
+
+export type PracticeAssignmentStatus =
+  (typeof PRACTICE_ASSIGNMENT_STATUS)[keyof typeof PRACTICE_ASSIGNMENT_STATUS]
+
+export const PARTICIPANT_CONFIRMATION_RESPONSE = {
+  CONFIRMED: 'confirmed',
+  WANTS_ADAPTATION: 'wants_adaptation',
+  TOO_MUCH_RIGHT_NOW: 'too_much_right_now',
+  NOT_NOW: 'not_now',
+  UNCONFIRMED: 'unconfirmed',
+} as const
+
+export type ParticipantConfirmationResponse =
+  (typeof PARTICIPANT_CONFIRMATION_RESPONSE)[keyof typeof PARTICIPANT_CONFIRMATION_RESPONSE]
+
+export const CAPACITY_RESPONSE_VALUES = {
+  CABE_BEM: 'cabe_bem',
+  CABE_SE_ADAPTAR: 'cabe_se_adaptar',
+  PARECE_DEMAIS: 'parece_demais',
+  NAO_CABE_AGORA: 'nao_cabe_agora',
+  AINDA_NAO_SEI: 'ainda_nao_sei',
+} as const
+
+export type CapacityResponseValue =
+  (typeof CAPACITY_RESPONSE_VALUES)[keyof typeof CAPACITY_RESPONSE_VALUES]
+
+export const PLANNER_ITEM_TYPES = {
+  SCHEDULED_ACTION: 'scheduled_action',
+  FLEXIBLE_PRACTICE: 'flexible_practice',
+  CONTEXTUAL_RESOURCE: 'contextual_resource',
+  SESSION_LINKED: 'session_linked',
+} as const
+
+export type PlannerItemType = (typeof PLANNER_ITEM_TYPES)[keyof typeof PLANNER_ITEM_TYPES]
+
+export const PLANNER_SCHEDULING_MODES = {
+  EXACT: 'exact',
+  WINDOW: 'window',
+  FLEXIBLE: 'flexible',
+  CONTEXTUAL: 'contextual',
+  SESSION_LINKED: 'session_linked',
+} as const
+
+export type PlannerSchedulingMode =
+  (typeof PLANNER_SCHEDULING_MODES)[keyof typeof PLANNER_SCHEDULING_MODES]
+
+export const PLANNER_DAYPARTS = {
+  MORNING: 'morning',
+  AFTERNOON: 'afternoon',
+  EVENING: 'evening',
+  ANY: 'any',
+} as const
+
+export type PlannerDaypart = (typeof PLANNER_DAYPARTS)[keyof typeof PLANNER_DAYPARTS]
+
+export const PLANNER_ITEM_STATUS = {
+  PLANNED: 'planned',
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+  SUPERSEDED: 'superseded',
+} as const
+
+export type PlannerItemStatus = (typeof PLANNER_ITEM_STATUS)[keyof typeof PLANNER_ITEM_STATUS]
+
+// 1. cer_practice_assignments
+export interface CerPracticeAssignmentRecord {
+  id: string
+  enrollment_id: string
+  participant_user_id: string
+  care_plan_priority_id: string
+  care_cycle_id: string
+  practice_version_id: string
+  variant_id?: string
+  safety_check_id: string
+  consent_id?: string
+  operational_acceptance_id: string
+  assigned_by_user_id: string
+  previous_assignment_id?: string
+  status: PracticeAssignmentStatus
+  stop_reason_code?: string
+  internal_title: string
+  internal_context?: string
+  participant_safe_title: string
+  participant_safe_summary?: string
+  assigned_duration?: string
+  assigned_frequency?: string
+  assigned_repetitions?: string
+  assigned_quantity?: string
+  assigned_time_window?: string
+  context_tags?: string[]
+  participant_response_type?: ParticipantConfirmationResponse
+  capacity_response?: CapacityResponseValue
+  confirmed_at?: string
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    participant_user_id?: UserAccountRecord
+    care_plan_priority_id?: CerCarePlanPriorityRecord
+    care_cycle_id?: CerCareCycleRecord
+    practice_version_id?: CerPracticeVersionRecord
+    variant_id?: CerPracticeVariantRecord
+    safety_check_id?: CerPracticeSafetyCheckRecord
+    consent_id?: CerPracticeConsentRecord
+    operational_acceptance_id?: CerOperationalAcceptanceRecord
+    assigned_by_user_id?: UserAccountRecord
+  }
+}
+
+// 2. cer_planner_items
+export interface CerPlannerItemRecord {
+  id: string
+  assignment_id: string
+  enrollment_id: string
+  participant_user_id: string
+  care_cycle_id: string
+  safe_title: string
+  safe_summary?: string
+  item_type: PlannerItemType
+  scheduling_mode: PlannerSchedulingMode
+  scheduled_at?: string
+  window_start?: string
+  window_end?: string
+  daypart?: PlannerDaypart
+  timezone_snapshot?: string
+  status: PlannerItemStatus
+  created_by: string
+  created: string
+  updated: string
+  expand?: {
+    assignment_id?: CerPracticeAssignmentRecord
+    enrollment_id?: EnrollmentRecord
+    participant_user_id?: UserAccountRecord
+    care_cycle_id?: CerCareCycleRecord
+    created_by?: UserAccountRecord
   }
 }

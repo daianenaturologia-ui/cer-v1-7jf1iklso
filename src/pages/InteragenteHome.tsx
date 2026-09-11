@@ -36,7 +36,15 @@ import {
 import { ExperienceEngine } from '@/components/experience'
 import { ParticipantMapDisplay } from '@/components/ParticipantMapDisplay'
 import { cerMapService } from '@/services/cerMapService'
-import type { CerMapRecord, CerMapItemRecord } from '@/types/cer'
+import { cerPracticeAssignmentService } from '@/services/cerPracticeAssignmentService'
+import { cerPlannerService } from '@/services/cerPlannerService'
+import type {
+  CerMapRecord,
+  CerMapItemRecord,
+  CerPracticeAssignmentRecord,
+  CerPlannerItemRecord,
+  CapacityResponseValue,
+} from '@/types/cer'
 
 export const InteragenteHome: React.FC = () => {
   const { user, person, logout } = useAuth()
@@ -58,6 +66,8 @@ export const InteragenteHome: React.FC = () => {
   >({})
   const [submittingRecog, setSubmittingRecog] = useState<string | null>(null)
   const [submittingPresRecog, setSubmittingPresRecog] = useState<string | null>(null)
+  const [assignments, setAssignments] = useState<CerPracticeAssignmentRecord[]>([])
+  const [plannerItems, setPlannerItems] = useState<CerPlannerItemRecord[]>([])
   const { toast } = useToast()
 
   const loadData = async () => {
@@ -111,11 +121,65 @@ export const InteragenteHome: React.FC = () => {
         }
         setSelectedRecognitions(recogMap)
         setSelectedPresRecognitions(presRecogMap)
+
+        // Build 08D: Carregar assignments e planner items
+        try {
+          const asgns = await cerPracticeAssignmentService.listByEnrollment(activeEnr.id)
+          setAssignments(asgns)
+        } catch {
+          /* intentionally ignored */
+        }
+
+        if (user?.id) {
+          try {
+            const pItems = await cerPlannerService.listForParticipant(activeEnr.id, user.id)
+            setPlannerItems(pItems)
+          } catch {
+            /* intentionally ignored */
+          }
+        }
       }
     } catch (err) {
       console.error('Erro ao carregar dados do interagente:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleConfirmExperiment = async (assignmentId: string, capacity: CapacityResponseValue) => {
+    try {
+      await cerPracticeAssignmentService.recordConfirmation(assignmentId, {
+        participant_response_type: 'confirmed',
+        capacity_response: capacity,
+      })
+      toast({
+        title: 'Experimento acolhido',
+        description: 'Sua percepção ajuda a calibrar o ritmo do cuidado.',
+      })
+      await loadData()
+    } catch (err: unknown) {
+      toast({
+        title: 'Não foi possível confirmar',
+        description: err instanceof Error ? err.message : 'Tente novamente.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleCompletePlannerItem = async (itemId: string) => {
+    try {
+      await cerPlannerService.completeItem(itemId)
+      toast({
+        title: 'Momento registrado',
+        description: 'Registro de realização concluído com sucesso.',
+      })
+      await loadData()
+    } catch (err: unknown) {
+      toast({
+        title: 'Erro ao registrar momento',
+        description: err instanceof Error ? err.message : 'Tente novamente.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -659,6 +723,220 @@ export const InteragenteHome: React.FC = () => {
                 loadData()
               }}
             />
+          </div>
+        )}
+
+        {/* Experimentos de Cuidado (Build 08D — Practice Assignment) */}
+        {assignments.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <span>Experimentos de Cuidado</span>
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Vamos experimentar isso juntos? Práticas desenhadas para o seu momento, sem
+                  cobrança ou notas de desempenho.
+                </p>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                {assignments.filter((a) => a.status === 'active').length} ativo(s)
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {assignments.map((asgn) => {
+                const isActive = asgn.status === 'active'
+                const isPaused = asgn.status === 'paused'
+                const isStopped = asgn.status === 'stopped'
+
+                return (
+                  <Card
+                    key={asgn.id}
+                    className="border-border/70 hover:border-border transition-colors"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <CardTitle className="text-base font-medium text-foreground">
+                            {asgn.participant_safe_title}
+                          </CardTitle>
+                          {asgn.participant_safe_summary && (
+                            <CardDescription className="text-xs mt-1 text-muted-foreground">
+                              {asgn.participant_safe_summary}
+                            </CardDescription>
+                          )}
+                        </div>
+                        <Badge
+                          variant={isActive ? 'default' : isPaused ? 'secondary' : 'outline'}
+                          className="text-[11px] capitalize shrink-0"
+                        >
+                          {isActive
+                            ? 'Em experimento'
+                            : isPaused
+                              ? 'Em pausa'
+                              : isStopped
+                                ? 'Interrompido'
+                                : asgn.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3 pt-0">
+                      <div className="bg-muted/30 p-2.5 rounded text-xs space-y-1 border border-border/40">
+                        {asgn.assigned_frequency && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Ritmo sugerido:</span>
+                            <span className="font-medium text-foreground">
+                              {asgn.assigned_frequency}
+                            </span>
+                          </div>
+                        )}
+                        {asgn.assigned_duration && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Duração:</span>
+                            <span className="font-medium text-foreground">
+                              {asgn.assigned_duration}
+                            </span>
+                          </div>
+                        )}
+                        {asgn.capacity_response && (
+                          <div className="flex justify-between pt-1 border-t border-border/30">
+                            <span className="text-muted-foreground">Como cabe no seu momento:</span>
+                            <span className="font-medium text-foreground capitalize">
+                              {asgn.capacity_response.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Confirmação do participante */}
+                      {isActive && !asgn.confirmed_at && (
+                        <div className="space-y-2 pt-1 border-t border-border/40">
+                          <span className="text-xs text-muted-foreground block">
+                            Como essa proposta conversa com o seu momento atual?
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7"
+                              onClick={() => handleConfirmExperiment(asgn.id, 'cabe_bem')}
+                            >
+                              Cabe bem
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7"
+                              onClick={() => handleConfirmExperiment(asgn.id, 'cabe_se_adaptar')}
+                            >
+                              Cabe se adaptar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7"
+                              onClick={() => handleConfirmExperiment(asgn.id, 'parece_demais')}
+                            >
+                              Parece demais
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7"
+                              onClick={() => handleConfirmExperiment(asgn.id, 'nao_cabe_agora')}
+                            >
+                              Não cabe agora
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Planner Mínimo da Semana (Build 08D — cer_planner_items) */}
+        {plannerItems.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  <span>Janela Operacional — Planner de Cuidados</span>
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Próximos momentos e recursos disponíveis para apoiar o seu ritmo diário.
+                </p>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                {plannerItems.filter((p) => p.status !== 'cancelled').length} momento(s)
+              </Badge>
+            </div>
+
+            <div className="space-y-2">
+              {plannerItems
+                .filter((p) => p.status !== 'cancelled')
+                .map((item) => {
+                  const isContextual = item.item_type === 'contextual_resource'
+                  const isCompleted = item.status === 'completed'
+
+                  return (
+                    <Card
+                      key={item.id}
+                      className={`border-border/60 transition-colors ${
+                        isCompleted ? 'bg-muted/20 opacity-80' : ''
+                      }`}
+                    >
+                      <CardContent className="p-3.5 flex items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-sm font-medium ${
+                                isCompleted
+                                  ? 'line-through text-muted-foreground'
+                                  : 'text-foreground'
+                              }`}
+                            >
+                              {item.safe_title}
+                            </span>
+                            <Badge variant="secondary" className="text-[10px] uppercase">
+                              {isContextual ? 'Recurso Disponível' : item.daypart || 'Dia a dia'}
+                            </Badge>
+                          </div>
+                          {item.safe_summary && (
+                            <p className="text-xs text-muted-foreground">{item.safe_summary}</p>
+                          )}
+                        </div>
+
+                        {!isCompleted && !isContextual && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 px-3 text-xs shrink-0 text-primary hover:bg-primary/10"
+                            onClick={() => handleCompletePlannerItem(item.id)}
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-1 text-primary" />
+                            <span>Realizado</span>
+                          </Button>
+                        )}
+                        {isCompleted && (
+                          <Badge
+                            variant="outline"
+                            className="text-[11px] text-primary border-primary/30"
+                          >
+                            ✓ Realizado
+                          </Badge>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+            </div>
           </div>
         )}
 

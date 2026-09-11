@@ -16,6 +16,7 @@ import { runBuild07FOrchestrationTests } from './testsBuild07f'
 import { runBuild07GOrchestrationTests } from './testsBuild07g'
 import { runBuild08BCarePlanTests } from './testsCarePlan08b'
 import { runBuild08CPracticeTests } from './testsPractice08c'
+import { runBuild08DTests } from './testsPracticeAssignment08d'
 
 describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
   it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {
@@ -317,6 +318,20 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
     const results = await runBuild08CPracticeTests()
     console.log(
       'BUILD 08C RESULTS:',
+      results.map((r) => `${r.name}: ${r.status}`),
+    )
+    const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')
+    expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
+
+    for (const r of results) {
+      expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
+    }
+  }, 90000)
+
+  it('executa suíte completa e adversarial do Build 08D (Practice Assignments & Minimal Planner: ASN, GATE, DOSE, CONF, PLANR, TIME, PR-D, AI-D, RU-D, AUD-D, UX-D, DEL, E2E-08D-1–12, Personas A–I)', async () => {
+    const results = await runBuild08DTests()
+    console.log(
+      'BUILD 08D RESULTS:',
       results.map((r) => `${r.name}: ${r.status}`),
     )
     const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')
