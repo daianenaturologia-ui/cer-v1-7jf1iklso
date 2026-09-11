@@ -12,6 +12,7 @@ import { runBuild07BOrchestrationTests } from './testsBuild07b'
 import { runBuild07COrchestrationTests } from './testsBuild07c'
 import { runBuild07DOrchestrationTests } from './testsBuild07d'
 import { runBuild07EOrchestrationTests } from './testsBuild07e'
+import { runBuild07FOrchestrationTests } from './testsBuild07f'
 
 describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
   it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {
@@ -257,6 +258,20 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
     const results = await runBuild07EOrchestrationTests()
     console.log(
       'BUILD 07E RESULTS:',
+      results.map((r) => `${r.name}: ${r.status}`),
+    )
+    const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')
+    expect(failedTests.map((f) => `${f.name}: ${f.details}`)).toEqual([])
+
+    for (const r of results) {
+      expect(r.status, `${r.name}: ${r.details}`).toBe('PASSOU')
+    }
+  }, 90000)
+
+  it('executa suíte completa e adversarial do Build 07F (Sentido & Conexão: SEN, SPI, EXP, IND, RU-F, PR-F, EPI, EC-F, UX-F, ACC-F, SC5-P0, E2E-07F, Personas A-G)', async () => {
+    const results = await runBuild07FOrchestrationTests()
+    console.log(
+      'BUILD 07F RESULTS:',
       results.map((r) => `${r.name}: ${r.status}`),
     )
     const failedTests = results.filter((r) => r.status === 'NÃO PASSOU')

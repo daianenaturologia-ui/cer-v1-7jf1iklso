@@ -530,6 +530,75 @@ export function resolveExperienceOrchestration(params: {
     }
   }
 
+  // e) BUILD 07F — Regra de Elegibilidade Determinística SC5 (Errata P0 Obrigatória):
+  // SC4=sim/talvez SOZINHO NÃO autoriza SC5.
+  // SC5 só abre se a participante introduziu explicitamente conteúdo indicando experiência incomum,
+  // ampliada, extraordinária ou mudança importante de percepção (semântica participant-led, sem IA).
+  const sc4DescResp = responseByPromptKey.get('como_vive_essa_conexao_sc4_desc')
+  const sc4AberturaResp = responseByPromptKey.get('conexao_algo_maior_sc4')
+  if (sc4DescResp || sc4AberturaResp) {
+    const targetResp = sc4DescResp || sc4AberturaResp
+    const sVal = targetResp?.structured_value as any
+    const freeText = targetResp?.free_text || sVal?.free_text || ''
+
+    // Importação dinâmica ou avaliação direta via termos determinísticos
+    const choices: string[] = Array.isArray(sVal)
+      ? sVal
+      : Array.isArray(sVal?.selected_forms)
+        ? sVal.selected_forms
+        : Array.isArray(sVal?.value)
+          ? sVal.value
+          : typeof sVal === 'string'
+            ? [sVal]
+            : sVal?.choice
+              ? [sVal.choice]
+              : []
+
+    const hasExplicitCategory = choices.some(
+      (c) =>
+        c === 'experiencia_ampliada' ||
+        c === 'percepcao_incomum' ||
+        c === 'mudanca_percepcao' ||
+        c === 'extrassensorial' ||
+        c === 'experiencia_extraordinaria' ||
+        c === 'sensacao_unidade' ||
+        c === 'percepcao_energetica_vivida' ||
+        c === 'momento_expansao',
+    )
+
+    let hasExplicitText = false
+    if (freeText) {
+      const lowerText = freeText.toLowerCase()
+      const textIndicators = [
+        'percepção se ampliou',
+        'percepcao se ampliou',
+        'mudança importante de percepção',
+        'mudanca importante de percepcao',
+        'experiência incomum',
+        'experiencia incomum',
+        'experiência extraordinária',
+        'experiencia extraordinaria',
+        'sensação de unidade',
+        'sensacao de unidade',
+        'percepção extrassensorial',
+        'percepcao extrassensorial',
+        'saída do corpo',
+        'saida do corpo',
+        'experiência mística',
+        'experiencia mistica',
+      ]
+      hasExplicitText = textIndicators.some((ind) => lowerText.includes(ind))
+    }
+
+    if (
+      sVal?.participant_reported_expanded_experience === true ||
+      hasExplicitCategory ||
+      hasExplicitText
+    ) {
+      openSet.add('sc5_abertura_experiencia_ampliada')
+    }
+  }
+
   // 4. Calcular conjunto de prompts elegíveis
   // Regra: prompt ∉ skip_set ∧ (path_role === 'essential' ∨ key ∈ open_set)
   const eligiblePrompts: CerPromptRecord[] = []

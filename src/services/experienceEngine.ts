@@ -78,11 +78,18 @@ export const experienceCatalogService = {
         const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
         list.push(SEXUALIDADE_EXPERIENCE)
       }
+      if (
+        !list.some((e) => e.id === 'exp-sentido-conexao-07f' || e.code === 'sentido_conexao_cer')
+      ) {
+        const { SENTIDO_CONEXAO_EXPERIENCE } = await import('./build07fPrompts')
+        list.push(SENTIDO_CONEXAO_EXPERIENCE)
+      }
       return list
     } catch {
       const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
       const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
-      return [CORPO_FISIOLOGIA_EXPERIENCE, SEXUALIDADE_EXPERIENCE]
+      const { SENTIDO_CONEXAO_EXPERIENCE } = await import('./build07fPrompts')
+      return [CORPO_FISIOLOGIA_EXPERIENCE, SEXUALIDADE_EXPERIENCE, SENTIDO_CONEXAO_EXPERIENCE]
     }
   },
 
@@ -101,6 +108,10 @@ export const experienceCatalogService = {
     if (code === 'sexualidade_cer') {
       const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
       return SEXUALIDADE_EXPERIENCE
+    }
+    if (code === 'sentido_conexao_cer') {
+      const { SENTIDO_CONEXAO_EXPERIENCE } = await import('./build07fPrompts')
+      return SENTIDO_CONEXAO_EXPERIENCE
     }
     try {
       return await pb
@@ -122,6 +133,10 @@ export const experienceCatalogService = {
       const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
       return SEXUALIDADE_EXPERIENCE
     }
+    if (id === 'exp-sentido-conexao-07f') {
+      const { SENTIDO_CONEXAO_EXPERIENCE } = await import('./build07fPrompts')
+      return SENTIDO_CONEXAO_EXPERIENCE
+    }
     return await pb.collection('cer_experiences').getOne<CerExperienceRecord>(id, {
       expand: 'dimension_id',
     })
@@ -135,6 +150,10 @@ export const experienceCatalogService = {
     if (experienceId === 'exp-sexualidade-07e') {
       const { SEXUALIDADE_MOMENTS } = await import('./build07ePrompts')
       return SEXUALIDADE_MOMENTS
+    }
+    if (experienceId === 'exp-sentido-conexao-07f') {
+      const { SENTIDO_CONEXAO_MOMENTS } = await import('./build07fPrompts')
+      return SENTIDO_CONEXAO_MOMENTS
     }
     return await pb.collection('cer_experience_moments').getFullList<CerExperienceMomentRecord>({
       filter: `experience_id = "${experienceId}" && is_active = true`,
@@ -150,6 +169,10 @@ export const experienceCatalogService = {
     if (experienceId === 'exp-sexualidade-07e') {
       const { BUILD_07E_SEXUALIDADE_PROMPTS } = await import('./build07ePrompts')
       return BUILD_07E_SEXUALIDADE_PROMPTS
+    }
+    if (experienceId === 'exp-sentido-conexao-07f') {
+      const { BUILD_07F_SENTIDO_PROMPTS } = await import('./build07fPrompts')
+      return BUILD_07F_SENTIDO_PROMPTS
     }
     return await pb.collection('cer_prompts').getFullList<CerPromptRecord>({
       filter: `experience_id = "${experienceId}"`,
