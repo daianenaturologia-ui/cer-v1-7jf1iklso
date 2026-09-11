@@ -268,6 +268,55 @@ export async function computeSessionPreparation(
     recentCompletedExperiences = []
   }
 
+  // BUILD 07A — Evidence Currency Layer no SessionPreparation:
+  // KIs cujas evidências exclusivas foram invalidadas por fechamento de branch são filtradas do resumo ativo
+  try {
+    const [allResps, allPrompts, allSigs] = await Promise.all([
+      pb.collection('experience_responses').getFullList({
+        filter: `enrollment_id = "${enrollmentId}"`,
+      }),
+      pb.collection('cer_prompts').getFullList({
+        sort: 'step_order',
+      }),
+      pb.collection('cer_signals').getFullList({
+        filter: `enrollment_id = "${enrollmentId}"`,
+      }),
+    ])
+    const { deriveEvidenceCurrency } = await import('@/services/orchestrationResolver')
+    const currency = deriveEvidenceCurrency({
+      prompts: allPrompts as any,
+      responses: allResps as any,
+      signals: allSigs as any,
+    })
+
+    // Se um KI tiver como única evidência um Signal que se tornou inativo, não destacar na preparação corrente
+    if (currency.historicalSignalIds.size > 0) {
+      const activeRecentKIs: CerKnowledgeItemRecord[] = []
+      for (const ki of recentKnowledgeItems) {
+        const evs = await pb.collection('cer_knowledge_evidence').getFullList({
+          filter: `knowledge_item_id = "${ki.id}"`,
+        })
+        const hasActiveEvidence =
+          evs.length === 0 ||
+          evs.some((ev) => {
+            if (ev.evidence_type === 'signal') {
+              return !currency.historicalSignalIds.has(ev.evidence_id)
+            }
+            if (ev.evidence_type === 'response') {
+              return !currency.historicalResponseIds.has(ev.evidence_id)
+            }
+            return true
+          })
+        if (hasActiveEvidence) {
+          activeRecentKIs.push(ki)
+        }
+      }
+      recentKnowledgeItems = activeRecentKIs
+    }
+  } catch {
+    // Fail-safe
+  }
+
   // 6. BUILD 04C — CONTINUITY (aditivo, sem persistência, sem scoring, sem IA):
   // Incluir Presentations recentes status=presented e Recognitions vinculados.
   // Destacar deterministicamente para preparação:

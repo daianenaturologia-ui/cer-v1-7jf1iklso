@@ -13,7 +13,9 @@ import type {
   ExperienceProgressStatus,
   ComponentType,
   VisibilityClass,
+  CerSignalRecord,
 } from '@/types/cer'
+import { deriveEvidenceCurrency, EvidenceCurrencyResult } from '@/services/orchestrationResolver'
 
 /**
  * Serviço de Feature Flags
@@ -254,6 +256,30 @@ export const experienceResponseService = {
       filter: `enrollment_id = "${enrollmentId}" && experience_id = "${experienceId}"`,
       expand: 'prompt_id',
       sort: 'prompt_id.step_order',
+    })
+  },
+
+  /**
+   * Deriva deterministicamente a Evidence Currency Layer para um enrollment
+   * separando respostas e signals correntes vs históricos.
+   */
+  async getEnrollmentEvidenceCurrency(enrollmentId: string): Promise<EvidenceCurrencyResult> {
+    const [responses, prompts, signals] = await Promise.all([
+      pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
+        filter: `enrollment_id = "${enrollmentId}"`,
+      }),
+      pb.collection('cer_prompts').getFullList<CerPromptRecord>({
+        sort: 'step_order',
+      }),
+      pb.collection('cer_signals').getFullList<CerSignalRecord>({
+        filter: `enrollment_id = "${enrollmentId}"`,
+      }),
+    ])
+
+    return deriveEvidenceCurrency({
+      prompts,
+      responses,
+      signals,
     })
   },
 

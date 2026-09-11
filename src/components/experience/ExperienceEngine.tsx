@@ -36,7 +36,17 @@ import {
   ShieldCheck,
   ChevronRight,
   Save,
+  AlertTriangle,
+  Lock,
 } from 'lucide-react'
+import {
+  resolveExperienceOrchestration,
+  FAILSAFE_MICROCOPY,
+  auditRuntimeInvalid,
+  getPromptKey,
+  getPromptOrchestration,
+} from '@/services/orchestrationResolver'
+import { contextReuseService } from '@/services/contextReuseService'
 
 export interface ExperienceEngineProps {
   experienceId: string
@@ -68,6 +78,15 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const [saving, setSaving] = useState(false)
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null)
   const [closingReflection, setClosingReflection] = useState('')
+
+  // Build 07A — Estado de Orquestração, Fail-Safe e Open-First
+  const [orchestrationFailed, setOrchestrationFailed] = useState(false)
+  const [orchestrationFailMessage, setOrchestrationFailMessage] = useState(FAILSAFE_MICROCOPY)
+  const [showOpenFirstSuggestions, setShowOpenFirstSuggestions] = useState(false)
+  const [currentNamingOrigin, setCurrentNamingOrigin] = useState<
+    'spontaneous' | 'selected_after_prompting' | 'not_applicable'
+  >('spontaneous')
+  const [reusedContextBinding, setReusedContextBinding] = useState<any>(null)
 
   // Resposta em edição do momento atual
   const [currentDraftValue, setCurrentDraftValue] = useState<unknown>(null)
@@ -101,18 +120,29 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         }
         setResponsesMap(map)
 
-        // Retomada inteligente de progresso:
-        // Se já estava em andamento ou completada, direciona para o step adequado
-        if (enrExp?.progress_status === 'completed') {
-          setEngineStage('closing')
-        } else if (enrExp?.current_step_order && enrExp.current_step_order > 1) {
-          const targetIndex = promptList.findIndex(
-            (p) => p.step_order === enrExp.current_step_order,
-          )
-          if (targetIndex >= 0) {
-            setCurrentStepIndex(targetIndex)
-            // Se o usuário já iniciou previamente, abre a tela de abertura ou vai direto
-            // Deixar em 'opening' permitindo retomar
+        // Retomada inteligente de progresso via OrchestrationResolver:
+        const orchResult = resolveExperienceOrchestration({
+          prompts: promptList,
+          responses: existingResponses,
+          currentStepOrder: enrExp?.current_step_order || 1,
+        })
+
+        if (orchResult.status === 'ORCHESTRATION_UNAVAILABLE') {
+          setOrchestrationFailed(true)
+          setOrchestrationFailMessage(orchResult.displayMessage || FAILSAFE_MICROCOPY)
+          // Auditoria técnica mínima do erro runtime
+          auditRuntimeInvalid({
+            actorUserId: respondentUserId,
+            enrollmentId,
+            experienceId,
+            reasonCode: orchResult.reasonCode || 'RUNTIME_INVALID',
+          })
+        } else {
+          setOrchestrationFailed(false)
+          if (enrExp?.progress_status === 'completed') {
+            setEngineStage('closing')
+          } else {
+            setCurrentStepIndex(orchResult.currentStepIndex)
           }
         }
       } catch (err) {
@@ -127,24 +157,59 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     return () => {
       isMounted = false
     }
-  }, [experienceId, enrollmentId])
+  }, [experienceId, enrollmentId, respondentUserId])
 
   // Atualizar rascunho sempre que o prompt atual mudar
   useEffect(() => {
     const currentPrompt = prompts[currentStepIndex]
+    setShowOpenFirstSuggestions(false)
+    setCurrentNamingOrigin('spontaneous')
+    setReusedContextBinding(null)
+
     if (currentPrompt) {
       const existing = responsesMap[currentPrompt.id]
       setOrderingInteracted(false)
+
+      const schema = (currentPrompt.schema_config || {}) as any
+
+      // Checar se há contexto reutilizado configurado (Registro Único puro)
+      if (schema.context_reuse && schema.context_reuse.concept_key) {
+        contextReuseService
+          .findReusableContext({
+            enrollmentId,
+            conceptKey: schema.context_reuse.concept_key,
+            temporality: schema.context_reuse.temporality,
+            frameworkId: schema.context_reuse.framework_id,
+            requestingAccessDestination: schema.access_destination || 'shared_care',
+          })
+          .then((res) => {
+            if (res.hasMatch && res.isDisplayableToParticipant) {
+              setReusedContextBinding(res)
+              // Reuso puro audit
+              contextReuseService.auditReusedContextPresented({
+                actorUserId: respondentUserId,
+                enrollmentId,
+                promptKey: getPromptKey(currentPrompt),
+                sourceConceptKey: res.conceptKey || schema.context_reuse.concept_key,
+                sourceAccessClass: res.sourceAccessClass || 'shared_care',
+              })
+            }
+          })
+          .catch(() => {})
+      }
+
       if (existing) {
+        const sVal = existing.structured_value as any
         setCurrentDraftValue(existing.structured_value)
         setCurrentDraftText(existing.free_text || '')
+        if (sVal && sVal.naming_origin) {
+          setCurrentNamingOrigin(sVal.naming_origin)
+        }
         if (currentPrompt.component_type === 'Ordering') {
           setOrderingInteracted(true)
         }
       } else {
         // Correção de defaults metodológicos:
-        // SimpleScale: NÃO iniciar pré-selecionado (inicia como null)
-        // Ordering: exibe itens configurados, mas sem auto-confirmação
         if (
           currentPrompt.component_type === 'MultiSelectCards' ||
           currentPrompt.component_type === 'BodyMap'
@@ -160,7 +225,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         setCurrentDraftText('')
       }
     }
-  }, [currentStepIndex, prompts, responsesMap])
+  }, [currentStepIndex, prompts, responsesMap, enrollmentId, respondentUserId])
 
   const handleStartExperience = async () => {
     setEngineStage('moments')
@@ -183,9 +248,26 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
     setSaving(true)
     try {
-      // FreeReflection suporta privacidade participante (participant_private)
-      const targetAccessClass =
-        currentPrompt.component_type === 'FreeReflection' ? 'participant_private' : 'shared_care'
+      // Build 07A: Usar SEMPRE a configuração versionada access_destination do prompt (default seguro: shared_care)
+      const pSchema = (currentPrompt.schema_config || {}) as any
+      const targetAccessClass = pSchema.access_destination || 'shared_care'
+
+      // Anexar proveniência (collection_origin e naming_origin) se for objeto estruturado ou envolver
+      let structToSave: any = valToSave
+      if (typeof structToSave === 'object' && structToSave !== null) {
+        if (!structToSave.collection_origin) {
+          structToSave.collection_origin = 'newly_collected'
+        }
+        if (pSchema.open_first?.enabled) {
+          structToSave.naming_origin = currentNamingOrigin
+        }
+      } else if (typeof structToSave === 'string' || typeof structToSave === 'number') {
+        structToSave = {
+          value: structToSave,
+          collection_origin: 'newly_collected',
+          ...(pSchema.open_first?.enabled ? { naming_origin: currentNamingOrigin } : {}),
+        }
+      }
 
       const saved = await experienceResponseService.saveResponse({
         enrollmentId,
@@ -194,7 +276,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         respondentUserId,
         responseType: currentPrompt.component_type,
         promptVersion: currentPrompt.version,
-        structuredValue: valToSave,
+        structuredValue: structToSave,
         freeText:
           currentPrompt.component_type === 'FreeReflection'
             ? (currentDraftValue as string) || currentDraftText
@@ -229,11 +311,89 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const handleNextStep = async () => {
     await saveCurrentStepResponse()
 
-    if (currentStepIndex < prompts.length - 1) {
-      setCurrentStepIndex((prev) => prev + 1)
-    } else {
-      // Conclusão da experiência
+    // Recalcular orquestração com as respostas atualizadas
+    const currentResponses = Object.values(responsesMap)
+    // Incluir temporariamente a resposta do passo atual caso o state responsesMap ainda não tenha sido atualizado
+    const currentPrompt = prompts[currentStepIndex]
+    const updatedResponses = [...currentResponses.filter((r) => r.prompt_id !== currentPrompt.id)]
+    updatedResponses.push({
+      id: 'temp_resp',
+      enrollment_id: enrollmentId,
+      experience_id: experienceId,
+      prompt_id: currentPrompt.id,
+      respondent_user_id: respondentUserId,
+      response_type: currentPrompt.component_type,
+      access_class: (currentPrompt.schema_config as any)?.access_destination || 'shared_care',
+      structured_value: currentDraftValue,
+      prompt_version: currentPrompt.version,
+      version: 1,
+      status: 'saved',
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+    })
+
+    const orch = resolveExperienceOrchestration({
+      prompts,
+      responses: updatedResponses,
+      currentStepOrder: (currentPrompt.step_order || 0) + 1,
+    })
+
+    if (orch.status === 'ORCHESTRATION_UNAVAILABLE') {
+      setOrchestrationFailed(true)
+      setOrchestrationFailMessage(orch.displayMessage || FAILSAFE_MICROCOPY)
+      auditRuntimeInvalid({
+        actorUserId: respondentUserId,
+        enrollmentId,
+        experienceId,
+        reasonCode: orch.reasonCode || 'RUNTIME_INVALID',
+      })
+      return
+    }
+
+    if (orch.isCompleted || !orch.nextPrompt) {
       handleCompleteExperience()
+    } else {
+      const nextIdx = prompts.findIndex((p) => p.id === orch.nextPrompt!.id)
+      if (nextIdx >= 0) {
+        setCurrentStepIndex(nextIdx)
+      } else {
+        handleCompleteExperience()
+      }
+    }
+  }
+
+  const handleLegitimateSkip = async (reason: 'nao_sei' | 'prefiro_nao_responder') => {
+    const currentPrompt = prompts[currentStepIndex]
+    if (!currentPrompt) return
+
+    setSaving(true)
+    try {
+      const pSchema = (currentPrompt.schema_config || {}) as any
+      const targetAccessClass = pSchema.access_destination || 'shared_care'
+
+      const saved = await experienceResponseService.saveResponse({
+        enrollmentId,
+        experienceId,
+        promptId: currentPrompt.id,
+        respondentUserId,
+        responseType: currentPrompt.component_type,
+        promptVersion: currentPrompt.version,
+        structuredValue: {
+          is_legitimate_skip: true,
+          skip_reason: reason,
+          collection_origin: 'newly_collected',
+        },
+        freeText: reason === 'nao_sei' ? 'Não sei' : 'Prefiro não responder',
+        accessClass: targetAccessClass,
+        changeReason: 'Declaração legítima de resposta não punitiva (' + reason + ')',
+      })
+
+      setResponsesMap((prev) => ({ ...prev, [currentPrompt.id]: saved }))
+      handleNextStep()
+    } catch (err) {
+      console.error('Falha ao registrar recusa legítima:', err)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -259,6 +419,41 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       <div className="py-20 flex flex-col items-center justify-center space-y-3">
         <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
         <p className="text-xs text-muted-foreground">Preparando sua experiência...</p>
+      </div>
+    )
+  }
+
+  // BUILD 07A — FAIL-SAFE DE RUNTIME: Interrupção Segura (Nunca Degradar para Caminho Linear)
+  if (orchestrationFailed) {
+    return (
+      <div className="max-w-xl mx-auto py-12 px-4 space-y-6 text-center">
+        <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-2">
+          <AlertTriangle className="w-6 h-6 stroke-[2]" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-serif font-medium text-foreground">
+            Experiência em Pausa Segura
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+            {orchestrationFailMessage}
+          </p>
+        </div>
+        <div className="p-4 rounded-xl bg-card border border-border/70 text-xs text-muted-foreground space-y-2 text-left">
+          <p className="text-foreground font-medium flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            <span>Integridade Preservada:</span>
+          </p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>Nenhuma resposta anterior foi apagada ou alterada.</li>
+            <li>Seu progresso está seguro e nenhuma marcação incorreta foi feita.</li>
+            <li>Quando o roteiro for normalizado, você poderá retomar exatamente daqui.</li>
+          </ul>
+        </div>
+        <div className="pt-2 flex items-center justify-center gap-3">
+          <Button onClick={onClose} variant="outline" className="text-xs h-9 px-6">
+            Voltar ao Início
+          </Button>
+        </div>
       </div>
     )
   }
@@ -425,9 +620,33 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   // FASE 2: MOMENTOS (UM PROMPT POR VEZ, COMPONENTES DINÂMICOS)
   // -------------------------------------------------------------
   const currentPrompt = prompts[currentStepIndex]
-  const isFirstStep = currentStepIndex === 0
-  const isLastStep = currentStepIndex === prompts.length - 1
   const existingSaved = responsesMap[currentPrompt.id]
+
+  // Calcular contagem de prompts elegíveis reais (Progress humanizado Y = count(elegíveis))
+  const orchDerived = resolveExperienceOrchestration({
+    prompts,
+    responses: Object.values(responsesMap),
+    currentStepOrder: currentPrompt.step_order,
+  })
+
+  const eligibleList = orchDerived.status === 'AVAILABLE' ? orchDerived.eligiblePrompts : prompts
+  const currentEligibleIndex = eligibleList.findIndex((p) => p.id === currentPrompt.id)
+  const displayStepNumber =
+    currentEligibleIndex >= 0 ? currentEligibleIndex + 1 : currentStepIndex + 1
+  const displayTotalCount = eligibleList.length
+  const isFirstStep = currentStepIndex === 0
+  const isLastStep = currentEligibleIndex === eligibleList.length - 1
+
+  const pSchema = (currentPrompt.schema_config || {}) as any
+  const accessDestination = pSchema.access_destination || 'shared_care'
+
+  // Microcopy pré-expressão de privacidade
+  const privacyMicrocopy =
+    accessDestination === 'participant_private'
+      ? 'Só para você. Ninguém mais vê isso.'
+      : accessDestination === 'participant_shared'
+        ? 'Compartilhado com sua profissional de referência.'
+        : 'Cuidado compartilhado da sua jornada.'
 
   // Renderizador dinâmico de componente conforme o schema
   const renderDynamicComponent = () => {
@@ -439,15 +658,21 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         return (
           <ChoiceCards
             config={schema as any}
-            value={currentDraftValue as string}
+            value={
+              typeof currentDraftValue === 'object' && currentDraftValue !== null
+                ? (currentDraftValue as any).value || (currentDraftValue as any).selectedOptionId
+                : (currentDraftValue as string)
+            }
             onChange={(val) => setCurrentDraftValue(val)}
+            allowSkip={true}
+            onSkip={handleLegitimateSkip}
           />
         )
       case 'MultiSelectCards':
         return (
           <MultiSelectCards
             config={schema as any}
-            value={currentDraftValue as string[]}
+            value={Array.isArray(currentDraftValue) ? (currentDraftValue as string[]) : []}
             onChange={(val) => setCurrentDraftValue(val)}
           />
         )
@@ -455,7 +680,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         return (
           <SimpleScale
             config={schema as any}
-            value={currentDraftValue as number}
+            value={typeof currentDraftValue === 'number' ? (currentDraftValue as number) : null}
             onChange={(val) => setCurrentDraftValue(val)}
           />
         )
@@ -498,11 +723,30 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         return (
           <FreeReflection
             config={schema as any}
-            value={(currentDraftValue as string) || currentDraftText}
+            value={
+              typeof currentDraftValue === 'object' && currentDraftValue !== null
+                ? (currentDraftValue as any).value || currentDraftText
+                : (currentDraftValue as string) || currentDraftText
+            }
             onChange={(val) => {
               setCurrentDraftValue(val)
               setCurrentDraftText(val)
             }}
+            openFirstConfig={
+              pSchema.open_first?.enabled
+                ? {
+                    enabled: true,
+                    helpLabel: pSchema.open_first.help_label || 'Ver opções de apoio',
+                    optionSetRef: pSchema.open_first.option_set_ref,
+                  }
+                : undefined
+            }
+            showSuggestions={showOpenFirstSuggestions}
+            onHelpRequested={() => {
+              setShowOpenFirstSuggestions(!showOpenFirstSuggestions)
+              setCurrentNamingOrigin('selected_after_prompting')
+            }}
+            namingOrigin={currentNamingOrigin}
           />
         )
       default:
@@ -528,8 +772,12 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Pausar e Salvar</span>
           </Button>
-          <span className="text-xs text-muted-foreground font-mono">
-            Momento {currentStepIndex + 1} de {prompts.length}
+          <span
+            className="text-xs text-muted-foreground font-mono"
+            aria-live="polite"
+            role="status"
+          >
+            Momento {displayStepNumber} de {displayTotalCount}
           </span>
         </div>
 
@@ -597,6 +845,29 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         </div>
         {currentPrompt.helper_text && (
           <p className="text-[11px] text-muted-foreground/80 italic">{currentPrompt.helper_text}</p>
+        )}
+
+        {/* Microcopy Pré-Expressão de Privacidade (Build 07A) */}
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/90 bg-muted/20 px-2.5 py-1 rounded-md border border-border/40 w-fit">
+          <Lock className="w-3 h-3 text-primary/70 shrink-0" />
+          <span>{privacyMicrocopy}</span>
+        </div>
+
+        {/* Registro Único — Contexto Reutilizado Puro Exibido Read-Only */}
+        {reusedContextBinding && (
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-xs space-y-1">
+            <span className="font-medium text-foreground block">
+              Contexto já registrado anteriormente:
+            </span>
+            <span className="text-muted-foreground italic block">
+              {typeof reusedContextBinding.readOnlyValue === 'object'
+                ? JSON.stringify(reusedContextBinding.readOnlyValue)
+                : String(reusedContextBinding.readOnlyValue)}
+            </span>
+            <span className="text-[10px] text-primary/80 font-mono block">
+              Reuso do Registro Único (sem necessidade de preencher novamente)
+            </span>
+          </div>
         )}
       </div>
 

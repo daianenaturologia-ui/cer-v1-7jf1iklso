@@ -50,6 +50,31 @@ export const cerMapCandidateService = {
       expand: 'framework_id',
     })
 
+    // BUILD 07A — Evidence Currency Layer no Mapa:
+    // Derivar Evidence Currency para excluir itens cuja sustentação dependa exclusivamente de evidências inativas
+    let currency: any = null
+    try {
+      const [allResps, allPrompts, allSigs] = await Promise.all([
+        pb.collection('experience_responses').getFullList({
+          filter: `enrollment_id = "${enrollmentId}"`,
+        }),
+        pb.collection('cer_prompts').getFullList({
+          sort: 'step_order',
+        }),
+        pb.collection('cer_signals').getFullList({
+          filter: `enrollment_id = "${enrollmentId}"`,
+        }),
+      ])
+      const { deriveEvidenceCurrency } = await import('@/services/orchestrationResolver')
+      currency = deriveEvidenceCurrency({
+        prompts: allPrompts as any,
+        responses: allResps as any,
+        signals: allSigs as any,
+      })
+    } catch {
+      currency = null
+    }
+
     // 2. Buscar todas as recognitions do enrollment (para pegar a mais recente por KI)
     const recognitions = await pb
       .collection('cer_participant_recognitions')
@@ -70,6 +95,32 @@ export const cerMapCandidateService = {
     const candidateList: MapCandidateItem[] = []
 
     for (const ki of kis) {
+      // Filtrar por Evidence Currency se disponível
+      if (
+        currency &&
+        (currency.historicalSignalIds.size > 0 || currency.historicalResponseIds.size > 0)
+      ) {
+        try {
+          const evs = await pb.collection('cer_knowledge_evidence').getFullList({
+            filter: `knowledge_item_id = "${ki.id}"`,
+          })
+          const hasInactivatedOnly =
+            evs.length > 0 &&
+            evs.every((ev) => {
+              if (ev.evidence_type === 'signal')
+                return currency.historicalSignalIds.has(ev.evidence_id)
+              if (ev.evidence_type === 'response')
+                return currency.historicalResponseIds.has(ev.evidence_id)
+              return false
+            })
+          if (hasInactivatedOnly) {
+            continue // Fora do consumo corrente
+          }
+        } catch {
+          /* intentionally ignored */
+        }
+      }
+
       const latestRecog = latestRecogByKi.get(ki.id)
       const presContext = latestRecog?.expand?.presentation_id
 

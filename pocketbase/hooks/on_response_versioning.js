@@ -9,6 +9,77 @@
 onRecordCreate((e) => {
   const record = e.record
 
+  // Build 07A: Validar proveniência de registro único e collection_origin
+  let structVal = record.get('structured_value')
+  if (typeof structVal === 'string') {
+    try {
+      structVal = JSON.parse(structVal)
+    } catch (_) {}
+  }
+  if (structVal && typeof structVal === 'object') {
+    if (structVal.collection_origin === 'reused') {
+      throw new BadRequestError(
+        'collection_origin=reused é inválido em experience_responses. Reuso puro não cria resposta.',
+      )
+    }
+    if (structVal.collection_origin === 'contextualized') {
+      if (!structVal.context_reference && !structVal.source_response_id) {
+        throw new BadRequestError(
+          'Resposta contextualizada exige context_reference ou source_response_id.',
+        )
+      }
+    }
+  }
+
+  // Preencher prompt_version e access_destination a partir do prompt
+  let promptRec = null
+  const promptId = record.getString('prompt_id')
+  if (promptId) {
+    try {
+      promptRec = $app.findFirstRecordByData('cer_prompts', 'id', promptId)
+    } catch (_) {}
+  }
+
+  if (promptRec) {
+    if (!record.getInt('prompt_version')) {
+      record.set('prompt_version', promptRec.getInt('version') || 1)
+    }
+
+    let pSchema = promptRec.get('schema_config')
+    if (typeof pSchema === 'string') {
+      try {
+        pSchema = JSON.parse(pSchema)
+      } catch (_) {
+        pSchema = {}
+      }
+    } else if (!pSchema || typeof pSchema !== 'object') {
+      pSchema = {}
+    }
+
+    // Se o prompt tem access_destination declarado, a resposta DEVE nascer com essa access_class
+    if (pSchema.access_destination) {
+      const declaredDest = pSchema.access_destination
+      const recAccess = record.getString('access_class')
+      if (recAccess && recAccess !== declaredDest) {
+        throw new BadRequestError(
+          'access_class da resposta (' +
+            recAccess +
+            ') diverge do access_destination do prompt (' +
+            declaredDest +
+            ').',
+        )
+      }
+      record.set('access_class', declaredDest)
+    }
+  }
+
+  // Proibir que prompt participante nasça com access_class = professional_private
+  if (record.getString('access_class') === 'professional_private') {
+    throw new BadRequestError(
+      'access_class professional_private é proibido para respostas participant-facing.',
+    )
+  }
+
   // Preencher defaults caso não venham preenchidos
   if (!record.getString('access_class')) {
     record.set('access_class', 'shared_care')

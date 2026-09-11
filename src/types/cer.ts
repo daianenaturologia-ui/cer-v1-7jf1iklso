@@ -243,6 +243,10 @@ export const AUDIT_ACTIONS = {
   AI_PROPOSAL_CREATED: 'AI_PROPOSAL_CREATED',
   AI_PROPOSAL_REVIEWED: 'AI_PROPOSAL_REVIEWED',
   AI_REQUEST_REFUSED: 'AI_REQUEST_REFUSED',
+  // Ações de auditoria do Experience Orchestration (Build 07A)
+  ORCHESTRATION_RUNTIME_INVALID: 'ORCHESTRATION_RUNTIME_INVALID',
+  REUSED_CONTEXT_PRESENTED: 'REUSED_CONTEXT_PRESENTED',
+  SKIP_DECLARED: 'SKIP_DECLARED',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -1023,6 +1027,76 @@ export interface CerExperienceMomentRecord {
   updated: string
 }
 
+// ------------------------------------------
+// TIPOS DO EXPERIENCE ORCHESTRATION (BUILD 07A)
+// ------------------------------------------
+
+export type PathRole = 'essential' | 'adaptive'
+
+export type OrchestrationAction = 'open_branch' | 'skip_branch' | 'goto'
+
+export interface OrchestrationCondition {
+  field?: string // default: 'structured_value'
+  operator?: 'equals' | 'contains' | 'concept_key_exists'
+  value?: unknown
+  concept_key?: string
+  temporality?: SignalTemporality
+}
+
+export interface OrchestrationRoute {
+  id: string
+  when?: {
+    any_of?: OrchestrationCondition[]
+    all_of?: OrchestrationCondition[]
+  }
+  then: {
+    action: OrchestrationAction
+    target_prompt_key: string
+  }
+}
+
+export interface OrchestrationConfig {
+  path_role?: PathRole
+  requires_branch_open?: boolean
+  routes?: OrchestrationRoute[]
+  fallback?: {
+    action: OrchestrationAction
+    target_prompt_key: string
+  }
+}
+
+export interface OpenFirstConfig {
+  enabled: boolean
+  allow_skip?: boolean
+  help_label: string
+  option_set_ref: string
+}
+
+export type CollectionOrigin = 'newly_collected' | 'contextualized' | 'reused'
+
+export type NamingOrigin = 'spontaneous' | 'selected_after_prompting' | 'not_applicable'
+
+export interface StructuredValueWithProvenance {
+  value?: unknown
+  selectedOptionId?: string
+  collection_origin?: CollectionOrigin
+  naming_origin?: NamingOrigin
+  context_reference?: string
+  source_response_id?: string
+  concept_key?: string
+  is_legitimate_skip?: boolean
+  skip_reason?: 'nao_sei' | 'prefiro_nao_responder' | 'optional_skip'
+  [key: string]: unknown
+}
+
+export interface CerPromptSchemaConfig {
+  prompt_key?: string
+  access_destination?: 'participant_private' | 'participant_shared' | 'shared_care'
+  orchestration?: OrchestrationConfig
+  open_first?: OpenFirstConfig
+  [key: string]: unknown
+}
+
 export interface CerPromptRecord {
   id: string
   experience_id: string
@@ -1034,7 +1108,7 @@ export interface CerPromptRecord {
   component_type: ComponentType
   prompt_text: string
   helper_text?: string
-  schema_config: Record<string, unknown>
+  schema_config: CerPromptSchemaConfig & Record<string, unknown>
   is_required: boolean
   version: number
   expand?: {

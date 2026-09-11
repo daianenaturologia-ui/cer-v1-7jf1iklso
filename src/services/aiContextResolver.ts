@@ -490,6 +490,30 @@ export async function resolveAuthorizedContext(
     // Broad authorized enrollment scan for brief/ask_cer
     const cats = requestedCategories || ALLOWED_CATEGORIES
 
+    // Evidence Currency Layer (Build 07A): obter conjunto corrente antes de adicionar fontes
+    let currency: any = null
+    try {
+      const [allResps, allPrompts, allSigs] = await Promise.all([
+        pb.collection('experience_responses').getFullList({
+          filter: `enrollment_id = "${enrollmentId}"`,
+        }),
+        pb.collection('cer_prompts').getFullList({
+          sort: 'step_order',
+        }),
+        pb.collection('cer_signals').getFullList({
+          filter: `enrollment_id = "${enrollmentId}"`,
+        }),
+      ])
+      const { deriveEvidenceCurrency } = await import('@/services/orchestrationResolver')
+      currency = deriveEvidenceCurrency({
+        prompts: allPrompts as any,
+        responses: allResps as any,
+        signals: allSigs as any,
+      })
+    } catch {
+      currency = null
+    }
+
     // a) experience_responses (shared_care, participant_shared)
     if (cats.includes('experience_responses')) {
       try {
@@ -497,6 +521,10 @@ export async function resolveAuthorizedContext(
           filter: `enrollment_id = "${enrollmentId}" && (access_class = "shared_care" || access_class = "participant_shared")`,
         })
         for (const r of resps) {
+          // Filtrar por Evidence Currency: excluir respostas de branches históricos inativos
+          if (currency && currency.historicalResponseIds.has(r.id)) {
+            continue
+          }
           sources.push({
             source_type: 'experience_response',
             source_id: r.id,
@@ -518,6 +546,10 @@ export async function resolveAuthorizedContext(
           filter: `enrollment_id = "${enrollmentId}" && (access_class = "shared_care" || access_class = "participant_shared")`,
         })
         for (const s of sigs) {
+          // Filtrar por Evidence Currency: excluir signals originados de respostas inativas
+          if (currency && currency.historicalSignalIds.has(s.id)) {
+            continue
+          }
           sources.push({
             source_type: 'signal',
             source_id: s.id,
