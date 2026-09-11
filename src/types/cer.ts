@@ -1307,3 +1307,239 @@ export interface CerSignalRecord {
   created: string
   updated: string
 }
+
+// ==========================================
+// BUILD 08B — CARE PLANNING & OPERATIONAL CYCLES
+// ==========================================
+
+export const CARE_PLAN_STATUS = {
+  DRAFT: 'draft',
+  ACTIVE: 'active',
+  PAUSED: 'paused',
+  SUPERSEDED: 'superseded',
+  COMPLETED: 'completed',
+  ARCHIVED: 'archived',
+} as const
+export type CarePlanStatus = (typeof CARE_PLAN_STATUS)[keyof typeof CARE_PLAN_STATUS]
+
+export const CARE_PLAN_DIRECTION_MODE = {
+  REUSED: 'reused',
+  CONTEXTUALIZED: 'contextualized',
+  STILL_DISCOVERING: 'still_discovering',
+} as const
+export type CarePlanDirectionMode =
+  (typeof CARE_PLAN_DIRECTION_MODE)[keyof typeof CARE_PLAN_DIRECTION_MODE]
+
+export const CARE_PLAN_PRIORITY_STATUS = {
+  CANDIDATE: 'candidate',
+  ACTIVE: 'active',
+  ACTIVE_PENDING_ADAPTATION: 'active_pending_adaptation',
+  DEFERRED: 'deferred',
+  SUPERSEDED: 'superseded',
+  ARCHIVED: 'archived',
+} as const
+export type CarePlanPriorityStatus =
+  (typeof CARE_PLAN_PRIORITY_STATUS)[keyof typeof CARE_PLAN_PRIORITY_STATUS]
+
+export const CARE_PLAN_PRIORITY_SOURCE_TYPE = {
+  KNOWLEDGE_ITEM: 'knowledge_item',
+  PARTICIPANT_RECOGNITION: 'participant_recognition',
+  MAP_ITEM: 'map_item',
+  PRESENTATION: 'presentation',
+  ASSOCIATION: 'association',
+  SIGNAL: 'signal',
+  AI_PROPOSAL: 'ai_proposal',
+  PROFESSIONAL_INPUT: 'professional_input',
+} as const
+export type CarePlanPrioritySourceType =
+  (typeof CARE_PLAN_PRIORITY_SOURCE_TYPE)[keyof typeof CARE_PLAN_PRIORITY_SOURCE_TYPE]
+
+export const CARE_PLAN_PRESENTATION_STATUS = {
+  DRAFT: 'draft',
+  PRESENTED: 'presented',
+  WITHDRAWN: 'withdrawn',
+  SUPERSEDED: 'superseded',
+} as const
+export type CarePlanPresentationStatus =
+  (typeof CARE_PLAN_PRESENTATION_STATUS)[keyof typeof CARE_PLAN_PRESENTATION_STATUS]
+
+export const CARE_CYCLE_STATUS = {
+  PLANNED: 'planned',
+  ACTIVE: 'active',
+  PAUSED: 'paused',
+  CLOSED: 'closed',
+} as const
+export type CareCycleStatus = (typeof CARE_CYCLE_STATUS)[keyof typeof CARE_CYCLE_STATUS]
+
+export const CARE_CYCLE_REVIEW_EVENT_TYPE = {
+  SESSION: 'session',
+  PARTICIPANT_CHECKIN: 'participant_checkin',
+  SCHEDULED: 'scheduled',
+  MANUAL: 'manual',
+  FUTURE_CONDITION: 'future_condition',
+} as const
+export type CareCycleReviewEventType =
+  (typeof CARE_CYCLE_REVIEW_EVENT_TYPE)[keyof typeof CARE_CYCLE_REVIEW_EVENT_TYPE]
+
+export const OPERATIONAL_ACCEPTANCE_RESPONSE_TYPE = {
+  ACCEPTED: 'accepted',
+  WANTS_TO_TRY: 'wants_to_try',
+  TOO_MUCH: 'too_much',
+  WANTS_TO_ADAPT: 'wants_to_adapt',
+  NOT_NOW: 'not_now',
+  ALTERNATIVE_REQUESTED: 'alternative_requested',
+  WANTS_TO_TALK: 'wants_to_talk',
+} as const
+export type OperationalAcceptanceResponseType =
+  (typeof OPERATIONAL_ACCEPTANCE_RESPONSE_TYPE)[keyof typeof OPERATIONAL_ACCEPTANCE_RESPONSE_TYPE]
+
+export const RECORD_LIFECYCLE_STATUS = {
+  CURRENT: 'current',
+  SUPERSEDED: 'superseded',
+} as const
+export type RecordLifecycleStatus =
+  (typeof RECORD_LIFECYCLE_STATUS)[keyof typeof RECORD_LIFECYCLE_STATUS]
+
+export interface CerCarePlanRecord {
+  id: string
+  enrollment_id: string
+  revision_number: number
+  status: CarePlanStatus
+  direction_mode: CarePlanDirectionMode
+  direction_statement?: string
+  direction_source_id?: string
+  professional_context?: string
+  professional_rationale?: string
+  previous_plan_id?: string
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    created_by_user_id?: UserAccountRecord
+  }
+}
+
+export interface CerCarePlanPriorityRecord {
+  id: string
+  plan_id: string
+  title: string
+  description?: string
+  status: CarePlanPriorityStatus
+  is_therapeutic_priority?: boolean
+  is_possible_now?: boolean
+  order_index?: number
+  deferral_reason?: string
+  professional_rationale?: string
+  access_class: VisibilityClass
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    plan_id?: CerCarePlanRecord
+    created_by_user_id?: UserAccountRecord
+  }
+}
+
+export interface CerCarePlanPrioritySourceRecord {
+  id: string
+  priority_id: string
+  enrollment_id: string
+  source_type: CarePlanPrioritySourceType
+  source_id: string
+  source_version_anchor?: string
+  access_class: VisibilityClass
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    priority_id?: CerCarePlanPriorityRecord
+    enrollment_id?: EnrollmentRecord
+    created_by_user_id?: UserAccountRecord
+  }
+}
+
+export interface CerCarePlanPresentationRecord {
+  id: string
+  enrollment_id: string
+  plan_id: string
+  priority_id?: string
+  status: CarePlanPresentationStatus
+  participant_title: string
+  participant_summary?: string
+  practical_invitation?: string
+  presented_at?: string
+  withdrawn_at?: string
+  channel: 'app' | 'session'
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    plan_id?: CerCarePlanRecord
+    priority_id?: CerCarePlanPriorityRecord
+    created_by_user_id?: UserAccountRecord
+  }
+}
+
+export interface CerCareCycleRecord {
+  id: string
+  enrollment_id: string
+  plan_id: string
+  cycle_number: number
+  status: CareCycleStatus
+  start_date?: string
+  planned_end_date?: string
+  extended_until?: string
+  closed_at?: string
+  review_event_type: CareCycleReviewEventType
+  capacity_context_ref?: string
+  focus_summary?: string
+  professional_notes?: string
+  created_by_user_id: string
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    plan_id?: CerCarePlanRecord
+    created_by_user_id?: UserAccountRecord
+  }
+}
+
+export interface CerOperationalAcceptanceRecord {
+  id: string
+  presentation_id: string
+  plan_id: string
+  priority_id?: string
+  enrollment_id: string
+  participant_user_id: string
+  response_type: OperationalAcceptanceResponseType
+  shared_comment?: string
+  access_class: 'shared_care'
+  record_status: RecordLifecycleStatus
+  created: string
+  updated: string
+  expand?: {
+    presentation_id?: CerCarePlanPresentationRecord
+    plan_id?: CerCarePlanRecord
+    priority_id?: CerCarePlanPriorityRecord
+    enrollment_id?: EnrollmentRecord
+    participant_user_id?: UserAccountRecord
+  }
+}
+
+export interface CerOperationalAcceptancePrivateNoteRecord {
+  id: string
+  acceptance_id: string
+  participant_user_id: string
+  enrollment_id: string
+  note_text: string
+  status: RecordLifecycleStatus
+  created: string
+  updated: string
+  expand?: {
+    acceptance_id?: CerOperationalAcceptanceRecord
+    enrollment_id?: EnrollmentRecord
+    participant_user_id?: UserAccountRecord
+  }
+}

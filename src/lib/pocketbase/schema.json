@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-11T17:04:59.500Z",
+  "generatedAt": "2026-09-11T17:43:04.765Z",
   "collections": [
     {
       "name": "users",
@@ -2628,7 +2628,8 @@
           "selectValues": [
             "association_suggestion",
             "knowledge_suggestion",
-            "integrative_hypothesis"
+            "integrative_hypothesis",
+            "priority_suggestion"
           ]
         },
         {
@@ -3035,6 +3036,707 @@
         "CREATE INDEX idx_cer_mis_item ON cer_map_item_sources (map_item_id)",
         "CREATE INDEX idx_cer_mis_type ON cer_map_item_sources (source_type)",
         "CREATE INDEX idx_cer_mis_ki ON cer_map_item_sources (knowledge_item_id)"
+      ]
+    },
+    {
+      "name": "cer_care_plans",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((status != 'draft' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((status != 'draft' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "revision_number",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["draft", "active", "paused", "superseded", "completed", "archived"]
+        },
+        {
+          "name": "direction_mode",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["reused", "contextualized", "still_discovering"]
+        },
+        {
+          "name": "direction_statement",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "direction_source_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "professional_context",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "professional_rationale",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "previous_plan_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_ccp_enrollment ON cer_care_plans (enrollment_id)",
+        "CREATE INDEX idx_ccp_status ON cer_care_plans (status)",
+        "CREATE INDEX idx_ccp_revision ON cer_care_plans (enrollment_id, revision_number)"
+      ]
+    },
+    {
+      "name": "cer_care_plan_priorities",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "plan_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_care_plans"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "candidate",
+            "active",
+            "active_pending_adaptation",
+            "deferred",
+            "superseded",
+            "archived"
+          ]
+        },
+        {
+          "name": "is_therapeutic_priority",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_possible_now",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "order_index",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deferral_reason",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "professional_rationale",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared",
+            "professional_private",
+            "shared_care",
+            "administrative",
+            "system_internal"
+          ]
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_ccpp_plan ON cer_care_plan_priorities (plan_id)",
+        "CREATE INDEX idx_ccpp_status ON cer_care_plan_priorities (status)",
+        "CREATE INDEX idx_ccpp_order ON cer_care_plan_priorities (plan_id, order_index)"
+      ]
+    },
+    {
+      "name": "cer_care_plan_priority_sources",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && priority_id.plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && priority_id.plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && priority_id.plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && priority_id.plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && priority_id.plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && priority_id.plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "priority_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_care_plan_priorities"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "source_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "knowledge_item",
+            "participant_recognition",
+            "map_item",
+            "presentation",
+            "association",
+            "signal",
+            "ai_proposal",
+            "professional_input"
+          ]
+        },
+        {
+          "name": "source_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "source_version_anchor",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared",
+            "professional_private",
+            "shared_care",
+            "administrative",
+            "system_internal"
+          ]
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_ccpps_priority ON cer_care_plan_priority_sources (priority_id)",
+        "CREATE INDEX idx_ccpps_enrollment ON cer_care_plan_priority_sources (enrollment_id)",
+        "CREATE INDEX idx_ccpps_source ON cer_care_plan_priority_sources (source_type, source_id)"
+      ]
+    },
+    {
+      "name": "cer_care_cycles",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((plan_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((plan_id.enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && plan_id.enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "plan_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_care_plans"
+        },
+        {
+          "name": "cycle_number",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["planned", "active", "paused", "closed"]
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "planned_end_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "extended_until",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "closed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "review_event_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "session",
+            "participant_checkin",
+            "scheduled",
+            "manual",
+            "future_condition"
+          ]
+        },
+        {
+          "name": "capacity_context_ref",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "focus_summary",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "professional_notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_ccc_enrollment ON cer_care_cycles (enrollment_id)",
+        "CREATE INDEX idx_ccc_plan ON cer_care_cycles (plan_id)",
+        "CREATE INDEX idx_ccc_status ON cer_care_cycles (status)"
+      ]
+    },
+    {
+      "name": "cer_care_plan_presentations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((status = 'presented' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((status = 'presented' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "plan_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_care_plans"
+        },
+        {
+          "name": "priority_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_care_plan_priorities"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["draft", "presented", "withdrawn", "superseded"]
+        },
+        {
+          "name": "participant_title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "participant_summary",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "practical_invitation",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "presented_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "withdrawn_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "channel",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["app", "session"]
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_ccppres_enrollment ON cer_care_plan_presentations (enrollment_id)",
+        "CREATE INDEX idx_ccppres_plan ON cer_care_plan_presentations (plan_id)",
+        "CREATE INDEX idx_ccppres_priority ON cer_care_plan_presentations (priority_id)",
+        "CREATE INDEX idx_ccppres_status ON cer_care_plan_presentations (status)"
+      ]
+    },
+    {
+      "name": "cer_operational_acceptances",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((participant_user_id = @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((participant_user_id = @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "presentation_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_care_plan_presentations"
+        },
+        {
+          "name": "plan_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_care_plans"
+        },
+        {
+          "name": "priority_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_care_plan_priorities"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "response_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "accepted",
+            "wants_to_try",
+            "too_much",
+            "wants_to_adapt",
+            "not_now",
+            "alternative_requested",
+            "wants_to_talk"
+          ]
+        },
+        {
+          "name": "shared_comment",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["shared_care"]
+        },
+        {
+          "name": "record_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["current", "superseded"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_coa_enrollment ON cer_operational_acceptances (enrollment_id)",
+        "CREATE INDEX idx_coa_presentation ON cer_operational_acceptances (presentation_id)",
+        "CREATE INDEX idx_coa_status ON cer_operational_acceptances (record_status)"
+      ]
+    },
+    {
+      "name": "cer_operational_acceptance_private_notes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "acceptance_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_operational_acceptances"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "note_text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["current", "superseded"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_coapn_acceptance ON cer_operational_acceptance_private_notes (acceptance_id)",
+        "CREATE INDEX idx_coapn_participant ON cer_operational_acceptance_private_notes (participant_user_id)",
+        "CREATE INDEX idx_coapn_status ON cer_operational_acceptance_private_notes (status)"
       ]
     }
   ]
