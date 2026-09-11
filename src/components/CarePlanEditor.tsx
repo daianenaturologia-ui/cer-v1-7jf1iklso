@@ -98,15 +98,18 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     setLoading(true)
     setErrorMsg(null)
     try {
-      const planList = await cerCarePlanService.listPlans(enrollmentId)
-      setPlans(planList)
+      const planRecords = await pb.collection('cer_care_plans').getFullList<CerCarePlanRecord>({
+        filter: `enrollment_id = "${enrollmentId}"`,
+        sort: '-revision_number',
+      })
+      setPlans(planRecords)
 
       // Seleciona o plano ativo ou o último draft
-      const active = planList.find((p) => p.status === 'active') || planList[0] || null
+      const active = planRecords.find((p) => p.status === 'active') || planRecords[0] || null
       setSelectedPlan(active)
 
       if (active) {
-        await loadPlanDetails(active.id, active.care_plan_version)
+        await loadPlanDetails(active.id)
       } else {
         setPriorities([])
         setPresentations([])
@@ -131,12 +134,12 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     }
   }
 
-  const loadPlanDetails = async (planId: string, versionNumber: number = 1) => {
+  const loadPlanDetails = async (planId: string) => {
     try {
       const [prios, presList, accList] = await Promise.all([
-        cerCarePlanService.listPriorities(planId, versionNumber),
+        cerCarePlanService.listPriorities(planId),
         pb.collection('cer_care_plan_presentations').getFullList<CerCarePlanPresentationRecord>({
-          filter: `care_plan_id = "${planId}"`,
+          filter: `plan_id = "${planId}"`,
           sort: '-created',
         }),
         pb.collection('cer_operational_acceptances').getFullList<CerOperationalAcceptanceRecord>({
@@ -168,13 +171,14 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     setActionLoading(true)
     setErrorMsg(null)
     try {
-      const authUser = pb.authStore.model
+      const authUser = pb.authStore.record
       const newPlan = await cerCarePlanService.createDraftPlan({
         enrollment_id: enrollmentId,
         created_by_user_id: authUser?.id || '',
-        shared_direction: newPlanDirection.trim(),
-        internal_intent: newPlanIntent.trim() || undefined,
-        professional_notes_private: newPlanRationale.trim() || undefined,
+        direction_mode: 'reused',
+        direction_statement: newPlanDirection.trim(),
+        professional_context: newPlanIntent.trim() || undefined,
+        professional_rationale: newPlanRationale.trim() || undefined,
       })
       setSuccessMsg('Rascunho de Plano de Cuidado criado com sucesso.')
       setCreatePlanDialogOpen(false)
@@ -216,24 +220,22 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     setActionLoading(true)
     setErrorMsg(null)
     try {
-      const authUser = pb.authStore.model
+      const authUser = pb.authStore.record
       await cerCarePlanService.addPriority({
-        care_plan_id: selectedPlan.id,
-        care_plan_version: selectedPlan.care_plan_version,
+        plan_id: selectedPlan.id,
         created_by_user_id: authUser?.id || '',
-        internal_label: prioTitle.trim(),
-        participant_facing_label: prioTitle.trim(),
-        clinical_description: prioDescription.trim() || undefined,
+        title: prioTitle.trim(),
+        description: prioDescription.trim() || undefined,
         is_therapeutic_priority: prioTherapeutic,
         is_possible_now: prioPossibleNow,
-        professional_notes_private: prioProfessionalRationale.trim() || undefined,
+        professional_rationale: prioProfessionalRationale.trim() || undefined,
       })
       setSuccessMsg('Prioridade adicionada ao plano.')
       setCreatePriorityDialogOpen(false)
       setPrioTitle('')
       setPrioDescription('')
       setPrioProfessionalRationale('')
-      await loadPlanDetails(selectedPlan.id, selectedPlan.care_plan_version)
+      await loadPlanDetails(selectedPlan.id)
     } catch (err: any) {
       setErrorMsg(err.message || 'Erro ao criar prioridade.')
     } finally {
@@ -243,7 +245,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
   // Aceitar / Rejeitar sugestão de IA
   const handleAcceptAiSuggestion = (proposal: CerAiProposalRecord) => {
-    const rawProposal = proposal.proposal_data as any
+    const rawProposal = (proposal.proposal_content || {}) as any
     setPrioTitle(rawProposal?.title || 'Prioridade sugerida')
     setPrioDescription(rawProposal?.description || '')
     setPrioTherapeutic(true)
@@ -268,9 +270,9 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
   const handleOpenPresentation = () => {
     if (!selectedPlan) return
     const activePrios = priorities.filter((p) => p.is_possible_now)
-    const prioSummary = activePrios.map((p) => `• ${p.participant_facing_label}`).join('\n')
+    const prioSummary = activePrios.map((p) => `• ${p.title}`).join('\n')
     setPresentationSummary(
-      `Direção de Cuidado: ${selectedPlan.shared_direction}\n\nFocos combinados para este momento:\n${prioSummary}`,
+      `Direção de Cuidado: ${selectedPlan.direction_statement || ''}\n\nFocos combinados para este momento:\n${prioSummary}`,
     )
     setPreviewPerspective('PARTICIPANT')
     setPresentationPreviewDialogOpen(true)
@@ -282,19 +284,18 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     setActionLoading(true)
     setErrorMsg(null)
     try {
-      const authUser = pb.authStore.model
       const activePrios = priorities.filter((p) => p.is_possible_now)
-      await cerCarePlanService.createPresentation({
-        care_plan_id: selectedPlan.id,
-        care_plan_version: selectedPlan.care_plan_version,
-        presented_by_user_id: authUser?.id || '',
+      const pres = await cerCarePlanService.createPresentation({
+        plan_id: selectedPlan.id,
+        priority_id: activePrios[0]?.id || undefined,
+        participant_title: 'Plano de Cuidado Compartilhado',
+        participant_summary: presentationSummary.trim(),
         channel: presentationChannel,
-        presented_summary: presentationSummary.trim(),
-        priority_ids: activePrios.map((p) => p.id),
       })
+      await cerCarePlanService.presentPresentation(pres.id)
       setSuccessMsg('Plano de Cuidado apresentado para a participante com sucesso.')
       setPresentationPreviewDialogOpen(false)
-      await loadPlanDetails(selectedPlan.id, selectedPlan.care_plan_version)
+      await loadPlanDetails(selectedPlan.id)
     } catch (err: any) {
       setErrorMsg(err.message || 'Erro ao apresentar plano.')
     } finally {
@@ -318,7 +319,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                   className="text-[10px] font-mono"
                 >
                   {selectedPlan.status === 'active' ? 'Plano Ativo' : 'Rascunho'} (v
-                  {selectedPlan.care_plan_version})
+                  {selectedPlan.revision_number})
                 </Badge>
               )}
             </div>
@@ -420,11 +421,11 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                 </span>
               </div>
               <p className="text-sm font-medium text-foreground leading-relaxed">
-                {selectedPlan.shared_direction}
+                {selectedPlan.direction_statement || 'Direção em formulação'}
               </p>
-              {selectedPlan.internal_intent && (
+              {selectedPlan.professional_context && (
                 <p className="text-xs text-muted-foreground italic">
-                  Intenção interna: {selectedPlan.internal_intent}
+                  Contexto clínico: {selectedPlan.professional_context}
                 </p>
               )}
             </div>
@@ -459,7 +460,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                 </p>
                 <div className="space-y-2">
                   {aiProposals.map((prop) => {
-                    const raw = prop.proposal_data as any
+                    const raw = (prop.proposal_content || {}) as any
                     return (
                       <div
                         key={prop.id}
@@ -539,7 +540,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-semibold text-foreground text-sm">
-                                {prio.participant_facing_label}
+                                {prio.title}
                               </span>
 
                               {/* Distinção visual clara: IMPORTANTE vs AGORA */}
@@ -566,21 +567,21 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                               </Badge>
                             </div>
 
-                            {prio.clinical_description && (
+                            {prio.description && (
                               <p className="text-xs text-muted-foreground leading-relaxed pt-0.5">
-                                {prio.clinical_description}
+                                {prio.description}
                               </p>
                             )}
                           </div>
                         </div>
 
                         {/* Rationale Clínico Privado do Profissional (Seguro) */}
-                        {prio.professional_notes_private && (
+                        {prio.professional_rationale && (
                           <div className="p-2 rounded bg-muted/30 border border-border/40 text-[11px] text-muted-foreground">
                             <span className="font-medium text-foreground">
                               Olhar Clínico Privado:{' '}
                             </span>
-                            <span>{prio.professional_notes_private}</span>
+                            <span>{prio.professional_rationale}</span>
                           </div>
                         )}
 
@@ -926,11 +927,11 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                         <div key={p.id} className="flex items-center gap-2 text-xs">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                           <span className="font-medium text-foreground">
-                            {p.participant_facing_label}
+                            {p.title}
                           </span>
-                          {p.clinical_description && (
+                          {p.description && (
                             <span className="text-muted-foreground">
-                              — {p.clinical_description}
+                              — {p.description}
                             </span>
                           )}
                         </div>
@@ -954,7 +955,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                     Rationale do Plano:
                   </span>
                   <p className="text-xs text-foreground">
-                    {selectedPlan?.professional_notes_private || 'Nenhum rationale registrado.'}
+                    {selectedPlan?.professional_rationale || 'Nenhum rationale registrado.'}
                   </p>
                 </div>
 
@@ -966,11 +967,11 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                     {priorities.map((p) => (
                       <div key={p.id} className="text-xs space-y-0.5">
                         <span className="font-semibold text-foreground">
-                          • {p.participant_facing_label}
+                          • {p.title}
                         </span>
-                        {p.professional_notes_private && (
+                        {p.professional_rationale && (
                           <p className="text-[11px] text-muted-foreground italic pl-3">
-                            Rationale: {p.professional_notes_private}
+                            Rationale: {p.professional_rationale}
                           </p>
                         )}
                       </div>

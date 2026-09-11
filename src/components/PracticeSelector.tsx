@@ -70,29 +70,30 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
       const candidates = await cerPracticeService.findPracticeCandidates({})
       setPractices(candidates)
 
-      // Carregar para cada prática a sua versão ativa e perfis
+      // Carregar versões, evidências, perfis de segurança e variantes
       const versMap: Record<string, CerPracticeVersionRecord> = {}
       const evMap: Record<string, CerPracticeEvidenceRecord[]> = {}
       const sfMap: Record<string, CerPracticeSafetyProfileRecord | null> = {}
       const vrMap: Record<string, CerPracticeVariantRecord[]> = {}
 
+      const [allVersions, allEvidence, allSafety, allVariants] = await Promise.all([
+        pb.collection('cer_practice_versions').getFullList<CerPracticeVersionRecord>({
+          sort: '-version_number',
+        }),
+        pb.collection('cer_practice_evidence').getFullList<CerPracticeEvidenceRecord>(),
+        pb.collection('cer_practice_safety_profiles').getFullList<CerPracticeSafetyProfileRecord>(),
+        pb.collection('cer_practice_variants').getFullList<CerPracticeVariantRecord>(),
+      ])
+
       for (const p of candidates) {
-        try {
-          const versions = await cerPracticeService.listVersionsForPractice(p.id)
-          const published = versions.find((v) => v.status === 'active') || versions[0]
-          if (published) {
-            versMap[p.id] = published
-            const [evs, sf, vrs] = await Promise.all([
-              cerPracticeService.listEvidenceForVersion(published.id),
-              cerPracticeService.getSafetyProfileForVersion(published.id),
-              cerPracticeService.listVariantsForVersion(published.id),
-            ])
-            evMap[p.id] = evs
-            sfMap[p.id] = sf
-            vrMap[p.id] = vrs
-          }
-        } catch (err) {
-          console.error(`Erro ao carregar detalhes da prática ${p.id}:`, err)
+        const pVersions = allVersions.filter((v) => v.practice_id === p.id)
+        const published = pVersions.find((v) => v.status === 'active') || pVersions[0]
+        if (published) {
+          versMap[p.id] = published
+          evMap[p.id] = allEvidence.filter((e) => e.practice_version_id === published.id)
+          sfMap[p.id] =
+            allSafety.find((s) => s.practice_version_id === published.id) || null
+          vrMap[p.id] = allVariants.filter((v) => v.practice_version_id === published.id)
         }
       }
 
@@ -446,10 +447,10 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
                                 {sf.consent_required}
                               </Badge>
                               <p className="text-xs text-muted-foreground">
-                                {sf.consent_required === 'formal_written'
+                                {sf.consent_required === 'required'
                                   ? 'Exige etapa formal de esclarecimento e aceite antes de qualquer atividade.'
-                                  : sf.consent_required === 'in_app_assent'
-                                    ? 'Assentimento simples no fluxo de início.'
+                                  : sf.consent_required === 'conditional'
+                                    ? 'Assentimento condicional no fluxo de início.'
                                     : 'Adesão tácita combinada em sessão.'}
                               </p>
                             </div>
@@ -500,15 +501,15 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-semibold text-foreground text-xs">
-                              {vr.participant_facing_label || vr.internal_code}
+                              {vr.title}
                             </span>
                             <Badge variant="outline" className="text-[10px] font-mono">
-                              {vr.variant_kind}
+                              {vr.variant_type}
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground leading-relaxed">
-                            {vr.clinical_rationale ||
-                              vr.dosing_difference_summary ||
+                            {vr.description ||
+                              vr.notes ||
                               'Sem descrição específica.'}
                           </p>
                         </div>

@@ -284,7 +284,11 @@ export const ParticipantWorkspace: React.FC = () => {
           <ProfessionalExperienceManager enrollment={enrollment} />
 
           {/* Mapa Estruturado / Mandala */}
-          <ProfessionalMapEditor enrollmentId={enrollment.id} participantName={participantName} />
+          <ProfessionalMapEditor
+            enrollmentId={enrollment.id}
+            participantName={participantName}
+            professionalUserId={pb.authStore.record?.id || ''}
+          />
 
           {/* Conhecimento em Construção */}
           <ProfessionalKnowledgeBuilding
