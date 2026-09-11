@@ -6,6 +6,7 @@ import type { EnrollmentRecord } from '@/types/cer'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { EmptyState } from '@/components/EmptyState'
 
 export const MandalaPage: React.FC = () => {
   const { user } = useAuth()
@@ -47,9 +48,13 @@ export const MandalaPage: React.FC = () => {
         {loading ? (
           <div className="p-8 text-center text-xs text-muted-foreground">Carregando Mandala...</div>
         ) : !enrollment ? (
-          <div className="p-8 text-center text-xs text-muted-foreground">
-            Nenhuma matrícula ativa encontrada para organizar a Mandala.
-          </div>
+          <EmptyState
+            variant="mandala"
+            title="Sua Mandala em formação"
+            description="Sua Mandala ganha forma à medida que o cuidado acontece."
+            actionLabel="Voltar ao Início"
+            onAction={() => navigate('/')}
+          />
         ) : (
           <MandalaStructuredView enrollmentId={enrollment.id} />
         )}

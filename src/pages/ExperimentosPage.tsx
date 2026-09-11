@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Sparkles, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
+import { EmptyState } from '@/components/EmptyState'
 
 export const ExperimentosPage: React.FC = () => {
   const { user } = useAuth()
@@ -79,11 +80,8 @@ export const ExperimentosPage: React.FC = () => {
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px] uppercase font-mono">
-                  Build 08E
-                </Badge>
                 <Badge variant="secondary" className="text-[10px]">
-                  Experimentos Ativos
+                  Práticas Combinadas
                 </Badge>
               </div>
               <h1 className="text-xl font-serif font-bold text-foreground mt-0.5 flex items-center gap-2">
@@ -99,12 +97,13 @@ export const ExperimentosPage: React.FC = () => {
             Carregando experimentos...
           </p>
         ) : assignments.length === 0 ? (
-          <div className="p-8 text-center border rounded-xl bg-card text-muted-foreground text-xs space-y-2">
-            <p>Nenhum experimento ativo encontrado no momento.</p>
-            <p className="text-[11px]">
-              Novas práticas são combinadas com você durante as sessões e revisões de ciclo.
-            </p>
-          </div>
+          <EmptyState
+            variant="experiments"
+            title="Experimentos combinados"
+            description="Os experimentos aparecem depois que algo for combinado com sua profissional."
+            actionLabel="Voltar para a página inicial"
+            onAction={() => navigate('/')}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {assignments.map((asgn) => (

@@ -176,7 +176,8 @@ export const enrollmentService = {
     enrollment: EnrollmentRecord
     tempPasswordGenerated?: string
   }> {
-    const tempPassword = params.temporaryPassword || 'CER@' + Math.random().toString(36).slice(-8)
+    const randomSuffix = Math.random().toString(36).slice(-8)
+    const tempPassword = params.temporaryPassword || `Tmp-${randomSuffix}`
 
     // 1. Criar ou reutilizar PERSON
     let person: PersonRecord
@@ -204,14 +205,14 @@ export const enrollmentService = {
         await pb.collection('users').update(existingUser.id, { person_id: person.id })
       }
     } catch {
-      // Criar nova conta com senha temporária e status 'active' (ou 'invited')
+      // Criar nova conta com senha temporária e status 'invited' (Item 3 & 8: First Login P0)
       const newUser = await pb.collection('users').create({
         email: params.email,
         password: tempPassword,
         passwordConfirm: tempPassword,
         name: params.preferredName || params.fullName,
         verified: true,
-        status: 'active',
+        status: 'invited',
         person_id: person.id,
       })
       userRecordId = newUser.id
@@ -221,7 +222,7 @@ export const enrollmentService = {
         resource_type: 'user_account',
         resource_id: newUser.id,
         result: 'success',
-        metadata: { email: params.email },
+        metadata: { email: params.email, initial_status: 'invited' },
       })
     }
 
@@ -316,5 +317,27 @@ export const enrollmentService = {
     } catch {
       return null
     }
+  },
+
+  /**
+   * Mecanismo server-side profissional "Redefinir acesso" (Build 09B P0).
+   * Somente profissional autorizado no escopo real. Gera credencial temporária,
+   * altera status para 'invited' e registra auditoria.
+   */
+  async resetParticipantAccess(targetUserId: string): Promise<{
+    success: boolean
+    message: string
+    targetUserId: string
+    temporaryCredential?: string
+  }> {
+    return await pb.send<{
+      success: boolean
+      message: string
+      targetUserId: string
+      temporaryCredential?: string
+    }>('/backend/v1/cer/reset-participant-access', {
+      method: 'POST',
+      body: { target_user_id: targetUserId },
+    })
   },
 }

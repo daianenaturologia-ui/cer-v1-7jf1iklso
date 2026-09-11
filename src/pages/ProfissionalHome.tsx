@@ -227,7 +227,7 @@ export const ProfissionalHome: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <CardTitle className="text-base font-medium">
-                  Interagentes em Acompanhamento (ENROLLMENT)
+                  Interagentes em Acompanhamento
                 </CardTitle>
                 <CardDescription className="text-xs">
                   Entidades reais vinculadas à sua credencial profissional

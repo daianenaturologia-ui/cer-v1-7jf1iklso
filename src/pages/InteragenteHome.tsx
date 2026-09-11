@@ -47,6 +47,9 @@ import { cerPracticeAssignmentService } from '@/services/cerPracticeAssignmentSe
 import { cerPlannerService } from '@/services/cerPlannerService'
 import { ExperimentCard } from '@/components/ExperimentCard'
 import { MandalaStructuredView } from '@/components/MandalaStructuredView'
+import { OnboardingFlow } from '@/components/OnboardingFlow'
+import { EmptyState } from '@/components/EmptyState'
+import pb from '@/lib/pocketbase/client'
 
 export const InteragenteHome: React.FC = () => {
   const navigate = useNavigate()
@@ -71,6 +74,8 @@ export const InteragenteHome: React.FC = () => {
   const [submittingPresRecog, setSubmittingPresRecog] = useState<string | null>(null)
   const [assignments, setAssignments] = useState<CerPracticeAssignmentRecord[]>([])
   const [plannerItems, setPlannerItems] = useState<CerPlannerItemRecord[]>([])
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [activeReviewInvite, setActiveReviewInvite] = useState<{ cycleId: string } | null>(null)
   const { toast } = useToast()
 
   const loadData = async () => {
@@ -141,6 +146,34 @@ export const InteragenteHome: React.FC = () => {
             /* intentionally ignored */
           }
         }
+
+        // Item 22: Verificar convite ativo de Cycle Review (participant_review_invited_at)
+        try {
+          const reviews = await pb.collection('cer_cycle_reviews').getFullList({
+            filter: `enrollment_id = "${activeEnr.id}" && participant_review_invited_at != "" && participant_review_completed_at = ""`,
+            sort: '-created',
+          })
+          if (reviews.length > 0 && reviews[0].care_cycle_id) {
+            setActiveReviewInvite({ cycleId: reviews[0].care_cycle_id })
+          } else {
+            setActiveReviewInvite(null)
+          }
+        } catch {
+          /* intentionally ignored */
+        }
+
+        // Item 14: Onboarding aparece uma vez no first access apropriado
+        // Reutiliza journey_states (current_stage === 'onboarding' ou metadata.onboarding_completed)
+        const journeyRecord = activeEnr.expand?.journey_states_via_enrollment_id?.[0]
+        const hasCompletedOnboarding =
+          journeyRecord?.metadata?.onboarding_completed ||
+          journeyRecord?.current_stage === 'consciousness' ||
+          journeyRecord?.current_stage === 'equilibrium_realization' ||
+          localStorage.getItem(`cer_onboarding_completed_${activeEnr.id}`)
+
+        if (!hasCompletedOnboarding && journeyRecord?.current_stage === 'onboarding') {
+          setShowOnboarding(true)
+        }
       }
     } catch (err) {
       console.error('Erro ao carregar dados do interagente:', err)
@@ -174,7 +207,7 @@ export const InteragenteHome: React.FC = () => {
       await cerPlannerService.completeItem(itemId)
       toast({
         title: 'Momento registrado',
-        description: 'Registro de realização concluído com sucesso.',
+        description: 'Seu momento foi registrado com leveza e carinho.',
       })
       await loadData()
     } catch (err: unknown) {
@@ -186,14 +219,55 @@ export const InteragenteHome: React.FC = () => {
     }
   }
 
+  const handleFinishOnboarding = async () => {
+    setShowOnboarding(false)
+    if (enrollment?.id) {
+      localStorage.setItem(`cer_onboarding_completed_${enrollment.id}`, 'true')
+      const journeyRecord = enrollment.expand?.journey_states_via_enrollment_id?.[0]
+      if (journeyRecord?.id) {
+        try {
+          await pb.collection('journey_states').update(journeyRecord.id, {
+            current_stage: 'consciousness',
+            stage_status: 'em_andamento',
+            metadata: {
+              ...(journeyRecord.metadata || {}),
+              onboarding_completed: true,
+              onboarding_completed_at: new Date().toISOString(),
+            },
+          })
+        } catch {
+          /* intentionally ignored */
+        }
+      }
+    }
+    await loadData()
+  }
+
   useEffect(() => {
     loadData()
   }, [person])
 
+  // Se precisa de Onboarding inicial
+  if (showOnboarding) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <OnboardingFlow
+          interagenteName={person?.preferred_name || person?.full_name}
+          onComplete={handleFinishOnboarding}
+        />
+      </div>
+    )
+  }
+
+  // Verificar se a etapa de consciência (todas as experiências ou 07G) foi concluída
+  const hasCompletedConsciousness =
+    availableExperiences.length > 0 &&
+    availableExperiences.every((ee) => ee.release_status === 'completed')
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Header Provisório */}
-      <header className="border-b border-border/60 bg-card/40 backdrop-blur-sm">
+      {/* Top Header com navegação direta sem depender de URL digitada */}
+      <header className="border-b border-border/60 bg-card/40 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-serif font-bold text-lg tracking-tight">CER</span>
@@ -205,20 +279,29 @@ export const InteragenteHome: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/mandala')}
-              className="gap-1.5 text-xs h-8 text-primary border-primary/30 hover:bg-primary/5"
+              onClick={() => navigate('/experimentos')}
+              className="gap-1.5 text-xs h-8 text-foreground"
             >
-              <Compass className="w-3.5 h-3.5" />
-              <span>Mandala</span>
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span>Experimentos</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate('/planner')}
-              className="gap-1.5 text-xs h-8"
+              className="gap-1.5 text-xs h-8 text-foreground"
             >
-              <CalendarIcon className="w-3.5 h-3.5" />
+              <CalendarIcon className="w-3.5 h-3.5 text-primary" />
               <span>Planner</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/mandala')}
+              className="gap-1.5 text-xs h-8 text-primary border-primary/30 hover:bg-primary/5"
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Mandala</span>
             </Button>
             <span className="text-xs text-muted-foreground hidden sm:inline ml-2">
               {person?.preferred_name || person?.full_name || user?.name || user?.email}
@@ -238,7 +321,40 @@ export const InteragenteHome: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {/* Identidade e Acolhimento */}
+        {/* Item 22: CTA de Revisão de Ciclo (Cycle Review) quando ativo */}
+        {activeReviewInvite && (
+          <Card className="border-primary/50 bg-gradient-to-r from-primary/10 via-card to-card shadow-sm animate-in fade-in">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] bg-primary/20 text-primary uppercase"
+                  >
+                    Convite de Revisão
+                  </Badge>
+                  <span className="text-xs text-foreground font-semibold">
+                    Revisão de Ciclo com sua Profissional
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Sua profissional convidou você para compartilhar suas percepções sobre este ciclo
+                  de cuidado.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => navigate(`/reviews/${activeReviewInvite.cycleId}`)}
+                className="text-xs h-8 px-4 gap-1.5 shrink-0"
+              >
+                <span>Responder Revisão</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Identidade e Acolhimento Humano (Clean Tech Copy) */}
         <div className="space-y-1.5">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground font-serif">
             Olá, {person?.preferred_name || person?.full_name || 'Interagente'}
@@ -248,13 +364,13 @@ export const InteragenteHome: React.FC = () => {
           </p>
         </div>
 
-        {/* Informações da Identidade Humana (PERSON) */}
+        {/* Informações da Identidade Humana — Tech Copy Cleanup */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-border/60 shadow-none">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                 <User className="w-3.5 h-3.5 text-primary" />
-                <span>Identidade (PERSON)</span>
+                <span>Seu Perfil</span>
               </div>
               <CardTitle className="text-base font-medium">
                 {person?.full_name || 'Registro em estruturação'}
@@ -262,9 +378,7 @@ export const InteragenteHome: React.FC = () => {
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-1">
               <p>E-mail: {person?.email || user?.email}</p>
-              <p>
-                ID Humano: <span className="font-mono text-[10px]">{person?.id || '—'}</span>
-              </p>
+              <p className="text-[11px] text-muted-foreground">Acompanhamento ativo e seguro</p>
             </CardContent>
           </Card>
 
@@ -272,7 +386,7 @@ export const InteragenteHome: React.FC = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                 <Compass className="w-3.5 h-3.5 text-primary" />
-                <span>Produto & Modalidade</span>
+                <span>Modalidade de Cuidado</span>
               </div>
               <CardTitle className="text-base font-medium">
                 {enrollment?.expand?.product_id?.name || 'Acompanhamento Individual CER'}
@@ -280,9 +394,9 @@ export const InteragenteHome: React.FC = () => {
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-1">
               <div className="flex items-center gap-2">
-                <span>Status:</span>
+                <span>Vínculo:</span>
                 <Badge variant="secondary" className="text-[10px] capitalize font-normal">
-                  {enrollment?.status || 'invited'}
+                  Ativo
                 </Badge>
               </div>
               <p>
@@ -298,29 +412,66 @@ export const InteragenteHome: React.FC = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                 <Layers className="w-3.5 h-3.5 text-primary" />
-                <span>Estado da Jornada</span>
+                <span>Etapa Atual</span>
               </div>
               <CardTitle className="text-base font-medium capitalize">
-                {enrollment?.expand?.journey_states_via_enrollment_id?.[0]?.current_stage?.replace(
-                  '_',
-                  ' ',
-                ) || 'onboarding'}
+                {hasCompletedConsciousness
+                  ? 'Transição e Planejamento'
+                  : enrollment?.expand?.journey_states_via_enrollment_id?.[0]?.current_stage ===
+                      'consciousness'
+                    ? 'Descoberta e Percepção'
+                    : 'Acolhimento'}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-1">
               <p>
-                Etapa:{' '}
+                Status:{' '}
                 <span className="capitalize">
-                  {enrollment?.expand?.journey_states_via_enrollment_id?.[0]?.stage_status?.replace(
-                    '_',
-                    ' ',
-                  ) || 'Em andamento'}
+                  {hasCompletedConsciousness ? 'Aguardando próxima etapa' : 'Em andamento'}
                 </span>
               </p>
               <p className="text-[11px] italic">“O ser humano não funciona em partes.”</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Itens 16-17: Transição clara Pós-Consciência / Waiting State */}
+        {hasCompletedConsciousness && assignments.length === 0 && (
+          <Card className="border-primary/40 bg-gradient-to-r from-primary/5 via-card to-card">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-2 text-primary font-medium text-sm">
+                <Sparkles className="w-5 h-5" />
+                <span>Etapa de Descoberta Concluída</span>
+              </div>
+              <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
+                <p className="text-foreground font-medium text-sm">
+                  Sua etapa de descoberta está concluída.
+                </p>
+                <p>
+                  Sua profissional vai revisar o que você descobriu ao longo das experiências e dos
+                  momentos de percepção.
+                </p>
+                <div className="p-3 rounded-lg bg-card border border-border/60 text-foreground italic">
+                  “Na próxima etapa, vocês vão escolher juntas o que faz sentido cuidar agora.”
+                </div>
+              </div>
+              <div className="flex items-center gap-3 pt-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate('/mandala')}
+                  className="text-xs h-8 gap-1.5"
+                >
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>Ver minha Mandala</span>
+                </Button>
+                <p className="text-[11px] text-muted-foreground">
+                  Precisa de ajuda? Fale com sua profissional.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* BUILD 06: Meu Mapa CER — Síntese Viva e Reconhecível */}
         {currentMap && (
@@ -748,24 +899,26 @@ export const InteragenteHome: React.FC = () => {
         )}
 
         {/* Experimentos de Cuidado (Build 08D — Practice Assignment) */}
-        {assignments.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <span>Experimentos de Cuidado</span>
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Vamos experimentar isso juntos? Práticas desenhadas para o seu momento, sem
-                  cobrança ou notas de desempenho.
-                </p>
-              </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span>Experimentos de Cuidado</span>
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Vamos experimentar isso juntos? Práticas desenhadas para o seu momento, sem cobrança
+                ou notas de desempenho.
+              </p>
+            </div>
+            {assignments.length > 0 && (
               <Badge variant="outline" className="text-xs">
                 {assignments.filter((a) => a.status === 'active').length} ativo(s)
               </Badge>
-            </div>
+            )}
+          </div>
 
+          {assignments.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {assignments.map((asgn) => {
                 return (
@@ -778,8 +931,16 @@ export const InteragenteHome: React.FC = () => {
                 )
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <EmptyState
+              variant="experiments"
+              title="Experimentos combinados"
+              description="Os experimentos aparecem depois que algo for combinado com sua profissional."
+              actionLabel="Ver detalhes na página de experimentos"
+              onAction={() => navigate('/experimentos')}
+            />
+          )}
+        </div>
 
         {/* Mandala V1 Estruturada (Build 08E — Read-Model) */}
         {enrollment && (
@@ -789,23 +950,25 @@ export const InteragenteHome: React.FC = () => {
         )}
 
         {/* Planner Mínimo da Semana (Build 08D — cer_planner_items) */}
-        {plannerItems.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  <span>Janela Operacional — Planner de Cuidados</span>
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Próximos momentos e recursos disponíveis para apoiar o seu ritmo diário.
-                </p>
-              </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                <span>Janela do Planner de Cuidados</span>
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Próximos momentos e recursos disponíveis para apoiar o seu ritmo diário.
+              </p>
+            </div>
+            {plannerItems.length > 0 && (
               <Badge variant="outline" className="text-xs">
                 {plannerItems.filter((p) => p.status !== 'cancelled').length} momento(s)
               </Badge>
-            </div>
+            )}
+          </div>
 
+          {plannerItems.filter((p) => p.status !== 'cancelled').length > 0 ? (
             <div className="space-y-2">
               {plannerItems
                 .filter((p) => p.status !== 'cancelled')
@@ -849,7 +1012,7 @@ export const InteragenteHome: React.FC = () => {
                             onClick={() => handleCompletePlannerItem(item.id)}
                           >
                             <CheckCircle2 className="w-4 h-4 mr-1 text-primary" />
-                            <span>Realizado</span>
+                            <span>aconteceu</span>
                           </Button>
                         )}
                         {isCompleted && (
@@ -857,7 +1020,7 @@ export const InteragenteHome: React.FC = () => {
                             variant="outline"
                             className="text-[11px] text-primary border-primary/30"
                           >
-                            ✓ Realizado
+                            aconteceu
                           </Badge>
                         )}
                       </CardContent>
@@ -865,10 +1028,18 @@ export const InteragenteHome: React.FC = () => {
                   )
                 })}
             </div>
-          </div>
-        )}
+          ) : (
+            <EmptyState
+              variant="planner"
+              title="Janela de práticas"
+              description="Ainda não há nenhum experimento combinado para este momento."
+              actionLabel="Abrir página completa do Planner"
+              onAction={() => navigate('/planner')}
+            />
+          )}
+        </div>
 
-        {/* Estado Real do Vínculo e Acompanhamento */}
+        {/* Estado Real do Vínculo e Acompanhamento — Clean Tech Copy */}
         <Card className="border-border/80">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -878,12 +1049,9 @@ export const InteragenteHome: React.FC = () => {
                   <span>Vínculo de Acompanhamento</span>
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Dados reais sincronizados da sua matrícula (ENROLLMENT)
+                  Informações sobre seu acompanhamento ativo
                 </CardDescription>
               </div>
-              <Badge variant="outline" className="text-xs font-mono">
-                {enrollment?.id ? `ID: ${enrollment.id.slice(0, 8)}...` : 'Sem matrícula'}
-              </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -894,25 +1062,25 @@ export const InteragenteHome: React.FC = () => {
                 <div className="p-3 rounded-lg bg-muted/30 border border-border/40 text-xs space-y-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <span className="text-muted-foreground block text-[11px]">Produto CER</span>
+                      <span className="text-muted-foreground block text-[11px]">
+                        Acompanhamento
+                      </span>
                       <span className="font-medium text-foreground">
                         {enrollment.expand?.product_id?.name || 'Acompanhamento Individual CER'}
                       </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground block text-[11px]">
-                        Status do Acompanhamento
+                        Status do Cuidado
                       </span>
-                      <span className="font-medium text-foreground capitalize">
-                        {enrollment.status}
-                      </span>
+                      <span className="font-medium text-foreground capitalize">Ativo</span>
                     </div>
                   </div>
 
                   {enrollment.notes && (
                     <div className="pt-2 border-t border-border/30">
                       <span className="text-muted-foreground block text-[11px]">
-                        Anotação inicial
+                        Combinados iniciais
                       </span>
                       <p className="text-foreground text-xs">{enrollment.notes}</p>
                     </div>
@@ -922,8 +1090,8 @@ export const InteragenteHome: React.FC = () => {
                 <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 p-3 rounded-lg border border-primary/15">
                   <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
                   <span>
-                    Privacy by Design: suas informações preservam autoria, contexto e visibilidade
-                    estrita por perfil.
+                    Privacidade respeitada: suas percepções íntimas permanecem resguardadas e sob
+                    seu controle.
                   </span>
                 </div>
               </div>
@@ -933,7 +1101,8 @@ export const InteragenteHome: React.FC = () => {
                   Nenhum acompanhamento ativo encontrado para este perfil.
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  Entre em contato com sua profissional para receber o convite de vinculação.
+                  Precisa de ajuda? Fale com sua profissional para receber a liberação do seu
+                  espaço.
                 </p>
               </div>
             )}

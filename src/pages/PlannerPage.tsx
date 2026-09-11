@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Calendar, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
+import { EmptyState } from '@/components/EmptyState'
 
 export const PlannerPage: React.FC = () => {
   const { user } = useAuth()
@@ -72,11 +73,8 @@ export const PlannerPage: React.FC = () => {
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px] uppercase font-mono">
-                  Planner 08D/08E
-                </Badge>
                 <Badge variant="secondary" className="text-[10px]">
-                  Janela Operacional
+                  Janela de Práticas
                 </Badge>
               </div>
               <h1 className="text-xl font-serif font-bold text-foreground mt-0.5 flex items-center gap-2">
@@ -91,13 +89,14 @@ export const PlannerPage: React.FC = () => {
           <p className="text-xs text-muted-foreground text-center py-12">
             Carregando itens do planner...
           </p>
-        ) : plannerItems.length === 0 ? (
-          <div className="p-8 text-center border rounded-xl bg-card text-muted-foreground text-xs space-y-2">
-            <p>Nenhum item agendado para o momento atual.</p>
-            <p className="text-[11px]">
-              O planner acolhe recursos e momentos planejados de forma suave e contextual.
-            </p>
-          </div>
+        ) : plannerItems.filter((p) => p.status !== 'cancelled').length === 0 ? (
+          <EmptyState
+            variant="planner"
+            title="Janela de práticas"
+            description="Ainda não há nenhum experimento combinado para este momento."
+            actionLabel="Voltar para a página inicial"
+            onAction={() => navigate('/')}
+          />
         ) : (
           <div className="space-y-2.5">
             {plannerItems
@@ -140,7 +139,7 @@ export const PlannerPage: React.FC = () => {
                           onClick={() => handleCompletePlannerItem(item.id)}
                         >
                           <CheckCircle2 className="w-4 h-4 mr-1 text-primary" />
-                          <span>Realizado</span>
+                          <span>aconteceu</span>
                         </Button>
                       )}
                       {isCompleted && (
@@ -148,7 +147,7 @@ export const PlannerPage: React.FC = () => {
                           variant="outline"
                           className="text-[11px] text-primary border-primary/30"
                         >
-                          ✓ Realizado
+                          aconteceu
                         </Badge>
                       )}
                     </CardContent>

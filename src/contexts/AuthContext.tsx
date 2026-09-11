@@ -135,6 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(authData.record)
       setAccountStatus(userStatus)
       if (authData.record?.id) {
+        // Se status for 'invited', ainda não busca papéis nem força 'active' no contexto
         await fetchUserData(authData.record.id)
       }
       return authData
@@ -198,7 +199,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       roles,
       accountStatus,
       isLoading,
-      isAuthenticated: Boolean(user) && accountStatus === 'active',
+      // Se status for 'invited', o usuário está autenticado para o fluxo FirstLoginPasswordChange
+      isAuthenticated: Boolean(user) && (accountStatus === 'active' || accountStatus === 'invited'),
       isInteragente: roles.includes('interagente'),
       isProfissional: isProf,
       isAdmin: isAdm,

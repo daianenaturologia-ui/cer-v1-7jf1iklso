@@ -23,7 +23,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
     )
   }
 
-  if (!isAuthenticated || accountStatus !== 'active') {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  // Se a usuária estiver autenticada com status 'invited', deve primeiro definir sua senha no Login
+  if (accountStatus === 'invited') {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  if (accountStatus !== 'active') {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
