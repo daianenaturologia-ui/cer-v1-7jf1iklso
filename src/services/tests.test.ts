@@ -20,6 +20,7 @@ import { runBuild08DTests } from './testsPracticeAssignment08d'
 import { runBuild08ETests } from './testsBuild08e'
 import { runBuild09CTests } from './testsBuild09c'
 import { runBuild09DATests } from './testsBuild09da'
+import { runBuildLote1Tests } from './testsLote1'
 
 describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
   it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {
@@ -378,6 +379,20 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
     const failedTests = results.filter((r) => !r.passed)
     expect(failedTests.map((f) => `${f.id}: ${f.details}`)).toEqual([])
     expect(results.length).toBeGreaterThanOrEqual(16)
+    for (const r of results) {
+      expect(r.passed, `${r.id}: ${r.details}`).toBe(true)
+    }
+  }, 90000)
+
+  it('executa suíte de testes do BUILD LOTE 1 (Estados Editoriais, Review Gate, Imutabilidade Material & Biblioteca)', async () => {
+    const results = await runBuildLote1Tests()
+    console.log(
+      'BUILD LOTE 1 RESULTS:',
+      results.map((r) => `${r.id}: ${r.passed ? 'PASSOU' : 'NÃO PASSOU'}`),
+    )
+    const failedTests = results.filter((r) => !r.passed)
+    expect(failedTests.map((f) => `${f.id}: ${f.details}`)).toEqual([])
+    expect(results.length).toBeGreaterThanOrEqual(25)
     for (const r of results) {
       expect(r.passed, `${r.id}: ${r.details}`).toBe(true)
     }

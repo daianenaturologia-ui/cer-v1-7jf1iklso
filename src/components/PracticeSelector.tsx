@@ -86,9 +86,24 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
         pb.collection('cer_practice_variants').getFullList<CerPracticeVariantRecord>(),
       ])
 
+      const now = Date.now()
       for (const p of candidates) {
         const pVersions = allVersions.filter((v) => v.practice_id === p.id)
-        const published = pVersions.find((v) => v.status === 'active') || pVersions[0]
+        // Lote 1: Para uso clínico e seleção na biblioteca, selecionar SOMENTE versão status='active'
+        // com revisão periódica vigente (review_due_at no futuro se preenchido).
+        // Eliminar fallback silencioso para versão não ativa ou lista crua.
+        const activeVersions = pVersions.filter((v) => {
+          if (v.status !== 'active') return false
+          if (v.review_due_at) {
+            const dueDate = new Date(v.review_due_at).getTime()
+            if (!isNaN(dueDate) && dueDate <= now) {
+              return false // Revisão vencida: indisponível para indicação
+            }
+          }
+          return true
+        })
+
+        const published = activeVersions[0] || null
         if (published) {
           versMap[p.id] = published
           evMap[p.id] = allEvidence.filter((e) => e.practice_version_id === published.id)
@@ -120,8 +135,13 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
     setDrawerOpen(true)
   }
 
-  // Filtragem
+  // Filtragem: Apenas práticas que possuem uma versão ativa e vigente vinculada
+  // (ou que correspondam aos filtros de busca e intensidade real do backend: low/moderate/high/expansive)
   const filtered = practices.filter((p) => {
+    const ver = practiceVersions[p.id]
+    // Se não há versão ativa com revisão vigente, não deve ser exibida como disponível para indicação
+    if (!ver) return false
+
     if (search.trim()) {
       const q = search.toLowerCase()
       const matchTitle = (p.participant_facing_name_base || p.internal_name)
@@ -132,8 +152,7 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
     }
 
     if (intensityFilter !== 'ALL') {
-      const ver = practiceVersions[p.id]
-      if (ver && ver.intensity !== intensityFilter) return false
+      if (ver.intensity !== intensityFilter) return false
     }
 
     return true
@@ -181,8 +200,8 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
               </Button>
               <Button
                 size="sm"
-                variant={intensityFilter === 'minimal' ? 'secondary' : 'outline'}
-                onClick={() => setIntensityFilter('minimal')}
+                variant={intensityFilter === 'low' ? 'secondary' : 'outline'}
+                onClick={() => setIntensityFilter('low')}
                 className="h-7 text-xs px-2"
               >
                 Mínima
@@ -197,11 +216,19 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
               </Button>
               <Button
                 size="sm"
-                variant={intensityFilter === 'intensive' ? 'secondary' : 'outline'}
-                onClick={() => setIntensityFilter('intensive')}
+                variant={intensityFilter === 'high' ? 'secondary' : 'outline'}
+                onClick={() => setIntensityFilter('high')}
                 className="h-7 text-xs px-2"
               >
-                Intensiva
+                Alta
+              </Button>
+              <Button
+                size="sm"
+                variant={intensityFilter === 'expansive' ? 'secondary' : 'outline'}
+                onClick={() => setIntensityFilter('expansive')}
+                className="h-7 text-xs px-2"
+              >
+                Expansiva
               </Button>
             </div>
           </div>

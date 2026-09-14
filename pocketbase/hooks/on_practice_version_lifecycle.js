@@ -1,19 +1,42 @@
-// Hook server-side do Build 08C: Lifecycle e Publication Gate de cer_practice_versions
+// Hook server-side do Projeto CER V1: Lifecycle, Editorial Gate e Imutabilidade Material de cer_practice_versions
 // Coleções monitoradas: cer_practice_versions, cer_practices
-// Regras e Decisões Congeladas:
-// 1. Version só pode ir para active com:
+// Decisões Canônicas Lote 1:
+// 1. Fluxo editorial: draft -> in_review -> approved -> active -> deprecated -> retired.
+//    Transições permitidas:
+//      - draft -> in_review
+//      - in_review -> draft (devolvida para correção)
+//      - in_review -> approved
+//      - approved -> active
+//      - active -> deprecated
+//      - deprecated -> retired
+//      - approved -> in_review (aprovação formalmente retirada antes de ativação)
+//      - active -> retired (recall imediato por segurança)
+//    Transições NUNCA permitidas:
+//      - draft -> active; draft -> approved; in_review -> active; approved -> draft;
+//      - active -> draft; active -> in_review; retired -> qualquer outro estado;
+//      - criação direta em qualquer estado diferente de 'draft'.
+// 2. Gates de Aprovação (in_review -> approved):
+//    - author_user_id preenchido;
+//    - reviewer_user_id preenchido;
+//    - reviewer_user_id ≠ author_user_id;
+//    - reviewed_at preenchido;
+//    - safety_reviewed_at preenchido.
+// 3. Gates de Publicação / Ativação (approved -> active):
+//    - Versão DEVE vir do estado 'approved';
 //    - author_user_id preenchido;
 //    - reviewer_user_id preenchido;
 //    - reviewer_user_id ≠ author_user_id;
 //    - reviewed_at preenchido;
 //    - safety_reviewed_at preenchido;
+//    - review_due_at preenchido, data válida e no FUTURO no momento da ativação;
 //    - ao menos 1 evidence record revisado (reviewed_at preenchido em cer_practice_evidence);
 //    - static safety profile válido (registro em cer_practice_safety_profiles com reviewed_at preenchido);
 //    - Para intensity high ou expansive: todos os requisitos de Expansão com Enraizamento preenchidos no safety profile.
-// 2. Transições de lifecycle: draft -> active -> deprecated -> retired.
-// 3. SEM TOCAR CONSENTS: a publicação de uma nova versão NÃO altera consents históricos da versão anterior.
-// 4. DELETE negado irrevogavelmente.
-// 5. Auditoria de eventos: PRACTICE_VERSION_PUBLISHED, PRACTICE_VERSION_DEPRECATED, PRACTICE_RETIRED.
+// 4. Imutabilidade server-side dos campos materiais:
+//    - Versões em 'approved', 'active', 'deprecated' ou 'retired' NÃO podem ter campos materiais alterados diretamente.
+//    - Metadados exclusivamente operacionais permitidos conforme transição: status, reviewer_user_id, reviewed_at, safety_reviewed_at, review_due_at.
+// 5. Zero Delete Físico.
+// 6. Auditoria de eventos e Recall de assignments em caso de retired.
 
 onRecordCreate((e) => {
   const version = e.record
@@ -23,40 +46,10 @@ onRecordCreate((e) => {
     version.set('author_user_id', e.auth.id)
   }
 
-  // Não pode nascer direto como deprecated ou retired
-  if (status === 'deprecated' || status === 'retired') {
+  // Criação direta só é permitida em status "draft"
+  if (status !== 'draft') {
     throw new BadRequestError(
-      'Uma nova PracticeVersion deve ser criada em status "draft" ou "active".',
-    )
-  }
-
-  if (status === 'active') {
-    // Validar Publication Gate
-    const authorId = version.getString('author_user_id')
-    const reviewerId = version.getString('reviewer_user_id')
-    const reviewedAt = version.getString('reviewed_at')
-    const safetyReviewedAt = version.getString('safety_reviewed_at')
-
-    if (!authorId || !reviewerId) {
-      throw new BadRequestError(
-        'Publication Gate: PracticeVersion ativa exige autor e revisor formalmente designados.',
-      )
-    }
-    if (authorId === reviewerId) {
-      throw new BadRequestError(
-        'Publication Gate: Revisor deve ser obrigatoriamente um profissional diferente do autor (reviewer ≠ author).',
-      )
-    }
-    if (!reviewedAt || !safetyReviewedAt) {
-      throw new BadRequestError(
-        'Publication Gate: PracticeVersion ativa exige datas de revisão metodológica e de segurança preenchidas.',
-      )
-    }
-    // Nota: Como é create, profiles e evidence vinculados ao ID da version ainda não existem no banco;
-    // a prática recomendada no workflow é criar como draft e ativar via update após anexar profiles e evidências.
-    // Se tentar ativar no create sem registro prévio, bloqueia.
-    throw new BadRequestError(
-      'Publication Gate: Recomenda-se criar a PracticeVersion como "draft", anexar Evidence e Safety Profile revisados, e então ativá-la.',
+      'Criação de PracticeVersion permitida exclusivamente em status "draft". Estados editoriais subsequentes exigem submissão e revisão formal.',
     )
   }
 
@@ -71,11 +64,11 @@ onRecordUpdate((e) => {
     return
   }
 
-  const origStatus = orig.getString('status')
-  const newStatus = version.getString('status')
+  const origStatus = orig.getString('status') || 'draft'
+  const newStatus = version.getString('status') || 'draft'
   const versionId = version.id
 
-  // 1. Imutabilidade estrutural da âncora
+  // 1. Imutabilidade absoluta da âncora relacional e numeração
   if (version.getString('practice_id') !== orig.getString('practice_id')) {
     throw new BadRequestError('Não é permitido alterar practice_id de uma PracticeVersion.')
   }
@@ -85,13 +78,125 @@ onRecordUpdate((e) => {
     )
   }
 
-  // 2. Transições de status e Publication Gate
+  // 2. Imutabilidade Material dos Conteúdos e Parâmetros Clínicos
+  // Em approved, active, deprecated e retired, qualquer alteração material é proibida no servidor.
+  const isPostApproved =
+    origStatus === 'approved' ||
+    origStatus === 'active' ||
+    origStatus === 'deprecated' ||
+    origStatus === 'retired'
+
+  if (isPostApproved) {
+    const materialFields = [
+      'previous_version_id',
+      'participant_title',
+      'participant_summary',
+      'description',
+      'instructions',
+      'preparation',
+      'stop_conditions',
+      'grounding',
+      'integration',
+      'intent_goal',
+      'context_tags',
+      'other_context_text',
+      'duration',
+      'frequency',
+      'repetitions',
+      'quantity',
+      'time_window',
+      'progression',
+      'rest',
+      'max_exposure',
+      'guidance_requirements',
+      'intensity',
+      'consent_required',
+      'author_user_id',
+    ]
+
+    for (let i = 0; i < materialFields.length; i++) {
+      const field = materialFields[i]
+      // Comparação de valor string/json
+      const origVal = orig.get(field)
+      const newVal = version.get(field)
+      const origStr =
+        typeof origVal === 'object' ? JSON.stringify(origVal || '') : String(origVal || '')
+      const newStr =
+        typeof newVal === 'object' ? JSON.stringify(newVal || '') : String(newVal || '')
+
+      if (origStr !== newStr) {
+        throw new BadRequestError(
+          'Imutabilidade Material Violada: A versão está em estado pós-aprovação ("' +
+            origStatus +
+            '") e o campo material "' +
+            field +
+            '" não pode ser alterado. Alterações materiais exigem a criação de uma nova PracticeVersion.',
+        )
+      }
+    }
+  }
+
+  // 3. Validação da Matriz de Transições de Status
   if (origStatus !== newStatus) {
+    // Matriz de transições permitidas
+    const allowedTransitions = {
+      draft: ['in_review'],
+      in_review: ['draft', 'approved'],
+      approved: ['active', 'in_review'],
+      active: ['deprecated', 'retired'],
+      deprecated: ['retired'],
+      retired: [],
+    }
+
+    const validTargets = allowedTransitions[origStatus] || []
+    if (validTargets.indexOf(newStatus) === -1) {
+      throw new BadRequestError(
+        'Transição de status inválida: não é permitido alterar PracticeVersion de "' +
+          origStatus +
+          '" para "' +
+          newStatus +
+          '".',
+      )
+    }
+
+    // GATES ESPECÍFICOS DE CADA TRANSIÇÃO
+
+    // GATE 3.1: in_review -> approved (Aprovação Metodológica e de Segurança)
+    if (newStatus === 'approved') {
+      const authorId = version.getString('author_user_id')
+      const reviewerId = version.getString('reviewer_user_id')
+      const reviewedAt = version.getString('reviewed_at')
+      const safetyReviewedAt = version.getString('safety_reviewed_at')
+
+      if (!authorId) {
+        throw new BadRequestError(
+          'Review Gate: PracticeVersion exige autor designado (author_user_id).',
+        )
+      }
+      if (!reviewerId) {
+        throw new BadRequestError(
+          'Review Gate: Aprovação exige revisor formalmente designado (reviewer_user_id).',
+        )
+      }
+      if (authorId === reviewerId) {
+        throw new BadRequestError(
+          'Review Gate: Revisor deve ser obrigatoriamente um profissional diferente do autor (reviewer ≠ author).',
+        )
+      }
+      if (!reviewedAt || !safetyReviewedAt) {
+        throw new BadRequestError(
+          'Review Gate: Aprovação exige datas de revisão metodológica e de segurança preenchidas.',
+        )
+      }
+    }
+
+    // GATE 3.2: approved -> active (Publication Gate & Review Due At)
     if (newStatus === 'active') {
       const authorId = version.getString('author_user_id')
       const reviewerId = version.getString('reviewer_user_id')
       const reviewedAt = version.getString('reviewed_at')
       const safetyReviewedAt = version.getString('safety_reviewed_at')
+      const reviewDueAtStr = version.getString('review_due_at')
 
       if (!authorId || !reviewerId) {
         throw new BadRequestError(
@@ -106,6 +211,22 @@ onRecordUpdate((e) => {
       if (!reviewedAt || !safetyReviewedAt) {
         throw new BadRequestError(
           'Publication Gate: PracticeVersion ativa exige datas de revisão metodológica e de segurança preenchidas.',
+        )
+      }
+
+      // Validação de review_due_at
+      if (!reviewDueAtStr) {
+        throw new BadRequestError(
+          'Publication Gate: review_due_at é obrigatório para ativar uma PracticeVersion.',
+        )
+      }
+      const dueDate = new Date(reviewDueAtStr)
+      if (isNaN(dueDate.getTime())) {
+        throw new BadRequestError('Publication Gate: review_due_at deve ser uma data válida.')
+      }
+      if (dueDate.getTime() <= Date.now()) {
+        throw new BadRequestError(
+          'Publication Gate: review_due_at deve estar no futuro no momento da ativação.',
         )
       }
 
@@ -216,7 +337,11 @@ onRecordAfterUpdateSuccess((e) => {
 
     if (origStatus !== newStatus) {
       let action = ''
-      if (newStatus === 'active') {
+      if (newStatus === 'in_review') {
+        action = 'PRACTICE_VERSION_SUBMITTED_FOR_REVIEW'
+      } else if (newStatus === 'approved') {
+        action = 'PRACTICE_VERSION_APPROVED'
+      } else if (newStatus === 'active') {
         action = 'PRACTICE_VERSION_PUBLISHED'
       } else if (newStatus === 'deprecated') {
         action = 'PRACTICE_VERSION_DEPRECATED'
@@ -245,12 +370,13 @@ onRecordAfterUpdateSuccess((e) => {
             previous_status: origStatus,
             new_status: newStatus,
             intensity: version.getString('intensity'),
+            review_due_at: version.getString('review_due_at') || undefined,
           }),
         )
         $app.save(audit)
       }
 
-      // Build 08D: Se uma PracticeVersion for aposentada (retired = recall),
+      // Se uma PracticeVersion for aposentada (retired = recall),
       // interromper com segurança assignments ativas e cancelar planner items futuros
       if (newStatus === 'retired') {
         try {

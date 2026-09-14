@@ -31,6 +31,7 @@ export async function runBuild09DATests(): Promise<TestResultItem09D[]> {
   const USER_ANA = '3bwotdvtzjiustx'
   const USER_BEATRIZ = 'dgnl4rq0ycul5e4'
   const USER_PROF_A = '4udevnp3htcqt4v'
+  const USER_PROF_B = 'zt7alkr3554z73w'
 
   // Fixtures criados para teste (serão removidos ao final)
   const createdRecordIds: { collection: string; id: string }[] = []
@@ -92,90 +93,154 @@ export async function runBuild09DATests(): Promise<TestResultItem09D[]> {
     })
     createdRecordIds.push({ collection: 'cer_practices', id: practiceContinued.id })
 
+    // Auxiliar para criar versão passando pelo fluxo editorial canônico
+    const futureDate = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
+    const createVersionWithLifecycle = async (params: {
+      practice_id: string
+      version_number: number
+      participant_title: string
+      intensity?: 'low' | 'moderate' | 'high' | 'expansive'
+      consent_required?: 'not_required' | 'required' | 'conditional'
+      targetStatus: 'draft' | 'active' | 'deprecated' | 'retired'
+    }) => {
+      // 1. Sempre nasce em draft
+      const rec = await pb.collection('cer_practice_versions').create({
+        practice_id: params.practice_id,
+        version_number: params.version_number,
+        participant_title: params.participant_title,
+        intensity: params.intensity || 'low',
+        consent_required: params.consent_required || 'not_required',
+        author_user_id: USER_PROF_A,
+        status: 'draft',
+      })
+      createdRecordIds.push({ collection: 'cer_practice_versions', id: rec.id })
+
+      if (params.targetStatus === 'draft') {
+        return rec
+      }
+
+      // Anexar evidência revisada e safety profile revisado
+      const ev = await pb.collection('cer_practice_evidence').create({
+        practice_version_id: rec.id,
+        evidence_basis_type: 'clinical_practice_framework',
+        confidence: 'high',
+        maturity: 'established',
+        author_user_id: USER_PROF_A,
+        reviewer_user_id: USER_PROF_B,
+        reviewed_at: new Date().toISOString(),
+      })
+      createdRecordIds.push({ collection: 'cer_practice_evidence', id: ev.id })
+
+      const sp = await pb.collection('cer_practice_safety_profiles').create({
+        practice_version_id: rec.id,
+        consent_required: params.consent_required || 'not_required',
+        regulatory_profile: 'none',
+        reviewed_by_user_id: USER_PROF_B,
+        reviewed_at: new Date().toISOString(),
+      })
+      createdRecordIds.push({ collection: 'cer_practice_safety_profiles', id: sp.id })
+
+      // draft -> in_review
+      await pb.collection('cer_practice_versions').update(rec.id, {
+        status: 'in_review',
+      })
+
+      // in_review -> approved
+      await pb.collection('cer_practice_versions').update(rec.id, {
+        reviewer_user_id: USER_PROF_B,
+        reviewed_at: new Date().toISOString(),
+        safety_reviewed_at: new Date().toISOString(),
+        status: 'approved',
+      })
+
+      // approved -> active
+      const activeRec = await pb.collection('cer_practice_versions').update(rec.id, {
+        review_due_at: futureDate,
+        status: 'active',
+      })
+
+      if (params.targetStatus === 'active') {
+        return activeRec
+      }
+
+      if (params.targetStatus === 'deprecated') {
+        return await pb.collection('cer_practice_versions').update(rec.id, {
+          status: 'deprecated',
+        })
+      }
+
+      if (params.targetStatus === 'retired') {
+        return await pb.collection('cer_practice_versions').update(rec.id, {
+          status: 'retired',
+        })
+      }
+
+      return activeRec
+    }
+
     // Criar Versões de PracticeResource em diferentes status:
-    // - vDraft (status = draft)
-    const vDraft = await pb.collection('cer_practice_versions').create({
+    const vDraft = await createVersionWithLifecycle({
       practice_id: practiceResource.id,
       version_number: 1,
       participant_title: 'Recurso em Draft',
       intensity: 'low',
       consent_required: 'not_required',
-      author_user_id: USER_PROF_A,
-      status: 'draft',
+      targetStatus: 'draft',
     })
-    createdRecordIds.push({ collection: 'cer_practice_versions', id: vDraft.id })
 
-    // - vActive (status = active)
-    const vActive = await pb.collection('cer_practice_versions').create({
+    const vActive = await createVersionWithLifecycle({
       practice_id: practiceResource.id,
       version_number: 2,
       participant_title: 'Recurso Ativo',
       intensity: 'low',
       consent_required: 'not_required',
-      author_user_id: USER_PROF_A,
-      status: 'active',
+      targetStatus: 'active',
     })
-    createdRecordIds.push({ collection: 'cer_practice_versions', id: vActive.id })
 
-    // - vDeprecated (status = deprecated)
-    const vDeprecated = await pb.collection('cer_practice_versions').create({
+    const vDeprecated = await createVersionWithLifecycle({
       practice_id: practiceResource.id,
       version_number: 3,
       participant_title: 'Recurso Deprecated',
       intensity: 'low',
       consent_required: 'not_required',
-      author_user_id: USER_PROF_A,
-      status: 'deprecated',
+      targetStatus: 'deprecated',
     })
-    createdRecordIds.push({ collection: 'cer_practice_versions', id: vDeprecated.id })
 
-    // - vRetired (status = retired)
-    const vRetired = await pb.collection('cer_practice_versions').create({
+    const vRetired = await createVersionWithLifecycle({
       practice_id: practiceResource.id,
       version_number: 4,
       participant_title: 'Recurso Retired',
       intensity: 'low',
       consent_required: 'not_required',
-      author_user_id: USER_PROF_A,
-      status: 'retired',
+      targetStatus: 'retired',
     })
-    createdRecordIds.push({ collection: 'cer_practice_versions', id: vRetired.id })
 
-    // - vStandardActive (prática com item_nature = practice, status = active)
-    const vStandardActive = await pb.collection('cer_practice_versions').create({
+    const vStandardActive = await createVersionWithLifecycle({
       practice_id: practiceStandard.id,
       version_number: 1,
       participant_title: 'Prática Ativa',
       intensity: 'moderate',
       consent_required: 'required',
-      author_user_id: USER_PROF_A,
-      status: 'active',
+      targetStatus: 'active',
     })
-    createdRecordIds.push({ collection: 'cer_practice_versions', id: vStandardActive.id })
 
-    // - vGuidedActive (item_nature = guided_experience, status = active)
-    const vGuidedActive = await pb.collection('cer_practice_versions').create({
+    const vGuidedActive = await createVersionWithLifecycle({
       practice_id: practiceGuided.id,
       version_number: 1,
       participant_title: 'Guia Ativo',
       intensity: 'low',
       consent_required: 'not_required',
-      author_user_id: USER_PROF_A,
-      status: 'active',
+      targetStatus: 'active',
     })
-    createdRecordIds.push({ collection: 'cer_practice_versions', id: vGuidedActive.id })
 
-    // - vContinuedActive (item_nature = continued_care, status = active)
-    const vContinuedActive = await pb.collection('cer_practice_versions').create({
+    const vContinuedActive = await createVersionWithLifecycle({
       practice_id: practiceContinued.id,
       version_number: 1,
       participant_title: 'Cuidado Ativo',
       intensity: 'low',
       consent_required: 'not_required',
-      author_user_id: USER_PROF_A,
-      status: 'active',
+      targetStatus: 'active',
     })
-    createdRecordIds.push({ collection: 'cer_practice_versions', id: vContinuedActive.id })
 
     // ----------------------------------------------------
     // T1: recommendation → PracticeVersion draft → NEGADO

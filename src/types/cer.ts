@@ -1571,6 +1571,8 @@ export interface CerOperationalAcceptancePrivateNoteRecord {
 
 export const PRACTICE_STATUS = {
   DRAFT: 'draft',
+  IN_REVIEW: 'in_review',
+  APPROVED: 'approved',
   ACTIVE: 'active',
   DEPRECATED: 'deprecated',
   RETIRED: 'retired',

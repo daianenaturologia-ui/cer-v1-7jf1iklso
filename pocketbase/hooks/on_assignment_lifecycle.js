@@ -80,7 +80,7 @@ onRecordCreate((e) => {
     const operationalAcceptanceId = a.getString('operational_acceptance_id')
     const consentId = a.getString('consent_id')
 
-    // 1. PRACTICE VERSION DEVE ESTAR ACTIVE
+    // 1. PRACTICE VERSION DEVE ESTAR ACTIVE E COM REVISÃO VIGENTE
     let pv = null
     try {
       pv = $app.findFirstRecordByData('cer_practice_versions', 'id', versionId)
@@ -98,10 +98,28 @@ onRecordCreate((e) => {
         'Practice Gate: Prática depreciada (deprecated). Novas ativações são bloqueadas.',
       )
     }
+    if (pvStatus === 'draft' || pvStatus === 'in_review' || pvStatus === 'approved') {
+      throw new BadRequestError(
+        'Practice Gate: PracticeVersion em estado editorial ("' +
+          pvStatus +
+          '"). Somente versões publicadas ("active") podem receber assignments.',
+      )
+    }
     if (pvStatus !== 'active') {
       throw new BadRequestError(
         'Practice Gate: PracticeVersion deve estar com status "active" para ser ativada.',
       )
+    }
+
+    // Validação de revisão vigente: review_due_at não pode estar vencido
+    const reviewDueAtStr = pv.getString('review_due_at')
+    if (reviewDueAtStr) {
+      const reviewDueDate = new Date(reviewDueAtStr)
+      if (!isNaN(reviewDueDate.getTime()) && reviewDueDate.getTime() <= Date.now()) {
+        throw new BadRequestError(
+          'Practice Gate: A revisão periódica desta prática expirou (review_due_at vencido). Novos assignments estão bloqueados até a renovação.',
+        )
+      }
     }
 
     // 2. PRIORITY GATE
@@ -383,7 +401,7 @@ onRecordUpdate((e) => {
       const operationalAcceptanceId = a.getString('operational_acceptance_id')
       const consentId = a.getString('consent_id')
 
-      // 1. PRACTICE VERSION DEVE ESTAR ACTIVE
+      // 1. PRACTICE VERSION DEVE ESTAR ACTIVE E COM REVISÃO VIGENTE
       let pv = null
       try {
         pv = $app.findFirstRecordByData('cer_practice_versions', 'id', versionId)
@@ -401,10 +419,28 @@ onRecordUpdate((e) => {
           'Practice Gate: Prática depreciada (deprecated). Novas ativações são bloqueadas.',
         )
       }
+      if (pvStatus === 'draft' || pvStatus === 'in_review' || pvStatus === 'approved') {
+        throw new BadRequestError(
+          'Practice Gate: PracticeVersion em estado editorial ("' +
+            pvStatus +
+            '"). Somente versões publicadas ("active") podem receber assignments.',
+        )
+      }
       if (pvStatus !== 'active') {
         throw new BadRequestError(
           'Practice Gate: PracticeVersion deve estar com status "active" para ser ativada.',
         )
+      }
+
+      // Validação de revisão vigente: review_due_at não pode estar vencido
+      const reviewDueAtStr = pv.getString('review_due_at')
+      if (reviewDueAtStr) {
+        const reviewDueDate = new Date(reviewDueAtStr)
+        if (!isNaN(reviewDueDate.getTime()) && reviewDueDate.getTime() <= Date.now()) {
+          throw new BadRequestError(
+            'Practice Gate: A revisão periódica desta prática expirou (review_due_at vencido). Novos assignments estão bloqueados até a renovação.',
+          )
+        }
       }
 
       // 2. PRIORITY GATE

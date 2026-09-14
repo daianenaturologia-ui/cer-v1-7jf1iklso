@@ -236,11 +236,26 @@ export async function runBuild08CPracticeTests(): Promise<TestResult[]> {
       reviewed_at: new Date().toISOString(),
     })
 
+    // Transição draft -> in_review -> approved -> active
+    versionV1 = await cerPracticeService.updatePracticeVersion(versionV1.id, {
+      status: 'in_review',
+    })
+
+    versionV1 = await cerPracticeService.updatePracticeVersion(versionV1.id, {
+      reviewer_user_id: USER_PROF_B,
+      reviewed_at: new Date().toISOString(),
+      safety_reviewed_at: new Date().toISOString(),
+      status: 'approved',
+    })
+
+    const futureDueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
     // VER4: Ativação com Publication Gate completo atendido
     versionV1 = await cerPracticeService.updatePracticeVersion(versionV1.id, {
       reviewer_user_id: USER_PROF_B,
       reviewed_at: new Date().toISOString(),
       safety_reviewed_at: new Date().toISOString(),
+      review_due_at: futureDueDate,
       status: 'active',
     })
 

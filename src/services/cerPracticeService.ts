@@ -187,9 +187,13 @@ export const cerPracticeService = {
     reviewer_user_id?: string
     reviewed_at?: string
     safety_reviewed_at?: string
-    status: PracticeStatus
+    review_due_at?: string
+    status?: PracticeStatus
   }): Promise<CerPracticeVersionRecord> {
-    return await pb.collection('cer_practice_versions').create<CerPracticeVersionRecord>(data)
+    return await pb.collection('cer_practice_versions').create<CerPracticeVersionRecord>({
+      ...data,
+      status: data.status || 'draft',
+    })
   },
 
   async updatePracticeVersion(
@@ -438,5 +442,37 @@ export const cerPracticeService = {
       }
       return true
     })
+  },
+
+  /**
+   * Obtém a versão ativa e com revisão vigente de uma prática para uso clínico / indicação.
+   * Retorna null caso não haja versão ativa ou se a revisão estiver expirada (review_due_at no passado).
+   */
+  async getAvailableActiveVersionForPractice(
+    practiceId: string,
+  ): Promise<CerPracticeVersionRecord | null> {
+    try {
+      const versions = await pb
+        .collection('cer_practice_versions')
+        .getFullList<CerPracticeVersionRecord>({
+          filter: `practice_id = "${practiceId}" && status = "active"`,
+          sort: '-version_number',
+        })
+
+      const now = Date.now()
+      for (const ver of versions) {
+        // Se review_due_at estiver definido, deve estar no futuro
+        if (ver.review_due_at) {
+          const dueDate = new Date(ver.review_due_at).getTime()
+          if (!isNaN(dueDate) && dueDate <= now) {
+            continue // Revisão vencida: versão indisponível para nova indicação
+          }
+        }
+        return ver
+      }
+      return null
+    } catch (_) {
+      return null
+    }
   },
 }
