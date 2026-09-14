@@ -19,6 +19,7 @@ import { runBuild08CPracticeTests } from './testsPractice08c'
 import { runBuild08DTests } from './testsPracticeAssignment08d'
 import { runBuild08ETests } from './testsBuild08e'
 import { runBuild09CTests } from './testsBuild09c'
+import { runBuild09DATests } from './testsBuild09da'
 
 describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
   it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {
@@ -367,4 +368,18 @@ describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
     const failedTests = results.filter((r) => !r.passed)
     expect(failedTests.length).toBe(0)
   }, 60000)
+
+  it('executa suíte de testes adversariais do Build 09D-A (T1–T16: Item Nature, Assets & Resource Recommendations)', async () => {
+    const results = await runBuild09DATests()
+    console.log(
+      'BUILD 09D-A RESULTS:',
+      results.map((r) => `${r.id}: ${r.passed ? 'PASSOU' : 'NÃO PASSOU'}`),
+    )
+    const failedTests = results.filter((r) => !r.passed)
+    expect(failedTests.map((f) => `${f.id}: ${f.details}`)).toEqual([])
+    expect(results.length).toBeGreaterThanOrEqual(16)
+    for (const r of results) {
+      expect(r.passed, `${r.id}: ${r.details}`).toBe(true)
+    }
+  }, 90000)
 })

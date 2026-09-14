@@ -1748,12 +1748,52 @@ export const CONSENT_RECORD_STATUS = {
 
 export type ConsentRecordStatus = (typeof CONSENT_RECORD_STATUS)[keyof typeof CONSENT_RECORD_STATUS]
 
+// BUILD 09D-A: Item Natures
+export const PRACTICE_ITEM_NATURES = {
+  PRACTICE: 'practice',
+  GUIDED_EXPERIENCE: 'guided_experience',
+  CONTINUED_CARE: 'continued_care',
+  SUPPORT_RESOURCE: 'support_resource',
+} as const
+
+export type PracticeItemNature = (typeof PRACTICE_ITEM_NATURES)[keyof typeof PRACTICE_ITEM_NATURES]
+
+// BUILD 09D-A: Asset Types
+export const PRACTICE_ASSET_TYPES = {
+  AUDIO: 'audio',
+  DOCUMENT: 'document',
+  VIDEO: 'video',
+  EXTERNAL_LINK: 'external_link',
+} as const
+
+export type PracticeAssetType = (typeof PRACTICE_ASSET_TYPES)[keyof typeof PRACTICE_ASSET_TYPES]
+
+// BUILD 09D-A: Resource Recommendation Status & Channels
+export const RESOURCE_RECOMMENDATION_STATUS = {
+  RECOMMENDED: 'recommended',
+  VIEWED: 'viewed',
+  WITHDRAWN: 'withdrawn',
+  SUPERSEDED: 'superseded',
+} as const
+
+export type ResourceRecommendationStatus =
+  (typeof RESOURCE_RECOMMENDATION_STATUS)[keyof typeof RESOURCE_RECOMMENDATION_STATUS]
+
+export const RESOURCE_RECOMMENDATION_CHANNELS = {
+  APP: 'app',
+  SESSION: 'session',
+} as const
+
+export type ResourceRecommendationChannel =
+  (typeof RESOURCE_RECOMMENDATION_CHANNELS)[keyof typeof RESOURCE_RECOMMENDATION_CHANNELS]
+
 // 1. cer_practices
 export interface CerPracticeRecord {
   id: string
   internal_name: string
   participant_facing_name_base: string
   family: string
+  item_nature: PracticeItemNature
   target_concept_keys?: string[]
   governance_modes: PracticeGovernanceMode[]
   is_system_curated: boolean
@@ -1813,6 +1853,44 @@ export interface CerPracticeVersionRecord {
     cer_practice_evidence_via_practice_version_id?: CerPracticeEvidenceRecord[]
     cer_practice_safety_profiles_via_practice_version_id?: CerPracticeSafetyProfileRecord[]
     cer_practice_safety_rules_via_practice_version_id?: CerPracticeSafetyRuleRecord[]
+    cer_practice_version_assets_via_practice_version_id?: CerPracticeVersionAssetRecord[]
+  }
+}
+
+// BUILD 09D-A: cer_practice_version_assets
+export interface CerPracticeVersionAssetRecord {
+  id: string
+  practice_version_id: string
+  asset_type: PracticeAssetType
+  role?: string
+  file?: string
+  url_identifier?: string
+  title?: string
+  sort_order?: number
+  created: string
+  updated: string
+  expand?: {
+    practice_version_id?: CerPracticeVersionRecord
+  }
+}
+
+// BUILD 09D-A: cer_resource_recommendations
+export interface CerResourceRecommendationRecord {
+  id: string
+  enrollment_id: string
+  participant_user_id: string
+  resource_version_id: string
+  professional_user_id: string
+  participant_safe_message?: string
+  status: ResourceRecommendationStatus
+  channel: ResourceRecommendationChannel
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    participant_user_id?: UserAccountRecord
+    resource_version_id?: CerPracticeVersionRecord
+    professional_user_id?: UserAccountRecord
   }
 }
 

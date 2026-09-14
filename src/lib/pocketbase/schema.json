@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-11T21:06:19.071Z",
+  "generatedAt": "2026-09-14T11:34:38.751Z",
   "collections": [
     {
       "name": "users",
@@ -3754,7 +3754,7 @@
         "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
         "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
         "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
-        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.body.item_nature ?= item_nature",
         "delete": null
       },
       "fields": [
@@ -3834,12 +3834,20 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "item_nature",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["practice", "guided_experience", "continued_care", "support_resource"]
         }
       ],
       "indexes": [
         "CREATE INDEX idx_cp_internal_name ON cer_practices (internal_name)",
         "CREATE INDEX idx_cp_family ON cer_practices (family)",
-        "CREATE INDEX idx_cp_status ON cer_practices (status)"
+        "CREATE INDEX idx_cp_status ON cer_practices (status)",
+        "CREATE INDEX `idx_cp_item_nature` ON `cer_practices` (item_nature)"
       ]
     },
     {
@@ -5698,6 +5706,163 @@
         "CREATE INDEX idx_ccr_enrollment ON cer_cycle_reviews (enrollment_id)",
         "CREATE INDEX idx_ccr_cycle ON cer_cycle_reviews (care_cycle_id)",
         "CREATE INDEX idx_ccr_status ON cer_cycle_reviews (status)"
+      ]
+    },
+    {
+      "name": "cer_practice_version_assets",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.user_roles_via_user_id.role ?= 'profissional' || practice_version_id.cer_practice_assignments_via_practice_version_id.participant_user_id ?= @request.auth.id || practice_version_id.cer_resource_recommendations_via_resource_version_id.participant_user_id ?= @request.auth.id)",
+        "view": "@request.auth.id != '' && (@request.auth.user_roles_via_user_id.role ?= 'profissional' || practice_version_id.cer_practice_assignments_via_practice_version_id.participant_user_id ?= @request.auth.id || practice_version_id.cer_resource_recommendations_via_resource_version_id.participant_user_id ?= @request.auth.id)",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "asset_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["audio", "document", "video", "external_link"]
+        },
+        {
+          "name": "role",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "file",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "url_identifier",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sort_order",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cpva_version ON cer_practice_version_assets (practice_version_id)",
+        "CREATE INDEX idx_cpva_type ON cer_practice_version_assets (asset_type)",
+        "CREATE INDEX idx_cpva_sort ON cer_practice_version_assets (sort_order)"
+      ]
+    },
+    {
+      "name": "cer_resource_recommendations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && participant_user_id = @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && participant_user_id = @request.auth.id) || (enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true && resource_version_id.practice_id.item_nature = 'support_resource' && resource_version_id.status = 'active'",
+        "update": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true && resource_version_id.practice_id.item_nature = 'support_resource' && resource_version_id.status = 'active'",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "resource_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "professional_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "participant_safe_message",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["recommended", "viewed", "withdrawn", "superseded"]
+        },
+        {
+          "name": "channel",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["app", "session"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_crr_enrollment ON cer_resource_recommendations (enrollment_id)",
+        "CREATE INDEX idx_crr_participant ON cer_resource_recommendations (participant_user_id)",
+        "CREATE INDEX idx_crr_version ON cer_resource_recommendations (resource_version_id)",
+        "CREATE INDEX idx_crr_status ON cer_resource_recommendations (status)"
       ]
     }
   ]

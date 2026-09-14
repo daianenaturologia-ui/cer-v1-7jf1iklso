@@ -12,6 +12,7 @@ import {
   CerPracticeSafetyCheckSourceRecord,
   CerPracticeConsentRecord,
   CerPracticeConsentPrivateNoteRecord,
+  PracticeItemNature,
   PracticeStatus,
   PracticeGovernanceMode,
   PracticeIntensity,
@@ -127,6 +128,7 @@ export const cerPracticeService = {
     internal_name: string
     participant_facing_name_base: string
     family: string
+    item_nature?: PracticeItemNature
     target_concept_keys?: string[]
     governance_modes: PracticeGovernanceMode[]
     is_system_curated?: boolean
@@ -136,6 +138,7 @@ export const cerPracticeService = {
   }): Promise<CerPracticeRecord> {
     return await pb.collection('cer_practices').create<CerPracticeRecord>({
       ...data,
+      item_nature: data.item_nature ?? 'practice',
       is_system_curated: data.is_system_curated ?? true,
     })
   },
