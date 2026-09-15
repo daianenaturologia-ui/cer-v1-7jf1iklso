@@ -16,17 +16,29 @@ import { inspectTestEnvironment } from './safeMutableGate'
 describe('Suítes de Integração Lote 2A (7.A, 7.B, 7.C) — Bloqueio Seguro Preventivo', () => {
   it('inspeção confirma que backend padrão não é localhost autorizado', () => {
     const inspection = inspectTestEnvironment()
-    // No ambiente de teste padrão (sem PocketBase local rodando com flag), deve ser false
-    expect(inspection.isAllowed).toBe(false)
+    if (inspection.isAllowed) {
+      expect(inspection.isLocalhost).toBe(true)
+      expect(inspection.explicitFlagPresent).toBe(true)
+    } else {
+      expect(inspection.isAllowed).toBe(false)
+    }
   })
 
-  it('Suíte 7.A (Assignment × review_due_at): retorna todos os 11 cenários como BLOCKED no backend não isolado', async () => {
+  it('Suíte 7.A (Assignment × review_due_at): executa com integridade conforme autorização do safeMutableGate', async () => {
+    const inspection = inspectTestEnvironment()
     const results = await runIntegration7ATests()
     expect(results.length).toBe(11)
 
-    // Nenhum caso pode ter passado ou falhado como se tivesse executado no backend
-    const nonBlocked = results.filter((r) => r.status !== 'BLOCKED')
-    expect(nonBlocked).toEqual([])
+    if (!inspection.isAllowed) {
+      // Nenhum caso pode ter passado ou falhado como se tivesse executado no backend
+      const nonBlocked = results.filter((r) => r.status !== 'BLOCKED')
+      expect(nonBlocked).toEqual([])
+    } else {
+      const failed = results.filter((r) => r.status === 'FAIL')
+      expect(failed).toEqual([])
+      const passed = results.filter((r) => r.status === 'PASS')
+      expect(passed.length).toBe(11)
+    }
 
     // Verificar presença dos casos canônicos
     const ids = results.map((r) => r.id)
@@ -42,20 +54,32 @@ describe('Suítes de Integração Lote 2A (7.A, 7.B, 7.C) — Bloqueio Seguro Pr
     expect(ids).toContain('7.A-10')
     expect(ids).toContain('7.A-11')
 
+    if (!inspection.isAllowed) {
+      for (const r of results) {
+        expect(r.details).toContain('bloqueada por trava de segurança')
+      }
+    }
     for (const r of results) {
-      expect(r.details).toContain('bloqueada por trava de segurança')
       // Sanitização de credenciais/URLs
       expect(r.details).not.toContain('Skip@Pass')
       expect(r.details).not.toContain('token=')
     }
   })
 
-  it('Suíte 7.B (Recall: active -> retired): retorna todos os 8 cenários como BLOCKED no backend não isolado', async () => {
+  it('Suíte 7.B (Recall: active -> retired): executa com integridade conforme autorização do safeMutableGate', async () => {
+    const inspection = inspectTestEnvironment()
     const results = await runIntegration7BTests()
     expect(results.length).toBe(8)
 
-    const nonBlocked = results.filter((r) => r.status !== 'BLOCKED')
-    expect(nonBlocked).toEqual([])
+    if (!inspection.isAllowed) {
+      const nonBlocked = results.filter((r) => r.status !== 'BLOCKED')
+      expect(nonBlocked).toEqual([])
+    } else {
+      const failed = results.filter((r) => r.status === 'FAIL')
+      expect(failed).toEqual([])
+      const passed = results.filter((r) => r.status === 'PASS')
+      expect(passed.length).toBe(8)
+    }
 
     const ids = results.map((r) => r.id)
     expect(ids).toContain('7.B-01')
@@ -67,17 +91,27 @@ describe('Suítes de Integração Lote 2A (7.A, 7.B, 7.C) — Bloqueio Seguro Pr
     expect(ids).toContain('7.B-07')
     expect(ids).toContain('7.B-08')
 
-    for (const r of results) {
-      expect(r.details).toContain('bloqueada por trava de segurança')
+    if (!inspection.isAllowed) {
+      for (const r of results) {
+        expect(r.details).toContain('bloqueada por trava de segurança')
+      }
     }
   })
 
-  it('Suíte 7.C (Transições Negadas): retorna todos os 7 cenários como BLOCKED no backend não isolado', async () => {
+  it('Suíte 7.C (Transições Negadas): executa com integridade conforme autorização do safeMutableGate', async () => {
+    const inspection = inspectTestEnvironment()
     const results = await runIntegration7CTests()
     expect(results.length).toBe(7)
 
-    const nonBlocked = results.filter((r) => r.status !== 'BLOCKED')
-    expect(nonBlocked).toEqual([])
+    if (!inspection.isAllowed) {
+      const nonBlocked = results.filter((r) => r.status !== 'BLOCKED')
+      expect(nonBlocked).toEqual([])
+    } else {
+      const failed = results.filter((r) => r.status === 'FAIL')
+      expect(failed).toEqual([])
+      const passed = results.filter((r) => r.status === 'PASS')
+      expect(passed.length).toBe(7)
+    }
 
     const ids = results.map((r) => r.id)
     expect(ids).toContain('7.C-01')
@@ -88,8 +122,10 @@ describe('Suítes de Integração Lote 2A (7.A, 7.B, 7.C) — Bloqueio Seguro Pr
     expect(ids).toContain('7.C-06')
     expect(ids).toContain('7.C-07')
 
-    for (const r of results) {
-      expect(r.details).toContain('bloqueada por trava de segurança')
+    if (!inspection.isAllowed) {
+      for (const r of results) {
+        expect(r.details).toContain('bloqueada por trava de segurança')
+      }
     }
   })
 })
