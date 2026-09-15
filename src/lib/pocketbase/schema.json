@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T16:02:09.233Z",
+  "generatedAt": "2026-09-15T20:36:06.173Z",
   "collections": [
     {
       "name": "users",
@@ -4174,6 +4174,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "is_default",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -6073,6 +6079,36 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "semantic_role",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "external_orientation",
+            "body_awareness",
+            "body_resource",
+            "chronological_orientation",
+            "challenge_awareness",
+            "internal_resource",
+            "external_resource",
+            "possibility_rehearsal",
+            "resource_awareness",
+            "direction"
+          ]
+        },
+        {
+          "name": "duration_min_seconds",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "duration_max_seconds",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -6192,6 +6228,194 @@
         "CREATE INDEX idx_cprfl_participant ON cer_practice_reflections (participant_user_id)",
         "CREATE INDEX idx_cprfl_target ON cer_practice_reflections (reflection_target)",
         "CREATE INDEX idx_cprfl_status ON cer_practice_reflections (record_status)"
+      ]
+    },
+    {
+      "name": "cer_practice_variant_steps",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && record_status = 'current'",
+        "view": "@request.auth.id != '' && record_status = 'current'",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_variant_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_variants"
+        },
+        {
+          "name": "practice_step_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_steps"
+        },
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "step_order",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "record_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["current", "superseded"]
+        },
+        {
+          "name": "current_uniqueness_key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "current_order_key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "supersedes_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_practice_variant_steps"
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_cpvs_current_unique ON cer_practice_variant_steps (current_uniqueness_key)",
+        "CREATE UNIQUE INDEX idx_cpvs_current_order ON cer_practice_variant_steps (current_order_key)",
+        "CREATE INDEX idx_cpvs_variant ON cer_practice_variant_steps (practice_variant_id)",
+        "CREATE INDEX idx_cpvs_step ON cer_practice_variant_steps (practice_step_id)",
+        "CREATE INDEX idx_cpvs_version ON cer_practice_variant_steps (practice_version_id)",
+        "CREATE INDEX idx_cpvs_status ON cer_practice_variant_steps (record_status)",
+        "CREATE INDEX `idx_cpvs_supersedes` ON `cer_practice_variant_steps` (supersedes_id)"
+      ]
+    },
+    {
+      "name": "cer_practice_step_professional_content",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true && record_status = 'current'",
+        "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true && record_status = 'current'",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_step_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_steps"
+        },
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "content_kind",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "traditional_framework_note",
+            "forbidden_inference",
+            "professional_guidance"
+          ]
+        },
+        {
+          "name": "content_text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "source_manifest_path",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "content_classification",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["professional_only"]
+        },
+        {
+          "name": "record_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["current", "superseded"]
+        },
+        {
+          "name": "current_uniqueness_key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "supersedes_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_practice_step_professional_content"
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_cpspc_current_unique ON cer_practice_step_professional_content (current_uniqueness_key)",
+        "CREATE INDEX idx_cpspc_step ON cer_practice_step_professional_content (practice_step_id)",
+        "CREATE INDEX idx_cpspc_version ON cer_practice_step_professional_content (practice_version_id)",
+        "CREATE INDEX idx_cpspc_kind ON cer_practice_step_professional_content (content_kind)",
+        "CREATE INDEX idx_cpspc_status ON cer_practice_step_professional_content (record_status)",
+        "CREATE INDEX `idx_cpspc_supersedes` ON `cer_practice_step_professional_content` (supersedes_id)"
       ]
     }
   ]
