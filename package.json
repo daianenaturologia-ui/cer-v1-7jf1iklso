@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "A frontend React Vite TypeScript Shadcn UI template for Skip projects",
   "private": true,
-  "version": "0.0.48",
+  "version": "0.0.49",
   "type": "module",
   "scripts": {
     "start": "vite dev",
@@ -17,9 +17,9 @@
     "preview": "vite preview",
     "test": "node -e \"console.log('Vitest check');\" && vitest run",
     "test:watch": "vitest",
-    "test:unit": "vitest run src/services/testsCorrecao1A.test.ts src/services/testsLote3A.test.ts src/services/safeMutableGate.test.ts src/services/testsMigration0049.test.ts",
+    "test:unit": "vitest run src/services/testsCorrecao1A.test.ts src/services/testsLote3A.test.ts src/services/safeMutableGate.test.ts src/services/testsMigration0049.test.ts src/services/testsMigration0059.test.ts",
     "test:integration": "vitest run src/services/testsIntegrationSuites.test.ts",
-    "test:regression": "vitest run src/services/testsCorrecao1A.test.ts src/services/testsLote3A.test.ts src/services/testsIntegrationSuites.test.ts src/services/testsMigration0049.test.ts",
+    "test:regression": "vitest run src/services/testsCorrecao1A.test.ts src/services/testsLote3A.test.ts src/services/testsIntegrationSuites.test.ts src/services/testsMigration0049.test.ts src/services/testsMigration0059.test.ts",
     "qa:practices": "node scripts/qa-practices.mjs"
   },
   "dependencies": {

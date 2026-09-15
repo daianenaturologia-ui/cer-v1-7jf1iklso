@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T20:36:06.173Z",
+  "generatedAt": "2026-09-15T20:59:26.197Z",
   "collections": [
     {
       "name": "users",
@@ -6323,8 +6323,8 @@
       "name": "cer_practice_step_professional_content",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true && record_status = 'current'",
-        "view": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true && record_status = 'current'",
+        "list": "@request.auth.id != '' && ((@request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true) || (@request.auth.user_roles_via_user_id.role ?= 'admin' && @request.auth.user_roles_via_user_id.is_active ?= true)) && record_status = 'current'",
+        "view": "@request.auth.id != '' && ((@request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true) || (@request.auth.user_roles_via_user_id.role ?= 'admin' && @request.auth.user_roles_via_user_id.is_active ?= true)) && record_status = 'current'",
         "create": null,
         "update": null,
         "delete": null

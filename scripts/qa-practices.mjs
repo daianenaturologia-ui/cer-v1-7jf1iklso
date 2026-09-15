@@ -76,9 +76,10 @@ function main() {
       'src/services/testsLote3A.test.ts',
       'src/services/testsCorrecao3A1.test.ts',
       'src/services/testsMigration0049.test.ts',
+      'src/services/testsMigration0059.test.ts',
     ],
     1,
-    'Testes Unitários Puros (testsCorrecao1A, testsLote3A, testsCorrecao3A1 e testsMigration0049: 29 casos canônicos de dose, reflexão e schema 0049)',
+    'Testes Unitários Puros (testsCorrecao1A, testsLote3A, testsCorrecao3A1, testsMigration0049 e testsMigration0059: casos canônicos de dose, reflexão, schema 0049 e rules 0059)',
   )
   if (step1.status === 'FAIL') {
     finishPipeline()
@@ -185,9 +186,10 @@ function main() {
       'src/services/testsCorrecao3A1.test.ts',
       'src/services/testsIntegrationSuites.test.ts',
       'src/services/testsMigration0049.test.ts',
+      'src/services/testsMigration0059.test.ts',
     ],
     5,
-    'Regressões Funcionais Determinísticas (regras temporais, editorial gates, imutabilidade e schema 0049)',
+    'Regressões Funcionais Determinísticas (regras temporais, editorial gates, imutabilidade, schema 0049 e rules 0059)',
   )
   if (step5.status === 'FAIL') {
     finishPipeline()

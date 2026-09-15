@@ -104,81 +104,86 @@ migrate(
 
     app.save(practiceVariantsCol)
 
-    // ═══ C. CRIAR cer_practice_variant_steps ═══
+    // ═══ C. CRIAR cer_practice_variant_steps (se não existir) ═══
     // Padrão de autorreferência: cria a collection sem o campo supersedes_id,
     // salva para obter ID e registrar a tabela, depois adiciona supersedes_id e salva novamente.
-    const variantStepsCol = new Collection({
-      name: 'cer_practice_variant_steps',
-      type: 'base',
-      listRule: "@request.auth.id != '' && record_status = 'current'",
-      viewRule: "@request.auth.id != '' && record_status = 'current'",
-      createRule: null,
-      updateRule: null,
-      deleteRule: null,
-      fields: [
-        {
-          name: 'practice_variant_id',
-          type: 'relation',
-          required: true,
-          collectionId: practiceVariantsCol.id,
-          cascadeDelete: false,
-          maxSelect: 1,
-        },
-        {
-          name: 'practice_step_id',
-          type: 'relation',
-          required: true,
-          collectionId: practiceStepsCol.id,
-          cascadeDelete: false,
-          maxSelect: 1,
-        },
-        {
-          name: 'practice_version_id',
-          type: 'relation',
-          required: true,
-          collectionId: practiceVersionsCol.id,
-          cascadeDelete: false,
-          maxSelect: 1,
-        },
-        {
-          name: 'step_order',
-          type: 'number',
-          required: true,
-          min: 1,
-          onlyInt: true,
-        },
-        {
-          name: 'record_status',
-          type: 'select',
-          required: true,
-          values: ['current', 'superseded'],
-          maxSelect: 1,
-        },
-        {
-          name: 'current_uniqueness_key',
-          type: 'text',
-          required: true,
-        },
-        {
-          name: 'current_order_key',
-          type: 'text',
-          required: true,
-        },
-        { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
-        { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
-      ],
-      indexes: [
-        'CREATE UNIQUE INDEX idx_cpvs_current_unique ON cer_practice_variant_steps (current_uniqueness_key)',
-        'CREATE UNIQUE INDEX idx_cpvs_current_order ON cer_practice_variant_steps (current_order_key)',
-        'CREATE INDEX idx_cpvs_variant ON cer_practice_variant_steps (practice_variant_id)',
-        'CREATE INDEX idx_cpvs_step ON cer_practice_variant_steps (practice_step_id)',
-        'CREATE INDEX idx_cpvs_version ON cer_practice_variant_steps (practice_version_id)',
-        'CREATE INDEX idx_cpvs_status ON cer_practice_variant_steps (record_status)',
-      ],
-    })
-    app.save(variantStepsCol)
+    let variantStepsCol = null
+    try {
+      variantStepsCol = app.findCollectionByNameOrId('cer_practice_variant_steps')
+    } catch (_) {
+      variantStepsCol = new Collection({
+        name: 'cer_practice_variant_steps',
+        type: 'base',
+        listRule: "@request.auth.id != '' && record_status = 'current'",
+        viewRule: "@request.auth.id != '' && record_status = 'current'",
+        createRule: null,
+        updateRule: null,
+        deleteRule: null,
+        fields: [
+          {
+            name: 'practice_variant_id',
+            type: 'relation',
+            required: true,
+            collectionId: practiceVariantsCol.id,
+            cascadeDelete: false,
+            maxSelect: 1,
+          },
+          {
+            name: 'practice_step_id',
+            type: 'relation',
+            required: true,
+            collectionId: practiceStepsCol.id,
+            cascadeDelete: false,
+            maxSelect: 1,
+          },
+          {
+            name: 'practice_version_id',
+            type: 'relation',
+            required: true,
+            collectionId: practiceVersionsCol.id,
+            cascadeDelete: false,
+            maxSelect: 1,
+          },
+          {
+            name: 'step_order',
+            type: 'number',
+            required: true,
+            min: 1,
+            onlyInt: true,
+          },
+          {
+            name: 'record_status',
+            type: 'select',
+            required: true,
+            values: ['current', 'superseded'],
+            maxSelect: 1,
+          },
+          {
+            name: 'current_uniqueness_key',
+            type: 'text',
+            required: true,
+          },
+          {
+            name: 'current_order_key',
+            type: 'text',
+            required: true,
+          },
+          { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
+          { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
+        ],
+        indexes: [
+          'CREATE UNIQUE INDEX idx_cpvs_current_unique ON cer_practice_variant_steps (current_uniqueness_key)',
+          'CREATE UNIQUE INDEX idx_cpvs_current_order ON cer_practice_variant_steps (current_order_key)',
+          'CREATE INDEX idx_cpvs_variant ON cer_practice_variant_steps (practice_variant_id)',
+          'CREATE INDEX idx_cpvs_step ON cer_practice_variant_steps (practice_step_id)',
+          'CREATE INDEX idx_cpvs_version ON cer_practice_variant_steps (practice_version_id)',
+          'CREATE INDEX idx_cpvs_status ON cer_practice_variant_steps (record_status)',
+        ],
+      })
+      app.save(variantStepsCol)
+    }
 
-    // Adiciona relação autorreferente supersedes_id em cer_practice_variant_steps
+    // Adiciona relação autorreferente supersedes_id em cer_practice_variant_steps se necessário
     const savedVariantStepsCol = app.findCollectionByNameOrId('cer_practice_variant_steps')
     if (!savedVariantStepsCol.fields.getByName('supersedes_id')) {
       savedVariantStepsCol.fields.add(
@@ -194,85 +199,94 @@ migrate(
       app.save(savedVariantStepsCol)
     }
 
-    // ═══ D. CRIAR cer_practice_step_professional_content ═══
+    // ═══ D. CRIAR cer_practice_step_professional_content (se não existir) ═══
     // Padrão de autorreferência idêntico: criar collection, salvar, adicionar supersedes_id, salvar.
-    const stepProfContentCol = new Collection({
-      name: 'cer_practice_step_professional_content',
-      type: 'base',
-      listRule:
-        "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true && record_status = 'current'",
-      viewRule:
-        "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true && record_status = 'current'",
-      createRule: null,
-      updateRule: null,
-      deleteRule: null,
-      fields: [
-        {
-          name: 'practice_step_id',
-          type: 'relation',
-          required: true,
-          collectionId: practiceStepsCol.id,
-          cascadeDelete: false,
-          maxSelect: 1,
-        },
-        {
-          name: 'practice_version_id',
-          type: 'relation',
-          required: true,
-          collectionId: practiceVersionsCol.id,
-          cascadeDelete: false,
-          maxSelect: 1,
-        },
-        {
-          name: 'content_kind',
-          type: 'select',
-          required: true,
-          values: ['traditional_framework_note', 'forbidden_inference', 'professional_guidance'],
-          maxSelect: 1,
-        },
-        {
-          name: 'content_text',
-          type: 'text',
-          required: true,
-        },
-        {
-          name: 'source_manifest_path',
-          type: 'text',
-          required: false,
-        },
-        {
-          name: 'content_classification',
-          type: 'select',
-          required: true,
-          values: ['professional_only'],
-          maxSelect: 1,
-        },
-        {
-          name: 'record_status',
-          type: 'select',
-          required: true,
-          values: ['current', 'superseded'],
-          maxSelect: 1,
-        },
-        {
-          name: 'current_uniqueness_key',
-          type: 'text',
-          required: true,
-        },
-        { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
-        { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
-      ],
-      indexes: [
-        'CREATE UNIQUE INDEX idx_cpspc_current_unique ON cer_practice_step_professional_content (current_uniqueness_key)',
-        'CREATE INDEX idx_cpspc_step ON cer_practice_step_professional_content (practice_step_id)',
-        'CREATE INDEX idx_cpspc_version ON cer_practice_step_professional_content (practice_version_id)',
-        'CREATE INDEX idx_cpspc_kind ON cer_practice_step_professional_content (content_kind)',
-        'CREATE INDEX idx_cpspc_status ON cer_practice_step_professional_content (record_status)',
-      ],
-    })
-    app.save(stepProfContentCol)
+    // listRule e viewRule fail-closed com branch profissional ativo OU admin ativo, somente record_status current.
+    // Nota de modelagem de segurança: Na sintaxe de filtro do PocketBase, @request.auth.user_roles_via_user_id
+    // avalia linhas da relação user_roles. Mantém-se o padrão conservador do ecossistema CER V1 exigindo autenticação,
+    // status ativo e record_status = 'current', com branch explícito para admin.
+    let stepProfContentCol = null
+    try {
+      stepProfContentCol = app.findCollectionByNameOrId('cer_practice_step_professional_content')
+    } catch (_) {
+      stepProfContentCol = new Collection({
+        name: 'cer_practice_step_professional_content',
+        type: 'base',
+        listRule:
+          "@request.auth.id != '' && ((@request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true) || (@request.auth.user_roles_via_user_id.role ?= 'admin' && @request.auth.user_roles_via_user_id.is_active ?= true)) && record_status = 'current'",
+        viewRule:
+          "@request.auth.id != '' && ((@request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true) || (@request.auth.user_roles_via_user_id.role ?= 'admin' && @request.auth.user_roles_via_user_id.is_active ?= true)) && record_status = 'current'",
+        createRule: null,
+        updateRule: null,
+        deleteRule: null,
+        fields: [
+          {
+            name: 'practice_step_id',
+            type: 'relation',
+            required: true,
+            collectionId: practiceStepsCol.id,
+            cascadeDelete: false,
+            maxSelect: 1,
+          },
+          {
+            name: 'practice_version_id',
+            type: 'relation',
+            required: true,
+            collectionId: practiceVersionsCol.id,
+            cascadeDelete: false,
+            maxSelect: 1,
+          },
+          {
+            name: 'content_kind',
+            type: 'select',
+            required: true,
+            values: ['traditional_framework_note', 'forbidden_inference', 'professional_guidance'],
+            maxSelect: 1,
+          },
+          {
+            name: 'content_text',
+            type: 'text',
+            required: true,
+          },
+          {
+            name: 'source_manifest_path',
+            type: 'text',
+            required: false,
+          },
+          {
+            name: 'content_classification',
+            type: 'select',
+            required: true,
+            values: ['professional_only'],
+            maxSelect: 1,
+          },
+          {
+            name: 'record_status',
+            type: 'select',
+            required: true,
+            values: ['current', 'superseded'],
+            maxSelect: 1,
+          },
+          {
+            name: 'current_uniqueness_key',
+            type: 'text',
+            required: true,
+          },
+          { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
+          { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
+        ],
+        indexes: [
+          'CREATE UNIQUE INDEX idx_cpspc_current_unique ON cer_practice_step_professional_content (current_uniqueness_key)',
+          'CREATE INDEX idx_cpspc_step ON cer_practice_step_professional_content (practice_step_id)',
+          'CREATE INDEX idx_cpspc_version ON cer_practice_step_professional_content (practice_version_id)',
+          'CREATE INDEX idx_cpspc_kind ON cer_practice_step_professional_content (content_kind)',
+          'CREATE INDEX idx_cpspc_status ON cer_practice_step_professional_content (record_status)',
+        ],
+      })
+      app.save(stepProfContentCol)
+    }
 
-    // Adiciona relação autorreferente supersedes_id em cer_practice_step_professional_content
+    // Adiciona relação autorreferente supersedes_id em cer_practice_step_professional_content se necessário
     const savedProfContentCol = app.findCollectionByNameOrId(
       'cer_practice_step_professional_content',
     )
@@ -292,104 +306,111 @@ migrate(
   },
   (app) => {
     // DOWN-MIGRATION FAIL-CLOSED:
-    // 1) Verificar se as duas collections novas estão vazias;
-    // 2) Verificar se os campos novos de steps/variants não possuem dados;
-    // 3) Falhar fechada (lançar erro) se qualquer dado existir;
-    // 4) Somente remover estruturas se estiverem comprovadamente vazias;
-    // 5) Nunca apagar audit_events;
-    // 6) Nunca tocar em 0047 ou 0048;
-    // 7) Não remover dados para forçar rollback.
+    // (1) Concluir todas as verificações antes da primeira alteração estrutural;
+    // (2) Relançar qualquer erro de consulta / nunca engolir falha;
+    // (3) Abortar se houver dados nas collections novas;
+    // (4) Abortar se qualquer campo novo possuir valor;
+    // (5) Somente iniciar remoções depois de todas as verificações passarem;
+    // (6) Abortar imediatamente se qualquer remoção falhar;
+    // (7) Nunca continuar após falha;
+    // (8) Nunca remover dados para facilitar rollback;
+    // (9) Nunca apagar audit_events;
+    // (10) Nunca tocar em 0047 ou 0048.
+    // Nenhum catch vazio ou engolidor permitido.
 
-    // 1. Verificação fail-closed de cer_practice_variant_steps
-    try {
-      const vsCol = app.findCollectionByNameOrId('cer_practice_variant_steps')
-      const countVs = app.countRecords('cer_practice_variant_steps')
-      if (countVs > 0) {
-        throw new Error(
-          `[ROLLBACK BLOQUEADO - FAIL CLOSED] Coleção cer_practice_variant_steps contém ${countVs} registros. Rollback abortado para proteger dados.`,
-        )
-      }
-    } catch (e) {
-      if (e.message && e.message.includes('ROLLBACK BLOQUEADO')) throw e
-    }
+    // ── ETAPA 1: VERIFICAÇÕES PRÉVIAS (nenhuma remoção antes desta etapa passar inteira) ──
 
-    // 2. Verificação fail-closed de cer_practice_step_professional_content
+    // 1.1 Verificação fail-closed de cer_practice_variant_steps
+    let vsCol = null
     try {
-      const spcCol = app.findCollectionByNameOrId('cer_practice_step_professional_content')
-      const countSpc = app.countRecords('cer_practice_step_professional_content')
-      if (countSpc > 0) {
-        throw new Error(
-          `[ROLLBACK BLOQUEADO - FAIL CLOSED] Coleção cer_practice_step_professional_content contém ${countSpc} registros. Rollback abortado para proteger dados.`,
-        )
-      }
-    } catch (e) {
-      if (e.message && e.message.includes('ROLLBACK BLOQUEADO')) throw e
-    }
-
-    // 3. Verificação fail-closed de dados nos novos campos de cer_practice_steps
-    try {
-      const countStepFieldsWithData = app.countRecords(
-        'cer_practice_steps',
-        "semantic_role != '' || duration_min_seconds > 0 || duration_max_seconds > 0",
+      vsCol = app.findCollectionByNameOrId('cer_practice_variant_steps')
+    } catch (err) {
+      throw new Error(
+        `[ROLLBACK BLOQUEADO] Falha ao localizar cer_practice_variant_steps: ${err.message || err}`,
       )
-      if (countStepFieldsWithData > 0) {
-        throw new Error(
-          `[ROLLBACK BLOQUEADO - FAIL CLOSED] cer_practice_steps possui ${countStepFieldsWithData} registros com campos do lote 0049 preenchidos. Rollback abortado.`,
-        )
-      }
-    } catch (e) {
-      if (e.message && e.message.includes('ROLLBACK BLOQUEADO')) throw e
     }
-
-    // 4. Verificação fail-closed de dados nos novos campos de cer_practice_variants
-    try {
-      const countVariantFieldsWithData = app.countRecords(
-        'cer_practice_variants',
-        'is_default = true',
+    const countVs = app.countRecords('cer_practice_variant_steps')
+    if (countVs > 0) {
+      throw new Error(
+        `[ROLLBACK BLOQUEADO - FAIL CLOSED] Coleção cer_practice_variant_steps contém ${countVs} registros. Rollback abortado para proteger dados.`,
       )
-      if (countVariantFieldsWithData > 0) {
-        throw new Error(
-          `[ROLLBACK BLOQUEADO - FAIL CLOSED] cer_practice_variants possui ${countVariantFieldsWithData} registros com is_default=true. Rollback abortado.`,
-        )
-      }
-    } catch (e) {
-      if (e.message && e.message.includes('ROLLBACK BLOQUEADO')) throw e
     }
 
-    // 5. Deletar com segurança as duas coleções se comprovadamente vazias
+    // 1.2 Verificação fail-closed de cer_practice_step_professional_content
+    let spcCol = null
     try {
-      const spcCol = app.findCollectionByNameOrId('cer_practice_step_professional_content')
-      app.delete(spcCol)
-    } catch (e) {
-      if (e.message && e.message.includes('ROLLBACK BLOQUEADO')) throw e
+      spcCol = app.findCollectionByNameOrId('cer_practice_step_professional_content')
+    } catch (err) {
+      throw new Error(
+        `[ROLLBACK BLOQUEADO] Falha ao localizar cer_practice_step_professional_content: ${err.message || err}`,
+      )
+    }
+    const countSpc = app.countRecords('cer_practice_step_professional_content')
+    if (countSpc > 0) {
+      throw new Error(
+        `[ROLLBACK BLOQUEADO - FAIL CLOSED] Coleção cer_practice_step_professional_content contém ${countSpc} registros. Rollback abortado para proteger dados.`,
+      )
     }
 
+    // 1.3 Verificação fail-closed de dados nos novos campos de cer_practice_steps
+    let stepsCol = null
     try {
-      const vsCol = app.findCollectionByNameOrId('cer_practice_variant_steps')
-      app.delete(vsCol)
-    } catch (e) {
-      if (e.message && e.message.includes('ROLLBACK BLOQUEADO')) throw e
+      stepsCol = app.findCollectionByNameOrId('cer_practice_steps')
+    } catch (err) {
+      throw new Error(
+        `[ROLLBACK BLOQUEADO] Falha ao localizar cer_practice_steps: ${err.message || err}`,
+      )
+    }
+    const countStepFieldsWithData = app.countRecords(
+      'cer_practice_steps',
+      "semantic_role != '' || duration_min_seconds > 0 || duration_max_seconds > 0",
+    )
+    if (countStepFieldsWithData > 0) {
+      throw new Error(
+        `[ROLLBACK BLOQUEADO - FAIL CLOSED] cer_practice_steps possui ${countStepFieldsWithData} registros com campos do lote 0049 preenchidos. Rollback abortado.`,
+      )
     }
 
-    // 6. Remover campos novos de cer_practice_steps
+    // 1.4 Verificação fail-closed de dados nos novos campos de cer_practice_variants
+    let variantsCol = null
     try {
-      const stepsCol = app.findCollectionByNameOrId('cer_practice_steps')
-      const fieldsToRemove = ['semantic_role', 'duration_min_seconds', 'duration_max_seconds']
-      for (const f of fieldsToRemove) {
-        if (stepsCol.fields.getByName(f)) {
-          stepsCol.fields.removeByName(f)
-        }
-      }
-      app.save(stepsCol)
-    } catch (_) {}
+      variantsCol = app.findCollectionByNameOrId('cer_practice_variants')
+    } catch (err) {
+      throw new Error(
+        `[ROLLBACK BLOQUEADO] Falha ao localizar cer_practice_variants: ${err.message || err}`,
+      )
+    }
+    const countVariantFieldsWithData = app.countRecords(
+      'cer_practice_variants',
+      'is_default = true',
+    )
+    if (countVariantFieldsWithData > 0) {
+      throw new Error(
+        `[ROLLBACK BLOQUEADO - FAIL CLOSED] cer_practice_variants possui ${countVariantFieldsWithData} registros com is_default=true. Rollback abortado.`,
+      )
+    }
 
-    // 7. Remover campo novo de cer_practice_variants
-    try {
-      const variantsCol = app.findCollectionByNameOrId('cer_practice_variants')
-      if (variantsCol.fields.getByName('is_default')) {
-        variantsCol.fields.removeByName('is_default')
+    // ── ETAPA 2: REMOÇÕES ESTRUTURAIS (somente após todas as verificações passarem) ──
+
+    // 2.1 Deletar cer_practice_step_professional_content (falha imediata se der erro)
+    app.delete(spcCol)
+
+    // 2.2 Deletar cer_practice_variant_steps (falha imediata se der erro)
+    app.delete(vsCol)
+
+    // 2.3 Remover campos novos de cer_practice_steps (falha imediata se der erro)
+    const fieldsToRemove = ['semantic_role', 'duration_min_seconds', 'duration_max_seconds']
+    for (const f of fieldsToRemove) {
+      if (stepsCol.fields.getByName(f)) {
+        stepsCol.fields.removeByName(f)
       }
-      app.save(variantsCol)
-    } catch (_) {}
+    }
+    app.save(stepsCol)
+
+    // 2.4 Remover campo novo de cer_practice_variants (falha imediata se der erro)
+    if (variantsCol.fields.getByName('is_default')) {
+      variantsCol.fields.removeByName('is_default')
+    }
+    app.save(variantsCol)
   },
 )
