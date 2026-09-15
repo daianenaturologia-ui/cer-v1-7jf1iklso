@@ -44,6 +44,29 @@ export const ALLOWED_SAFETY_CHECK_SOURCE_TYPES: readonly SafetyCheckSourceType[]
   'session_observation',
 ] as const
 
+/**
+ * Validador canônico de consistência temporal e vigência de review_due_at.
+ * Regra: para uma versão active estar disponível/vigente:
+ * 1. review_due_at deve ser obrigatório (não nulo, não indefinido, não string vazia)
+ * 2. Deve ser uma data válida em formato parseável (UTC/ISO)
+ * 3. Deve ser estritamente posterior ao instante de referência (review_due_at > nowMs).
+ * review_due_at <= nowMs é considerado VENCIDO/INDISPONÍVEL.
+ */
+export function isPracticeVersionReviewDueValid(
+  reviewDueAt?: string | null,
+  nowMs: number = Date.now(),
+): boolean {
+  if (!reviewDueAt || typeof reviewDueAt !== 'string' || !reviewDueAt.trim()) {
+    return false
+  }
+  const dueDate = new Date(reviewDueAt)
+  const dueTime = dueDate.getTime()
+  if (isNaN(dueTime)) {
+    return false
+  }
+  return dueTime > nowMs
+}
+
 // Termos proibidos pelo Claim Guard
 export const CLAIM_GUARD_FORBIDDEN_TERMS = [
   'cura',
@@ -446,10 +469,11 @@ export const cerPracticeService = {
 
   /**
    * Obtém a versão ativa e com revisão vigente de uma prática para uso clínico / indicação.
-   * Retorna null caso não haja versão ativa ou se a revisão estiver expirada (review_due_at no passado).
+   * Retorna null caso não haja versão ativa ou se a revisão estiver ausente, vazia, inválida ou expirada (review_due_at <= now).
    */
   async getAvailableActiveVersionForPractice(
     practiceId: string,
+    nowMs: number = Date.now(),
   ): Promise<CerPracticeVersionRecord | null> {
     try {
       const versions = await pb
@@ -459,16 +483,10 @@ export const cerPracticeService = {
           sort: '-version_number',
         })
 
-      const now = Date.now()
       for (const ver of versions) {
-        // Se review_due_at estiver definido, deve estar no futuro
-        if (ver.review_due_at) {
-          const dueDate = new Date(ver.review_due_at).getTime()
-          if (!isNaN(dueDate) && dueDate <= now) {
-            continue // Revisão vencida: versão indisponível para nova indicação
-          }
+        if (isPracticeVersionReviewDueValid(ver.review_due_at, nowMs)) {
+          return ver
         }
-        return ver
       }
       return null
     } catch (_) {

@@ -22,7 +22,7 @@ import {
   ChevronRight,
   ExternalLink,
 } from 'lucide-react'
-import { cerPracticeService } from '@/services/cerPracticeService'
+import { cerPracticeService, isPracticeVersionReviewDueValid } from '@/services/cerPracticeService'
 import pb from '@/lib/pocketbase/client'
 import type {
   CerPracticeRecord,
@@ -89,18 +89,12 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
       const now = Date.now()
       for (const p of candidates) {
         const pVersions = allVersions.filter((v) => v.practice_id === p.id)
-        // Lote 1: Para uso clínico e seleção na biblioteca, selecionar SOMENTE versão status='active'
-        // com revisão periódica vigente (review_due_at no futuro se preenchido).
-        // Eliminar fallback silencioso para versão não ativa ou lista crua.
+        // Lote 1 (Correção 1A): Para uso clínico e seleção na biblioteca, selecionar SOMENTE versão status='active'
+        // com revisão periódica vigente e obrigatória (reviewDueAt presente, válido e estritamente no futuro).
+        // Versão active com review_due_at vazio, ausente, inválido ou vencido é INDISPONÍVEL.
         const activeVersions = pVersions.filter((v) => {
           if (v.status !== 'active') return false
-          if (v.review_due_at) {
-            const dueDate = new Date(v.review_due_at).getTime()
-            if (!isNaN(dueDate) && dueDate <= now) {
-              return false // Revisão vencida: indisponível para indicação
-            }
-          }
-          return true
+          return isPracticeVersionReviewDueValid(v.review_due_at, now)
         })
 
         const published = activeVersions[0] || null

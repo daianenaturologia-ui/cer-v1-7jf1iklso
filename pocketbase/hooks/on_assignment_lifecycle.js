@@ -111,15 +111,24 @@ onRecordCreate((e) => {
       )
     }
 
-    // Validação de revisão vigente: review_due_at não pode estar vencido
+    // Validação de revisão vigente: review_due_at é OBRIGATÓRIO, deve ser data válida e estritamente futura para versão active
     const reviewDueAtStr = pv.getString('review_due_at')
-    if (reviewDueAtStr) {
-      const reviewDueDate = new Date(reviewDueAtStr)
-      if (!isNaN(reviewDueDate.getTime()) && reviewDueDate.getTime() <= Date.now()) {
-        throw new BadRequestError(
-          'Practice Gate: A revisão periódica desta prática expirou (review_due_at vencido). Novos assignments estão bloqueados até a renovação.',
-        )
-      }
+    if (!reviewDueAtStr || !reviewDueAtStr.trim()) {
+      throw new BadRequestError(
+        'Practice Gate: A versão ativa da prática possui review_due_at ausente ou vazio. Novos assignments estão bloqueados até regularização da revisão.',
+      )
+    }
+    const reviewDueDate = new Date(reviewDueAtStr)
+    const reviewDueTime = reviewDueDate.getTime()
+    if (isNaN(reviewDueTime)) {
+      throw new BadRequestError(
+        'Practice Gate: A versão ativa da prática possui review_due_at com formato de data inválido. Novos assignments estão bloqueados até regularização da revisão.',
+      )
+    }
+    if (reviewDueTime <= Date.now()) {
+      throw new BadRequestError(
+        'Practice Gate: A revisão periódica desta prática expirou (review_due_at vencido ou igual ao instante atual). Novos assignments estão bloqueados até a renovação.',
+      )
     }
 
     // 2. PRIORITY GATE
@@ -432,15 +441,24 @@ onRecordUpdate((e) => {
         )
       }
 
-      // Validação de revisão vigente: review_due_at não pode estar vencido
+      // Validação de revisão vigente: review_due_at é OBRIGATÓRIO, deve ser data válida e estritamente futura para versão active
       const reviewDueAtStr = pv.getString('review_due_at')
-      if (reviewDueAtStr) {
-        const reviewDueDate = new Date(reviewDueAtStr)
-        if (!isNaN(reviewDueDate.getTime()) && reviewDueDate.getTime() <= Date.now()) {
-          throw new BadRequestError(
-            'Practice Gate: A revisão periódica desta prática expirou (review_due_at vencido). Novos assignments estão bloqueados até a renovação.',
-          )
-        }
+      if (!reviewDueAtStr || !reviewDueAtStr.trim()) {
+        throw new BadRequestError(
+          'Practice Gate: A versão ativa da prática possui review_due_at ausente ou vazio. Novos assignments estão bloqueados até regularização da revisão.',
+        )
+      }
+      const reviewDueDate = new Date(reviewDueAtStr)
+      const reviewDueTime = reviewDueDate.getTime()
+      if (isNaN(reviewDueTime)) {
+        throw new BadRequestError(
+          'Practice Gate: A versão ativa da prática possui review_due_at com formato de data inválido. Novos assignments estão bloqueados até regularização da revisão.',
+        )
+      }
+      if (reviewDueTime <= Date.now()) {
+        throw new BadRequestError(
+          'Practice Gate: A revisão periódica desta prática expirou (review_due_at vencido ou igual ao instante atual). Novos assignments estão bloqueados até a renovação.',
+        )
       }
 
       // 2. PRIORITY GATE

@@ -21,6 +21,7 @@ import { runBuild08ETests } from './testsBuild08e'
 import { runBuild09CTests } from './testsBuild09c'
 import { runBuild09DATests } from './testsBuild09da'
 import { runBuildLote1Tests } from './testsLote1'
+import './testsCorrecao1A.test'
 
 describe('Gate Final de Segurança & Experience Engine - CER V1', () => {
   it('executa suíte de isolamento, concessão e integridade do Build 01 contra o backend real', async () => {

@@ -136,6 +136,34 @@ onRecordUpdate((e) => {
     }
   }
 
+  // 2.1 Imutabilidade Canônica de review_due_at após ativação (active, deprecated, retired)
+  // Em active, deprecated e retired, review_due_at NÃO pode ser alterado (qualquer mudança negada).
+  // Enviar o mesmo valor canônico é permitido como no-op.
+  const isActiveOrPostActive =
+    origStatus === 'active' || origStatus === 'deprecated' || origStatus === 'retired'
+
+  if (isActiveOrPostActive) {
+    const origDue = orig.getString('review_due_at')
+    const newDue = version.getString('review_due_at')
+
+    let isDueChanged = origDue !== newDue
+    if (isDueChanged && origDue && newDue) {
+      const origMs = new Date(origDue).getTime()
+      const newMs = new Date(newDue).getTime()
+      if (!isNaN(origMs) && !isNaN(newMs) && origMs === newMs) {
+        isDueChanged = false // Mesmo instante normalizado -> no-op
+      }
+    }
+
+    if (isDueChanged) {
+      throw new BadRequestError(
+        'Imutabilidade de Revisão Violada: A versão está em estado pós-ativação ("' +
+          origStatus +
+          '") e o campo "review_due_at" não pode ser alterado, prorrogado ou apagado diretamente. Eventuais renovações exigem fluxo formal futuro.',
+      )
+    }
+  }
+
   // 3. Validação da Matriz de Transições de Status
   if (origStatus !== newStatus) {
     // Matriz de transições permitidas
@@ -214,17 +242,19 @@ onRecordUpdate((e) => {
         )
       }
 
-      // Validação de review_due_at
-      if (!reviewDueAtStr) {
+      // Validação Canônica de review_due_at
+      // Obrigatório, string não vazia, data válida e estritamente no futuro (> Date.now())
+      if (!reviewDueAtStr || !reviewDueAtStr.trim()) {
         throw new BadRequestError(
           'Publication Gate: review_due_at é obrigatório para ativar uma PracticeVersion.',
         )
       }
       const dueDate = new Date(reviewDueAtStr)
-      if (isNaN(dueDate.getTime())) {
+      const dueTime = dueDate.getTime()
+      if (isNaN(dueTime)) {
         throw new BadRequestError('Publication Gate: review_due_at deve ser uma data válida.')
       }
-      if (dueDate.getTime() <= Date.now()) {
+      if (dueTime <= Date.now()) {
         throw new BadRequestError(
           'Publication Gate: review_due_at deve estar no futuro no momento da ativação.',
         )
