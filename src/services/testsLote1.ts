@@ -36,8 +36,9 @@
  */
 
 import pb from '@/lib/pocketbase/client'
-import { cerPracticeService } from './cerPracticeService'
+import { cerPracticeService, isPracticeVersionReviewDueValid } from './cerPracticeService'
 import { cerPracticeAssignmentService } from './cerPracticeAssignmentService'
+import { assertSafeMutableTestEnvironment } from './safeMutableGate'
 
 export interface TestResultItemLote1 {
   id: string
@@ -60,6 +61,9 @@ export async function runBuildLote1Tests(): Promise<TestResultItemLote1[]> {
   const ENROLLMENT_A = 'lhzdvf2yk51zv7p'
 
   try {
+    // Trava obrigatória antes de qualquer escrita mutável:
+    assertSafeMutableTestEnvironment()
+
     // 1. Autenticar como Profissional A
     await pb.collection('users').authWithPassword('profissional.a@cer.app', 'Skip@Pass')
 
@@ -1074,16 +1078,44 @@ export async function runBuildLote1Tests(): Promise<TestResultItemLote1[]> {
     // CORREÇÃO 1A: ASSIGNMENT GATE COM review_due_at INVÁLIDO/VAZIO
     // ====================================================
 
-    // Criar versão draft 5 para testar recusa de Assignment quando review_due_at estiver vazio
-    // Como a ativação não permite criar com review_due_at vazio, simulamos a tentativa de assignment
-    // em versão com dados corrompidos se existisse, ou verificamos o bloqueio determinístico.
-    // T-L1-29: Disponibilidade de versão com data vencida no serviço cerPracticeService
-    const isPastDueValid = cerPracticeService ? false : true // testado via função canônica
+    // T-L1-29: Avaliação real e determinística de isPracticeVersionReviewDueValid
+    const nowMs = 1757419200000 // instante fixo de teste
+    const pastIso = new Date(nowMs - 60000).toISOString()
+    const nowIso = new Date(nowMs).toISOString()
+    const futureIso = new Date(nowMs + 60000).toISOString()
+    const futureOffsetIso = '2025-09-09T15:00:00.000+03:00' // equivale a 12:00 UTC
+
+    const undefinedRejected = !isPracticeVersionReviewDueValid(undefined, nowMs)
+    const nullRejected = !isPracticeVersionReviewDueValid(null, nowMs)
+    const emptyRejected = !isPracticeVersionReviewDueValid('', nowMs)
+    const whitespaceRejected = !isPracticeVersionReviewDueValid('   ', nowMs)
+    const invalidRejected = !isPracticeVersionReviewDueValid('data-invalida', nowMs)
+    const pastRejected = !isPracticeVersionReviewDueValid(pastIso, nowMs)
+    const equalNowRejected = !isPracticeVersionReviewDueValid(nowIso, nowMs)
+    const futureAccepted = isPracticeVersionReviewDueValid(futureIso, nowMs)
+    const offsetAccepted = isPracticeVersionReviewDueValid(
+      futureOffsetIso,
+      new Date('2025-09-09T11:00:00.000Z').getTime(),
+    )
+
+    const allConditionsPassed =
+      undefinedRejected &&
+      nullRejected &&
+      emptyRejected &&
+      whitespaceRejected &&
+      invalidRejected &&
+      pastRejected &&
+      equalNowRejected &&
+      futureAccepted &&
+      offsetAccepted
+
     logResult(
       'T-L1-29',
-      'Validador canônico rejeita data passada, nula, vazia ou inválida -> ESPERADO: NEGADO',
-      true,
-      'isPracticeVersionReviewDueValid rejeita rigorosamente todos os casos inválidos',
+      'Validador canônico rejeita data passada, nula, vazia, whitespace, inválida ou igual ao agora -> ESPERADO: NEGADO; futuro e timezone -> PERMITIDO',
+      allConditionsPassed,
+      allConditionsPassed
+        ? 'isPracticeVersionReviewDueValid validou com sucesso todos os 9 cenários temporais'
+        : 'FALHA: isPracticeVersionReviewDueValid não atendeu a todos os critérios de consistência temporal',
     )
   } catch (err: any) {
     logResult('T-L1-FATAL', 'Erro fatal na execução da suíte Lote 1', false, err.message)
@@ -1094,21 +1126,37 @@ export async function runBuildLote1Tests(): Promise<TestResultItemLote1[]> {
     // Para não silenciar falhas nem deixar registros mutáveis descontrolados no backend vivo:
     // 1. Não tentar delete físico onde é proibido por Zero Delete Físico.
     // 2. Se registros foram criados, registrar alerta explícito nos resultados de teste se o cleanup não for possível fisicamente.
-    // 3. Em coleções onde delete é permitido (cer_practices, cer_practice_evidence, cer_practice_safety_profiles), executar delete explícito e reportar falhas.
+    // Zero Delete Físico Canônico (deleteRule = null e hook onRecordDelete):
+    // As seguintes collections são protegidas contra DELETE físico:
+    // cer_practice_versions, cer_practice_assignments, cer_practice_evidence,
+    // cer_practice_evidence_sources, cer_practice_safety_profiles, cer_practice_safety_rules,
+    // cer_practice_safety_checks, cer_practice_consents, cer_practices (deleteRule = null).
+    // Tentar exclusão física nessas collections viola o design canônico.
+    // Em ambiente temporário descartável, o cleanup correto é a destruição da instância temporária.
     const cleanupErrors: string[] = []
+    const zeroDeleteProtectedCollections = new Set([
+      'cer_practices',
+      'cer_practice_versions',
+      'cer_practice_evidence',
+      'cer_practice_evidence_sources',
+      'cer_practice_safety_profiles',
+      'cer_practice_safety_rules',
+      'cer_practice_safety_checks',
+      'cer_practice_assignments',
+      'cer_practice_consents',
+      'cer_planner_items',
+    ])
+
     for (const rec of createdRecordIds.reverse()) {
-      if (
-        rec.collection === 'cer_practice_versions' ||
-        rec.collection === 'cer_practice_assignments'
-      ) {
-        // Zero Delete Físico se aplica: exclusão física é bloqueada por design canônico
+      if (zeroDeleteProtectedCollections.has(rec.collection)) {
+        // Zero Delete Físico se aplica: exclusão física é proibida por design canônico
         continue
       }
       try {
         await pb.collection(rec.collection).delete(rec.id)
       } catch (e: any) {
         cleanupErrors.push(
-          `Falha ao remover fixture de ${rec.collection} (${rec.id}): ${e?.message || e}`,
+          `Falha ao remover fixture não protegida de ${rec.collection} (${rec.id}): ${e?.message || e}`,
         )
       }
     }
