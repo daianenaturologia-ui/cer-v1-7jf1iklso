@@ -311,7 +311,7 @@ describe('CORREÇÃO 3A-1: 20 Casos Canônicos de Testes Puros Determinísticos'
 
   // Caso 16: ausência de compartilhamento automático
   it('Caso 16: ausência total de compartilhamento automático (shared_care exige ação explícita)', () => {
-    const initialVisibility = 'participant_private'
+    const initialVisibility: string = 'participant_private'
     const isAutoShared = initialVisibility === 'shared_care'
     expect(isAutoShared).toBe(false)
   })
