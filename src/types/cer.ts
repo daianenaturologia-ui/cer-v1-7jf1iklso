@@ -1856,6 +1856,122 @@ export interface CerPracticeVersionRecord {
     cer_practice_safety_profiles_via_practice_version_id?: CerPracticeSafetyProfileRecord[]
     cer_practice_safety_rules_via_practice_version_id?: CerPracticeSafetyRuleRecord[]
     cer_practice_version_assets_via_practice_version_id?: CerPracticeVersionAssetRecord[]
+    cer_practice_steps_via_practice_version_id?: CerPracticeStepRecord[]
+    cer_practice_reflections_via_practice_version_id?: CerPracticeReflectionRecord[]
+  }
+}
+
+// ------------------------------------------
+// LOTE 3A: PASSOS ESTRUTURADOS E REFLEXÃO CORPO, MENTE E EMOÇÕES
+// ------------------------------------------
+
+export const PRACTICE_STEP_TYPES = {
+  PREPARATION: 'preparation',
+  POSTURE: 'posture',
+  BREATHING: 'breathing',
+  REPETITION: 'repetition',
+  CYCLE: 'cycle',
+  SERIES: 'series',
+  NATURAL_PAUSE: 'natural_pause',
+  RETENTION: 'retention',
+  GROUNDING: 'grounding',
+  INTEGRATION: 'integration',
+  CLOSING: 'closing',
+} as const
+
+export type PracticeStepType = (typeof PRACTICE_STEP_TYPES)[keyof typeof PRACTICE_STEP_TYPES]
+
+export const PRACTICE_BREAK_TYPES = {
+  NATURAL_BREATHING: 'natural_breathing',
+  STILLNESS: 'stillness',
+  POSTURAL_TRANSITION: 'postural_transition',
+  NONE: 'none',
+} as const
+
+export type PracticeBreakType = (typeof PRACTICE_BREAK_TYPES)[keyof typeof PRACTICE_BREAK_TYPES]
+
+export const PRACTICE_RETENTION_TYPES = {
+  NONE: 'none',
+  ANTARA: 'antara',
+  BAHYA: 'bahya',
+} as const
+
+export type PracticeRetentionType =
+  (typeof PRACTICE_RETENTION_TYPES)[keyof typeof PRACTICE_RETENTION_TYPES]
+
+export const REFLECTION_TARGETS = {
+  CORPO: 'corpo',
+  MENTE: 'mente',
+  EMOCAO: 'emocao',
+} as const
+
+export type ReflectionTarget = (typeof REFLECTION_TARGETS)[keyof typeof REFLECTION_TARGETS]
+
+export const CANONICAL_REFLECTION_PROMPTS: Record<ReflectionTarget, string> = {
+  corpo: 'O que você percebe agora no seu corpo?',
+  mente: 'O que você percebe agora na sua mente?',
+  emocao: 'O que você percebe agora nas suas emoções?',
+}
+
+export const REFLECTION_VISIBILITY = {
+  PARTICIPANT_PRIVATE: 'participant_private',
+  SHARED_CARE: 'shared_care',
+} as const
+
+export type ReflectionVisibility =
+  (typeof REFLECTION_VISIBILITY)[keyof typeof REFLECTION_VISIBILITY]
+
+export interface CerPracticeStepRecord {
+  id: string
+  practice_version_id: string
+  stable_step_id: string
+  step_order: number
+  step_type: PracticeStepType
+  title: string
+  participant_instruction: string
+  professional_note?: string
+  duration_seconds?: number
+  target_repetitions?: number
+  target_cycles?: number
+  target_series?: number
+  rest_seconds?: number
+  break_type?: PracticeBreakType
+  retention_type: PracticeRetentionType
+  retention_duration_seconds?: number
+  breathing_ratio?: string
+  allow_early_stop?: boolean
+  stop_signs?: string
+  grounding_instruction?: string
+  is_optional?: boolean
+  metadata?: Record<string, unknown>
+  created: string
+  updated: string
+  expand?: {
+    practice_version_id?: CerPracticeVersionRecord
+  }
+}
+
+export interface CerPracticeReflectionRecord {
+  id: string
+  assignment_id: string
+  practice_version_id: string
+  participant_user_id: string
+  enrollment_id: string
+  reflection_target: ReflectionTarget
+  question_prompt: string
+  reflection_text?: string
+  prefer_not_to_answer?: boolean
+  visibility: ReflectionVisibility
+  record_status: 'current' | 'superseded'
+  previous_reflection_id?: string
+  metadata?: Record<string, unknown>
+  created: string
+  updated: string
+  expand?: {
+    assignment_id?: CerPracticeAssignmentRecord
+    practice_version_id?: CerPracticeVersionRecord
+    participant_user_id?: UserAccountRecord
+    enrollment_id?: EnrollmentRecord
   }
 }
 

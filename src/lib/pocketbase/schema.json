@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T11:24:52.110Z",
+  "generatedAt": "2026-09-15T12:09:44.458Z",
   "collections": [
     {
       "name": "users",
@@ -5863,6 +5863,293 @@
         "CREATE INDEX idx_crr_participant ON cer_resource_recommendations (participant_user_id)",
         "CREATE INDEX idx_crr_version ON cer_resource_recommendations (resource_version_id)",
         "CREATE INDEX idx_crr_status ON cer_resource_recommendations (status)"
+      ]
+    },
+    {
+      "name": "cer_practice_steps",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "stable_step_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "step_order",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "step_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "preparation",
+            "posture",
+            "breathing",
+            "repetition",
+            "cycle",
+            "series",
+            "natural_pause",
+            "retention",
+            "grounding",
+            "integration",
+            "closing"
+          ]
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "participant_instruction",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "professional_note",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "duration_seconds",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "target_repetitions",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "target_cycles",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "target_series",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "rest_seconds",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "break_type",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["natural_breathing", "stillness", "postural_transition", "none"]
+        },
+        {
+          "name": "retention_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["none", "antara", "bahya"]
+        },
+        {
+          "name": "retention_duration_seconds",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "breathing_ratio",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "allow_early_stop",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "stop_signs",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "grounding_instruction",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_optional",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_cps_version_stable_id ON cer_practice_steps (practice_version_id, stable_step_id)",
+        "CREATE INDEX idx_cps_version_order ON cer_practice_steps (practice_version_id, step_order)",
+        "CREATE INDEX idx_cps_version ON cer_practice_steps (practice_version_id)"
+      ]
+    },
+    {
+      "name": "cer_practice_reflections",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((participant_user_id = @request.auth.id) || (visibility = 'shared_care' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((participant_user_id = @request.auth.id) || (visibility = 'shared_care' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "assignment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_assignments"
+        },
+        {
+          "name": "practice_version_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_practice_versions"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "reflection_target",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["corpo", "mente", "emocao"]
+        },
+        {
+          "name": "question_prompt",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "reflection_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "prefer_not_to_answer",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "visibility",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["participant_private", "shared_care"]
+        },
+        {
+          "name": "record_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["current", "superseded"]
+        },
+        {
+          "name": "previous_reflection_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cprfl_assignment ON cer_practice_reflections (assignment_id)",
+        "CREATE INDEX idx_cprfl_version ON cer_practice_reflections (practice_version_id)",
+        "CREATE INDEX idx_cprfl_participant ON cer_practice_reflections (participant_user_id)",
+        "CREATE INDEX idx_cprfl_target ON cer_practice_reflections (reflection_target)",
+        "CREATE INDEX idx_cprfl_status ON cer_practice_reflections (record_status)"
       ]
     }
   ]

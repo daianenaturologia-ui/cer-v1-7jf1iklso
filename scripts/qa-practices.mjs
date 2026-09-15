@@ -69,9 +69,9 @@ function main() {
   // ---------------------------------------------------------
   const step1 = runCommand(
     'npx',
-    ['vitest', 'run', 'src/services/testsCorrecao1A.test.ts'],
+    ['vitest', 'run', 'src/services/testsCorrecao1A.test.ts', 'src/services/testsLote3A.test.ts'],
     1,
-    'Testes Unitários Puros (testsCorrecao1A: consistência temporal e semântica)',
+    'Testes Unitários Puros (testsCorrecao1A e testsLote3A: 15 requisitos puros de passos e reflexões)',
   )
   if (step1.status === 'FAIL') {
     finishPipeline()
@@ -120,7 +120,7 @@ function main() {
   // ---------------------------------------------------------
   // ETAPA 4: INTEGRAÇÃO MUTÁVEL (SOMENTE SE ISOLADO AUTORIZADO)
   // ---------------------------------------------------------
-  console.log(`\n>>> [Etapa 4/9] Iniciando: Testes de Integração Mutáveis (7.A, 7.B, 7.C)...`)
+  console.log(`\n>>> [Etapa 4/9] Iniciando: Testes de Integração Mutáveis (7.A, 7.B, 7.C, 3.A)...`)
   const start4 = Date.now()
 
   if (!inspection.isAllowed) {
@@ -130,7 +130,7 @@ function main() {
       `Nenhuma mutação foi ou será enviada para o backend remoto (${inspection.backendUrl}).`,
     )
 
-    // Executamos a suíte de verificação que comprova que as 3 integrações retornam BLOCKED
+    // Executamos a suíte de verificação que comprova que as integrações retornam BLOCKED
     spawnSync('npx', ['vitest', 'run', 'src/services/testsIntegrationSuites.test.ts'], {
       stdio: 'inherit',
       env: process.env,
@@ -138,7 +138,7 @@ function main() {
 
     steps.push({
       stepNumber: 4,
-      name: 'Integração Mutável (7.A, 7.B, 7.C)',
+      name: 'Integração Mutável (7.A, 7.B, 7.C, 3.A)',
       status: 'BLOCKED',
       durationMs: Date.now() - start4,
       message: `BLOQUEADO: ${inspection.blockReason}. Suíte de segurança comprovou bloqueio sem escritas.`,
@@ -154,7 +154,7 @@ function main() {
     const isOk = step4Run.status === 0
     steps.push({
       stepNumber: 4,
-      name: 'Integração Mutável (7.A, 7.B, 7.C)',
+      name: 'Integração Mutável (7.A, 7.B, 7.C, 3.A)',
       status: isOk ? 'PASS' : 'FAIL',
       durationMs: Date.now() - start4,
       message: isOk ? 'Integração isolada concluída' : 'Falha na execução mutável isolada',
@@ -174,6 +174,7 @@ function main() {
       'vitest',
       'run',
       'src/services/testsCorrecao1A.test.ts',
+      'src/services/testsLote3A.test.ts',
       'src/services/testsIntegrationSuites.test.ts',
     ],
     5,

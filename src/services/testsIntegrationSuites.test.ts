@@ -11,7 +11,36 @@ import { describe, it, expect } from 'vitest'
 import { runIntegration7ATests } from './testsIntegration7A'
 import { runIntegration7BTests } from './testsIntegration7B'
 import { runIntegration7CTests } from './testsIntegration7C'
+import { runIntegration3ATests } from './testsIntegration3A'
 import { inspectTestEnvironment } from './safeMutableGate'
+
+describe('Suítes de Integração Lote 3A (Passos Estruturados e Reflexões) — Bloqueio Seguro Preventivo', () => {
+  it('Suíte 3.A (Passos e Reflexões): executa com integridade conforme autorização do safeMutableGate', async () => {
+    const inspection = inspectTestEnvironment()
+    const results = await runIntegration3ATests()
+    expect(results.length).toBe(5)
+
+    if (!inspection.isAllowed) {
+      const nonBlocked = results.filter((r) => r.status !== 'BLOCKED')
+      expect(nonBlocked).toEqual([])
+      for (const r of results) {
+        expect(r.details).toContain('bloqueada por trava de segurança')
+      }
+    } else {
+      const failed = results.filter((r) => r.status === 'FAIL')
+      expect(failed).toEqual([])
+      const passed = results.filter((r) => r.status === 'PASS')
+      expect(passed.length).toBe(5)
+    }
+
+    const ids = results.map((r) => r.id)
+    expect(ids).toContain('3.A-01')
+    expect(ids).toContain('3.A-02')
+    expect(ids).toContain('3.A-03')
+    expect(ids).toContain('3.A-04')
+    expect(ids).toContain('3.A-05')
+  })
+})
 
 describe('Suítes de Integração Lote 2A (7.A, 7.B, 7.C) — Bloqueio Seguro Preventivo', () => {
   it('inspeção confirma que backend padrão não é localhost autorizado', () => {
