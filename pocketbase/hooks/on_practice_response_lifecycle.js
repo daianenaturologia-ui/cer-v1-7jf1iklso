@@ -1,4 +1,4 @@
-// Hook server-side do Build 08E: Lifecycle, Versionamento e Regras de cer_practice_responses e cer_practice_response_private_notes
+// Hook server-side do Build 08E / Correção 3A-1: Lifecycle, Versionamento, Dose e Regras de cer_practice_responses e cer_practice_response_private_notes
 // Coleções monitoradas: cer_practice_responses, cer_practice_response_private_notes
 //
 // Regras e Decisões Congeladas:
@@ -26,6 +26,11 @@
 //    - PRACTICE_RESPONSE_RECORDED, PRACTICE_RESPONSE_SUPERSEDED, SAFETY_RECHECK_REQUESTED
 // 6. ZERO DELETE FÍSICO:
 //    - deleteRule = null e throw BadRequestError em onRecordDelete
+// 7. CORREÇÃO 3A-1 — DOSE REALIZADA E PROTEÇÕES SERVER-SIDE:
+//    - Inteiros não negativos para dose (completed_repetitions, completed_cycles, completed_series, actual_duration_seconds >= 0)
+//    - completed_step_ids com IDs estáveis string (nunca números/índices posicionais)
+//    - Vínculo relacional imutável (participant_user_id, assignment_id, practice_version_id, enrollment_id)
+//    - Ausência de progressão automática ou nota moral (encerrar antes não é falha)
 
 onRecordCreate((e) => {
   const r = e.record
@@ -40,6 +45,45 @@ onRecordCreate((e) => {
   // Garantir record_status = 'current' na criação
   if (!r.getString('record_status')) {
     r.set('record_status', 'current')
+  }
+
+  // Validação de integridade dos campos de dose realizada (não-negativos)
+  const rep = r.getInt('completed_repetitions')
+  if (rep < 0) {
+    throw new BadRequestError('completed_repetitions não pode ser negativo.')
+  }
+  const cyc = r.getInt('completed_cycles')
+  if (cyc < 0) {
+    throw new BadRequestError('completed_cycles não pode ser negativo.')
+  }
+  const ser = r.getInt('completed_series')
+  if (ser < 0) {
+    throw new BadRequestError('completed_series não pode ser negativo.')
+  }
+  const dur = r.getInt('actual_duration_seconds')
+  if (dur < 0) {
+    throw new BadRequestError('actual_duration_seconds não pode ser negativo.')
+  }
+
+  // Validação de completed_step_ids: IDs estáveis (nunca índices numéricos posicionais)
+  const stepIdsRaw = r.get('completed_step_ids')
+  if (stepIdsRaw) {
+    let parsed = stepIdsRaw
+    if (typeof stepIdsRaw === 'string') {
+      try {
+        parsed = JSON.parse(stepIdsRaw)
+      } catch (_) {}
+    }
+    if (Array.isArray(parsed)) {
+      for (let i = 0; i < parsed.length; i++) {
+        const item = parsed[i]
+        if (typeof item === 'number' || (typeof item === 'string' && /^\d+$/.test(item.trim()))) {
+          throw new BadRequestError(
+            'Rejeição de índice posicional: completed_step_ids exige IDs estáveis semânticos, nunca índices numéricos.',
+          )
+        }
+      }
+    }
   }
 
   // Regra P0 de Safety Flag: was_too_much força needs_review (se ainda 'none')
@@ -185,10 +229,33 @@ onRecordUpdate((e) => {
       'Não é permitido alterar participant_user_id de uma Response existente.',
     )
   }
+  if (r.getString('practice_version_id') !== orig.getString('practice_version_id')) {
+    throw new BadRequestError(
+      'Não é permitido alterar practice_version_id de uma Response existente.',
+    )
+  }
   if (r.getString('safety_flag') !== orig.getString('safety_flag')) {
     throw new BadRequestError(
       'Imutabilidade da Safety Flag: A flag de segurança não pode ser alterada na mesma linha. Evolução exige nova response version.',
     )
+  }
+
+  // Validação de inteiros não negativos em update também
+  const repU = r.getInt('completed_repetitions')
+  if (repU < 0) {
+    throw new BadRequestError('completed_repetitions não pode ser negativo.')
+  }
+  const cycU = r.getInt('completed_cycles')
+  if (cycU < 0) {
+    throw new BadRequestError('completed_cycles não pode ser negativo.')
+  }
+  const serU = r.getInt('completed_series')
+  if (serU < 0) {
+    throw new BadRequestError('completed_series não pode ser negativo.')
+  }
+  const durU = r.getInt('actual_duration_seconds')
+  if (durU < 0) {
+    throw new BadRequestError('actual_duration_seconds não pode ser negativo.')
   }
 
   e.next()

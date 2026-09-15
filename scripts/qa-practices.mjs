@@ -69,9 +69,15 @@ function main() {
   // ---------------------------------------------------------
   const step1 = runCommand(
     'npx',
-    ['vitest', 'run', 'src/services/testsCorrecao1A.test.ts', 'src/services/testsLote3A.test.ts'],
+    [
+      'vitest',
+      'run',
+      'src/services/testsCorrecao1A.test.ts',
+      'src/services/testsLote3A.test.ts',
+      'src/services/testsCorrecao3A1.test.ts',
+    ],
     1,
-    'Testes Unitários Puros (testsCorrecao1A e testsLote3A: 15 requisitos puros de passos e reflexões)',
+    'Testes Unitários Puros (testsCorrecao1A, testsLote3A e testsCorrecao3A1: 20 casos canônicos de dose e reflexão)',
   )
   if (step1.status === 'FAIL') {
     finishPipeline()
@@ -175,6 +181,7 @@ function main() {
       'run',
       'src/services/testsCorrecao1A.test.ts',
       'src/services/testsLote3A.test.ts',
+      'src/services/testsCorrecao3A1.test.ts',
       'src/services/testsIntegrationSuites.test.ts',
     ],
     5,

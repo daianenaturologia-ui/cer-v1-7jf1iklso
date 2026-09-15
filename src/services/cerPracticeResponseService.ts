@@ -22,6 +22,14 @@ export interface CreatePracticeResponseInput {
   shared_reflection?: string
   previous_response_id?: string
   private_note_text?: string
+  // Correção 3A-1: campos de execução real e dose realizada
+  completed_repetitions?: number
+  completed_cycles?: number
+  completed_series?: number
+  actual_duration_seconds?: number
+  ended_early?: boolean
+  stop_reason?: string
+  completed_step_ids?: string[]
 }
 
 export const cerPracticeResponseService = {
@@ -79,6 +87,23 @@ export const cerPracticeResponseService = {
     if (input.shared_reflection) responsePayload.shared_reflection = input.shared_reflection
     if (input.previous_response_id)
       responsePayload.previous_response_id = input.previous_response_id
+
+    // Correção 3A-1: dose realizada e execução
+    if (input.completed_repetitions !== undefined)
+      responsePayload.completed_repetitions = Math.max(0, Math.floor(input.completed_repetitions))
+    if (input.completed_cycles !== undefined)
+      responsePayload.completed_cycles = Math.max(0, Math.floor(input.completed_cycles))
+    if (input.completed_series !== undefined)
+      responsePayload.completed_series = Math.max(0, Math.floor(input.completed_series))
+    if (input.actual_duration_seconds !== undefined)
+      responsePayload.actual_duration_seconds = Math.max(
+        0,
+        Math.floor(input.actual_duration_seconds),
+      )
+    if (input.ended_early !== undefined) responsePayload.ended_early = Boolean(input.ended_early)
+    if (input.stop_reason) responsePayload.stop_reason = input.stop_reason
+    if (input.completed_step_ids && Array.isArray(input.completed_step_ids))
+      responsePayload.completed_step_ids = input.completed_step_ids
 
     const createdResponse = await pb
       .collection('cer_practice_responses')

@@ -17,6 +17,12 @@ import type {
   CerPracticeConsentRecord,
 } from '@/types/cer'
 import { QuickResponseFlow } from './QuickResponseFlow'
+import { PracticeStepViewer, type PracticeStepViewerSummary } from './PracticeStepViewer'
+import { PracticeReflectionForm, type ReflectionFormData } from './PracticeReflectionForm'
+import { cerPracticeStepService } from '@/services/cerPracticeStepService'
+import { cerPracticeReflectionService } from '@/services/cerPracticeReflectionService'
+import { cerPracticeResponseService } from '@/services/cerPracticeResponseService'
+import type { CerPracticeStepRecord } from '@/types/cer'
 import pb from '@/lib/pocketbase/client'
 
 interface ExperimentCardProps {
@@ -39,6 +45,15 @@ export const ExperimentCard: React.FC<ExperimentCardProps> = ({
     'understood' | 'want_to_ask' | 'did_not_understand'
   >('understood')
   const [consentSubmitting, setConsentSubmitting] = useState(false)
+
+  // Correção 3A-1: Estados de execução com PracticeStepViewer + PracticeReflectionForm
+  const [practiceSteps, setPracticeSteps] = useState<CerPracticeStepRecord[]>([])
+  const [showStepViewer, setShowStepViewer] = useState(false)
+  const [showReflectionModal, setShowReflectionModal] = useState(false)
+  const [pendingExecutionSummary, setPendingExecutionSummary] =
+    useState<PracticeStepViewerSummary | null>(null)
+  const [reflectionSubmitting, setReflectionSubmitting] = useState(false)
+  const [showEarlyDiscomfortWarning, setShowEarlyDiscomfortWarning] = useState(false)
 
   const isActive = assignment.status === 'active'
   const isPaused = assignment.status === 'paused'
@@ -64,6 +79,22 @@ export const ExperimentCard: React.FC<ExperimentCardProps> = ({
     }
     checkConsent()
   }, [assignment.id])
+
+  // Carregar passos estruturados da PracticeVersion, se existirem
+  React.useEffect(() => {
+    const loadSteps = async () => {
+      if (!assignment.practice_version_id) return
+      try {
+        const steps = await cerPracticeStepService.listByPracticeVersion(
+          assignment.practice_version_id,
+        )
+        setPracticeSteps(steps)
+      } catch {
+        // silencioso se não houver ou falhar
+      }
+    }
+    loadSteps()
+  }, [assignment.practice_version_id])
 
   const handleRecordConsent = async (decision: 'accepted' | 'declined') => {
     if (!assignment.practice_version_id || !assignment.enrollment_id) return
@@ -108,6 +139,104 @@ export const ExperimentCard: React.FC<ExperimentCardProps> = ({
       console.error('Erro ao revogar consentimento:', err)
     } finally {
       setConsentSubmitting(false)
+    }
+  }
+
+  const handleStepViewerComplete = async (summary: PracticeStepViewerSummary) => {
+    setPendingExecutionSummary(summary)
+    setShowStepViewer(false)
+    setShowEarlyDiscomfortWarning(false)
+    setShowReflectionModal(true)
+  }
+
+  const handleStepViewerEarlyStop = async (summary: PracticeStepViewerSummary) => {
+    setPendingExecutionSummary(summary)
+    setShowStepViewer(false)
+    // Orientação de segurança antes da reflexão quando houver encerramento precoce por desconforto
+    setShowEarlyDiscomfortWarning(true)
+    setShowReflectionModal(true)
+  }
+
+  const handleSaveReflectionsAndExecution = async (reflections: {
+    corpo?: ReflectionFormData
+    mente?: ReflectionFormData
+    emocao?: ReflectionFormData
+  }) => {
+    if (!assignment.enrollment_id || !assignment.participant_user_id) return
+    setReflectionSubmitting(true)
+
+    try {
+      // 1. Persistir reflexões através de cerPracticeReflectionService (tolerante a 0, 1, 2 ou 3)
+      await cerPracticeReflectionService.recordBatchReflections({
+        assignment_id: assignment.id,
+        practice_version_id: assignment.practice_version_id,
+        participant_user_id: assignment.participant_user_id,
+        enrollment_id: assignment.enrollment_id,
+        corpo: reflections.corpo,
+        mente: reflections.mente,
+        emocao: reflections.emocao,
+      })
+
+      // 2. Persistir a dose realizada server-side em cer_practice_responses
+      const isEarly = pendingExecutionSummary?.ended_early ?? false
+      await cerPracticeResponseService.recordResponse({
+        assignment_id: assignment.id,
+        participant_user_id: assignment.participant_user_id,
+        enrollment_id: assignment.enrollment_id,
+        care_cycle_id: assignment.care_cycle_id,
+        practice_version_id: assignment.practice_version_id,
+        response_type: isEarly ? 'adapted' : 'helped',
+        completed_repetitions: pendingExecutionSummary?.completed_repetitions,
+        completed_cycles: pendingExecutionSummary?.completed_cycles,
+        completed_series: pendingExecutionSummary?.completed_series,
+        actual_duration_seconds: pendingExecutionSummary?.actual_duration_seconds,
+        ended_early: isEarly,
+        stop_reason: pendingExecutionSummary?.stop_reason,
+        completed_step_ids: pendingExecutionSummary?.completed_step_ids,
+      })
+
+      setShowReflectionModal(false)
+      setShowEarlyDiscomfortWarning(false)
+      setPendingExecutionSummary(null)
+      if (onResponseRecorded) onResponseRecorded()
+    } catch (err) {
+      console.error('Erro ao persistir reflexão e dose realizada:', err)
+    } finally {
+      setReflectionSubmitting(false)
+    }
+  }
+
+  const handleSkipReflections = async () => {
+    if (!assignment.enrollment_id || !assignment.participant_user_id) return
+    setReflectionSubmitting(true)
+
+    try {
+      // Pular reflexão encerra normalmente persistindo a execução sem notas
+      const isEarly = pendingExecutionSummary?.ended_early ?? false
+      await cerPracticeResponseService.recordResponse({
+        assignment_id: assignment.id,
+        participant_user_id: assignment.participant_user_id,
+        enrollment_id: assignment.enrollment_id,
+        care_cycle_id: assignment.care_cycle_id,
+        practice_version_id: assignment.practice_version_id,
+        response_type: isEarly ? 'chose_not_to_do' : 'helped',
+        completed_repetitions: pendingExecutionSummary?.completed_repetitions,
+        completed_cycles: pendingExecutionSummary?.completed_cycles,
+        completed_series: pendingExecutionSummary?.completed_series,
+        actual_duration_seconds: pendingExecutionSummary?.actual_duration_seconds,
+        ended_early: isEarly,
+        stop_reason: pendingExecutionSummary?.stop_reason,
+        completed_step_ids: pendingExecutionSummary?.completed_step_ids,
+      })
+
+      setShowReflectionModal(false)
+      setShowEarlyDiscomfortWarning(false)
+      setPendingExecutionSummary(null)
+      if (onResponseRecorded) onResponseRecorded()
+    } catch (err) {
+      console.error('Erro ao encerrar prática com reflexão pulada:', err)
+    } finally {
+      setReflectionSubmitting(false)
     }
   }
 
@@ -272,25 +401,89 @@ export const ExperimentCard: React.FC<ExperimentCardProps> = ({
             </div>
           )}
 
-          {/* Ação de Quick Response (Build 08E) */}
+          {/* Ações de Prática: Passos Estruturados (Correção 3A-1) ou Quick Response (08E) */}
           {isActive && !readOnly && (
-            <div className="pt-2 border-t border-border/30 flex items-center justify-between">
+            <div className="pt-2 border-t border-border/30 flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">
-                Praticou ou tentou recentemente?
+                Praticou ou quer guiar a prática agora?
               </span>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs h-8 gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
-                onClick={() => setShowResponseModal(true)}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Como foi isso para você?</span>
-              </Button>
+              <div className="flex items-center gap-1.5">
+                {practiceSteps.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="text-xs h-8 gap-1.5"
+                    onClick={() => setShowStepViewer(true)}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Realizar Prática Guiada</span>
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-8 gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
+                  onClick={() => setShowResponseModal(true)}
+                >
+                  <span>Como foi isso para você?</span>
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Modal / Dialog de Prática Guiada (PracticeStepViewer) */}
+      {showStepViewer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="max-w-2xl w-full my-auto">
+            <PracticeStepViewer
+              steps={practiceSteps}
+              practiceTitle={assignment.participant_safe_title || 'Prática'}
+              onComplete={handleStepViewerComplete}
+              onEarlyStop={handleStepViewerEarlyStop}
+            />
+            <div className="text-center mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowStepViewer(false)}
+                className="text-xs text-muted-foreground hover:text-foreground h-7"
+              >
+                Fechar sem registrar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Dialog de Reflexão (PracticeReflectionForm) */}
+      {showReflectionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="max-w-2xl w-full my-auto space-y-3">
+            {/* Orientação de segurança antes da reflexão quando houver interrupção precoce por desconforto */}
+            {showEarlyDiscomfortWarning && (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs space-y-1">
+                <span className="font-semibold block flex items-center gap-1.5">
+                  <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span>Orientações de Segurança e Enraizamento</span>
+                </span>
+                <p className="leading-relaxed">
+                  Interromper no primeiro sinal de desconforto é uma decisão consciente e correta.
+                  Respire no seu ritmo habitual, apoie os pés firmes no chão e tome alguns instantes
+                  de repouso antes de continuar o seu dia.
+                </p>
+              </div>
+            )}
+
+            <PracticeReflectionForm
+              onSave={handleSaveReflectionsAndExecution}
+              onSkipAll={handleSkipReflections}
+              submitting={reflectionSubmitting}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Modal / Dialog de Safety Consent do Participante */}
       {consentModalOpen && (

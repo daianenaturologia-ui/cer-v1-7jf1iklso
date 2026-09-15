@@ -2451,6 +2451,14 @@ export interface CerPracticeResponseRecord {
   shared_reflection?: string
   record_status: PracticeResponseStatus
   previous_response_id?: string
+  // Correção 3A-1: campos de execução real e dose realizada
+  completed_repetitions?: number
+  completed_cycles?: number
+  completed_series?: number
+  actual_duration_seconds?: number
+  ended_early?: boolean
+  stop_reason?: string
+  completed_step_ids?: string[]
   created: string
   updated: string
   expand?: {

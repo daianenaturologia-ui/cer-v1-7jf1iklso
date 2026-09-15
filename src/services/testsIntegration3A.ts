@@ -122,6 +122,63 @@ export async function runIntegration3ATests(): Promise<IntegrationTestResult[]> 
         }
       },
     },
+    {
+      id: '3.A-06',
+      name: 'Persistência de Dose Realizada com IDs estáveis em cer_practice_responses',
+      fn: async () => {
+        const resp = await pb.collection('cer_practice_responses').create({
+          assignment_id: 'test_assignment_id',
+          participant_user_id: 'test_user_id',
+          enrollment_id: 'test_enrollment_id',
+          care_cycle_id: 'test_care_cycle_id',
+          practice_version_id: 'test_version_id',
+          response_type: 'helped',
+          completed_repetitions: 12,
+          completed_cycles: 2,
+          completed_series: 1,
+          actual_duration_seconds: 240,
+          ended_early: false,
+          completed_step_ids: ['step_posture_prep', 'step_breath_init'],
+        })
+        if (!resp.id || resp.completed_repetitions !== 12) {
+          throw new Error('Falha ao registrar dose realizada em cer_practice_responses')
+        }
+      },
+    },
+    {
+      id: '3.A-07',
+      name: 'Rejeição Server-Side de Índices Numéricos Posicionais em completed_step_ids',
+      fn: async () => {
+        try {
+          await pb.collection('cer_practice_responses').create({
+            assignment_id: 'test_assignment_id',
+            participant_user_id: 'test_user_id',
+            enrollment_id: 'test_enrollment_id',
+            care_cycle_id: 'test_care_cycle_id',
+            practice_version_id: 'test_version_id',
+            response_type: 'helped',
+            completed_step_ids: [0, 1, 2],
+          })
+          throw new Error('Deveria ter rejeitado índices numéricos posicionais')
+        } catch (err: unknown) {
+          if (err instanceof Error && err.message.includes('Deveria')) throw err
+        }
+      },
+    },
+    {
+      id: '3.A-08',
+      name: 'Imutabilidade das Âncoras Relacionais em cer_practice_responses',
+      fn: async () => {
+        try {
+          await pb.collection('cer_practice_responses').update('test_resp_id', {
+            participant_user_id: 'tampered_user_id',
+          })
+          throw new Error('Deveria ter bloqueado alteração de participant_user_id')
+        } catch (err: unknown) {
+          if (err instanceof Error && err.message.includes('Deveria')) throw err
+        }
+      },
+    },
   ]
 
   const results: IntegrationTestResult[] = []

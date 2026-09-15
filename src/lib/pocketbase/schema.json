@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T12:09:44.458Z",
+  "generatedAt": "2026-09-15T13:32:34.962Z",
   "collections": [
     {
       "name": "users",
@@ -5531,6 +5531,48 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "completed_repetitions",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "completed_cycles",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "completed_series",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "actual_duration_seconds",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ended_early",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "stop_reason",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "completed_step_ids",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

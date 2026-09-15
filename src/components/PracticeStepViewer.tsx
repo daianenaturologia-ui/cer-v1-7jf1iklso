@@ -14,11 +14,22 @@ import {
   Wind,
 } from 'lucide-react'
 
+export interface PracticeStepViewerSummary {
+  completed_repetitions?: number
+  completed_cycles?: number
+  completed_series?: number
+  actual_duration_seconds?: number
+  ended_early: boolean
+  stop_reason?: string
+  completed_step_ids: string[]
+  stepBreakdown?: { stepId: string; completedAmount: number }[]
+}
+
 interface PracticeStepViewerProps {
   steps: CerPracticeStepRecord[]
   practiceTitle: string
-  onComplete?: (actualPerformed?: { stepId: string; completedAmount: number }[]) => void
-  onEarlyStop?: (reason?: string) => void
+  onComplete?: (summary: PracticeStepViewerSummary) => void
+  onEarlyStop?: (summary: PracticeStepViewerSummary) => void
 }
 
 export const PracticeStepViewer: React.FC<PracticeStepViewerProps> = ({
@@ -30,6 +41,7 @@ export const PracticeStepViewer: React.FC<PracticeStepViewerProps> = ({
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [performedCounts, setPerformedCounts] = useState<Record<string, number>>({})
   const [showStopConfirm, setShowStopConfirm] = useState(false)
+  const [startTime] = useState<number>(() => Date.now())
 
   const sortedSteps = [...steps].sort((a, b) => a.step_order - b.step_order)
   const currentStep = sortedSteps[currentStepIndex]
@@ -45,17 +57,63 @@ export const PracticeStepViewer: React.FC<PracticeStepViewerProps> = ({
     )
   }
 
+  const buildExecutionSummary = (
+    endedEarly: boolean,
+    stopReason?: string,
+  ): PracticeStepViewerSummary => {
+    const elapsedSeconds = Math.max(1, Math.round((Date.now() - startTime) / 1000))
+    // Determinar até qual passo foi completado
+    const stepsReached = endedEarly ? sortedSteps.slice(0, currentStepIndex + 1) : sortedSteps
+
+    // IDs estáveis dos passos completados (nunca índices numéricos)
+    const completedStepIds = stepsReached.map((s) => s.stable_step_id)
+
+    let totalReps = 0
+    let totalCycles = 0
+    let totalSeries = 0
+    let hasReps = false
+    let hasCycles = false
+    let hasSeries = false
+
+    const breakdown = stepsReached.map((s) => {
+      const userAmount = performedCounts[s.stable_step_id]
+      const defaultAmount = s.target_repetitions ?? s.target_cycles ?? s.target_series ?? 1
+      const amount = userAmount !== undefined ? userAmount : defaultAmount
+
+      if (s.target_repetitions !== undefined || s.step_type === 'repetition') {
+        hasReps = true
+        totalReps += amount
+      }
+      if (s.target_cycles !== undefined || s.step_type === 'cycle') {
+        hasCycles = true
+        totalCycles += amount
+      }
+      if (s.target_series !== undefined || s.step_type === 'series') {
+        hasSeries = true
+        totalSeries += s.target_series ?? 1
+      }
+
+      return {
+        stepId: s.stable_step_id,
+        completedAmount: amount,
+      }
+    })
+
+    return {
+      completed_repetitions: hasReps ? totalReps : undefined,
+      completed_cycles: hasCycles ? totalCycles : undefined,
+      completed_series: hasSeries ? totalSeries : undefined,
+      actual_duration_seconds: elapsedSeconds,
+      ended_early: endedEarly,
+      stop_reason: stopReason,
+      completed_step_ids: completedStepIds,
+      stepBreakdown: breakdown,
+    }
+  }
+
   const handleNext = () => {
     if (isLastStep) {
-      const summary = sortedSteps.map((s) => ({
-        stepId: s.stable_step_id,
-        completedAmount:
-          performedCounts[s.stable_step_id] ??
-          s.target_repetitions ??
-          s.target_cycles ??
-          s.target_series ??
-          1,
-      }))
+      const summary = buildExecutionSummary(false)
       onComplete?.(summary)
     } else {
       setCurrentStepIndex((prev) => prev + 1)
@@ -70,7 +128,8 @@ export const PracticeStepViewer: React.FC<PracticeStepViewerProps> = ({
   }
 
   const handleStopEarly = () => {
-    onEarlyStop?.('interrompido_pelo_participante')
+    const summary = buildExecutionSummary(true, 'interrompido_pelo_participante')
+    onEarlyStop?.(summary)
   }
 
   return (

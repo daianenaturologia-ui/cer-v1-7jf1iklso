@@ -29,6 +29,15 @@ interface QuickResponseFlowProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  initialExecutionSummary?: {
+    completed_repetitions?: number
+    completed_cycles?: number
+    completed_series?: number
+    actual_duration_seconds?: number
+    ended_early?: boolean
+    stop_reason?: string
+    completed_step_ids?: string[]
+  }
 }
 
 export const QuickResponseFlow: React.FC<QuickResponseFlowProps> = ({
@@ -37,6 +46,7 @@ export const QuickResponseFlow: React.FC<QuickResponseFlowProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  initialExecutionSummary,
 }) => {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -164,6 +174,13 @@ export const QuickResponseFlow: React.FC<QuickResponseFlowProps> = ({
         safety_flag: safetyFlag,
         shared_reflection: sharedReflection.trim() ? sharedReflection.trim() : undefined,
         private_note_text: privateNoteText.trim() ? privateNoteText.trim() : undefined,
+        completed_repetitions: initialExecutionSummary?.completed_repetitions,
+        completed_cycles: initialExecutionSummary?.completed_cycles,
+        completed_series: initialExecutionSummary?.completed_series,
+        actual_duration_seconds: initialExecutionSummary?.actual_duration_seconds,
+        ended_early: initialExecutionSummary?.ended_early,
+        stop_reason: initialExecutionSummary?.stop_reason,
+        completed_step_ids: initialExecutionSummary?.completed_step_ids,
       })
 
       toast({
