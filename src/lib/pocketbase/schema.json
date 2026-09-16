@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T21:08:54.510Z",
+  "generatedAt": "2026-09-16T18:41:12.263Z",
   "collections": [
     {
       "name": "users",
@@ -6416,6 +6416,255 @@
         "CREATE INDEX idx_cpspc_kind ON cer_practice_step_professional_content (content_kind)",
         "CREATE INDEX idx_cpspc_status ON cer_practice_step_professional_content (record_status)",
         "CREATE INDEX `idx_cpspc_supersedes` ON `cer_practice_step_professional_content` (supersedes_id)"
+      ]
+    },
+    {
+      "name": "cer_journal_entries",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["active", "archived"]
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["participant_private"]
+        },
+        {
+          "name": "version_number",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cje_enrollment ON cer_journal_entries (enrollment_id)",
+        "CREATE INDEX idx_cje_participant ON cer_journal_entries (participant_user_id)",
+        "CREATE INDEX idx_cje_status ON cer_journal_entries (status)",
+        "CREATE INDEX idx_cje_access ON cer_journal_entries (access_class)"
+      ]
+    },
+    {
+      "name": "cer_journal_entry_versions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "entry_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_journal_entries"
+        },
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "version_number",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "change_reason",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["participant_private"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cjev_entry ON cer_journal_entry_versions (entry_id)",
+        "CREATE INDEX idx_cjev_enrollment ON cer_journal_entry_versions (enrollment_id)",
+        "CREATE INDEX idx_cjev_participant ON cer_journal_entry_versions (participant_user_id)",
+        "CREATE INDEX idx_cjev_version ON cer_journal_entry_versions (entry_id, version_number)"
+      ]
+    },
+    {
+      "name": "cer_next_session_messages",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (participant_user_id = @request.auth.id || (status = 'approved' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && (participant_user_id = @request.auth.id || (status = 'approved' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "message_text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "summary_text",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["draft", "approved", "withdrawn"]
+        },
+        {
+          "name": "approved_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "withdrawn_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["participant_private", "shared_care"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_cnsm_enrollment ON cer_next_session_messages (enrollment_id)",
+        "CREATE INDEX idx_cnsm_participant ON cer_next_session_messages (participant_user_id)",
+        "CREATE INDEX idx_cnsm_status ON cer_next_session_messages (status)",
+        "CREATE INDEX idx_cnsm_created ON cer_next_session_messages (created)"
       ]
     }
   ]

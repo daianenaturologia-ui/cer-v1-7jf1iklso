@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
 import { enrollmentExperienceService, featureFlagService } from '@/services/experienceEngine'
+import { CadernoSection } from '@/components/CadernoSection'
+import { CER_FEATURE_FLAGS } from '@/config/features'
 import {
   cerKnowledgeItemService,
   cerParticipantRecognitionService,
@@ -72,6 +74,7 @@ export const InteragenteHome: React.FC = () => {
   >({})
   const [submittingRecog, setSubmittingRecog] = useState<string | null>(null)
   const [submittingPresRecog, setSubmittingPresRecog] = useState<string | null>(null)
+  const [cadernoEnabled, setCadernoEnabled] = useState(false)
   const [assignments, setAssignments] = useState<CerPracticeAssignmentRecord[]>([])
   const [plannerItems, setPlannerItems] = useState<CerPlannerItemRecord[]>([])
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -85,13 +88,15 @@ export const InteragenteHome: React.FC = () => {
     }
 
     try {
-      const [activeEnr, isFlagActive] = await Promise.all([
+      const [activeEnr, isFlagActive, isCadernoActive] = await Promise.all([
         enrollmentService.getByPersonId(person.id),
         featureFlagService.isEnabled('experience_engine'),
+        featureFlagService.isEnabled(CER_FEATURE_FLAGS.CADERNO_JOURNAL),
       ])
 
       setEnrollment(activeEnr)
       setEngineEnabled(isFlagActive)
+      setCadernoEnabled(isCadernoActive)
 
       if (activeEnr?.id && isFlagActive) {
         const [exps, kiList, myRecogs, presList, mapData] = await Promise.all([
@@ -946,6 +951,16 @@ export const InteragenteHome: React.FC = () => {
         {enrollment && (
           <div className="space-y-4 pt-4 border-t border-border/40">
             <MandalaStructuredView enrollmentId={enrollment.id} onRefreshRequested={loadData} />
+          </div>
+        )}
+
+        {/* CER V1 — Caderno Privado & Recados para a Próxima Sessão (Condicional à Feature Flag) */}
+        {cadernoEnabled && enrollment && (
+          <div className="space-y-4">
+            <CadernoSection
+              enrollmentId={enrollment.id}
+              interagenteName={person?.preferred_name || person?.full_name || user?.name}
+            />
           </div>
         )}
 

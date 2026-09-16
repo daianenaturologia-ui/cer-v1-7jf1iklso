@@ -374,6 +374,69 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
               </p>
             </div>
 
+            {/* Bloco 0 (CER V1): Recados da Interagente para a Próxima Sessão (Aprovados) */}
+            <div className="p-3.5 rounded-lg border border-primary/30 bg-primary/5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span>Recados da Interagente para este Encontro</span>
+                </div>
+                {preparation?.approvedNextSessionMessages &&
+                  preparation.approvedNextSessionMessages.length > 0 && (
+                    <Badge
+                      variant="default"
+                      className="text-[10px] font-mono px-1.5 py-0 bg-primary"
+                    >
+                      {preparation.approvedNextSessionMessages.length} recado(s)
+                    </Badge>
+                  )}
+              </div>
+
+              {preparation?.approvedNextSessionMessages &&
+              preparation.approvedNextSessionMessages.length > 0 ? (
+                <div className="space-y-2 pt-1">
+                  {preparation.approvedNextSessionMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className="p-2.5 rounded-md bg-background border border-primary/20 space-y-1.5 text-xs shadow-none"
+                    >
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span className="font-semibold text-primary">
+                          Enviado por {participantName}
+                        </span>
+                        <span className="font-mono">
+                          {new Date(msg.approved_at || msg.created).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: 'short',
+                          })}
+                        </span>
+                      </div>
+                      {msg.summary_text && (
+                        <div className="p-2 rounded bg-muted/30 border border-border/30 text-[11px] font-medium text-foreground">
+                          <span className="text-[10px] text-muted-foreground uppercase block font-semibold mb-0.5">
+                            Resumo conferido pela interagente:
+                          </span>
+                          {msg.summary_text}
+                        </div>
+                      )}
+                      <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed pt-0.5">
+                        {msg.message_text}
+                      </p>
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-muted-foreground italic">
+                    Nota de governança: Recados aprovados são compartilhados voluntariamente pela
+                    participante para este encontro. O Caderno privado da interagente permanece
+                    inacessível. Nenhuma nota clínica é criada automaticamente.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground italic">
+                  Nenhum recado ou aviso enviado pela interagente para este encontro.
+                </p>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Bloco 1: Último Encontro */}
               <div className="p-3 rounded-lg border border-border/60 bg-background space-y-2">

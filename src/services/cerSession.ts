@@ -346,6 +346,17 @@ export async function computeSessionPreparation(
     (r) => r.recognition_type === 'makes_sense',
   )
 
+  // 7. CER V1 — Recados aprovados da interagente para o próximo encontro
+  // Ligados ao enrollment_id (não ao session_id), garantindo persistência mesmo se a sessão ainda não foi agendada ou remarcada
+  let approvedNextSessionMessages: any[] = []
+  try {
+    const { cerJournalService } = await import('@/services/cerJournalService')
+    approvedNextSessionMessages =
+      await cerJournalService.listApprovedMessagesForProfessional(enrollmentId)
+  } catch {
+    approvedNextSessionMessages = []
+  }
+
   return {
     enrollment,
     participantName,
@@ -359,5 +370,6 @@ export async function computeSessionPreparation(
       criticalRecognitions,
       supportiveRecognitions,
     },
+    approvedNextSessionMessages,
   }
 }

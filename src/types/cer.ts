@@ -636,6 +636,8 @@ export interface SessionPreparationData {
     criticalRecognitions: CerParticipantRecognitionRecord[]
     supportiveRecognitions: CerParticipantRecognitionRecord[]
   }
+  // CER V1 — Recados aprovados da interagente para o próximo encontro
+  approvedNextSessionMessages?: CerNextSessionMessageRecord[]
 }
 
 // ------------------------------------------
@@ -2552,4 +2554,67 @@ export interface MandalaReadModel {
     }>
   }
   evolution_highlights: string[]
+}
+
+// ------------------------------------------
+// ENTIDADES DO CADERNO PRIVADO E RECADOS (CER V1)
+// ------------------------------------------
+
+export type JournalEntryStatus = 'active' | 'archived'
+
+export interface CerJournalEntryRecord {
+  id: string
+  enrollment_id: string
+  participant_user_id: string
+  title?: string
+  content: string
+  status: JournalEntryStatus
+  access_class: 'participant_private'
+  version_number: number
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    participant_user_id?: UserAccountRecord
+    cer_journal_entry_versions_via_entry_id?: CerJournalEntryVersionRecord[]
+  }
+}
+
+export interface CerJournalEntryVersionRecord {
+  id: string
+  entry_id: string
+  enrollment_id: string
+  participant_user_id: string
+  title?: string
+  content: string
+  version_number: number
+  change_reason?: string
+  access_class: 'participant_private'
+  created: string
+  updated: string
+  expand?: {
+    entry_id?: CerJournalEntryRecord
+    enrollment_id?: EnrollmentRecord
+    participant_user_id?: UserAccountRecord
+  }
+}
+
+export type NextSessionMessageStatus = 'draft' | 'approved' | 'withdrawn'
+
+export interface CerNextSessionMessageRecord {
+  id: string
+  enrollment_id: string
+  participant_user_id: string
+  message_text: string
+  summary_text?: string
+  status: NextSessionMessageStatus
+  approved_at?: string
+  withdrawn_at?: string
+  access_class: 'participant_private' | 'shared_care'
+  created: string
+  updated: string
+  expand?: {
+    enrollment_id?: EnrollmentRecord
+    participant_user_id?: UserAccountRecord
+  }
 }
