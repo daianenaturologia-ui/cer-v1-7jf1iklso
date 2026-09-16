@@ -28,7 +28,9 @@ import {
   Edit2,
   Archive,
   Mic,
+  Volume2,
 } from 'lucide-react'
+import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import { cerJournalService } from '@/services/cerJournalService'
 import type {
   CerJournalEntryRecord,
@@ -56,6 +58,7 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
   const [entryTitle, setEntryTitle] = useState('')
   const [entryContent, setEntryContent] = useState('')
   const [savingEntry, setSavingEntry] = useState(false)
+  const [showVoiceEntry, setShowVoiceEntry] = useState(false)
 
   // Edição de Anotação existente
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
@@ -75,6 +78,7 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
   const [summaryText, setSummaryText] = useState('')
   const [stepShare, setStepShare] = useState<'write' | 'review'>('write')
   const [submittingMessage, setSubmittingMessage] = useState(false)
+  const [showVoiceShare, setShowVoiceShare] = useState(false)
 
   // Ação de retirada de recado
   const [withdrawingMessageId, setWithdrawingMessageId] = useState<string | null>(null)
@@ -192,6 +196,7 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
   const handleOpenShareDialog = () => {
     setMessageText('')
     setSummaryText('')
+    setShowVoiceShare(false)
     setStepShare('write')
     setShareDialogOpen(true)
   }
@@ -372,6 +377,39 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
               onChange={(e) => setEntryTitle(e.target.value)}
               className="text-xs"
             />
+
+            {/* Captura de Voz no Caderno */}
+            {showVoiceEntry ? (
+              <VoiceInputCapture
+                targetLabel="anotação do Caderno"
+                onConfirmText={(confirmedText) => {
+                  setEntryContent((prev) =>
+                    prev ? `${prev.trim()}\n\n${confirmedText}` : confirmedText,
+                  )
+                  setShowVoiceEntry(false)
+                  toast({
+                    title: 'Fala inserida na anotação',
+                    description:
+                      'O texto foi incluído. Você pode editá-lo antes de guardar no seu Caderno.',
+                  })
+                }}
+                onCancel={() => setShowVoiceEntry(false)}
+              />
+            ) : (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowVoiceEntry(true)}
+                  className="text-xs h-7 gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+                >
+                  <Mic className="w-3.5 h-3.5 text-primary" />
+                  <span>Falar anotação por voz</span>
+                </Button>
+              </div>
+            )}
+
             <Textarea
               placeholder="Escreva livremente o que vier à mente, sentimentos, percepções do dia a dia..."
               value={entryContent}
@@ -387,7 +425,10 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setIsWritingEntry(false)}
+                  onClick={() => {
+                    setIsWritingEntry(false)
+                    setShowVoiceEntry(false)
+                  }}
                   className="text-xs h-8"
                 >
                   Cancelar
@@ -743,6 +784,38 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
                 </p>
               </div>
 
+              {/* Voz no Recado */}
+              {showVoiceShare ? (
+                <VoiceInputCapture
+                  targetLabel="recado para a terapeuta"
+                  onConfirmText={(confirmedText) => {
+                    setMessageText((prev) =>
+                      prev ? `${prev.trim()}\n\n${confirmedText}` : confirmedText,
+                    )
+                    setShowVoiceShare(false)
+                    toast({
+                      title: 'Fala inserida no recado',
+                      description:
+                        'O texto foi adicionado. Confira antes de gerar o resumo e enviar.',
+                    })
+                  }}
+                  onCancel={() => setShowVoiceShare(false)}
+                />
+              ) : (
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowVoiceShare(true)}
+                    className="text-xs h-7 gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+                  >
+                    <Mic className="w-3.5 h-3.5 text-primary" />
+                    <span>Falar recado por voz</span>
+                  </Button>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground">
                   Sua mensagem para a terapeuta:
@@ -754,15 +827,6 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
                   rows={5}
                   className="text-xs leading-relaxed"
                 />
-              </div>
-
-              {/* Nota sobre entrada por voz — Informação objetiva de status */}
-              <div className="p-2 bg-muted/10 border border-border/30 rounded text-[11px] text-muted-foreground flex items-center gap-2">
-                <Mic className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                <span>
-                  Entrada por voz em preparação: gravação e transcrição local com revisão prévia
-                  serão disponibilizadas na próxima atualização de acessibilidade.
-                </span>
               </div>
             </div>
           )}

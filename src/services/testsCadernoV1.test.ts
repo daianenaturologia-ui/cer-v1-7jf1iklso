@@ -43,60 +43,71 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
   )
   const messageLifecycleContent = fs.readFileSync(messageLifecycleHookPath, 'utf-8')
 
+  const migration63Path = path.resolve(
+    process.cwd(),
+    'pocketbase/migrations/0063_harden_journal_and_messages_rules.js',
+  )
+  const migration63Content = fs.readFileSync(migration63Path, 'utf-8')
+
   // --------------------------------------------------------------------------
-  // 1. REGRAS DE RLS E SCHEMA NA MIGRATION 0062
+  // 1. REGRAS DE RLS E SCHEMA NAS MIGRATIONS 0062 E 0063
   // --------------------------------------------------------------------------
-  describe('1. Contrato de RLS Fail-Closed na Migration 0062', () => {
-    it('1.1 Migration 0062 existe e possui sintaxe válida sem imports ES modules', () => {
+  describe('1. Contrato de RLS Fail-Closed nas Migrations 0062 e 0063', () => {
+    it('1.1 Migration 0062 e 0063 existem e possuem sintaxe válida sem imports ES modules', () => {
       expect(fs.existsSync(migration62Path)).toBe(true)
+      expect(fs.existsSync(migration63Path)).toBe(true)
       expect(migration62Content).toMatch(/^migrate\(\s*\(app\)\s*=>/)
       expect(migration62Content).not.toMatch(/^\s*import\s/m)
       expect(migration62Content).not.toMatch(/^\s*export\s/m)
+      expect(migration63Content).toMatch(/migrate\(\s*\(app\)\s*=>/)
+      expect(migration63Content).not.toMatch(/^\s*import\s/m)
+      expect(migration63Content).not.toMatch(/^\s*export\s/m)
     })
 
     it('1.2 cer_journal_entries: list/view/create/update estritamente vinculados ao participant_user_id', () => {
       expect(migration62Content).toContain("name: 'cer_journal_entries'")
-      expect(migration62Content).toContain(
-        'listRule: "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      expect(migration63Content).toContain(
+        'journalEntriesCol.listRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
-      expect(migration62Content).toContain(
-        'viewRule: "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      expect(migration63Content).toContain(
+        'journalEntriesCol.viewRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
-      expect(migration62Content).toContain(
-        'createRule: "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      expect(migration63Content).toContain(
+        'journalEntriesCol.createRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
-      expect(migration62Content).toContain(
-        'updateRule: "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      expect(migration63Content).toContain(
+        'journalEntriesCol.updateRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
-      expect(migration62Content).toContain('deleteRule: null')
+      expect(migration63Content).toContain('journalEntriesCol.deleteRule = null')
     })
 
     it('1.3 cer_journal_entry_versions: imutável e sem create/update/delete client-side', () => {
       expect(migration62Content).toContain("name: 'cer_journal_entry_versions'")
-      expect(migration62Content).toContain(
-        'listRule: "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      expect(migration63Content).toContain(
+        'journalVersionsCol.listRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
-      expect(migration62Content).toContain(
-        'viewRule: "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      expect(migration63Content).toContain(
+        'journalVersionsCol.viewRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
       // As três regras de mutação client-side DEVEM ser nulas
-      expect(migration62Content).toContain('createRule: null')
-      expect(migration62Content).toContain('updateRule: null')
-      expect(migration62Content).toContain('deleteRule: null')
+      expect(migration63Content).toContain('journalVersionsCol.createRule = null')
+      expect(migration63Content).toContain('journalVersionsCol.updateRule = null')
+      expect(migration63Content).toContain('journalVersionsCol.deleteRule = null')
     })
 
-    it('1.4 cer_next_session_messages: profissional vê apenas status = approved com vínculo ativo', () => {
+    it('1.4 cer_next_session_messages: profissional vê apenas status = approved com access_class shared_care e vínculo ativo', () => {
       expect(migration62Content).toContain("name: 'cer_next_session_messages'")
-      expect(migration62Content).toContain("status = 'approved'")
-      expect(migration62Content).toContain(
+      expect(migration63Content).toContain("status = 'approved'")
+      expect(migration63Content).toContain("access_class = 'shared_care'")
+      expect(migration63Content).toContain(
         'enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id',
       )
-      expect(migration62Content).toContain(
+      expect(migration63Content).toContain(
         'enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true',
       )
-      // Drafts e anotações retiradas nunca são visíveis para profissional
-      expect(migration62Content).toContain(
-        'createRule: "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      // Drafts e recados retirados nunca são visíveis para profissional por viewRule ou listRule
+      expect(migration63Content).toContain(
+        'nextMsgCol.createRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
     })
   })
@@ -109,6 +120,10 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
       expect(journalLifecycleContent).toContain("record.set('participant_user_id', authId)")
       expect(journalLifecycleContent).toContain("record.set('access_class', 'participant_private')")
       expect(journalLifecycleContent).toContain("record.set('version_number', 1)")
+      // Validação estrita de enrollment para não forjar enrollment_id
+      expect(journalLifecycleContent).toContain(
+        'if (!personIdOnUser || !personIdOnEnrollment || personIdOnUser !== personIdOnEnrollment)',
+      )
     })
 
     it('2.2 Hook do Caderno preserva versão histórica no update e incrementa versão', () => {
@@ -136,6 +151,10 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
       expect(messageLifecycleContent).toContain('Um recado retirado não pode ser reativado')
       // Quando retirado, access_class é resetado para participant_private para fail-closed
       expect(messageLifecycleContent).toContain("record.set('access_class', 'participant_private')")
+      // Validação estrita de enrollment para não forjar enrollment_id
+      expect(messageLifecycleContent).toContain(
+        'if (!personIdOnUser || !personIdOnEnrollment || personIdOnUser !== personIdOnEnrollment)',
+      )
     })
   })
 
@@ -220,6 +239,45 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
     it('6.2 Migration 0062 insere a flag no backend com is_enabled = false', () => {
       expect(migration62Content).toContain("flagRec.set('key', 'cer_caderno_v1')")
       expect(migration62Content).toContain("flagRec.set('is_enabled', false)")
+    })
+  })
+
+  // --------------------------------------------------------------------------
+  // 7. CAPTURA DE VOZ COM PRIVACIDADE COMPROVADA E ZERO PERSISTÊNCIA DE ÁUDIO
+  // --------------------------------------------------------------------------
+  describe('7. Voz no Caderno: Privacidade e Zero Persistência de Áudio', () => {
+    const voiceComponentPath = path.resolve(process.cwd(), 'src/components/VoiceInputCapture.tsx')
+    const voiceComponentContent = fs.readFileSync(voiceComponentPath, 'utf-8')
+
+    it('7.1 VoiceInputCapture utiliza exclusivamente Web Speech API local e não envia áudio a endpoints externos', () => {
+      expect(fs.existsSync(voiceComponentPath)).toBe(true)
+      expect(voiceComponentContent).toContain('SpeechRecognition')
+      // NENHUM endpoint de áudio externo ou upload de arquivo de áudio
+      expect(voiceComponentContent).not.toMatch(/fetch\s*\(\s*['"`]http/i)
+      expect(voiceComponentContent).not.toMatch(/axios/i)
+      expect(voiceComponentContent).not.toMatch(/FormData/i)
+      expect(voiceComponentContent).not.toMatch(/audio\/wav/i)
+      expect(voiceComponentContent).not.toMatch(/audio\/mp3/i)
+    })
+
+    it('7.2 Fluxo exige confirmação explícita prévia da interagente antes de inserir o texto', () => {
+      expect(voiceComponentContent).toContain('reviewing')
+      expect(voiceComponentContent).toContain('handleConfirm')
+      expect(voiceComponentContent).toContain('onConfirmText(clean)')
+      // Indicação clara de que o áudio não é persistido
+      expect(voiceComponentContent).toContain('Áudio não persistido')
+    })
+
+    it('7.3 CadernoSection integra VoiceInputCapture tanto no Caderno quanto no Recado', () => {
+      const cadernoSectionPath = path.resolve(process.cwd(), 'src/components/CadernoSection.tsx')
+      const cadernoSectionContent = fs.readFileSync(cadernoSectionPath, 'utf-8')
+
+      expect(cadernoSectionContent).toContain('VoiceInputCapture')
+      expect(cadernoSectionContent).toContain('showVoiceEntry')
+      expect(cadernoSectionContent).toContain('showVoiceShare')
+      // Botão de iniciar fala no caderno e no recado
+      expect(cadernoSectionContent).toContain('Falar anotação por voz')
+      expect(cadernoSectionContent).toContain('Falar recado por voz')
     })
   })
 })

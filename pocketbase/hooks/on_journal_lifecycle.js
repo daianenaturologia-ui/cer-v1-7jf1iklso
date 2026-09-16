@@ -9,6 +9,7 @@ onRecordCreate((e) => {
   const authId = e.auth ? e.auth.id : null
 
   if (authId) {
+    // Forçar titularidade intransponível: nunca permitir forjar participant_user_id via payload direto
     record.set('participant_user_id', authId)
   }
 
@@ -22,7 +23,7 @@ onRecordCreate((e) => {
     throw new BadRequestError('enrollment_id é obrigatório.')
   }
 
-  // Validar se o enrollment pertence ao participante
+  // Validar se o enrollment pertence estritamente ao participante
   let enrollment = null
   try {
     enrollment = $app.findFirstRecordByData('enrollments', 'id', enrollmentId)
@@ -30,7 +31,7 @@ onRecordCreate((e) => {
     throw new BadRequestError('Enrollment referenciado não foi encontrado.')
   }
 
-  // Verificar se person_id do enrollment vincula ao participant_user_id
+  // Verificar se person_id do enrollment vincula ao participant_user_id (não forjar enrollment_id)
   let userRec = null
   try {
     userRec = $app.findFirstRecordByData('users', 'id', participantUserId)
@@ -40,7 +41,7 @@ onRecordCreate((e) => {
 
   const personIdOnUser = userRec.getString('person_id')
   const personIdOnEnrollment = enrollment.getString('person_id')
-  if (personIdOnUser && personIdOnEnrollment && personIdOnUser !== personIdOnEnrollment) {
+  if (!personIdOnUser || !personIdOnEnrollment || personIdOnUser !== personIdOnEnrollment) {
     throw new BadRequestError('O enrollment referenciado não pertence a este interagente.')
   }
 

@@ -18,6 +18,7 @@ onRecordCreate((e) => {
   const authId = e.auth ? e.auth.id : null
 
   if (authId) {
+    // Forçar titularidade intransponível: nunca permitir forjar participant_user_id via payload direto
     record.set('participant_user_id', authId)
   }
 
@@ -48,7 +49,7 @@ onRecordCreate((e) => {
 
   const personIdOnUser = userRec.getString('person_id')
   const personIdOnEnrollment = enrollment.getString('person_id')
-  if (personIdOnUser && personIdOnEnrollment && personIdOnUser !== personIdOnEnrollment) {
+  if (!personIdOnUser || !personIdOnEnrollment || personIdOnUser !== personIdOnEnrollment) {
     throw new BadRequestError('O enrollment referenciado não pertence a este interagente.')
   }
 
