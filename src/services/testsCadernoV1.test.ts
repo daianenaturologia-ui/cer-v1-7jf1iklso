@@ -249,9 +249,9 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
     const voiceComponentPath = path.resolve(process.cwd(), 'src/components/VoiceInputCapture.tsx')
     const voiceComponentContent = fs.readFileSync(voiceComponentPath, 'utf-8')
 
-    it('7.1 VoiceInputCapture utiliza exclusivamente Web Speech API local e não envia áudio a endpoints externos', () => {
+    it('7.1 VoiceInputCapture utiliza exclusivamente processamento local on-device e não envia áudio a endpoints externos', () => {
       expect(fs.existsSync(voiceComponentPath)).toBe(true)
-      expect(voiceComponentContent).toContain('SpeechRecognition')
+      expect(voiceComponentContent).toContain('LocalSpeechRecognitionService')
       // NENHUM endpoint de áudio externo ou upload de arquivo de áudio
       expect(voiceComponentContent).not.toMatch(/fetch\s*\(\s*['"`]http/i)
       expect(voiceComponentContent).not.toMatch(/axios/i)
@@ -264,8 +264,8 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
       expect(voiceComponentContent).toContain('reviewing')
       expect(voiceComponentContent).toContain('handleConfirm')
       expect(voiceComponentContent).toContain('onConfirmText(clean)')
-      // Indicação clara de que o áudio não é persistido
-      expect(voiceComponentContent).toContain('Áudio não persistido')
+      // Indicação clara de processamento local on-device
+      expect(voiceComponentContent).toContain('Processamento local on-device')
     })
 
     it('7.3 CadernoSection integra VoiceInputCapture tanto no Caderno quanto no Recado', () => {
