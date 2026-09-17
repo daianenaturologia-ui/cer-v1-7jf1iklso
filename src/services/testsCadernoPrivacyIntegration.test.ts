@@ -15,6 +15,14 @@ describe('Suíte de Integração Bimodal: Privacidade do Caderno e Recados (CER 
   it('CAD-PRIVACY: executa com integridade conforme autorização do safeMutableGate', async () => {
     const inspection = inspectTestEnvironment()
     const results = await runCadernoPrivacyIntegrationTests()
+
+    console.log('\n--- Detalhamento Suíte de Privacidade Caderno (CAD-01..CAD-07) ---')
+    for (const r of results) {
+      console.log(`[${r.status}] ${r.id}: ${r.title}`)
+      if (r.details) console.log(`      Detalhe: ${r.details}`)
+    }
+    console.log('------------------------------------------------------------------\n')
+
     expect(results.length).toBe(7)
 
     if (!inspection.isAllowed) {

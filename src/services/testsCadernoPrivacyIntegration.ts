@@ -14,6 +14,7 @@
  * - NENHUMA escrita enviada para o backend remoto conectado (goskip.app).
  */
 
+import PocketBase from 'pocketbase'
 import pb from '@/lib/pocketbase/client'
 import {
   assertSafeMutableTestEnvironment,
@@ -72,21 +73,52 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     // Interagente fictícia: ana.caderno@cer.local
     // Profissional fictícia vinculada: dra.caderno@cer.local
     // Profissional fictícia estranha (não vinculada): prof.estranho@cer.local
+    //
+    // Obter cliente autenticado como SUPERUSER SOMENTE para bootstrap de dados fictícios.
+    // As sondas e verificações RLS dos cenários CAD-01 a CAD-07 utilizam estritamente o cliente pb comum
+    // autenticado com contas comuns (authWithPassword).
+    const adminEmail =
+      (typeof process !== 'undefined' && process.env?.CER_BENCH_SUPERUSER_EMAIL) ||
+      'bench-admin@cer.isolated'
+    const adminPass =
+      (typeof process !== 'undefined' && process.env?.CER_BENCH_SUPERUSER_PASSWORD) ||
+      'BenchAdminSecret123!'
 
-    // Autenticação administrativa ou setup na bancada isolada
-    const personInteragente = await pb.collection('persons').create({
+    const baseUrl =
+      (typeof process !== 'undefined' && process.env?.VITE_POCKETBASE_URL) ||
+      pb.baseUrl ||
+      'http://127.0.0.1:8090'
+
+    const adminPb = new PocketBase(baseUrl)
+    adminPb.autoCancellation(false)
+
+    try {
+      await adminPb.collection('_superusers').authWithPassword(adminEmail, adminPass)
+    } catch {
+      // Fallback para PocketBase legado caso a coleção _superusers não exista
+      try {
+        await (adminPb as any).admins.authWithPassword(adminEmail, adminPass)
+      } catch (adminErr: any) {
+        throw new Error(
+          `Falha no bootstrap administrativo na bancada descartável: ${adminErr?.message || String(adminErr)}. ` +
+            `Certifique-se de que o superuser foi criado via pocketbase superuser upsert.`,
+        )
+      }
+    }
+
+    const personInteragente = await adminPb.collection('persons').create({
       full_name: 'Ana Fictícia Caderno',
       email: `ana_${Date.now()}@cer.local`,
     })
     createdRecordIds.push({ collection: 'persons', id: personInteragente.id })
 
-    const personProfissional = await pb.collection('persons').create({
+    const personProfissional = await adminPb.collection('persons').create({
       full_name: 'Dra. Fictícia Caderno',
       email: `dra_${Date.now()}@cer.local`,
     })
     createdRecordIds.push({ collection: 'persons', id: personProfissional.id })
 
-    const personEstranho = await pb.collection('persons').create({
+    const personEstranho = await adminPb.collection('persons').create({
       full_name: 'Prof. Estranho Fictício',
       email: `estranho_${Date.now()}@cer.local`,
     })
@@ -94,7 +126,7 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
 
     const pwd = 'TestPass123!Safe'
 
-    const userInteragente = await pb.collection('users').create({
+    const userInteragente = await adminPb.collection('users').create({
       email: `ana_user_${Date.now()}@cer.local`,
       password: pwd,
       passwordConfirm: pwd,
@@ -103,7 +135,7 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     })
     createdRecordIds.push({ collection: 'users', id: userInteragente.id })
 
-    const userProfissional = await pb.collection('users').create({
+    const userProfissional = await adminPb.collection('users').create({
       email: `dra_user_${Date.now()}@cer.local`,
       password: pwd,
       passwordConfirm: pwd,
@@ -112,7 +144,7 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     })
     createdRecordIds.push({ collection: 'users', id: userProfissional.id })
 
-    const userEstranho = await pb.collection('users').create({
+    const userEstranho = await adminPb.collection('users').create({
       email: `estranho_user_${Date.now()}@cer.local`,
       password: pwd,
       passwordConfirm: pwd,
@@ -122,31 +154,31 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     createdRecordIds.push({ collection: 'users', id: userEstranho.id })
 
     // Papéis
-    await pb.collection('user_roles').create({
+    await adminPb.collection('user_roles').create({
       user_id: userInteragente.id,
       role: 'interagente',
       is_active: true,
     })
-    await pb.collection('user_roles').create({
+    await adminPb.collection('user_roles').create({
       user_id: userProfissional.id,
       role: 'profissional',
       is_active: true,
     })
-    await pb.collection('user_roles').create({
+    await adminPb.collection('user_roles').create({
       user_id: userEstranho.id,
       role: 'profissional',
       is_active: true,
     })
 
     // Enrollment fictício
-    const enrollment = await pb.collection('enrollments').create({
+    const enrollment = await adminPb.collection('enrollments').create({
       person_id: personInteragente.id,
       status: 'active',
     })
     createdRecordIds.push({ collection: 'enrollments', id: enrollment.id })
 
     // Vínculo profissional ativo
-    const accessLink = await pb.collection('professional_enrollment_access').create({
+    const accessLink = await adminPb.collection('professional_enrollment_access').create({
       enrollment_id: enrollment.id,
       professional_user_id: userProfissional.id,
       access_role: 'primary',
@@ -307,9 +339,118 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     }
 
     // -------------------------------------------------------------------------
-    // CENÁRIO D: RECADO RETIRADO (WITHDRAWN) INACESSÍVEL POR LISTAGEM E ID DIRETO
+    // CENÁRIO CAD-06: ACESSO POR PROFISSIONAL NÃO VINCULADA É NEGADO
     // -------------------------------------------------------------------------
-    // Logar como interagente e retirar o recado
+    // Testado ANTES de retirar o recado, para provar que uma profissional estranha NÃO consegue
+    // ler o recado aprovado e ativo do enrollment da interagente.
+    await pb.collection('users').authWithPassword(userEstranho.email, pwd)
+    const estranhoList = await pb.collection('cer_next_session_messages').getFullList({
+      filter: `enrollment_id = '${enrollment.id}'`,
+    })
+    let estranhoGetBlocked = false
+    try {
+      await pb.collection('cer_next_session_messages').getOne(draftMsg.id)
+    } catch {
+      estranhoGetBlocked = true
+    }
+
+    if (estranhoList.length === 0 && estranhoGetBlocked) {
+      log(
+        'CAD-06',
+        'Tentativa de acesso por profissional não vinculada é negada',
+        'PASS',
+        'RLS bloqueou profissional sem vínculo ativo ao recado aprovado',
+      )
+    } else {
+      log(
+        'CAD-06',
+        'Profissional não vinculada conseguiu acessar mensagens!',
+        'FAIL',
+        `estranhoList.length=${estranhoList.length}`,
+      )
+    }
+
+    // -------------------------------------------------------------------------
+    // CENÁRIO CAD-07: ACESSO A RECADO DE OUTRO ENROLLMENT POR OUTRA PARTICIPANTE É NEGADO
+    // -------------------------------------------------------------------------
+    // Testado enquanto o recado de draftMsg ainda está aprovado e ativo.
+    // Criar segunda participante fictícia com próprio enrollment via superuser
+    let secondUser: any = null
+    const secondPwd = 'TestPass456!Second'
+    if (adminPb) {
+      const person2 = await adminPb.collection('persons').create({
+        full_name: 'Segunda Fictícia Caderno',
+        email: `segunda_${Date.now()}@cer.local`,
+      })
+      createdRecordIds.push({ collection: 'persons', id: person2.id })
+
+      secondUser = await adminPb.collection('users').create({
+        email: `segunda_user_${Date.now()}@cer.local`,
+        password: secondPwd,
+        passwordConfirm: secondPwd,
+        person_id: person2.id,
+        status: 'active',
+      })
+      createdRecordIds.push({ collection: 'users', id: secondUser.id })
+
+      await adminPb.collection('user_roles').create({
+        user_id: secondUser.id,
+        role: 'interagente',
+        is_active: true,
+      })
+
+      const enrollment2 = await adminPb.collection('enrollments').create({
+        person_id: person2.id,
+        status: 'active',
+      })
+      createdRecordIds.push({ collection: 'enrollments', id: enrollment2.id })
+    }
+
+    if (!secondUser) {
+      log(
+        'CAD-07',
+        'Tentativa de acesso a recado de outro enrollment por outra participante',
+        'FAIL',
+        'Segunda participante não pôde ser criada no setup (cliente administrativo indisponível)',
+      )
+    } else {
+      // Autenticar cliente comum com a conta da segunda participante
+      await pb.collection('users').authWithPassword(secondUser.email, secondPwd)
+
+      // Tentar listar os recados do enrollment da primeira participante
+      const otherParticipantList = await pb.collection('cer_next_session_messages').getFullList({
+        filter: `enrollment_id = '${enrollment.id}'`,
+      })
+
+      // Tentar buscar diretamente por getOne o recado aprovado da primeira participante
+      let otherParticipantGetBlocked = false
+      try {
+        await pb.collection('cer_next_session_messages').getOne(draftMsg.id)
+      } catch {
+        otherParticipantGetBlocked = true
+      }
+
+      if (otherParticipantList.length === 0 && otherParticipantGetBlocked) {
+        log(
+          'CAD-07',
+          'Tentativa de acesso a recado de outro enrollment por outra participante é negada',
+          'PASS',
+          'RLS bloqueou com sucesso: 0 retornos na listagem e 404/403 no getOne direto',
+        )
+      } else {
+        log(
+          'CAD-07',
+          'Recado de outro enrollment vazou para participante estranha!',
+          'FAIL',
+          `otherParticipantList.length=${otherParticipantList.length}, otherParticipantGetBlocked=${otherParticipantGetBlocked}`,
+        )
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // CENÁRIO CAD-05: RECADO RETIRADO (WITHDRAWN) INACESSÍVEL POR LISTAGEM E ID DIRETO
+    // -------------------------------------------------------------------------
+    // Logar como primeira interagente e retirar o recado
     await pb.collection('users').authWithPassword(userInteragente.email, pwd)
     await pb.collection('cer_next_session_messages').update(draftMsg.id, {
       status: 'withdrawn',
@@ -342,50 +483,44 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
         `profWithdrawnList.length=${profWithdrawnList.length}, withdrawnDirectBlocked=${withdrawnDirectBlocked}`,
       )
     }
-
-    // -------------------------------------------------------------------------
-    // CENÁRIO E: ACESSO POR OUTRA CONTA OU OUTRO ENROLLMENT FALHA
-    // -------------------------------------------------------------------------
-    // Logar como profissional estranha
-    await pb.collection('users').authWithPassword(userEstranho.email, pwd)
-    const estranhoList = await pb.collection('cer_next_session_messages').getFullList({
-      filter: `enrollment_id = '${enrollment.id}'`,
-    })
-    let estranhoGetBlocked = false
-    try {
-      await pb.collection('cer_next_session_messages').getOne(draftMsg.id)
-    } catch {
-      estranhoGetBlocked = true
-    }
-
-    if (estranhoList.length === 0 && estranhoGetBlocked) {
-      log(
-        'CAD-06',
-        'Tentativa de acesso por profissional não vinculada é negada',
-        'PASS',
-        'RLS bloqueou profissional sem vínculo ativo',
-      )
-    } else {
-      log(
-        'CAD-06',
-        'Profissional não vinculada conseguiu acessar mensagens!',
-        'FAIL',
-        `estranhoList.length=${estranhoList.length}`,
-      )
-    }
-
-    // Tentativa de outra participante
-    log(
-      'CAD-07',
-      'Tentativa de acesso a recado de outro enrollment por outra participante é negada',
-      'PASS',
-      'Verificado com integridade RLS',
-    )
   } catch (err: any) {
     if (err instanceof LiveBackendMutationBlockedError) {
       log('CAD-TRAVA', 'Trava de segurança acionada', 'BLOCKED', err.message)
     } else {
       log('CAD-ERRO', 'Erro na execução dos testes do Caderno', 'FAIL', err?.message || String(err))
+    }
+  } finally {
+    // Teardown / limpeza de dados fictícios na bancada
+    if (createdRecordIds.length > 0) {
+      const cleanupPb = new PocketBase(
+        (typeof process !== 'undefined' && process.env?.VITE_POCKETBASE_URL) ||
+          pb.baseUrl ||
+          'http://127.0.0.1:8090',
+      )
+      cleanupPb.autoCancellation(false)
+      const adminEmail =
+        (typeof process !== 'undefined' && process.env?.CER_BENCH_SUPERUSER_EMAIL) ||
+        'bench-admin@cer.isolated'
+      const adminPass =
+        (typeof process !== 'undefined' && process.env?.CER_BENCH_SUPERUSER_PASSWORD) ||
+        'BenchAdminSecret123!'
+      try {
+        await cleanupPb.collection('_superusers').authWithPassword(adminEmail, adminPass)
+      } catch {
+        try {
+          await (cleanupPb as any).admins.authWithPassword(adminEmail, adminPass)
+        } catch {
+          // ignora
+        }
+      }
+
+      for (const rec of [...createdRecordIds].reverse()) {
+        try {
+          await cleanupPb.collection(rec.collection).delete(rec.id)
+        } catch {
+          // ignora erros de deleção em bancada efêmera
+        }
+      }
     }
   }
 

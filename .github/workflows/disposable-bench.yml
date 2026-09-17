@@ -99,12 +99,22 @@ jobs:
             exit 1
           fi
 
+          echo ">>> [BANCADA] Criando superuser efêmero na bancada isolada..."
+          BENCH_ADMIN_EMAIL="bench-admin@cer.isolated"
+          BENCH_ADMIN_PASS="BenchAdminSecret123!"
+          /tmp/pb_bin/pocketbase superuser upsert "${BENCH_ADMIN_EMAIL}" "${BENCH_ADMIN_PASS}" --dir="${TMP_PB_DIR}/pb_data"
+          echo "CER_BENCH_SUPERUSER_EMAIL=${BENCH_ADMIN_EMAIL}" >> $GITHUB_ENV
+          echo "CER_BENCH_SUPERUSER_PASSWORD=${BENCH_ADMIN_PASS}" >> $GITHUB_ENV
+          echo ">>> [BANCADA] Superuser efêmero criado com sucesso."
+
       - name: Run Disposable Bench & QA Verification
         shell: bash
         env:
           VITE_POCKETBASE_URL: 'http://127.0.0.1:8090'
           CER_ALLOW_MUTABLE_TESTS: 'true'
           CER_TEST_ENV: 'isolated'
+          CER_BENCH_SUPERUSER_EMAIL: ${{ env.CER_BENCH_SUPERUSER_EMAIL }}
+          CER_BENCH_SUPERUSER_PASSWORD: ${{ env.CER_BENCH_SUPERUSER_PASSWORD }}
         run: |
           node scripts/qa-practices.mjs
 

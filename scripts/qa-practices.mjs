@@ -171,6 +171,7 @@ function main() {
       [
         'vitest',
         'run',
+        '--reporter=verbose',
         'src/services/testsIntegrationSuites.test.ts',
         'src/services/testsCadernoPrivacyIntegration.test.ts',
       ],
@@ -179,10 +180,12 @@ function main() {
     const isOk = step4Run.status === 0
     steps.push({
       stepNumber: 4,
-      name: 'Integração Mutável (7.A, 7.B, 7.C, 3.A, Caderno)',
+      name: 'Integração Mutável (7.A, 7.B, 7.C, 3.A, Caderno CAD-01..CAD-07)',
       status: isOk ? 'PASS' : 'FAIL',
       durationMs: Date.now() - start4,
-      message: isOk ? 'Integração isolada concluída' : 'Falha na execução mutável isolada',
+      message: isOk
+        ? 'Integração isolada concluída (34 mutáveis + CAD-01..07)'
+        : 'Falha na execução mutável isolada',
     })
     if (!isOk) {
       finishPipeline()
