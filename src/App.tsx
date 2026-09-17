@@ -16,7 +16,9 @@ import MandalaPage from './pages/MandalaPage'
 import { ParticipantWorkspace } from './components/ParticipantWorkspace'
 import { BibliotecaPage } from './pages/BibliotecaPage'
 
-const App = () => (
+const App = () => {
+  const x: number = "type error"
+  return (
   <BrowserRouter>
     <AuthProvider>
       <TooltipProvider>
@@ -112,5 +114,8 @@ const App = () => (
     </AuthProvider>
   </BrowserRouter>
 )
+
+  )
+}
 
 export default App

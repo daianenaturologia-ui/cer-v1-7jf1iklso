@@ -22,7 +22,7 @@
  * 3. node --check nos dois executores .mjs (validação de sintaxe).
  */
 
-import { execFileSync } from 'node:child_process'
+import { execFileSync, execSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -35,6 +35,25 @@ console.log('  TRAVA DE CI: VERIFICAÇÃO DE MÓDULOS EXECUTORES EM NODE PURO')
 console.log('======================================================================\n')
 
 let hasFailure = false
+
+// Investigação Git
+try {
+  console.log('=== GIT DIAGNOSTICS ===')
+  console.log('GIT HEAD:', execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim())
+  console.log('GIT LOG -5:')
+  console.log(execSync('git log -n 5 --oneline', { encoding: 'utf8' }))
+  console.log('SHOW e0e4803 client.ts:')
+  console.log(execSync('git show e0e4803:src/lib/pocketbase/client.ts', { encoding: 'utf8' }))
+  console.log('SHOW c9bda99 client.ts:')
+  console.log(execSync('git show c9bda99:src/lib/pocketbase/client.ts', { encoding: 'utf8' }))
+  console.log('LOG src/lib/pocketbase/client.ts:')
+  console.log(
+    execSync('git log -n 10 --oneline -- src/lib/pocketbase/client.ts', { encoding: 'utf8' }),
+  )
+  console.log('=== END GIT DIAGNOSTICS ===')
+} catch (e) {
+  console.error('Git diag error:', e.message)
+}
 
 // -----------------------------------------------------------------------------
 // CENÁRIO 1: Com VITE_POCKETBASE_URL=http://127.0.0.1:8090
