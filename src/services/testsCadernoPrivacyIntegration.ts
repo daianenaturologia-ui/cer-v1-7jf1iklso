@@ -15,12 +15,12 @@
  */
 
 import PocketBase from 'pocketbase'
-import pb from '@/lib/pocketbase/client'
+import pb from '../lib/pocketbase/client.ts'
 import {
   assertSafeMutableTestEnvironment,
   inspectTestEnvironment,
   LiveBackendMutationBlockedError,
-} from './safeMutableGate'
+} from './safeMutableGate.ts'
 
 export interface CadernoPrivacyTestResult {
   id: string

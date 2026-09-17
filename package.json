@@ -5,6 +5,9 @@
   "version": "0.0.67",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
+  "imports": {
+    "@/*": "./src/*"
+  },
   "scripts": {
     "start": "vite dev",
     "dev": "vite",
