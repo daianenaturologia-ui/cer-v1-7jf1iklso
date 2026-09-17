@@ -1,10 +1,10 @@
-name: PocketBase Disposable Test Bench & QA
+name: Disposable Bench QA & Caderno Privacy
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
 
 concurrency:
@@ -12,110 +12,144 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  disposable-bench-and-qa:
-    name: Bancada Descartável PocketBase & Suítes de Teste
+  # ============================================================================
+  # JOB 1: QA Geral (Vitest completo, mantendo visíveis os 8 erros conhecidos)
+  # ============================================================================
+  qa-general:
+    name: General QA Practices (Etapa 1..9)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.5.2
+          run_install: false
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: false
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup Disposable PocketBase Bench (v0.26.1)
-        id: pb-bench
-        shell: bash
+      - name: Run General QA Practices Pipeline
+        run: pnpm run qa:practices
+
+  # ============================================================================
+  # JOB 2: Prova de Privacidade do Caderno e Recados (CAD-01 a CAD-07)
+  # Trabalha de forma estritamente independente de qa-general, em bancada descartável
+  # ============================================================================
+  caderno-privacy-proof:
+    name: Caderno Privacy Proof (CAD-01..07)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.5.2
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download & Extract PocketBase 0.26.x
+        run: |
+          PB_VERSION="0.26.1"
+          echo "Baixando PocketBase oficial v${PB_VERSION} para linux_amd64..."
+          curl -sSL -o pb.zip "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip"
+          unzip -q pb.zip -d /usr/local/bin
+          chmod +x /usr/local/bin/pocketbase
+          pocketbase --version
+
+      - name: Run Caderno Privacy Proof on Disposable Bench
+        id: run_proof
+        env:
+          VITE_POCKETBASE_URL: 'http://127.0.0.1:8090'
+          CER_ALLOW_MUTABLE_TESTS: 'true'
+          CER_TEST_ENV: 'isolated'
+          CER_BENCH_SUPERUSER_EMAIL: 'bench-admin@cer.isolated'
+          CER_BENCH_SUPERUSER_PASSWORD: 'BenchAdminSecret123!'
         run: |
           set -euo pipefail
 
-          PB_VERSION="0.26.1"
-          PB_ARCH="linux_amd64"
-          echo ">>> [BANCADA] Baixando binário oficial PocketBase v${PB_VERSION}..."
-          curl -sSL "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_${PB_ARCH}.zip" -o /tmp/pocketbase.zip
-          unzip -q /tmp/pocketbase.zip -d /tmp/pb_bin
-          chmod +x /tmp/pb_bin/pocketbase
+          # 1. Criar workspace temporário efêmero (mktemp -d)
+          BENCH_TMP=$(mktemp -d /tmp/pb_caderno_proof_XXXXXX)
+          echo "Diretório efêmero criado: ${BENCH_TMP}"
 
-          TMP_PB_DIR=$(mktemp -d /tmp/pb_cer_isolated_XXXXXX)
-          echo "TMP_PB_DIR=${TMP_PB_DIR}" >> $GITHUB_ENV
-          echo ">>> [BANCADA] Diretório efêmero criado: ${TMP_PB_DIR}"
+          mkdir -p "${BENCH_TMP}/pb_migrations"
+          mkdir -p "${BENCH_TMP}/pb_hooks"
+          mkdir -p "${BENCH_TMP}/pb_data"
 
-          mkdir -p "${TMP_PB_DIR}/pb_migrations"
-          mkdir -p "${TMP_PB_DIR}/pb_hooks"
-          mkdir -p "${TMP_PB_DIR}/pb_data"
+          # 2. Copiar migrations e hooks do repositório
+          cp -r pocketbase/migrations/* "${BENCH_TMP}/pb_migrations/"
+          cp -r pocketbase/hooks/* "${BENCH_TMP}/pb_hooks/"
 
-          cp -r pocketbase/migrations/*.js "${TMP_PB_DIR}/pb_migrations/"
-          cp -r pocketbase/hooks/*.js "${TMP_PB_DIR}/pb_hooks/"
+          # 3. Criar superuser efêmero para permitir o bootstrap de dados de teste
+          echo "Criando superuser efêmero na base de dados descartável..."
+          pocketbase superuser upsert "${CER_BENCH_SUPERUSER_EMAIL}" "${CER_BENCH_SUPERUSER_PASSWORD}" \
+            --dir="${BENCH_TMP}/pb_data"
 
-          echo ">>> [BANCADA] Inicializando PocketBase isolado em loopback 127.0.0.1:8090..."
-          /tmp/pb_bin/pocketbase serve \
-            --dir="${TMP_PB_DIR}/pb_data" \
-            --migrationsDir="${TMP_PB_DIR}/pb_migrations" \
-            --hooksDir="${TMP_PB_DIR}/pb_hooks" \
-            --http="127.0.0.1:8090" > "${TMP_PB_DIR}/pb.log" 2>&1 &
-
+          # 4. Iniciar PocketBase descartável em 127.0.0.1:8090
+          echo "Iniciando PocketBase em 127.0.0.1:8090..."
+          pocketbase serve \
+            --dir="${BENCH_TMP}/pb_data" \
+            --migrationsDir="${BENCH_TMP}/pb_migrations" \
+            --hooksDir="${BENCH_TMP}/pb_hooks" \
+            --http="127.0.0.1:8090" > "${BENCH_TMP}/pocketbase.log" 2>&1 &
           PB_PID=$!
-          echo "PB_PID=${PB_PID}" >> $GITHUB_ENV
-          echo ">>> [BANCADA] Processo iniciado com PID: ${PB_PID}"
+          echo "PocketBase em execução com PID ${PB_PID}"
 
-          # Health check com timeout de 30s
-          echo ">>> [BANCADA] Aguardando inicialização e migrações limpas..."
-          for i in {1..30}; do
-            if curl -s -f http://127.0.0.1:8090/api/health > /dev/null; then
-              echo ">>> [BANCADA] PocketBase respondeu com sucesso ao health check (tentativa $i)!"
+          # Definir trap de limpeza rigoroso para teardown garantido
+          cleanup() {
+            echo ""
+            echo "=== TEARDOWN DA BANCADA DESCARTÁVEL ==="
+            if [ -n "${PB_PID:-}" ] && kill -0 "${PB_PID}" 2>/dev/null; then
+              echo "Encerrando processo PocketBase (PID ${PB_PID})..."
+              kill -TERM "${PB_PID}" || true
+              wait "${PB_PID}" 2>/dev/null || true
+            fi
+            if [ -d "${BENCH_TMP}" ]; then
+              echo "Destruindo diretório temporário: ${BENCH_TMP}"
+              rm -rf "${BENCH_TMP}"
+            fi
+            echo "Teardown concluído."
+          }
+          trap cleanup EXIT
+
+          # 5. Aguardar healthcheck em 127.0.0.1:8090/api/health
+          echo "Aguardando inicialização do PocketBase descartável..."
+          READY=0
+          for i in $(seq 1 30); do
+            if curl -fsSL "http://127.0.0.1:8090/api/health" > /dev/null 2>&1; then
+              echo "PocketBase pronto e respondendo em http://127.0.0.1:8090 após ${i}s."
+              READY=1
               break
             fi
             sleep 1
           done
 
-          if ! curl -s -f http://127.0.0.1:8090/api/health > /dev/null; then
-            echo "ERRO FATAL: PocketBase não respondeu ao health check após 30 segundos!"
-            cat "${TMP_PB_DIR}/pb.log"
-            kill -9 "${PB_PID}" || true
+          if [ "${READY}" -ne 1 ]; then
+            echo "[ERRO FATAL] PocketBase não iniciou no tempo limite!"
+            echo "=== LOGS DO POCKETBASE ==="
+            cat "${BENCH_TMP}/pocketbase.log" || true
             exit 1
           fi
 
-          echo ">>> [BANCADA] Criando superuser efêmero na bancada isolada..."
-          BENCH_ADMIN_EMAIL="bench-admin@cer.isolated"
-          BENCH_ADMIN_PASS="BenchAdminSecret123!"
-          /tmp/pb_bin/pocketbase superuser upsert "${BENCH_ADMIN_EMAIL}" "${BENCH_ADMIN_PASS}" --dir="${TMP_PB_DIR}/pb_data"
-          echo "CER_BENCH_SUPERUSER_EMAIL=${BENCH_ADMIN_EMAIL}" >> $GITHUB_ENV
-          echo "CER_BENCH_SUPERUSER_PASSWORD=${BENCH_ADMIN_PASS}" >> $GITHUB_ENV
-          echo ">>> [BANCADA] Superuser efêmero criado com sucesso."
-
-      - name: Run Disposable Bench & QA Verification
-        shell: bash
-        env:
-          VITE_POCKETBASE_URL: 'http://127.0.0.1:8090'
-          CER_ALLOW_MUTABLE_TESTS: 'true'
-          CER_TEST_ENV: 'isolated'
-          CER_BENCH_SUPERUSER_EMAIL: ${{ env.CER_BENCH_SUPERUSER_EMAIL }}
-          CER_BENCH_SUPERUSER_PASSWORD: ${{ env.CER_BENCH_SUPERUSER_PASSWORD }}
-        run: |
-          node scripts/qa-practices.mjs
-
-      - name: Teardown and Erase Disposable Bench
-        if: always()
-        shell: bash
-        run: |
-          if [ -n "${PB_PID:-}" ] && kill -0 "${PB_PID}" 2>/dev/null; then
-            echo ">>> [TEARDOWN] Finalizando processo PocketBase PID ${PB_PID}..."
-            kill "${PB_PID}" || true
-            wait "${PB_PID}" 2>/dev/null || true
-          fi
-
-          if [[ "${TMP_PB_DIR:-}" =~ ^/tmp/pb_cer_isolated_[A-Za-z0-9]+$ ]]; then
-            echo ">>> [TEARDOWN] Destruindo diretório temporário efêmero: ${TMP_PB_DIR}"
-            rm -rf "${TMP_PB_DIR}"
-          fi
+          # 6. Executar APENAS a suíte de provas de privacidade (CAD-01 a CAD-07)
+          echo ""
+          echo "=== EXECUTANDO PROVA DE PRIVACIDADE CAD-01..07 ==="
+          pnpm run test:caderno-privacy
