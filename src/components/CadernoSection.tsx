@@ -925,7 +925,7 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
                     className="text-xs h-8 gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>Aprovar e Enviar</span>
+                    <span>Enviar para Daiane</span>
                   </Button>
                 </div>
               </>

@@ -284,6 +284,36 @@ class CerCarePlanService {
   // -------------------------------------------------------------
   // OPERATIONAL ACCEPTANCE & PRIVATE NOTES
   // -------------------------------------------------------------
+  async listPresentedForParticipant(
+    enrollmentId: string,
+  ): Promise<CerCarePlanPresentationRecord[]> {
+    try {
+      return await pb
+        .collection('cer_care_plan_presentations')
+        .getFullList<CerCarePlanPresentationRecord>({
+          filter: `enrollment_id = "${enrollmentId}" && status = "presented"`,
+          sort: '-presented_at,-created',
+        })
+    } catch {
+      return []
+    }
+  }
+
+  async listAcceptancesByEnrollment(
+    enrollmentId: string,
+  ): Promise<CerOperationalAcceptanceRecord[]> {
+    try {
+      return await pb
+        .collection('cer_operational_acceptances')
+        .getFullList<CerOperationalAcceptanceRecord>({
+          filter: `enrollment_id = "${enrollmentId}"`,
+          sort: '-created',
+        })
+    } catch {
+      return []
+    }
+  }
+
   async recordAcceptance(input: RecordAcceptanceInput): Promise<{
     acceptance: CerOperationalAcceptanceRecord
     privateNote?: CerOperationalAcceptancePrivateNoteRecord

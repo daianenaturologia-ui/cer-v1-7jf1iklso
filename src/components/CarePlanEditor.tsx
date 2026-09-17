@@ -364,9 +364,13 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
             )}
 
             {selectedPlan && (
-              <Button size="sm" onClick={handleOpenPresentation} className="h-8 text-xs gap-1.5">
+              <Button
+                size="sm"
+                onClick={handleOpenPresentation}
+                className="h-8 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
                 <Send className="w-3.5 h-3.5" />
-                <span>Apresentar à Participante</span>
+                <span>Compartilhar plano com {participantName}</span>
               </Button>
             )}
           </div>
@@ -1050,10 +1054,10 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
               size="sm"
               onClick={handleExecutePresentation}
               disabled={actionLoading || !presentationSummary.trim()}
-              className="text-xs h-8 gap-1.5"
+              className="text-xs h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Confirmar e Apresentar</span>
+              <span>Compartilhar plano com {participantName}</span>
             </Button>
           </DialogFooter>
         </DialogContent>

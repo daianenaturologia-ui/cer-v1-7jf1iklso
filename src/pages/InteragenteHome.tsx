@@ -47,6 +47,9 @@ import { ParticipantMapDisplay } from '@/components/ParticipantMapDisplay'
 import { cerMapService } from '@/services/cerMapService'
 import { cerPracticeAssignmentService } from '@/services/cerPracticeAssignmentService'
 import { cerPlannerService } from '@/services/cerPlannerService'
+import { cerJournalService } from '@/services/cerJournalService'
+import { cerCarePlanService } from '@/services/cerCarePlanService'
+import type { CerCarePlanPresentationRecord, OperationalAcceptanceResponseType } from '@/types/cer'
 import { ExperimentCard } from '@/components/ExperimentCard'
 import { MandalaStructuredView } from '@/components/MandalaStructuredView'
 import { OnboardingFlow } from '@/components/OnboardingFlow'
@@ -79,6 +82,22 @@ export const InteragenteHome: React.FC = () => {
   const [plannerItems, setPlannerItems] = useState<CerPlannerItemRecord[]>([])
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [activeReviewInvite, setActiveReviewInvite] = useState<{ cycleId: string } | null>(null)
+  // ETAPA 1: Relato inicial acolhedor
+  const [initialIntakeWhatBrings, setInitialIntakeWhatBrings] = useState('')
+  const [initialIntakeWhatHelps, setInitialIntakeWhatHelps] = useState('')
+  const [initialIntakeWhatCares, setInitialIntakeWhatCares] = useState('')
+  const [intakeSavingDraft, setIntakeSavingDraft] = useState(false)
+  const [intakeSending, setIntakeSending] = useState(false)
+  const [intakeSubmittedMessage, setIntakeSubmittedMessage] = useState<string | null>(null)
+  // ETAPA 4: Plano apresentado e Retorno Operacional
+  const [presentedCarePlans, setPresentedCarePlans] = useState<CerCarePlanPresentationRecord[]>([])
+  const [selectedPlanResponses, setSelectedPlanResponses] = useState<
+    Record<
+      string,
+      { response_type: OperationalAcceptanceResponseType; shared_comment: string; saved: boolean }
+    >
+  >({})
+  const [submittingPlanResponse, setSubmittingPlanResponse] = useState<string | null>(null)
   const { toast } = useToast()
 
   const loadData = async () => {
@@ -110,6 +129,35 @@ export const InteragenteHome: React.FC = () => {
         setKnowledgeItems(kiList)
         setPresentations(presList)
         setCurrentMap(mapData)
+
+        // ETAPA 4: Carregar planos apresentados à participante (status = presented)
+        try {
+          const presentedPlans = await cerCarePlanService.listPresentedForParticipant(activeEnr.id)
+          setPresentedCarePlans(presentedPlans)
+
+          // Carregar aceites operacionais existentes para preencher visualmente se já respondeu
+          const existingAcceptances = await cerCarePlanService.listAcceptancesByEnrollment(
+            activeEnr.id,
+          )
+          const respMap: Record<
+            string,
+            {
+              response_type: OperationalAcceptanceResponseType
+              shared_comment: string
+              saved: boolean
+            }
+          > = {}
+          for (const acc of existingAcceptances) {
+            respMap[acc.presentation_id] = {
+              response_type: acc.response_type,
+              shared_comment: acc.shared_comment || '',
+              saved: true,
+            }
+          }
+          setSelectedPlanResponses(respMap)
+        } catch {
+          /* intentionally ignored */
+        }
 
         const recogMap: Record<string, { type: RecognitionType; comment: string; saved: boolean }> =
           {}
@@ -252,6 +300,127 @@ export const InteragenteHome: React.FC = () => {
     loadData()
   }, [person])
 
+  // ETAPA 1: Handlers do Relato Inicial
+  const formatIntakeFullText = () => {
+    const parts: string[] = []
+    if (initialIntakeWhatBrings.trim()) {
+      parts.push(`O que a traz:\n${initialIntakeWhatBrings.trim()}`)
+    }
+    if (initialIntakeWhatHelps.trim()) {
+      parts.push(`O que já a ajuda:\n${initialIntakeWhatHelps.trim()}`)
+    }
+    if (initialIntakeWhatCares.trim()) {
+      parts.push(`O que deseja cuidar:\n${initialIntakeWhatCares.trim()}`)
+    }
+    return parts.join('\n\n')
+  }
+
+  const handleSaveIntakeDraft = async () => {
+    if (!enrollment?.id) return
+    const text = formatIntakeFullText()
+    if (!text) {
+      toast({
+        title: 'Campos em branco',
+        description: 'Escreva ao menos um pensamento para salvar seu rascunho.',
+      })
+      return
+    }
+    try {
+      setIntakeSavingDraft(true)
+      await cerJournalService.createNextSessionMessage({
+        enrollment_id: enrollment.id,
+        message_text: text,
+        as_draft: true,
+      })
+      toast({
+        title: 'Rascunho salvo',
+        description:
+          'Seu relato está guardado de forma privada. Nada foi enviado para a profissional ainda.',
+      })
+    } catch (err: unknown) {
+      toast({
+        title: 'Erro ao salvar rascunho',
+        description: err instanceof Error ? err.message : 'Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIntakeSavingDraft(false)
+    }
+  }
+
+  const handleSendIntakeToDaiane = async () => {
+    if (!enrollment?.id) return
+    const text = formatIntakeFullText()
+    if (!text) {
+      toast({
+        title: 'Campos em branco',
+        description: 'Escreva seu relato antes de enviar.',
+      })
+      return
+    }
+    try {
+      setIntakeSending(true)
+      await cerJournalService.createNextSessionMessage({
+        enrollment_id: enrollment.id,
+        message_text: text,
+        as_draft: false,
+      })
+      setIntakeSubmittedMessage(
+        'Seu relato foi enviado com sucesso para Daiane. Ele estará disponível no prontuário para o próximo encontro.',
+      )
+      setInitialIntakeWhatBrings('')
+      setInitialIntakeWhatHelps('')
+      setInitialIntakeWhatCares('')
+      toast({
+        title: 'Relato enviado para Daiane',
+        description: 'Agradecemos por compartilhar. Daiane lerá na preparação do encontro.',
+      })
+      await loadData()
+    } catch (err: unknown) {
+      toast({
+        title: 'Erro ao enviar relato',
+        description: err instanceof Error ? err.message : 'Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIntakeSending(false)
+    }
+  }
+
+  // ETAPA 4: Handler de Retorno Operacional sobre o Plano Apresentado
+  const handleSaveOperationalAcceptance = async (presentationId: string) => {
+    const current = selectedPlanResponses[presentationId]
+    if (!current?.response_type || !enrollment) return
+    setSubmittingPlanResponse(presentationId)
+    try {
+      await cerCarePlanService.recordAcceptance({
+        presentation_id: presentationId,
+        response_type: current.response_type,
+        shared_comment: current.shared_comment,
+      })
+      setSelectedPlanResponses((prev) => ({
+        ...prev,
+        [presentationId]: {
+          ...prev[presentationId],
+          saved: true,
+        },
+      }))
+      toast({
+        title: 'Retorno acolhido',
+        description: 'Seu retorno sobre o próximo passo foi compartilhado com Daiane.',
+      })
+      await loadData()
+    } catch (err: unknown) {
+      toast({
+        title: 'Não conseguimos salvar agora',
+        description: err instanceof Error ? err.message : 'Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setSubmittingPlanResponse(null)
+    }
+  }
+
   // Se precisa de Onboarding inicial
   if (showOnboarding) {
     return (
@@ -368,6 +537,273 @@ export const InteragenteHome: React.FC = () => {
             Este é o seu espaço de acompanhamento contínuo no CER.
           </p>
         </div>
+
+        {/* ETAPA 1 — Card Acolhedor de Relato Inicial com 3 campos e Envio Explícito */}
+        <Card className="border-primary/40 bg-gradient-to-br from-primary/5 via-card to-card shadow-sm">
+          <CardHeader className="pb-3 border-b border-primary/10">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="space-y-0.5">
+                <CardTitle className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
+                  <HeartHandshake className="w-4 h-4 text-primary" />
+                  <span>Seu Espaço Inicial de Acolhimento</span>
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Compartilhe suas percepções no seu tempo. Por padrão, nada fica visível à
+                  profissional até você decidir enviar.
+                </CardDescription>
+              </div>
+              <Badge
+                variant="outline"
+                className="text-[10px] font-mono uppercase bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-300"
+              >
+                <ShieldCheck className="w-3 h-3 text-emerald-600 mr-1" />
+                Privado por padrão
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-5 space-y-4">
+            {intakeSubmittedMessage ? (
+              <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-300 text-emerald-900 dark:text-emerald-200 text-xs space-y-2">
+                <div className="flex items-center gap-2 font-semibold text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Relato Entregue para Daiane</span>
+                </div>
+                <p className="leading-relaxed">{intakeSubmittedMessage}</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIntakeSubmittedMessage(null)}
+                  className="text-xs h-7 mt-1 border-emerald-400 text-emerald-800 dark:text-emerald-200"
+                >
+                  Escrever outro relato
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3.5">
+                {/* Pergunta 1 */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-foreground block">
+                    1. O que a traz?
+                  </label>
+                  <p className="text-[11px] text-muted-foreground">
+                    O que motivou sua busca por cuidado e o que tem estado mais presente nos seus
+                    dias?
+                  </p>
+                  <Textarea
+                    placeholder="Conte com suas palavras o que a fez procurar este acompanhamento..."
+                    value={initialIntakeWhatBrings}
+                    onChange={(e) => setInitialIntakeWhatBrings(e.target.value)}
+                    className="text-xs min-h-[70px] resize-y"
+                  />
+                </div>
+
+                {/* Pergunta 2 */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-foreground block">
+                    2. O que já a ajuda?
+                  </label>
+                  <p className="text-[11px] text-muted-foreground">
+                    Recursos, práticas, apoios ou momentos em que você percebe mais respiro e
+                    acolhimento.
+                  </p>
+                  <Textarea
+                    placeholder="Coisas simples ou pessoas que já trazem alívio ou sustentação..."
+                    value={initialIntakeWhatHelps}
+                    onChange={(e) => setInitialIntakeWhatHelps(e.target.value)}
+                    className="text-xs min-h-[70px] resize-y"
+                  />
+                </div>
+
+                {/* Pergunta 3 */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-foreground block">
+                    3. O que deseja cuidar?
+                  </label>
+                  <p className="text-[11px] text-muted-foreground">
+                    O foco, direção ou transformação que mais faz sentido priorizar neste momento.
+                  </p>
+                  <Textarea
+                    placeholder="O que no seu ritmo, corpo ou sentimentos pede atenção agora..."
+                    value={initialIntakeWhatCares}
+                    onChange={(e) => setInitialIntakeWhatCares(e.target.value)}
+                    className="text-xs min-h-[70px] resize-y"
+                  />
+                </div>
+
+                {/* Ações Explícitas: Rascunho vs Enviar para Daiane */}
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border/40">
+                  <span className="text-[11px] text-muted-foreground italic">
+                    Nada é compartilhado sem seu comando explícito.
+                  </span>
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSaveIntakeDraft}
+                      disabled={intakeSavingDraft || intakeSending}
+                      className="text-xs h-8"
+                    >
+                      {intakeSavingDraft ? 'Guardando rascunho...' : 'Salvar Rascunho'}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleSendIntakeToDaiane}
+                      disabled={intakeSavingDraft || intakeSending}
+                      className="text-xs h-8 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <HeartHandshake className="w-3.5 h-3.5" />
+                      <span>{intakeSending ? 'Enviando...' : 'Enviar para Daiane'}</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ETAPA 4 — Plano de Cuidado Apresentado & Retorno da Interagente */}
+        {presentedCarePlans.length > 0 && (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-lg font-serif font-semibold text-foreground flex items-center gap-2">
+                <Compass className="w-5 h-5 text-primary" />
+                <span>Próximo Passo do Nosso Cuidado</span>
+              </h2>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Este plano e próximo passo foram compartilhados por Daiane. Você pode registrar com
+                leveza como isso soa para você agora.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {presentedCarePlans.map((planPres) => {
+                const currentResp = selectedPlanResponses[planPres.id]
+                const currentType = currentResp?.response_type
+                const currentComment = currentResp?.shared_comment || ''
+                const isSaved = currentResp?.saved
+
+                const acceptanceOptions: {
+                  value: OperationalAcceptanceResponseType
+                  label: string
+                }[] = [
+                  { value: 'accepted', label: 'consegui experimentar' },
+                  { value: 'wants_to_try', label: 'quero tentar' },
+                  { value: 'too_much', label: 'foi muito' },
+                  { value: 'wants_to_talk', label: 'prefiro conversar' },
+                ]
+
+                return (
+                  <Card
+                    key={planPres.id}
+                    className="border-primary/40 bg-card/80 backdrop-blur-sm shadow-sm"
+                  >
+                    <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/15">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="font-semibold text-primary text-[11px] uppercase tracking-wider">
+                          Plano Compartilhado por Daiane
+                        </span>
+                        <span className="text-[11px] text-muted-foreground font-mono">
+                          {planPres.presented_at
+                            ? new Date(planPres.presented_at).toLocaleDateString('pt-BR')
+                            : 'Recente'}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-serif font-medium text-foreground pt-1">
+                        {planPres.participant_title || 'Próximo Passo Proposto'}
+                      </h3>
+                      {planPres.participant_summary && (
+                        <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap pt-1 font-sans">
+                          {planPres.participant_summary}
+                        </p>
+                      )}
+                      {planPres.practical_invitation && (
+                        <div className="p-2.5 rounded bg-primary/10 border border-primary/20 text-xs text-foreground italic mt-2">
+                          &ldquo;{planPres.practical_invitation}&rdquo;
+                        </div>
+                      )}
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-4">
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-foreground block">
+                          Como você se sente em relação a este próximo passo?
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                          {acceptanceOptions.map((opt) => (
+                            <Button
+                              key={opt.value}
+                              type="button"
+                              variant={currentType === opt.value ? 'default' : 'outline'}
+                              size="sm"
+                              disabled={isSaved}
+                              onClick={() => {
+                                setSelectedPlanResponses((prev) => ({
+                                  ...prev,
+                                  [planPres.id]: {
+                                    response_type: opt.value,
+                                    shared_comment: prev[planPres.id]?.shared_comment || '',
+                                    saved: false,
+                                  },
+                                }))
+                              }}
+                              className="justify-start text-xs h-9 px-3 text-left font-normal"
+                            >
+                              {opt.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Texto livre para retorno */}
+                      <div className="space-y-1.5 pt-1">
+                        <label className="text-[11px] font-medium text-muted-foreground">
+                          Quer contar mais alguma percepção sobre esse próximo passo? (Opcional)
+                        </label>
+                        <Textarea
+                          placeholder="Como você imagina tentar, o que pode facilitar ou dificultar..."
+                          value={currentComment}
+                          disabled={isSaved}
+                          onChange={(e) => {
+                            setSelectedPlanResponses((prev) => ({
+                              ...prev,
+                              [planPres.id]: {
+                                response_type: prev[planPres.id]?.response_type || 'wants_to_try',
+                                shared_comment: e.target.value,
+                                saved: false,
+                              },
+                            }))
+                          }}
+                          className="text-xs min-h-[64px]"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+                        <span className="text-[11px] text-muted-foreground italic">
+                          {isSaved
+                            ? '✓ Seu retorno foi acolhido e já está no prontuário de Daiane.'
+                            : 'Sua resposta ajuda Daiane a calibrar o ritmo junto com você.'}
+                        </span>
+                        {!isSaved && currentType && (
+                          <Button
+                            size="sm"
+                            disabled={submittingPlanResponse === planPres.id}
+                            onClick={() => handleSaveOperationalAcceptance(planPres.id)}
+                            className="text-xs h-8 px-4 bg-primary text-primary-foreground hover:bg-primary/90"
+                          >
+                            {submittingPlanResponse === planPres.id
+                              ? 'Enviando...'
+                              : 'Enviar retorno para Daiane'}
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Informações da Identidade Humana — Tech Copy Cleanup */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

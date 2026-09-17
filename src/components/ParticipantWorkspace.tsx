@@ -27,6 +27,8 @@ import type {
 import { attentionService, AttentionItem } from '@/services/attentionService'
 import { AttentionPanel } from '@/components/AttentionPanel'
 import { CarePlanEditor } from '@/components/CarePlanEditor'
+import { cerCarePlanService } from '@/services/cerCarePlanService'
+import type { CerOperationalAcceptanceRecord } from '@/types/cer'
 import { PracticeSelector } from '@/components/PracticeSelector'
 import { AssignmentEditor } from '@/components/AssignmentEditor'
 import { ResponseDigest } from '@/components/ResponseDigest'
@@ -48,6 +50,9 @@ export const ParticipantWorkspace: React.FC = () => {
   const [person, setPerson] = useState<PersonRecord | null>(null)
   const [journeyState, setJourneyState] = useState<JourneyStateRecord | null>(null)
   const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
+  const [operationalAcceptances, setOperationalAcceptances] = useState<
+    CerOperationalAcceptanceRecord[]
+  >([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -83,6 +88,10 @@ export const ParticipantWorkspace: React.FC = () => {
       // 3. Atenção específica da participante
       const attn = await attentionService.computeAttentionItems(enrollmentId)
       setAttentionItems(attn)
+
+      // 4. Retornos operacionais da interagente (cer_operational_acceptances)
+      const accList = await cerCarePlanService.listAcceptancesByEnrollment(enrollmentId)
+      setOperationalAcceptances(accList)
     } catch (err: any) {
       console.error('Erro ao carregar Workspace:', err)
       setErrorMsg(
@@ -148,7 +157,6 @@ export const ParticipantWorkspace: React.FC = () => {
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs font-medium text-foreground">Workspace Clínico</span>
           </div>
-
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-xl font-bold font-serif text-foreground">{participantName}</h1>
             <Badge
@@ -163,7 +171,11 @@ export const ParticipantWorkspace: React.FC = () => {
                 Etapa: {journeyState.current_stage} ({journeyState.stage_status})
               </Badge>
             )}
-          </div>
+
+            <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">
+              Prontuário de Daiane
+            </Badge>
+          </div>{' '}
         </div>
 
         {/* Alertas Rápidos no Topo */}
@@ -244,6 +256,84 @@ export const ParticipantWorkspace: React.FC = () => {
       {currentTab === 'resumo' && (
         <div className="space-y-5">
           <AttentionPanel items={attentionItems} showParticipantName={false} />
+
+          {/* ETAPA 5: Retornos da interagente sobre o próximo passo (cer_operational_acceptances) */}
+          <Card className="border-border/70 shadow-none">
+            <CardHeader className="py-3 px-4 bg-muted/20 border-b border-border/40">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" />
+                  <CardTitle className="text-sm font-semibold font-serif">
+                    Retorno da interagente sobre o próximo passo
+                  </CardTitle>
+                </div>
+                <Badge variant="outline" className="text-[10px] font-mono">
+                  {operationalAcceptances.length} retorno(s)
+                </Badge>
+              </div>
+              <CardDescription className="text-xs">
+                Respostas diretas da participante registradas via aceite operacional compartilhado
+                (sem anotação em notas clínicas privadas).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 space-y-2.5">
+              {operationalAcceptances.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic py-2">
+                  Nenhum retorno operacional registrado pela interagente até o momento.
+                </p>
+              ) : (
+                operationalAcceptances.map((acc) => {
+                  const labelMap: Record<string, string> = {
+                    accepted: 'consegui experimentar',
+                    wants_to_try: 'quero tentar',
+                    too_much: 'foi muito',
+                    wants_to_talk: 'prefiro conversar',
+                    wants_to_adapt: 'quero adaptar',
+                    not_now: 'agora não',
+                    alternative_requested: 'pediu alternativa',
+                  }
+                  const label = labelMap[acc.response_type] || acc.response_type
+
+                  return (
+                    <div
+                      key={acc.id}
+                      className="p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-1.5 text-xs"
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] font-medium bg-primary/15 text-primary border-primary/30"
+                          >
+                            {label}
+                          </Badge>
+                          <span className="text-[11px] font-semibold text-foreground">
+                            Enviado por {participantName}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          {new Date(acc.created).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </span>
+                      </div>
+                      {acc.shared_comment ? (
+                        <p className="text-foreground whitespace-pre-wrap leading-relaxed pt-0.5 italic">
+                          &ldquo;{acc.shared_comment}&rdquo;
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground italic">
+                          Sem comentário adicional.
+                        </p>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </CardContent>
+          </Card>
 
           {/* Preparação de Sessão (Reutilizando cerSession) */}
           <ProfessionalSessionManager
