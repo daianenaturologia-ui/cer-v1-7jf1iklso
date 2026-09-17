@@ -167,9 +167,6 @@ try {
 // -----------------------------------------------------------------------------
 // CENÁRIO 3: node --check nos dois executores .mjs
 // -----------------------------------------------------------------------------
-try {
-  await import('./disposable-inspect-git.mjs')
-} catch (e) {}
 console.log('\n[ETAPA 3] Verificação de sintaxe (node --check) nos executores .mjs...')
 
 const executors = [
