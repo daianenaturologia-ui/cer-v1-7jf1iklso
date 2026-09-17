@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import '../../scripts/diag_git.mjs'
 import {
   inspectTestEnvironment,
   assertSafeMutableTestEnvironment,
