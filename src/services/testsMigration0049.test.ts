@@ -35,9 +35,9 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration 0049', () =>
   })
 
   it('3. Coleção cer_practice_variant_steps possui rules estruturais corretas e imutabilidade de escrita', () => {
-    // Isolamento do bloco de criação de cer_practice_variant_steps
+    // Isolamento do bloco de criação de cer_practice_variant_steps (aceita let ... = null seguido de atribuição)
     const variantBlockMatch = migrationContent.match(
-      /const variantStepsCol = new Collection\(\{([\s\S]*?)\}\)\s*app\.save\(variantStepsCol\)/,
+      /(?:const|let)\s+variantStepsCol\s*=\s*(?:null\s*;\s*[\s\S]*?)?new Collection\(\{([\s\S]*?)\}\)\s*app\.save\(variantStepsCol\)/,
     )
     expect(variantBlockMatch).not.toBeNull()
     const variantBlock = variantBlockMatch![1]
@@ -55,9 +55,9 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration 0049', () =>
   })
 
   it('4. Coleção cer_practice_step_professional_content possui CRUD mutável nulo e regras list/view com branch profissional E admin', () => {
-    // Isolamento do bloco de criação de cer_practice_step_professional_content
+    // Isolamento do bloco de criação de cer_practice_step_professional_content (aceita let ... = null seguido de atribuição)
     const profBlockMatch = migrationContent.match(
-      /const stepProfContentCol = new Collection\(\{([\s\S]*?)\}\)\s*app\.save\(stepProfContentCol\)/,
+      /(?:const|let)\s+stepProfContentCol\s*=\s*(?:null\s*;\s*[\s\S]*?)?new Collection\(\{([\s\S]*?)\}\)\s*app\.save\(stepProfContentCol\)/,
     )
     expect(profBlockMatch).not.toBeNull()
     const profBlock = profBlockMatch![1]
@@ -196,8 +196,15 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration 0049', () =>
     expect(c0047).toContain('LOTE 3A: MIGRATION 0047')
     expect(c0048).toContain('CORREÇÃO 3A-1: MIGRATION 0048')
 
-    // 0049 não tenta alterar 0047 ou 0048
-    expect(migrationContent).not.toContain('0047')
-    expect(migrationContent).not.toContain('0048')
+    // 0049 não tenta alterar 0047 ou 0048 (nenhuma chamada de mutação referenciando essas collections)
+    // As collections de 0047 são cer_practice_steps e cer_practice_reflections
+    // 0048 altera persistência de dose
+    // Verifica significativamente que coleções e tabelas exclusivas de 0047/0048 não sofrem mutações indevidas
+    expect(migrationContent).not.toMatch(/app\.delete\s*\(\s*['"]?cer_practice_reflections/)
+    expect(migrationContent).not.toMatch(/DROP\s+TABLE\s+cer_practice_reflections/i)
+    // Não executa código direcionado a alterar os arquivos ou registros de 0047/0048
+    const codeWithoutComments = migrationContent.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '')
+    expect(codeWithoutComments).not.toContain('0047')
+    expect(codeWithoutComments).not.toContain('0048')
   })
 })

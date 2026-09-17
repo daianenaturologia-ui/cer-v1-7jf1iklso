@@ -102,7 +102,7 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration Corretiva 00
 
   it('6. Down-migration restaura exclusivamente as rules anteriores da 0049 original e falha se collection não encontrada', () => {
     const downFunctionMatch = migration59Content.match(
-      /,\s*\(app\)\s*=>\s*\{([\s\S]*)\}\s*,\?\s*\)$/,
+      /,\s*\(app\)\s*=>\s*\{([\s\S]*)\}\s*,?\s*\)$/,
     )
     expect(downFunctionMatch).not.toBeNull()
     const downContent = downFunctionMatch![1]
@@ -138,5 +138,13 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration Corretiva 00
     expect(c58).not.toContain('fields.add')
     expect(c57).toContain('cer_practice_variant_steps')
     expect(c58).toContain('cer_practice_variant_steps')
+
+    // Validação da cadeia 0049 -> 0057 -> 0058 -> 0059 presente no repositório
+    const migration49Path = path.resolve(
+      process.cwd(),
+      'pocketbase/migrations/0049_structural_foundations_practice_variants_and_content.js',
+    )
+    expect(fs.existsSync(migration49Path)).toBe(true)
+    expect(fs.existsSync(migration59Path)).toBe(true)
   })
 })

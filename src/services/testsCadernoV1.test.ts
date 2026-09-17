@@ -66,17 +66,19 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
 
     it('1.2 cer_journal_entries: list/view/create/update estritamente vinculados ao participant_user_id', () => {
       expect(migration62Content).toContain("name: 'cer_journal_entries'")
-      expect(migration63Content).toContain(
-        'journalEntriesCol.listRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      // Normalização de whitespace e quebras de linha para comparação robusta
+      const normalized63 = migration63Content.replace(/\s+/g, ' ')
+      expect(normalized63).toContain(
+        'journalEntriesCol.listRule = "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
-      expect(migration63Content).toContain(
-        'journalEntriesCol.viewRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      expect(normalized63).toContain(
+        'journalEntriesCol.viewRule = "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
-      expect(migration63Content).toContain(
-        'journalEntriesCol.createRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      expect(normalized63).toContain(
+        'journalEntriesCol.createRule = "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
-      expect(migration63Content).toContain(
-        'journalEntriesCol.updateRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      expect(normalized63).toContain(
+        'journalEntriesCol.updateRule = "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
       expect(migration63Content).toContain('journalEntriesCol.deleteRule = null')
     })
@@ -106,8 +108,10 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
         'enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true',
       )
       // Drafts e recados retirados nunca são visíveis para profissional por viewRule ou listRule
-      expect(migration63Content).toContain(
-        'nextMsgCol.createRule =\n        "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
+      // Normalização de whitespace e quebras de linha para comparação robusta
+      const normalized63 = migration63Content.replace(/\s+/g, ' ')
+      expect(normalized63).toContain(
+        'nextMsgCol.createRule = "@request.auth.id != \'\' && participant_user_id = @request.auth.id"',
       )
     })
   })
@@ -174,12 +178,29 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
     })
 
     it('3.2 Signals derivation bloqueia derivação a partir de Caderno ou FreeReflection', () => {
+      // O hook server-side on_signal_derivation.js responde exclusivamente a experience_responses
       const signalDerivationPath = path.resolve(
         process.cwd(),
         'pocketbase/hooks/on_signal_derivation.js',
       )
+      expect(fs.existsSync(signalDerivationPath)).toBe(true)
       const signalDerivationContent = fs.readFileSync(signalDerivationPath, 'utf-8')
+
+      // Garante que FreeReflection NUNCA deriva Signal
       expect(signalDerivationContent).toContain('FreeReflection')
+
+      // Garante que o hook de derivação escuta exclusivamente experience_responses e cer_signals
+      expect(signalDerivationContent).not.toContain('cer_journal_entries')
+      expect(signalDerivationContent).not.toContain('cer_journal_entry_versions')
+      expect(signalDerivationContent).not.toContain('cer_next_session_messages')
+
+      // Confirma também que aiContextResolver proíbe explicitamente coleções do Caderno e participant_private
+      const aiResolverPath = path.resolve(process.cwd(), 'src/services/aiContextResolver.ts')
+      const aiResolverContent = fs.readFileSync(aiResolverPath, 'utf-8')
+      expect(aiResolverContent).not.toContain('cer_journal_entries')
+      expect(aiResolverContent).not.toContain('cer_journal_entry_versions')
+      expect(aiResolverContent).not.toContain('cer_next_session_messages')
+      expect(aiResolverContent).toContain("item.access_class === 'participant_private'")
     })
   })
 
@@ -275,9 +296,12 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
       expect(cadernoSectionContent).toContain('VoiceInputCapture')
       expect(cadernoSectionContent).toContain('showVoiceEntry')
       expect(cadernoSectionContent).toContain('showVoiceShare')
-      // Botão de iniciar fala no caderno e no recado
+      // Botão de iniciar fala no caderno e no recado com labels exatos do componente
       expect(cadernoSectionContent).toContain('Falar anotação por voz')
       expect(cadernoSectionContent).toContain('Falar recado por voz')
+      // Verifica integração com as propriedades do componente VoiceInputCapture
+      expect(cadernoSectionContent).toContain('targetLabel="anotação do Caderno"')
+      expect(cadernoSectionContent).toContain('targetLabel="recado para a terapeuta"')
     })
   })
 })
