@@ -100,6 +100,52 @@ async function main() {
     allPass = false
   }
 
+  // Emissão da tabela individual CAD-01..CAD-07 no $GITHUB_STEP_SUMMARY se presente
+  const summaryFile = process.env.GITHUB_STEP_SUMMARY
+  if (summaryFile) {
+    try {
+      const fs = await import('node:fs')
+      const summaryLines = []
+      summaryLines.push('### 🛡️ Prova de Privacidade do Caderno e Recados (CAD-01..07)')
+      summaryLines.push('')
+      summaryLines.push('| Cenário | Status | Descrição / Asserção | Detalhes |')
+      summaryLines.push('| :--- | :---: | :--- | :--- |')
+
+      for (const expectedId of expectedIds) {
+        const found = results.find((r) => r.id === expectedId)
+        if (found) {
+          const badge =
+            found.status === 'PASS'
+              ? '✅ PASS'
+              : found.status === 'FAIL'
+                ? '❌ FAIL'
+                : found.status === 'BLOCKED'
+                  ? '⚠️ BLOCKED'
+                  : '⚪ SKIPPED'
+          const safeName = (found.name || '').replace(/\|/g, '\\|')
+          const safeDetails = (found.details || '').replace(/\|/g, '\\|').replace(/\n/g, ' ')
+          summaryLines.push(`| **${expectedId}** | ${badge} | ${safeName} | ${safeDetails} |`)
+        } else {
+          summaryLines.push(
+            `| **${expectedId}** | ⚪ NÃO EXECUTADO | Cenário não reportado na suíte | Ausente do resultado |`,
+          )
+        }
+      }
+
+      summaryLines.push('')
+      summaryLines.push(
+        `**Resultado Geral:** ${allPass && results.length === 7 ? '✅ SUCESSO COMPLETO' : '❌ FALHA / BLOQUEIO'} (${passCount} PASS, ${failCount} FAIL, ${blockedCount} BLOCKED)`,
+      )
+      summaryLines.push('')
+
+      fs.appendFileSync(summaryFile, summaryLines.join('\n') + '\n', 'utf8')
+    } catch (sumErr) {
+      console.warn(
+        `[AVISO] Não foi possível gravar resumo em GITHUB_STEP_SUMMARY: ${sumErr instanceof Error ? sumErr.message : String(sumErr)}`,
+      )
+    }
+  }
+
   if (allPass && results.length === 7) {
     console.log(
       '\n[CONCLUSÃO] SUCESSO COMPROVADO: Todos os cenários CAD-01 a CAD-07 passaram com status PASS.',

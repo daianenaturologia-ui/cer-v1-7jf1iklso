@@ -106,28 +106,29 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
       }
     }
 
+    const runTimestamp = Date.now()
     const personInteragente = await adminPb.collection('persons').create({
       full_name: 'Ana Fictícia Caderno',
-      email: `ana_${Date.now()}@cer.local`,
+      email: `ana_${runTimestamp}_${Math.random().toString(36).slice(2, 6)}@cer.local`,
     })
     createdRecordIds.push({ collection: 'persons', id: personInteragente.id })
 
     const personProfissional = await adminPb.collection('persons').create({
       full_name: 'Dra. Fictícia Caderno',
-      email: `dra_${Date.now()}@cer.local`,
+      email: `dra_${runTimestamp}_${Math.random().toString(36).slice(2, 6)}@cer.local`,
     })
     createdRecordIds.push({ collection: 'persons', id: personProfissional.id })
 
     const personEstranho = await adminPb.collection('persons').create({
       full_name: 'Prof. Estranho Fictício',
-      email: `estranho_${Date.now()}@cer.local`,
+      email: `estranho_${runTimestamp}_${Math.random().toString(36).slice(2, 6)}@cer.local`,
     })
     createdRecordIds.push({ collection: 'persons', id: personEstranho.id })
 
     const pwd = 'TestPass123!Safe'
 
     const userInteragente = await adminPb.collection('users').create({
-      email: `ana_user_${Date.now()}@cer.local`,
+      email: `ana_user_${runTimestamp}_${Math.random().toString(36).slice(2, 6)}@cer.local`,
       password: pwd,
       passwordConfirm: pwd,
       person_id: personInteragente.id,
@@ -136,7 +137,7 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     createdRecordIds.push({ collection: 'users', id: userInteragente.id })
 
     const userProfissional = await adminPb.collection('users').create({
-      email: `dra_user_${Date.now()}@cer.local`,
+      email: `dra_user_${runTimestamp}_${Math.random().toString(36).slice(2, 6)}@cer.local`,
       password: pwd,
       passwordConfirm: pwd,
       person_id: personProfissional.id,
@@ -145,7 +146,7 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     createdRecordIds.push({ collection: 'users', id: userProfissional.id })
 
     const userEstranho = await adminPb.collection('users').create({
-      email: `estranho_user_${Date.now()}@cer.local`,
+      email: `estranho_user_${runTimestamp}_${Math.random().toString(36).slice(2, 6)}@cer.local`,
       password: pwd,
       passwordConfirm: pwd,
       person_id: personEstranho.id,
@@ -186,37 +187,49 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     })
     createdRecordIds.push({ collection: 'professional_enrollment_access', id: accessLink.id })
 
+    // Clientes independentes por ator (padrão PAV isolado):
+    // As sondas e verificações RLS dos cenários utilizam estritamente clientes comuns
+    // autenticados com as respectivas contas (authWithPassword).
+    const clientInteragente = new PocketBase(baseUrl)
+    clientInteragente.autoCancellation(false)
+    await clientInteragente.collection('users').authWithPassword(userInteragente.email, pwd)
+
+    const clientProfissional = new PocketBase(baseUrl)
+    clientProfissional.autoCancellation(false)
+    await clientProfissional.collection('users').authWithPassword(userProfissional.email, pwd)
+
+    const clientEstranho = new PocketBase(baseUrl)
+    clientEstranho.autoCancellation(false)
+    await clientEstranho.collection('users').authWithPassword(userEstranho.email, pwd)
+
     // -------------------------------------------------------------------------
     // CENÁRIO A: ANOTAÇÃO E VERSÕES DO CADERNO INVISÍVEIS À PROFISSIONAL
     // -------------------------------------------------------------------------
-    // Logar como interagente
-    await pb.collection('users').authWithPassword(userInteragente.email, pwd)
-
-    const journalEntry = await pb.collection('cer_journal_entries').create({
+    // Interagente cria anotação espontânea íntima
+    const journalEntry = await clientInteragente.collection('cer_journal_entries').create({
       enrollment_id: enrollment.id,
       participant_user_id: userInteragente.id,
       title: 'Minha anotação íntima',
       content: 'Conteúdo estritamente privado de teste',
       status: 'active',
+      access_class: 'participant_private',
+      version_number: 1,
     })
     createdRecordIds.push({ collection: 'cer_journal_entries', id: journalEntry.id })
 
     // Atualizar anotação para disparar geração de versão no hook
-    await pb.collection('cer_journal_entries').update(journalEntry.id, {
+    await clientInteragente.collection('cer_journal_entries').update(journalEntry.id, {
       content: 'Conteúdo atualizado íntimo',
       change_reason: 'correção reflexiva',
     })
 
-    // Logar como profissional vinculada
-    await pb.collection('users').authWithPassword(userProfissional.email, pwd)
-
-    // (CAD-01) Tentar listar cer_journal_entries
-    const profJournalList = await pb.collection('cer_journal_entries').getFullList({
+    // (CAD-01) Profissional vinculada tenta listar cer_journal_entries
+    const profJournalList = await clientProfissional.collection('cer_journal_entries').getFullList({
       filter: `enrollment_id = '${enrollment.id}'`,
     })
     let entryDirectViewBlocked = false
     try {
-      await pb.collection('cer_journal_entries').getOne(journalEntry.id)
+      await clientProfissional.collection('cer_journal_entries').getOne(journalEntry.id)
     } catch {
       entryDirectViewBlocked = true
     }
@@ -237,10 +250,12 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
       )
     }
 
-    // (CAD-02) Tentar listar versões do Caderno
-    const profVersionsList = await pb.collection('cer_journal_entry_versions').getFullList({
-      filter: `enrollment_id = '${enrollment.id}'`,
-    })
+    // (CAD-02) Profissional vinculada tenta listar versões do Caderno
+    const profVersionsList = await clientProfissional
+      .collection('cer_journal_entry_versions')
+      .getFullList({
+        filter: `enrollment_id = '${enrollment.id}'`,
+      })
     if (profVersionsList.length === 0) {
       log(
         'CAD-02',
@@ -260,26 +275,25 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     // -------------------------------------------------------------------------
     // CENÁRIO B: RASCUNHO DE RECADO INVISÍVEL À PROFISSIONAL VINCULADA
     // -------------------------------------------------------------------------
-    // Logar como interagente
-    await pb.collection('users').authWithPassword(userInteragente.email, pwd)
-
-    const draftMsg = await pb.collection('cer_next_session_messages').create({
+    // Interagente cria rascunho de recado (draft / participant_private)
+    const draftMsg = await clientInteragente.collection('cer_next_session_messages').create({
       enrollment_id: enrollment.id,
       participant_user_id: userInteragente.id,
       message_text: 'Rascunho de recado não enviado ainda',
       status: 'draft',
+      access_class: 'participant_private',
     })
     createdRecordIds.push({ collection: 'cer_next_session_messages', id: draftMsg.id })
 
-    // Logar como profissional vinculada
-    await pb.collection('users').authWithPassword(userProfissional.email, pwd)
-
-    const profDraftList = await pb.collection('cer_next_session_messages').getFullList({
-      filter: `enrollment_id = '${enrollment.id}' && status = 'draft'`,
-    })
+    // Profissional vinculada tenta listar e acessar por ID direto
+    const profDraftList = await clientProfissional
+      .collection('cer_next_session_messages')
+      .getFullList({
+        filter: `enrollment_id = '${enrollment.id}' && status = 'draft'`,
+      })
     let draftDirectViewBlocked = false
     try {
-      await pb.collection('cer_next_session_messages').getOne(draftMsg.id)
+      await clientProfissional.collection('cer_next_session_messages').getOne(draftMsg.id)
     } catch {
       draftDirectViewBlocked = true
     }
@@ -303,21 +317,25 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     // -------------------------------------------------------------------------
     // CENÁRIO C: RECADO APROVADO VISÍVEL APENAS À PROFISSIONAL VINCULADA
     // -------------------------------------------------------------------------
-    // Logar como interagente e aprovar o recado
-    await pb.collection('users').authWithPassword(userInteragente.email, pwd)
-    await pb.collection('cer_next_session_messages').update(draftMsg.id, {
+    // Interagente aprova o recado (transição para approved / shared_care)
+    await clientInteragente.collection('cer_next_session_messages').update(draftMsg.id, {
       status: 'approved',
+      access_class: 'shared_care',
       summary_text: 'Resumo aprovado do recado',
+      approved_at: new Date().toISOString(),
     })
 
-    // Logar como profissional vinculada
-    await pb.collection('users').authWithPassword(userProfissional.email, pwd)
-    const profApprovedList = await pb.collection('cer_next_session_messages').getFullList({
-      filter: `enrollment_id = '${enrollment.id}' && status = 'approved'`,
-    })
+    // Profissional vinculada lista e acessa o recado aprovado
+    const profApprovedList = await clientProfissional
+      .collection('cer_next_session_messages')
+      .getFullList({
+        filter: `enrollment_id = '${enrollment.id}' && status = 'approved'`,
+      })
     let approvedMsgDirect = null
     try {
-      approvedMsgDirect = await pb.collection('cer_next_session_messages').getOne(draftMsg.id)
+      approvedMsgDirect = await clientProfissional
+        .collection('cer_next_session_messages')
+        .getOne(draftMsg.id)
     } catch {
       approvedMsgDirect = null
     }
@@ -341,15 +359,13 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     // -------------------------------------------------------------------------
     // CENÁRIO CAD-06: ACESSO POR PROFISSIONAL NÃO VINCULADA É NEGADO
     // -------------------------------------------------------------------------
-    // Testado ANTES de retirar o recado, para provar que uma profissional estranha NÃO consegue
-    // ler o recado aprovado e ativo do enrollment da interagente.
-    await pb.collection('users').authWithPassword(userEstranho.email, pwd)
-    const estranhoList = await pb.collection('cer_next_session_messages').getFullList({
+    // Profissional estranha (sem vínculo ativo) tenta listar ou acessar o recado aprovado
+    const estranhoList = await clientEstranho.collection('cer_next_session_messages').getFullList({
       filter: `enrollment_id = '${enrollment.id}'`,
     })
     let estranhoGetBlocked = false
     try {
-      await pb.collection('cer_next_session_messages').getOne(draftMsg.id)
+      await clientEstranho.collection('cer_next_session_messages').getOne(draftMsg.id)
     } catch {
       estranhoGetBlocked = true
     }
@@ -380,12 +396,12 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     if (adminPb) {
       const person2 = await adminPb.collection('persons').create({
         full_name: 'Segunda Fictícia Caderno',
-        email: `segunda_${Date.now()}@cer.local`,
+        email: `segunda_${runTimestamp}_${Math.random().toString(36).slice(2, 6)}@cer.local`,
       })
       createdRecordIds.push({ collection: 'persons', id: person2.id })
 
       secondUser = await adminPb.collection('users').create({
-        email: `segunda_user_${Date.now()}@cer.local`,
+        email: `segunda_user_${runTimestamp}_${Math.random().toString(36).slice(2, 6)}@cer.local`,
         password: secondPwd,
         passwordConfirm: secondPwd,
         person_id: person2.id,
@@ -414,18 +430,22 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
         'Segunda participante não pôde ser criada no setup (cliente administrativo indisponível)',
       )
     } else {
-      // Autenticar cliente comum com a conta da segunda participante
-      await pb.collection('users').authWithPassword(secondUser.email, secondPwd)
+      // Cliente dedicado autenticado com a conta da segunda participante
+      const clientSegunda = new PocketBase(baseUrl)
+      clientSegunda.autoCancellation(false)
+      await clientSegunda.collection('users').authWithPassword(secondUser.email, secondPwd)
 
       // Tentar listar os recados do enrollment da primeira participante
-      const otherParticipantList = await pb.collection('cer_next_session_messages').getFullList({
-        filter: `enrollment_id = '${enrollment.id}'`,
-      })
+      const otherParticipantList = await clientSegunda
+        .collection('cer_next_session_messages')
+        .getFullList({
+          filter: `enrollment_id = '${enrollment.id}'`,
+        })
 
       // Tentar buscar diretamente por getOne o recado aprovado da primeira participante
       let otherParticipantGetBlocked = false
       try {
-        await pb.collection('cer_next_session_messages').getOne(draftMsg.id)
+        await clientSegunda.collection('cer_next_session_messages').getOne(draftMsg.id)
       } catch {
         otherParticipantGetBlocked = true
       }
@@ -450,20 +470,22 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     // -------------------------------------------------------------------------
     // CENÁRIO CAD-05: RECADO RETIRADO (WITHDRAWN) INACESSÍVEL POR LISTAGEM E ID DIRETO
     // -------------------------------------------------------------------------
-    // Logar como primeira interagente e retirar o recado
-    await pb.collection('users').authWithPassword(userInteragente.email, pwd)
-    await pb.collection('cer_next_session_messages').update(draftMsg.id, {
+    // Primeira interagente retira o recado (status withdrawn, access_class participant_private)
+    await clientInteragente.collection('cer_next_session_messages').update(draftMsg.id, {
       status: 'withdrawn',
+      access_class: 'participant_private',
+      withdrawn_at: new Date().toISOString(),
     })
 
-    // Logar como profissional vinculada
-    await pb.collection('users').authWithPassword(userProfissional.email, pwd)
-    const profWithdrawnList = await pb.collection('cer_next_session_messages').getFullList({
-      filter: `enrollment_id = '${enrollment.id}'`,
-    })
+    // Profissional vinculada tenta listar e acessar por ID direto
+    const profWithdrawnList = await clientProfissional
+      .collection('cer_next_session_messages')
+      .getFullList({
+        filter: `enrollment_id = '${enrollment.id}'`,
+      })
     let withdrawnDirectBlocked = false
     try {
-      await pb.collection('cer_next_session_messages').getOne(draftMsg.id)
+      await clientProfissional.collection('cer_next_session_messages').getOne(draftMsg.id)
     } catch {
       withdrawnDirectBlocked = true
     }
@@ -487,7 +509,26 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     if (err instanceof LiveBackendMutationBlockedError) {
       log('CAD-TRAVA', 'Trava de segurança acionada', 'BLOCKED', err.message)
     } else {
-      log('CAD-ERRO', 'Erro na execução dos testes do Caderno', 'FAIL', err?.message || String(err))
+      const httpCode = err?.response?.code || err?.status || err?.statusCode || 'N/A'
+      const responseData = err?.response?.data
+      let fieldReasons = ''
+      if (responseData && typeof responseData === 'object') {
+        const parts: string[] = []
+        for (const [key, val] of Object.entries(responseData)) {
+          if (val && typeof val === 'object' && 'message' in (val as Record<string, unknown>)) {
+            parts.push(`[${key}]: ${(val as { message: unknown }).message}`)
+          } else if (typeof val === 'string') {
+            parts.push(`[${key}]: ${val}`)
+          } else {
+            parts.push(`[${key}]: erro`)
+          }
+        }
+        if (parts.length > 0) {
+          fieldReasons = ` | Campos: ${parts.join(', ')}`
+        }
+      }
+      const sanitizedMessage = `HTTP ${httpCode}: ${err?.message || 'Erro inesperado'}${fieldReasons}`
+      log('CAD-ERRO', 'Erro na execução dos testes do Caderno', 'FAIL', sanitizedMessage)
     }
   } finally {
     // Teardown / limpeza de dados fictícios na bancada
