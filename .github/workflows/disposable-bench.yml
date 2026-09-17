@@ -153,3 +153,117 @@ jobs:
           echo ""
           echo "=== EXECUTANDO PROVA DE PRIVACIDADE CAD-01..07 ==="
           pnpm run test:caderno-privacy
+
+  # ============================================================================
+  # JOB 3: Verificação do Primeiro Atendimento (0.0.70 — PAV-01 a PAV-06)
+  # Executado em bancada descartável com 6 verificações reais contra a API
+  # ============================================================================
+  primeiro-atendimento-verification:
+    name: Primeiro Atendimento Verification (PAV-01..06)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.5.2
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download & Extract PocketBase 0.26.x
+        run: |
+          PB_VERSION="0.26.1"
+          echo "Baixando PocketBase oficial v${PB_VERSION} para linux_amd64..."
+          curl -sSL -o pb.zip "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip"
+          unzip -q pb.zip -d /usr/local/bin
+          chmod +x /usr/local/bin/pocketbase
+          pocketbase --version
+
+      - name: Run Primeiro Atendimento Verification on Disposable Bench
+        id: run_verification
+        env:
+          VITE_POCKETBASE_URL: 'http://127.0.0.1:8090'
+          CER_ALLOW_MUTABLE_TESTS: 'true'
+          CER_TEST_ENV: 'isolated'
+          CER_BENCH_SUPERUSER_EMAIL: 'bench-admin@cer.isolated'
+          CER_BENCH_SUPERUSER_PASSWORD: 'BenchAdminSecret123!'
+        run: |
+          set -euo pipefail
+
+          # 1. Criar workspace temporário efêmero (mktemp -d)
+          BENCH_TMP=$(mktemp -d /tmp/pb_primeiro_atendimento_XXXXXX)
+          echo "Diretório efêmero criado: ${BENCH_TMP}"
+
+          mkdir -p "${BENCH_TMP}/pb_migrations"
+          mkdir -p "${BENCH_TMP}/pb_hooks"
+          mkdir -p "${BENCH_TMP}/pb_data"
+
+          # 2. Copiar migrations e hooks do repositório
+          cp -r pocketbase/migrations/* "${BENCH_TMP}/pb_migrations/"
+          cp -r pocketbase/hooks/* "${BENCH_TMP}/pb_hooks/"
+
+          # 3. Criar superuser efêmero para permitir o bootstrap de dados de teste
+          echo "Criando superuser efêmero na base de dados descartável..."
+          pocketbase superuser upsert "${CER_BENCH_SUPERUSER_EMAIL}" "${CER_BENCH_SUPERUSER_PASSWORD}" \
+            --dir="${BENCH_TMP}/pb_data"
+
+          # 4. Iniciar PocketBase descartável em 127.0.0.1:8090
+          echo "Iniciando PocketBase em 127.0.0.1:8090..."
+          pocketbase serve \
+            --dir="${BENCH_TMP}/pb_data" \
+            --migrationsDir="${BENCH_TMP}/pb_migrations" \
+            --hooksDir="${BENCH_TMP}/pb_hooks" \
+            --http="127.0.0.1:8090" > "${BENCH_TMP}/pocketbase.log" 2>&1 &
+          PB_PID=$!
+          echo "PocketBase em execução com PID ${PB_PID}"
+
+          # Definir trap de limpeza rigoroso para teardown garantido
+          cleanup() {
+            echo ""
+            echo "=== TEARDOWN DA BANCADA DESCARTÁVEL ==="
+            if [ -n "${PB_PID:-}" ] && kill -0 "${PB_PID}" 2>/dev/null; then
+              echo "Encerrando processo PocketBase (PID ${PB_PID})..."
+              kill -TERM "${PB_PID}" || true
+              wait "${PB_PID}" 2>/dev/null || true
+            fi
+            if [ -d "${BENCH_TMP}" ]; then
+              echo "Destruindo diretório temporário: ${BENCH_TMP}"
+              rm -rf "${BENCH_TMP}"
+            fi
+            echo "Teardown concluído."
+          }
+          trap cleanup EXIT
+
+          # 5. Aguardar healthcheck em 127.0.0.1:8090/api/health
+          echo "Aguardando inicialização do PocketBase descartável..."
+          READY=0
+          for i in $(seq 1 30); do
+            if curl -fsSL "http://127.0.0.1:8090/api/health" > /dev/null 2>&1; then
+              echo "PocketBase pronto e respondendo em http://127.0.0.1:8090 após ${i}s."
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "${READY}" -ne 1 ]; then
+            echo "[ERRO FATAL] PocketBase não iniciou no tempo limite!"
+            echo "=== LOGS DO POCKETBASE ==="
+            cat "${BENCH_TMP}/pocketbase.log" || true
+            exit 1
+          fi
+
+          # 6. Executar suíte de verificação do Primeiro Atendimento (PAV-01 a PAV-06)
+          echo ""
+          echo "=== EXECUTANDO VERIFICAÇÃO DO PRIMEIRO ATENDIMENTO PAV-01..06 ==="
+          pnpm run test:primeiro-atendimento-verification

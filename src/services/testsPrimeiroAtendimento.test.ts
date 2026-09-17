@@ -75,4 +75,36 @@ describe('Primeiro Atendimento Funcional: Regras de Isolamento e Privacidade (CE
     expect(typeof cerJournalService.approveNextSessionMessage).toBe('function')
     expect(typeof cerJournalService.listApprovedMessagesForProfessional).toBe('function')
   })
+
+  it('PAF-06: Suíte de Verificação do Primeiro Atendimento (PAV-01..PAV-06) opera em conformidade fail-closed', async () => {
+    const { runPrimeiroAtendimentoVerificationTests } =
+      await import('./testsPrimeiroAtendimentoVerification')
+    const inspection = inspectTestEnvironment()
+    const results = await runPrimeiroAtendimentoVerificationTests()
+
+    expect(results.length).toBe(6)
+
+    if (!inspection.isAllowed) {
+      const nonBlocked = results.filter((r) => r.status !== 'BLOCKED')
+      expect(nonBlocked).toEqual([])
+      const blocked = results.filter((r) => r.status === 'BLOCKED')
+      expect(blocked.length).toBe(6)
+      for (const r of results) {
+        expect(r.details).toContain('bloqueada por trava de segurança')
+      }
+    } else {
+      const failed = results.filter((r) => r.status === 'FAIL')
+      expect(failed).toEqual([])
+      const passed = results.filter((r) => r.status === 'PASS')
+      expect(passed.length).toBe(6)
+    }
+
+    const ids = results.map((r) => r.id)
+    expect(ids).toContain('PAV-01')
+    expect(ids).toContain('PAV-02')
+    expect(ids).toContain('PAV-03')
+    expect(ids).toContain('PAV-04')
+    expect(ids).toContain('PAV-05')
+    expect(ids).toContain('PAV-06')
+  })
 })

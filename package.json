@@ -22,7 +22,8 @@
     "test:integration": "vitest run src/services/testsIntegrationSuites.test.ts src/services/testsCadernoPrivacyIntegration.test.ts",
     "test:regression": "vitest run src/services/testsCorrecao1A.test.ts src/services/testsLote3A.test.ts src/services/testsIntegrationSuites.test.ts src/services/testsMigration0049.test.ts src/services/testsMigration0059.test.ts src/services/testsCadernoV1.test.ts src/services/testsCadernoPrivacyIntegration.test.ts src/services/testsPrimeiroAtendimento.test.ts",
     "qa:practices": "node scripts/qa-practices.mjs",
-    "test:caderno-privacy": "node scripts/run-caderno-privacy.mjs"
+    "test:caderno-privacy": "node scripts/run-caderno-privacy.mjs",
+    "test:primeiro-atendimento-verification": "node scripts/run-primeiro-atendimento-verification.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
