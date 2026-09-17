@@ -50,6 +50,22 @@ const App = () => (
               }
             />
             <Route
+              path="/profissional/:enrollmentId"
+              element={
+                <ProtectedRoute>
+                  <ParticipantWorkspace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/app"
+              element={
+                <ProtectedRoute>
+                  <HomeDispatcher />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/profissional/biblioteca"
               element={
                 <ProtectedRoute>

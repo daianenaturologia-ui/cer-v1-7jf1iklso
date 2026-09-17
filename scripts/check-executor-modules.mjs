@@ -172,6 +172,7 @@ console.log('\n[ETAPA 3] Verificação de sintaxe (node --check) nos executores 
 const executors = [
   'scripts/run-caderno-privacy.mjs',
   'scripts/run-primeiro-atendimento-verification.mjs',
+  'scripts/run-pav-visual.mjs',
 ]
 
 for (const execPath of executors) {

@@ -264,7 +264,7 @@ export const ParticipantWorkspace: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-primary" />
                   <CardTitle className="text-sm font-semibold font-serif">
-                    Retorno da interagente sobre o próximo passo
+                    Retornos ao Próximo Passo
                   </CardTitle>
                 </div>
                 <Badge variant="outline" className="text-[10px] font-mono">
