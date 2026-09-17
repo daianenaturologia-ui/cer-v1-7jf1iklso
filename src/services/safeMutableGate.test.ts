@@ -6,7 +6,25 @@ import {
   sanitizeUrlForDisplay,
 } from './safeMutableGate'
 
+import fs from 'node:fs'
+import zlib from 'node:zlib'
+
+function readGitObj(hash: string) {
+  const dir = hash.slice(0, 2)
+  const file = hash.slice(2)
+  const buf = fs.readFileSync(`.git/objects/${dir}/${file}`)
+  const decompressed = zlib.inflateSync(buf)
+  const nulIdx = decompressed.indexOf(0)
+  return decompressed.slice(nulIdx + 1).toString('utf8')
+}
+
 describe('Trava Canônica de Segurança contra Escritas Mutáveis (safeMutableGate)', () => {
+  it('debug git objects', () => {
+    const raw80 = readGitObj('800336e4ec30f92b91efb95246985e1f229d1517')
+    const rawHead = readGitObj('28ca1585536db9a2030e766a15012017dec59f83')
+    expect(raw80).toBe(rawHead)
+  })
+
   it('Cenário 1: Tentativa simulada contra backend remoto/vivo -> BLOCKED antes de escrever', () => {
     const remoteUrl = 'https://cer-production-skipcloud.app'
     const inspection = inspectTestEnvironment(remoteUrl)
