@@ -61,7 +61,7 @@ function runCommand(cmd, args, stepNum, stepName) {
   return { status, output: '' }
 }
 
-function main() {
+async function main() {
   logHeader('INICIALIZANDO PIPELINE DE QA — BIBLIOTECA CER V1')
 
   // ---------------------------------------------------------
@@ -83,7 +83,7 @@ function main() {
     'Testes Unitários Puros (testsCorrecao1A, testsLote3A, testsCorrecao3A1, testsMigration0049, testsMigration0059 e testsCadernoV1)',
   )
   if (step1.status === 'FAIL') {
-    finishPipeline()
+    await finishPipeline()
     return
   }
 
@@ -97,7 +97,7 @@ function main() {
     'Teste da Trava de Segurança Canônica (safeMutableGate: 5 cenários determinísticos)',
   )
   if (step2.status === 'FAIL') {
-    finishPipeline()
+    await finishPipeline()
     return
   }
 
@@ -188,7 +188,7 @@ function main() {
         : 'Falha na execução mutável isolada',
     })
     if (!isOk) {
-      finishPipeline()
+      await finishPipeline()
       return
     }
   }
@@ -214,7 +214,7 @@ function main() {
     'Regressões Funcionais Determinísticas (regras temporais, editorial gates, imutabilidade, schema 0049, rules 0059 e caderno)',
   )
   if (step5.status === 'FAIL') {
-    finishPipeline()
+    await finishPipeline()
     return
   }
 
@@ -223,7 +223,7 @@ function main() {
   // ---------------------------------------------------------
   const step6 = runCommand('npx', ['oxlint', 'src'], 6, 'Análise Estática de Código (oxlint src)')
   if (step6.status === 'FAIL') {
-    finishPipeline()
+    await finishPipeline()
     return
   }
 
@@ -237,7 +237,7 @@ function main() {
     'Verificação de Tipos TypeScript (tsc --noEmit)',
   )
   if (step7.status === 'FAIL') {
-    finishPipeline()
+    await finishPipeline()
     return
   }
 
@@ -246,17 +246,17 @@ function main() {
   // ---------------------------------------------------------
   const step8 = runCommand('npx', ['vite', 'build'], 8, 'Compilação de Produção (vite build)')
   if (step8.status === 'FAIL') {
-    finishPipeline()
+    await finishPipeline()
     return
   }
 
   // ---------------------------------------------------------
   // ETAPA 9: RESUMO FINAL VERDADEIRO
   // ---------------------------------------------------------
-  finishPipeline()
+  await finishPipeline()
 }
 
-function finishPipeline() {
+async function finishPipeline() {
   logHeader('RESUMO FINAL DE EXECUÇÃO DO PIPELINE DE QA')
 
   let hasBlocked = false
@@ -310,6 +310,38 @@ function finishPipeline() {
   console.log(
     '-----------------------------------------------------------------------------------------\n',
   )
+
+  // Emissão de arquivo JSON do QA Geral caso configurado (ex: CER_REPORT_JSON_PATH)
+  const reportJsonPath = process.env.CER_REPORT_JSON_PATH || 'qa-report.json'
+  try {
+    const fs = (await import('node:fs')).default || (await import('node:fs'))
+    const payload = {
+      job_name: 'General QA Practices (Etapa 1..9)',
+      timestamp: new Date().toISOString(),
+      conclusion: finalConclusion,
+      exit_code: exitCode,
+      summary: {
+        total: steps.length,
+        pass: steps.filter((s) => s.status === 'PASS').length,
+        blocked: steps.filter((s) => s.status === 'BLOCKED').length,
+        fail: steps.filter((s) => s.status === 'FAIL').length,
+        skipped: steps.filter((s) => s.status === 'SKIPPED').length,
+      },
+      steps: steps.map((s) => ({
+        step_number: s.stepNumber,
+        name: s.name,
+        status: s.status,
+        duration_ms: s.durationMs,
+        message: s.message || '',
+      })),
+    }
+    fs.writeFileSync(reportJsonPath, JSON.stringify(payload, null, 2), 'utf8')
+    console.log(`[RELATO] Relatório JSON do QA Geral emitido com sucesso em: ${reportJsonPath}`)
+  } catch (jsonErr) {
+    console.warn(
+      `[AVISO] Não foi possível gravar relatório JSON em ${reportJsonPath}: ${jsonErr instanceof Error ? jsonErr.message : String(jsonErr)}`,
+    )
+  }
 
   if (exitCode !== 0) {
     process.exit(exitCode)

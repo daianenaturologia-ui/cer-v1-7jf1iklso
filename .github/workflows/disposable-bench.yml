@@ -7,6 +7,9 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -39,6 +42,70 @@ jobs:
 
       - name: Run General QA Practices Pipeline
         run: pnpm run qa:practices
+        env:
+          CER_REPORT_JSON_PATH: qa-report.json
+
+      - name: Publicar Status do Job QA Geral no branch run-status
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOB_STATUS: ${{ job.status }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            let report = null;
+            if (fs.existsSync("qa-report.json")) {
+              try {
+                report = JSON.parse(fs.readFileSync("qa-report.json", "utf8"));
+              } catch (e) {
+                console.warn("Falha ao ler qa-report.json:", e);
+              }
+            }
+
+            const statusPayload = {
+              job: "qa-general",
+              job_name: "General QA Practices (Etapa 1..9)",
+              sha: process.env.COMMIT_SHA,
+              conclusion: process.env.JOB_STATUS,
+              timestamp_utc: new Date().toISOString(),
+              run_id: process.env.RUN_ID,
+              run_number: process.env.RUN_NUMBER,
+              pipeline_conclusion: report?.conclusion || (process.env.JOB_STATUS === "success" ? "PASS" : "FAIL"),
+              summary: report?.summary || null,
+              steps: report?.steps || []
+            };
+
+            fs.writeFileSync("qa.json", JSON.stringify(statusPayload, null, 2), "utf8");
+          '
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin run-status:run-status || git branch run-status
+          git checkout run-status
+          git pull --rebase origin run-status || true
+
+          mv -f qa.json ./qa.json
+          git add qa.json
+
+          if git diff --staged --quiet; then
+            echo "Nenhuma alteração em qa.json para commitar."
+          else
+            git commit -m "chore(status): update qa.json [skip ci]"
+            for attempt in 1 2 3 4 5; do
+              echo "Tentativa de push ${attempt}..."
+              if git push origin run-status; then
+                echo "Push concluído com sucesso!"
+                break
+              fi
+              echo "Conflito concorrente detectado, reexecutando rebase..."
+              git fetch origin run-status
+              git rebase origin/run-status || (git rebase --abort && git pull --rebase -X theirs origin run-status)
+              sleep $((attempt * 2))
+            done
+          fi
 
   # ============================================================================
   # JOB 2: Prova de Privacidade do Caderno e Recados (CAD-01 a CAD-07)
@@ -86,6 +153,7 @@ jobs:
           CER_TEST_ENV: 'isolated'
           CER_BENCH_SUPERUSER_EMAIL: 'bench-admin@cer.isolated'
           CER_BENCH_SUPERUSER_PASSWORD: 'BenchAdminSecret123!'
+          CER_REPORT_JSON_PATH: 'caderno-report.json'
         run: |
           set -euo pipefail
 
@@ -157,6 +225,79 @@ jobs:
           echo "=== EXECUTANDO PROVA DE PRIVACIDADE CAD-01..07 ==="
           pnpm run test:caderno-privacy
 
+      - name: Publicar Status do Job Caderno Privacy no branch run-status
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOB_STATUS: ${{ job.status }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const expectedIds = ["CAD-01", "CAD-02", "CAD-03", "CAD-04", "CAD-05", "CAD-06", "CAD-07"];
+            let report = null;
+            if (fs.existsSync("caderno-report.json")) {
+              try {
+                report = JSON.parse(fs.readFileSync("caderno-report.json", "utf8"));
+              } catch (e) {
+                console.warn("Falha ao ler caderno-report.json:", e);
+              }
+            }
+
+            const scenarios = expectedIds.map(id => {
+              const found = report?.scenarios?.find(s => s.id === id);
+              if (found) return found;
+              return {
+                id,
+                status: process.env.JOB_STATUS === "success" ? "PASS" : "NÃO EXECUTADO",
+                description: "Prova de privacidade do caderno",
+                details: process.env.JOB_STATUS === "success" ? "Executado" : "Job interrompido antes ou durante a execução"
+              };
+            });
+
+            const statusPayload = {
+              job: "caderno-privacy-proof",
+              job_name: "Caderno Privacy Proof (CAD-01..07)",
+              sha: process.env.COMMIT_SHA,
+              conclusion: process.env.JOB_STATUS,
+              timestamp_utc: new Date().toISOString(),
+              run_id: process.env.RUN_ID,
+              run_number: process.env.RUN_NUMBER,
+              summary: report?.summary || null,
+              scenarios
+            };
+
+            fs.writeFileSync("caderno.json", JSON.stringify(statusPayload, null, 2), "utf8");
+          '
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin run-status:run-status || git branch run-status
+          git checkout run-status
+          git pull --rebase origin run-status || true
+
+          mv -f caderno.json ./caderno.json
+          git add caderno.json
+
+          if git diff --staged --quiet; then
+            echo "Nenhuma alteração em caderno.json para commitar."
+          else
+            git commit -m "chore(status): update caderno.json [skip ci]"
+            for attempt in 1 2 3 4 5; do
+              echo "Tentativa de push ${attempt}..."
+              if git push origin run-status; then
+                echo "Push concluído com sucesso!"
+                break
+              fi
+              echo "Conflito concorrente detectado, reexecutando rebase..."
+              git fetch origin run-status
+              git rebase origin/run-status || (git rebase --abort && git pull --rebase -X theirs origin run-status)
+              sleep $((attempt * 2))
+            done
+          fi
+
   # ============================================================================
   # JOB 3: Verificação do Primeiro Atendimento (0.0.70 — PAV-01 a PAV-06)
   # Executado em bancada descartável com 6 verificações reais contra a API
@@ -203,6 +344,7 @@ jobs:
           CER_TEST_ENV: 'isolated'
           CER_BENCH_SUPERUSER_EMAIL: 'bench-admin@cer.isolated'
           CER_BENCH_SUPERUSER_PASSWORD: 'BenchAdminSecret123!'
+          CER_REPORT_JSON_PATH: 'pav-report.json'
         run: |
           set -euo pipefail
 
@@ -274,6 +416,79 @@ jobs:
           echo "=== EXECUTANDO VERIFICAÇÃO DO PRIMEIRO ATENDIMENTO PAV-01..06 ==="
           pnpm run test:primeiro-atendimento-verification
 
+      - name: Publicar Status do Job Primeiro Atendimento no branch run-status
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOB_STATUS: ${{ job.status }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const expectedIds = ["PAV-01", "PAV-02", "PAV-03", "PAV-04", "PAV-05", "PAV-06"];
+            let report = null;
+            if (fs.existsSync("pav-report.json")) {
+              try {
+                report = JSON.parse(fs.readFileSync("pav-report.json", "utf8"));
+              } catch (e) {
+                console.warn("Falha ao ler pav-report.json:", e);
+              }
+            }
+
+            const scenarios = expectedIds.map(id => {
+              const found = report?.scenarios?.find(s => s.id === id);
+              if (found) return found;
+              return {
+                id,
+                status: process.env.JOB_STATUS === "success" ? "PASS" : "NÃO EXECUTADO",
+                description: "Verificação funcional do primeiro atendimento",
+                details: process.env.JOB_STATUS === "success" ? "Executado" : "Job interrompido antes ou durante a execução"
+              };
+            });
+
+            const statusPayload = {
+              job: "primeiro-atendimento-verification",
+              job_name: "Primeiro Atendimento Verification (PAV-01..06)",
+              sha: process.env.COMMIT_SHA,
+              conclusion: process.env.JOB_STATUS,
+              timestamp_utc: new Date().toISOString(),
+              run_id: process.env.RUN_ID,
+              run_number: process.env.RUN_NUMBER,
+              summary: report?.summary || null,
+              scenarios
+            };
+
+            fs.writeFileSync("pav.json", JSON.stringify(statusPayload, null, 2), "utf8");
+          '
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin run-status:run-status || git branch run-status
+          git checkout run-status
+          git pull --rebase origin run-status || true
+
+          mv -f pav.json ./pav.json
+          git add pav.json
+
+          if git diff --staged --quiet; then
+            echo "Nenhuma alteração em pav.json para commitar."
+          else
+            git commit -m "chore(status): update pav.json [skip ci]"
+            for attempt in 1 2 3 4 5; do
+              echo "Tentativa de push ${attempt}..."
+              if git push origin run-status; then
+                echo "Push concluído com sucesso!"
+                break
+              fi
+              echo "Conflito concorrente detectado, reexecutando rebase..."
+              git fetch origin run-status
+              git rebase origin/run-status || (git rebase --abort && git pull --rebase -X theirs origin run-status)
+              sleep $((attempt * 2))
+            done
+          fi
+
   # ============================================================================
   # JOB 4: Visual Demo — Primeiro Atendimento (Conferência Visual no Navegador)
   # Executado em bancada descartável com Playwright Chromium headless e Vite preview
@@ -330,6 +545,7 @@ jobs:
           CER_BENCH_SUPERUSER_PASSWORD: 'BenchAdminSecret123!'
           APP_URL: 'http://127.0.0.1:4173'
           VISUAL_ARTIFACTS_DIR: '${{ github.workspace }}/demo-visual-primeiro-atendimento'
+          CER_REPORT_JSON_PATH: 'visual-demo-report.json'
         run: |
           set -euo pipefail
 
@@ -438,3 +654,88 @@ jobs:
           path: demo-visual-primeiro-atendimento/
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Publicar Status do Job Visual Demo no branch run-status
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOB_STATUS: ${{ job.status }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            let report = null;
+            if (fs.existsSync("visual-demo-report.json")) {
+              try {
+                report = JSON.parse(fs.readFileSync("visual-demo-report.json", "utf8"));
+              } catch (e) {
+                console.warn("Falha ao ler visual-demo-report.json:", e);
+              }
+            }
+
+            const defaultSteps = [
+              { num: 1, id: "01-relato-rascunho", title: "Interagente A: Relato Inicial em Rascunho" },
+              { num: 2, id: "02-relato-enviado", title: "Interagente A: Relato Enviado para Daiane" },
+              { num: 3, id: "03-prontuario-relato", title: "Profissional: Prontuário com Relato Recebido" },
+              { num: 4, id: "04-nota-privada", title: "Profissional: Sessão Manual e Nota Privada" },
+              { num: 5, id: "05-plano-compartilhado", title: "Profissional: Plano de Cuidado Compartilhado" },
+              { num: 6, id: "06-retorno-proximo-passo", title: "Interagente A: Retorno ao Próximo Passo" },
+              { num: 7, id: "07-retorno-no-prontuario", title: "Profissional: Retorno da Interagente no Prontuário" },
+              { num: 8, id: "08-interagente-b-sem-acesso", title: "Interagente B: Isolamento Estrito" }
+            ];
+
+            const steps = defaultSteps.map(ds => {
+              const found = report?.steps?.find(s => s.num === ds.num || s.id === ds.id);
+              if (found) return found;
+              return {
+                num: ds.num,
+                id: ds.id,
+                title: ds.title,
+                status: process.env.JOB_STATUS === "success" ? "PASS" : "NÃO EXECUTADO",
+                note: process.env.JOB_STATUS === "success" ? "" : "Job interrompido antes ou durante a etapa"
+              };
+            });
+
+            const statusPayload = {
+              job: "visual-demo-primeiro-atendimento",
+              job_name: "Visual Demo — Primeiro Atendimento",
+              sha: process.env.COMMIT_SHA,
+              conclusion: process.env.JOB_STATUS,
+              timestamp_utc: new Date().toISOString(),
+              run_id: process.env.RUN_ID,
+              run_number: process.env.RUN_NUMBER,
+              all_success: report ? report.all_success : (process.env.JOB_STATUS === "success"),
+              failure_reason: report?.failure_reason || (process.env.JOB_STATUS === "success" ? null : "Job falhou antes de concluir"),
+              steps
+            };
+
+            fs.writeFileSync("visual-demo.json", JSON.stringify(statusPayload, null, 2), "utf8");
+          '
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin run-status:run-status || git branch run-status
+          git checkout run-status
+          git pull --rebase origin run-status || true
+
+          mv -f visual-demo.json ./visual-demo.json
+          git add visual-demo.json
+
+          if git diff --staged --quiet; then
+            echo "Nenhuma alteração em visual-demo.json para commitar."
+          else
+            git commit -m "chore(status): update visual-demo.json [skip ci]"
+            for attempt in 1 2 3 4 5; do
+              echo "Tentativa de push ${attempt}..."
+              if git push origin run-status; then
+                echo "Push concluído com sucesso!"
+                break
+              fi
+              echo "Conflito concorrente detectado, reexecutando rebase..."
+              git fetch origin run-status
+              git rebase origin/run-status || (git rebase --abort && git pull --rebase -X theirs origin run-status)
+              sleep $((attempt * 2))
+            done
+          fi

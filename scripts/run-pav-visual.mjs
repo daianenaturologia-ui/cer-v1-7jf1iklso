@@ -126,6 +126,33 @@ const stepStatuses = STEP_DEFINITIONS.map((def) => ({
 }))
 
 function writeGitHubSummary(allSuccess, failureReason) {
+  // Emissão de relatório JSON caso configurado (ex: CER_REPORT_JSON_PATH)
+  const reportJsonPath = process.env.CER_REPORT_JSON_PATH || 'visual-demo-report.json'
+  try {
+    const stepsPayload = stepStatuses.map((s) => ({
+      num: s.num,
+      id: s.id,
+      title: s.title,
+      filename: s.filename,
+      status: s.status === 'COMPLETA' ? 'PASS' : s.status === 'PAROU' ? 'FAIL' : 'NÃO EXECUTADO',
+      note: s.note || '',
+    }))
+
+    const payload = {
+      job_name: 'Visual Demo — Primeiro Atendimento',
+      timestamp: new Date().toISOString(),
+      all_success: allSuccess,
+      failure_reason: failureReason || null,
+      steps: stepsPayload,
+    }
+    fs.writeFileSync(reportJsonPath, JSON.stringify(payload, null, 2), 'utf8')
+    console.log(`[RELATO] Relatório JSON visual emitido com sucesso em: ${reportJsonPath}`)
+  } catch (jsonErr) {
+    console.warn(
+      `[AVISO] Não foi possível gravar relatório JSON em ${reportJsonPath}: ${jsonErr instanceof Error ? jsonErr.message : String(jsonErr)}`,
+    )
+  }
+
   const summaryFile = process.env.GITHUB_STEP_SUMMARY
   if (!summaryFile) return
 

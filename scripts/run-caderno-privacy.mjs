@@ -100,6 +100,41 @@ async function main() {
     allPass = false
   }
 
+  // Emissão de arquivo JSON de resultados caso configurado (ex: CER_REPORT_JSON_PATH)
+  const reportJsonPath = process.env.CER_REPORT_JSON_PATH || 'caderno-report.json'
+  try {
+    const fs = await import('node:fs')
+    const scenarios = expectedIds.map((expectedId) => {
+      const found = results.find((r) => r.id === expectedId)
+      return {
+        id: expectedId,
+        status: found ? found.status : 'NÃO EXECUTADO',
+        description: found?.name || 'Cenário não reportado na suíte',
+        details: found?.details || 'Ausente do resultado',
+      }
+    })
+
+    const payload = {
+      job_name: 'Caderno Privacy Proof (CAD-01..07)',
+      timestamp: new Date().toISOString(),
+      duration_ms: totalDuration,
+      summary: {
+        total: results.length,
+        pass: passCount,
+        fail: failCount,
+        blocked: blockedCount,
+        all_pass: allPass && results.length === 7,
+      },
+      scenarios,
+    }
+    fs.writeFileSync(reportJsonPath, JSON.stringify(payload, null, 2), 'utf8')
+    console.log(`[RELATO] Relatório JSON emitido com sucesso em: ${reportJsonPath}`)
+  } catch (jsonErr) {
+    console.warn(
+      `[AVISO] Não foi possível gravar relatório JSON em ${reportJsonPath}: ${jsonErr instanceof Error ? jsonErr.message : String(jsonErr)}`,
+    )
+  }
+
   // Emissão da tabela individual CAD-01..CAD-07 no $GITHUB_STEP_SUMMARY se presente
   const summaryFile = process.env.GITHUB_STEP_SUMMARY
   if (summaryFile) {
