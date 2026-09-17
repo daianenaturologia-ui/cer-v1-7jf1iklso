@@ -77,9 +77,10 @@ function main() {
       'src/services/testsCorrecao3A1.test.ts',
       'src/services/testsMigration0049.test.ts',
       'src/services/testsMigration0059.test.ts',
+      'src/services/testsCadernoV1.test.ts',
     ],
     1,
-    'Testes Unitários Puros (testsCorrecao1A, testsLote3A, testsCorrecao3A1, testsMigration0049 e testsMigration0059: casos canônicos de dose, reflexão, schema 0049 e rules 0059)',
+    'Testes Unitários Puros (testsCorrecao1A, testsLote3A, testsCorrecao3A1, testsMigration0049, testsMigration0059 e testsCadernoV1)',
   )
   if (step1.status === 'FAIL') {
     finishPipeline()
@@ -128,7 +129,9 @@ function main() {
   // ---------------------------------------------------------
   // ETAPA 4: INTEGRAÇÃO MUTÁVEL (SOMENTE SE ISOLADO AUTORIZADO)
   // ---------------------------------------------------------
-  console.log(`\n>>> [Etapa 4/9] Iniciando: Testes de Integração Mutáveis (7.A, 7.B, 7.C, 3.A)...`)
+  console.log(
+    `\n>>> [Etapa 4/9] Iniciando: Testes de Integração Mutáveis (7.A, 7.B, 7.C, 3.A, Caderno)...`,
+  )
   const start4 = Date.now()
 
   if (!inspection.isAllowed) {
@@ -139,14 +142,23 @@ function main() {
     )
 
     // Executamos a suíte de verificação que comprova que as integrações retornam BLOCKED
-    spawnSync('npx', ['vitest', 'run', 'src/services/testsIntegrationSuites.test.ts'], {
-      stdio: 'inherit',
-      env: process.env,
-    })
+    spawnSync(
+      'npx',
+      [
+        'vitest',
+        'run',
+        'src/services/testsIntegrationSuites.test.ts',
+        'src/services/testsCadernoPrivacyIntegration.test.ts',
+      ],
+      {
+        stdio: 'inherit',
+        env: process.env,
+      },
+    )
 
     steps.push({
       stepNumber: 4,
-      name: 'Integração Mutável (7.A, 7.B, 7.C, 3.A)',
+      name: 'Integração Mutável (7.A, 7.B, 7.C, 3.A, Caderno)',
       status: 'BLOCKED',
       durationMs: Date.now() - start4,
       message: `BLOQUEADO: ${inspection.blockReason}. Suíte de segurança comprovou bloqueio sem escritas.`,
@@ -156,13 +168,18 @@ function main() {
     console.log(`[AUTORIZADO] Executando testes mutáveis em instância local isolada...`)
     const step4Run = spawnSync(
       'npx',
-      ['vitest', 'run', 'src/services/testsIntegrationSuites.test.ts'],
+      [
+        'vitest',
+        'run',
+        'src/services/testsIntegrationSuites.test.ts',
+        'src/services/testsCadernoPrivacyIntegration.test.ts',
+      ],
       { stdio: 'inherit', env: process.env },
     )
     const isOk = step4Run.status === 0
     steps.push({
       stepNumber: 4,
-      name: 'Integração Mutável (7.A, 7.B, 7.C, 3.A)',
+      name: 'Integração Mutável (7.A, 7.B, 7.C, 3.A, Caderno)',
       status: isOk ? 'PASS' : 'FAIL',
       durationMs: Date.now() - start4,
       message: isOk ? 'Integração isolada concluída' : 'Falha na execução mutável isolada',
@@ -187,9 +204,11 @@ function main() {
       'src/services/testsIntegrationSuites.test.ts',
       'src/services/testsMigration0049.test.ts',
       'src/services/testsMigration0059.test.ts',
+      'src/services/testsCadernoV1.test.ts',
+      'src/services/testsCadernoPrivacyIntegration.test.ts',
     ],
     5,
-    'Regressões Funcionais Determinísticas (regras temporais, editorial gates, imutabilidade, schema 0049 e rules 0059)',
+    'Regressões Funcionais Determinísticas (regras temporais, editorial gates, imutabilidade, schema 0049, rules 0059 e caderno)',
   )
   if (step5.status === 'FAIL') {
     finishPipeline()

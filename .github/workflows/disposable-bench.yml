@@ -1,0 +1,124 @@
+name: PocketBase Disposable Test Bench & QA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  disposable-bench-and-qa:
+    name: Bancada Descartável PocketBase & Suítes de Teste
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Disposable PocketBase Bench (v0.26.1)
+        id: pb-bench
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PB_VERSION="0.26.1"
+          PB_ARCH="linux_amd64"
+          echo ">>> [BANCADA] Baixando binário oficial PocketBase v${PB_VERSION}..."
+          curl -sSL "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_${PB_ARCH}.zip" -o /tmp/pocketbase.zip
+          unzip -q /tmp/pocketbase.zip -d /tmp/pb_bin
+          chmod +x /tmp/pb_bin/pocketbase
+
+          TMP_PB_DIR=$(mktemp -d /tmp/pb_cer_isolated_XXXXXX)
+          echo "TMP_PB_DIR=${TMP_PB_DIR}" >> $GITHUB_ENV
+          echo ">>> [BANCADA] Diretório efêmero criado: ${TMP_PB_DIR}"
+
+          mkdir -p "${TMP_PB_DIR}/pb_migrations"
+          mkdir -p "${TMP_PB_DIR}/pb_hooks"
+          mkdir -p "${TMP_PB_DIR}/pb_data"
+
+          cp -r pocketbase/migrations/*.js "${TMP_PB_DIR}/pb_migrations/"
+          cp -r pocketbase/hooks/*.js "${TMP_PB_DIR}/pb_hooks/"
+
+          echo ">>> [BANCADA] Inicializando PocketBase isolado em loopback 127.0.0.1:8090..."
+          /tmp/pb_bin/pocketbase serve \
+            --dir="${TMP_PB_DIR}/pb_data" \
+            --migrationsDir="${TMP_PB_DIR}/pb_migrations" \
+            --hooksDir="${TMP_PB_DIR}/pb_hooks" \
+            --http="127.0.0.1:8090" > "${TMP_PB_DIR}/pb.log" 2>&1 &
+
+          PB_PID=$!
+          echo "PB_PID=${PB_PID}" >> $GITHUB_ENV
+          echo ">>> [BANCADA] Processo iniciado com PID: ${PB_PID}"
+
+          # Health check com timeout de 30s
+          echo ">>> [BANCADA] Aguardando inicialização e migrações limpas..."
+          for i in {1..30}; do
+            if curl -s -f http://127.0.0.1:8090/api/health > /dev/null; then
+              echo ">>> [BANCADA] PocketBase respondeu com sucesso ao health check (tentativa $i)!"
+              break
+            fi
+            sleep 1
+          done
+
+          if ! curl -s -f http://127.0.0.1:8090/api/health > /dev/null; then
+            echo "ERRO FATAL: PocketBase não respondeu ao health check após 30 segundos!"
+            cat "${TMP_PB_DIR}/pb.log"
+            kill -9 "${PB_PID}" || true
+            exit 1
+          fi
+
+      - name: Run Disposable Bench & QA Verification
+        shell: bash
+        env:
+          VITE_POCKETBASE_URL: 'http://127.0.0.1:8090'
+          CER_ALLOW_MUTABLE_TESTS: 'true'
+          CER_TEST_ENV: 'isolated'
+        run: |
+          node scripts/qa-practices.mjs
+
+      - name: Teardown and Erase Disposable Bench
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${PB_PID:-}" ] && kill -0 "${PB_PID}" 2>/dev/null; then
+            echo ">>> [TEARDOWN] Finalizando processo PocketBase PID ${PB_PID}..."
+            kill "${PB_PID}" || true
+            wait "${PB_PID}" 2>/dev/null || true
+          fi
+
+          if [[ "${TMP_PB_DIR:-}" =~ ^/tmp/pb_cer_isolated_[A-Za-z0-9]+$ ]]; then
+            echo ">>> [TEARDOWN] Destruindo diretório temporário efêmero: ${TMP_PB_DIR}"
+            rm -rf "${TMP_PB_DIR}"
+          fi
