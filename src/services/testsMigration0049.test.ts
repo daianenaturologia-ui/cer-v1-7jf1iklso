@@ -37,7 +37,7 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration 0049', () =>
   it('3. Coleção cer_practice_variant_steps possui rules estruturais corretas e imutabilidade de escrita', () => {
     // Isolamento do bloco de criação de cer_practice_variant_steps (aceita let ... = null seguido de atribuição)
     const variantBlockMatch = migrationContent.match(
-      /(?:const|let)\s+variantStepsCol\s*=\s*(?:null\s*;\s*[\s\S]*?)?new Collection\(\{([\s\S]*?)\}\)\s*app\.save\(variantStepsCol\)/,
+      /(?:const|let)\s+variantStepsCol\s*=\s*(?:null\s*;?\s*[\s\S]*?)?new Collection\(\{([\s\S]*?)\}\)\s*app\.save\(variantStepsCol\)/,
     )
     expect(variantBlockMatch).not.toBeNull()
     const variantBlock = variantBlockMatch![1]
@@ -57,7 +57,7 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration 0049', () =>
   it('4. Coleção cer_practice_step_professional_content possui CRUD mutável nulo e regras list/view com branch profissional E admin', () => {
     // Isolamento do bloco de criação de cer_practice_step_professional_content (aceita let ... = null seguido de atribuição)
     const profBlockMatch = migrationContent.match(
-      /(?:const|let)\s+stepProfContentCol\s*=\s*(?:null\s*;\s*[\s\S]*?)?new Collection\(\{([\s\S]*?)\}\)\s*app\.save\(stepProfContentCol\)/,
+      /(?:const|let)\s+stepProfContentCol\s*=\s*(?:null\s*;?\s*[\s\S]*?)?new Collection\(\{([\s\S]*?)\}\)\s*app\.save\(stepProfContentCol\)/,
     )
     expect(profBlockMatch).not.toBeNull()
     const profBlock = profBlockMatch![1]
