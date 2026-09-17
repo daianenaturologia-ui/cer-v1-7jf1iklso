@@ -134,7 +134,7 @@ export async function runPrimeiroAtendimentoVerificationTests(): Promise<
       is_active: true,
     })
 
-    // 2. Interagente A Fictícia: Alice Fictícia
+    // 2. Interagente A Fictícia: Alice Fictícia (enrollment A)
     const personAlice = await adminPb.collection('persons').create({
       full_name: 'Alice da Silva Fictícia',
       preferred_name: 'Alice',
@@ -157,30 +157,7 @@ export async function runPrimeiroAtendimentoVerificationTests(): Promise<
       is_active: true,
     })
 
-    // 3. Interagente A2 Fictícia (segunda interagente no mesmo enrollment ou perfil alternativo)
-    const personA2 = await adminPb.collection('persons').create({
-      full_name: 'Alice Co-Interagente Fictícia',
-      preferred_name: 'Alice2',
-      email: `alice2_${testRunId}@cer.local`,
-    })
-    createdRecordIds.push({ collection: 'persons', id: personA2.id })
-
-    const userA2 = await adminPb.collection('users').create({
-      email: `alice2_user_${testRunId}@cer.local`,
-      password: defaultPwd,
-      passwordConfirm: defaultPwd,
-      person_id: personA2.id,
-      status: 'active',
-    })
-    createdRecordIds.push({ collection: 'users', id: userA2.id })
-
-    await adminPb.collection('user_roles').create({
-      user_id: userA2.id,
-      role: 'interagente',
-      is_active: true,
-    })
-
-    // 4. Interagente B Fictícia (Controle, não vinculada ao enrollment de A)
+    // 3. Interagente B Fictícia (Controle, enrollment B distinto, não vinculada ao enrollment de A)
     const personBeatriz = await adminPb.collection('persons').create({
       full_name: 'Beatriz Controle Fictícia',
       preferred_name: 'Beatriz',
@@ -586,7 +563,7 @@ export async function runPrimeiroAtendimentoVerificationTests(): Promise<
     }
 
     // =========================================================================
-    // PONTO 6: Interagente B (não vinculada ao enrollment de A / segunda interagente)
+    // PONTO 6: Interagente B (Controle com enrollment B distinto, não vinculada ao enrollment de A)
     // NÃO consegue listar nem abrir por ID real:
     // - O relato de A (draftMsg.id)
     // - O plano de A (carePlanRec.id)
