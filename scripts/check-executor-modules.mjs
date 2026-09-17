@@ -41,8 +41,10 @@ let hasFailure = false
 // -----------------------------------------------------------------------------
 console.log('[ETAPA 1] Testando importação em Node puro com VITE_POCKETBASE_URL configurada...')
 const expectedUrl = 'http://127.0.0.1:8090'
-const clientFile = path.join(rootDir, 'src', 'lib', 'pocketbase', 'client.ts')
-const gateFile = path.join(rootDir, 'src', 'services', 'safeMutableGate.ts')
+const clientFile =
+  process.env.CER_CLIENT_FILE || path.join(rootDir, 'src', 'lib', 'pocketbase', 'client.ts')
+const gateFile =
+  process.env.CER_GATE_FILE || path.join(rootDir, 'src', 'services', 'safeMutableGate.ts')
 
 try {
   const runnerScript = `
