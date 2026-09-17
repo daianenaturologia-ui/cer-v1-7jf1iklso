@@ -273,3 +273,168 @@ jobs:
           echo ""
           echo "=== EXECUTANDO VERIFICAÇÃO DO PRIMEIRO ATENDIMENTO PAV-01..06 ==="
           pnpm run test:primeiro-atendimento-verification
+
+  # ============================================================================
+  # JOB 4: Visual Demo — Primeiro Atendimento (Conferência Visual no Navegador)
+  # Executado em bancada descartável com Playwright Chromium headless e Vite preview
+  # ============================================================================
+  visual-demo-primeiro-atendimento:
+    name: Visual Demo — Primeiro Atendimento
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.5.2
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium with dependencies
+        run: npx playwright install chromium --with-deps
+
+      - name: Trava de CI — Integridade de Módulos Node dos Executores
+        run: node scripts/check-executor-modules.mjs
+
+      - name: Download & Extract PocketBase 0.26.x
+        run: |
+          PB_VERSION="0.26.1"
+          echo "Baixando PocketBase oficial v${PB_VERSION} para linux_amd64..."
+          curl -sSL -o pb.zip "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip"
+          unzip -q pb.zip -d /usr/local/bin
+          chmod +x /usr/local/bin/pocketbase
+          pocketbase --version
+
+      - name: Build Vite App for Disposable Bench
+        env:
+          VITE_POCKETBASE_URL: 'http://127.0.0.1:8090'
+        run: pnpm run build
+
+      - name: Run Visual Demo Flow on Disposable Bench
+        id: run_visual_demo
+        env:
+          VITE_POCKETBASE_URL: 'http://127.0.0.1:8090'
+          CER_ALLOW_MUTABLE_TESTS: 'true'
+          CER_TEST_ENV: 'isolated'
+          CER_BENCH_SUPERUSER_EMAIL: 'bench-admin@cer.isolated'
+          CER_BENCH_SUPERUSER_PASSWORD: 'BenchAdminSecret123!'
+          APP_URL: 'http://127.0.0.1:4173'
+          VISUAL_ARTIFACTS_DIR: '${{ github.workspace }}/demo-visual-primeiro-atendimento'
+        run: |
+          set -euo pipefail
+
+          # 1. Criar workspace temporário efêmero (mktemp -d)
+          BENCH_TMP=$(mktemp -d /tmp/pb_visual_demo_XXXXXX)
+          echo "Diretório efêmero criado: ${BENCH_TMP}"
+
+          mkdir -p "${BENCH_TMP}/pb_migrations"
+          mkdir -p "${BENCH_TMP}/pb_hooks"
+          mkdir -p "${BENCH_TMP}/pb_data"
+
+          # 2. Copiar migrations e hooks do repositório
+          cp -r pocketbase/migrations/* "${BENCH_TMP}/pb_migrations/"
+          cp -r pocketbase/hooks/* "${BENCH_TMP}/pb_hooks/"
+
+          # 3. Criar superuser efêmero para permitir o bootstrap de dados de teste
+          echo "Criando superuser efêmero na base de dados descartável..."
+          pocketbase superuser upsert "${CER_BENCH_SUPERUSER_EMAIL}" "${CER_BENCH_SUPERUSER_PASSWORD}" \
+            --dir="${BENCH_TMP}/pb_data"
+
+          # 4. Iniciar PocketBase descartável em 127.0.0.1:8090
+          echo "Iniciando PocketBase em 127.0.0.1:8090..."
+          pocketbase serve \
+            --dir="${BENCH_TMP}/pb_data" \
+            --migrationsDir="${BENCH_TMP}/pb_migrations" \
+            --hooksDir="${BENCH_TMP}/pb_hooks" \
+            --http="127.0.0.1:8090" > "${BENCH_TMP}/pocketbase.log" 2>&1 &
+          PB_PID=$!
+          echo "PocketBase em execução com PID ${PB_PID}"
+
+          # 5. Iniciar Vite Preview em 127.0.0.1:4173
+          echo "Iniciando Vite Preview em 127.0.0.1:4173..."
+          pnpm run preview --host 127.0.0.1 --port 4173 > "${BENCH_TMP}/vite-preview.log" 2>&1 &
+          VITE_PID=$!
+          echo "Vite Preview em execução com PID ${VITE_PID}"
+
+          # Definir trap de limpeza rigoroso para teardown garantido
+          cleanup() {
+            echo ""
+            echo "=== TEARDOWN DA BANCADA VISUAL DESCARTÁVEL ==="
+            if [ -n "${VITE_PID:-}" ] && kill -0 "${VITE_PID}" 2>/dev/null; then
+              echo "Encerrando Vite Preview (PID ${VITE_PID})..."
+              kill -TERM "${VITE_PID}" || true
+              wait "${VITE_PID}" 2>/dev/null || true
+            fi
+            if [ -n "${PB_PID:-}" ] && kill -0 "${PB_PID}" 2>/dev/null; then
+              echo "Encerrando processo PocketBase (PID ${PB_PID})..."
+              kill -TERM "${PB_PID}" || true
+              wait "${PB_PID}" 2>/dev/null || true
+            fi
+            if [ -d "${BENCH_TMP}" ]; then
+              echo "Destruindo diretório temporário: ${BENCH_TMP}"
+              rm -rf "${BENCH_TMP}"
+            fi
+            echo "Teardown concluído."
+          }
+          trap cleanup EXIT
+
+          # 6. Aguardar healthchecks
+          echo "Aguardando inicialização do PocketBase descartável..."
+          PB_READY=0
+          for i in $(seq 1 30); do
+            if curl -fsSL "http://127.0.0.1:8090/api/health" > /dev/null 2>&1; then
+              echo "PocketBase pronto e respondendo em http://127.0.0.1:8090 após ${i}s."
+              PB_READY=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "${PB_READY}" -ne 1 ]; then
+            echo "[ERRO FATAL] PocketBase não iniciou no tempo limite!"
+            echo "=== LOGS DO POCKETBASE ==="
+            cat "${BENCH_TMP}/pocketbase.log" || true
+            exit 1
+          fi
+
+          echo "Aguardando inicialização do Vite Preview..."
+          VITE_READY=0
+          for i in $(seq 1 30); do
+            if curl -fsSL "http://127.0.0.1:4173" > /dev/null 2>&1; then
+              echo "Vite Preview pronto e respondendo em http://127.0.0.1:4173 após ${i}s."
+              VITE_READY=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "${VITE_READY}" -ne 1 ]; then
+            echo "[ERRO FATAL] Vite Preview não iniciou no tempo limite!"
+            echo "=== LOGS DO VITE ==="
+            cat "${BENCH_TMP}/vite-preview.log" || true
+            exit 1
+          fi
+
+          # 7. Executar demonstração visual completa
+          echo ""
+          echo "=== EXECUTANDO DEMONSTRAÇÃO VISUAL NO NAVEGADOR (8 ETAPAS) ==="
+          pnpm run test:pav-visual
+
+      - name: Upload Visual Demo Artifacts (Capturas + Vídeo)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-visual-primeiro-atendimento
+          path: demo-visual-primeiro-atendimento/
+          if-no-files-found: warn
+          retention-days: 14
