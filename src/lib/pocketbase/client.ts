@@ -1,13 +1,16 @@
 import PocketBase from 'pocketbase'
 
-const pbUrl =
+const pocketbaseUrl =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_POCKETBASE_URL) ||
   (typeof process !== 'undefined' &&
     process.env &&
-    (process.env.VITE_POCKETBASE_URL || process.env.POCKETBASE_URL)) ||
-  'http://127.0.0.1:8090'
+    (process.env.VITE_POCKETBASE_URL || process.env.POCKETBASE_URL))
 
-const pb = new PocketBase(pbUrl)
+if (!pocketbaseUrl || typeof pocketbaseUrl !== 'string' || !pocketbaseUrl.trim()) {
+  throw new Error('Backend não configurado: defina VITE_POCKETBASE_URL no ambiente')
+}
+
+const pb = new PocketBase(pocketbaseUrl.trim())
 pb.autoCancellation(false)
 
 export default pb
