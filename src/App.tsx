@@ -17,104 +17,101 @@ import { ParticipantWorkspace } from './components/ParticipantWorkspace'
 import { BibliotecaPage } from './pages/BibliotecaPage'
 
 const App = () => {
-  const x: number = "type error"
   return (
-  <BrowserRouter>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<Layout />}>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <HomeDispatcher />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profissional"
-              element={
-                <ProtectedRoute>
-                  <HomeDispatcher />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profissional/participantes/:enrollmentId"
-              element={
-                <ProtectedRoute>
-                  <ParticipantWorkspace />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profissional/:enrollmentId"
-              element={
-                <ProtectedRoute>
-                  <ParticipantWorkspace />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/app"
-              element={
-                <ProtectedRoute>
-                  <HomeDispatcher />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profissional/biblioteca"
-              element={
-                <ProtectedRoute>
-                  <BibliotecaPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/experimentos"
-              element={
-                <ProtectedRoute>
-                  <ExperimentosPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/planner"
-              element={
-                <ProtectedRoute>
-                  <PlannerPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/reviews/:cycleId"
-              element={
-                <ProtectedRoute>
-                  <CycleReviewPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/mandala"
-              element={
-                <ProtectedRoute>
-                  <MandalaPage />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
-    </AuthProvider>
-  </BrowserRouter>
-)
-
+    <BrowserRouter>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<Layout />}>
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <HomeDispatcher />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profissional"
+                element={
+                  <ProtectedRoute>
+                    <HomeDispatcher />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profissional/participantes/:enrollmentId"
+                element={
+                  <ProtectedRoute>
+                    <ParticipantWorkspace />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profissional/:enrollmentId"
+                element={
+                  <ProtectedRoute>
+                    <ParticipantWorkspace />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/app"
+                element={
+                  <ProtectedRoute>
+                    <HomeDispatcher />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profissional/biblioteca"
+                element={
+                  <ProtectedRoute>
+                    <BibliotecaPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/experimentos"
+                element={
+                  <ProtectedRoute>
+                    <ExperimentosPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/planner"
+                element={
+                  <ProtectedRoute>
+                    <PlannerPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reviews/:cycleId"
+                element={
+                  <ProtectedRoute>
+                    <CycleReviewPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/mandala"
+                element={
+                  <ProtectedRoute>
+                    <MandalaPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
 

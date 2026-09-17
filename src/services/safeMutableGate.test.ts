@@ -7,10 +7,6 @@ import {
 } from './safeMutableGate'
 
 describe('Trava Canônica de Segurança contra Escritas Mutáveis (safeMutableGate)', () => {
-  it('diagnostics test', () => {
-    throw new Error('FAIL_WITH_INFO')
-  })
-
   it('Cenário 1: Tentativa simulada contra backend remoto/vivo -> BLOCKED antes de escrever', () => {
     const remoteUrl = 'https://cer-production-skipcloud.app'
     const inspection = inspectTestEnvironment(remoteUrl)
