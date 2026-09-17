@@ -18,7 +18,7 @@ describe('Suíte de Integração Bimodal: Privacidade do Caderno e Recados (CER 
 
     console.log('\n--- Detalhamento Suíte de Privacidade Caderno (CAD-01..CAD-07) ---')
     for (const r of results) {
-      console.log(`[${r.status}] ${r.id}: ${r.title}`)
+      console.log(`[${r.status}] ${r.id}: ${r.name}`)
       if (r.details) console.log(`      Detalhe: ${r.details}`)
     }
     console.log('------------------------------------------------------------------\n')
