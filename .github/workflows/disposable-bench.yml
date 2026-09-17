@@ -66,6 +66,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Trava de CI — Integridade de Módulos Node dos Executores
+        run: node scripts/check-executor-modules.mjs
+
       - name: Download & Extract PocketBase 0.26.x
         run: |
           PB_VERSION="0.26.1"
@@ -179,6 +182,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Trava de CI — Integridade de Módulos Node dos Executores
+        run: node scripts/check-executor-modules.mjs
 
       - name: Download & Extract PocketBase 0.26.x
         run: |
