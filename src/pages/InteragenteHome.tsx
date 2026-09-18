@@ -41,6 +41,7 @@ import {
   CheckCircle2,
   Brain,
   Calendar as CalendarIcon,
+  RotateCcw,
 } from 'lucide-react'
 import { ExperienceEngine } from '@/components/experience'
 import { ParticipantMapDisplay } from '@/components/ParticipantMapDisplay'
@@ -1478,7 +1479,8 @@ export const InteragenteHome: React.FC = () => {
                     <span className="text-lg font-bold font-serif text-foreground">
                       {
                         assignments.filter(
-                          (a) => a.status === 'completed' || a.status === 'confirmed',
+                          (a) =>
+                            a.status === 'completed' || a.participant_response_type === 'confirmed',
                         ).length
                       }{' '}
                       de {assignments.length}

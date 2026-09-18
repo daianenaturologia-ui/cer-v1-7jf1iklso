@@ -78,9 +78,10 @@ async function main() {
       'src/services/testsMigration0049.test.ts',
       'src/services/testsMigration0059.test.ts',
       'src/services/testsCadernoV1.test.ts',
+      'src/services/testsDemoCorrection.test.ts',
     ],
     1,
-    'Testes Unitários Puros (testsCorrecao1A, testsLote3A, testsCorrecao3A1, testsMigration0049, testsMigration0059 e testsCadernoV1)',
+    'Testes Unitários Puros (testsCorrecao1A, testsLote3A, testsCorrecao3A1, testsMigration0049, testsMigration0059, testsCadernoV1 e testsDemoCorrection)',
   )
   if (step1.status === 'FAIL') {
     await finishPipeline()
@@ -209,9 +210,10 @@ async function main() {
       'src/services/testsMigration0059.test.ts',
       'src/services/testsCadernoV1.test.ts',
       'src/services/testsCadernoPrivacyIntegration.test.ts',
+      'src/services/testsDemoCorrection.test.ts',
     ],
     5,
-    'Regressões Funcionais Determinísticas (regras temporais, editorial gates, imutabilidade, schema 0049, rules 0059 e caderno)',
+    'Regressões Funcionais Determinísticas (regras temporais, editorial gates, imutabilidade, schema 0049, rules 0059, caderno e demo)',
   )
   if (step5.status === 'FAIL') {
     await finishPipeline()
