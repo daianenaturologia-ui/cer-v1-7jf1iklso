@@ -127,8 +127,9 @@ interface DemoStateStore {
   acceptances: CerOperationalAcceptanceRecord[]
 }
 
-const STORAGE_KEY = 'cer_demo_mode_state_v2'
+const STORAGE_KEY = 'cer_demo_mode_state_v3'
 const LEGACY_STORAGE_KEY_V1 = 'cer_demo_mode_state_v1'
+const LEGACY_STORAGE_KEY_V2 = 'cer_demo_mode_state_v2'
 
 function getInitialState(): DemoStateStore {
   return {
@@ -136,71 +137,9 @@ function getInitialState(): DemoStateStore {
     messages: [],
     sessions: [],
     notes: [],
-    plans: [
-      {
-        id: 'demo-plan-seed-1',
-        enrollment_id: DEMO_ENROLLMENT_ID,
-        revision_number: 1,
-        status: 'active',
-        direction_mode: 'reused',
-        direction_statement: 'Pausa consciente e transição suave ao entardecer',
-        professional_context: 'Foco na diminuição da sobrecarga vespertina e ritmo respiratório',
-        professional_rationale: 'Fortalecer a autorregulação antes do momento crítico de fadiga',
-        created_by_user_id: DEMO_USER_DAIANE.id,
-        created: '2025-02-15T09:00:00.000Z',
-        updated: '2025-02-15T09:00:00.000Z',
-      },
-    ],
-    priorities: [
-      {
-        id: 'demo-prio-seed-1',
-        plan_id: 'demo-plan-seed-1',
-        title: 'Micro-pausa de 5 minutos ao terminar a jornada de trabalho',
-        description: 'Três respirações lentas antes de ligar telas de entretenimento',
-        status: 'candidate',
-        is_therapeutic_priority: true, // IMPORTANTE
-        is_possible_now: true, // AGORA
-        order_index: 1,
-        professional_rationale: 'Ponto de alavanca com menor custo cognitivo para Mariana',
-        access_class: 'shared_care',
-        created_by_user_id: DEMO_USER_DAIANE.id,
-        created: '2025-02-15T09:10:00.000Z',
-        updated: '2025-02-15T09:10:00.000Z',
-      },
-      {
-        id: 'demo-prio-seed-2',
-        plan_id: 'demo-plan-seed-1',
-        title: 'Revisão da iluminação do quarto 1 hora antes de deitar',
-        description: 'Luzes indiretas e quentes',
-        status: 'candidate',
-        is_therapeutic_priority: true, // IMPORTANTE
-        is_possible_now: false, // Opcional / Próximo ciclo
-        order_index: 2,
-        professional_rationale: 'Higiene do sono após consolidar a micro-pausa',
-        access_class: 'shared_care',
-        created_by_user_id: DEMO_USER_DAIANE.id,
-        created: '2025-02-15T09:12:00.000Z',
-        updated: '2025-02-15T09:12:00.000Z',
-      },
-    ],
-    presentations: [
-      {
-        id: 'demo-pres-seed-1',
-        plan_id: 'demo-plan-seed-1',
-        priority_id: 'demo-prio-seed-1',
-        enrollment_id: DEMO_ENROLLMENT_ID,
-        status: 'presented',
-        participant_title: 'Nosso Próximo Passo: Pausa Consciente no Entardecer',
-        participant_summary:
-          'Direção de Cuidado: Pausa consciente e transição suave ao entardecer.\n\nFocos combinados:\n• Micro-pausa de 5 minutos ao terminar a jornada de trabalho',
-        practical_invitation: 'Experimente por 3 dias e veja como seu corpo responde à pausa.',
-        channel: 'app',
-        presented_at: '2025-02-15T09:30:00.000Z',
-        created_by_user_id: DEMO_USER_DAIANE.id,
-        created: '2025-02-15T09:20:00.000Z',
-        updated: '2025-02-15T09:30:00.000Z',
-      },
-    ],
+    plans: [],
+    priorities: [],
+    presentations: [],
     acceptances: [],
   }
 }
@@ -217,8 +156,9 @@ class DemoAdapter {
 
   private loadState(): DemoStateStore {
     try {
-      // Remoção explícita do cache v1 para evitar contaminação por sementes antigas
+      // Remoção explícita dos caches legados para evitar contaminação por sementes antigas
       localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
+      localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
 
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
@@ -233,6 +173,7 @@ class DemoAdapter {
   private saveState(): void {
     try {
       localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
+      localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state))
       localStorage.setItem('cer_demo_mode_active', this.isDemoEnabled ? 'true' : 'false')
       this.notify()
@@ -263,6 +204,7 @@ class DemoAdapter {
   public enableDemo(persona: 'mariana' | 'daiane' = 'mariana'): void {
     try {
       localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
+      localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
     } catch {
       /* ignore */
     }
@@ -276,6 +218,7 @@ class DemoAdapter {
     try {
       localStorage.removeItem(STORAGE_KEY)
       localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
+      localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
       localStorage.removeItem('cer_demo_mode_active')
     } catch {
       /* ignore */
@@ -287,6 +230,7 @@ class DemoAdapter {
   public resetToDefaultState(): void {
     try {
       localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
+      localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
     } catch {
       /* ignore */
     }
@@ -456,16 +400,7 @@ class DemoAdapter {
       participantName: DEMO_PERSON_MARIANA.preferred_name || DEMO_PERSON_MARIANA.full_name,
       lastCompletedSession: lastCompleted,
       lastSessionNote: lastNote,
-      recentKnowledgeItems: [
-        {
-          id: 'demo-ki-01',
-          statement: 'Pausa ao entardecer favorece a regulação autonômica e o descanso',
-          status: 'supported',
-          access_class: 'shared_care',
-          created: '2025-02-14T10:00:00.000Z',
-          updated: '2025-02-14T10:00:00.000Z',
-        } as any,
-      ],
+      recentKnowledgeItems: [],
       recentRecognitions: [],
       recentCompletedExperiences: [],
       recentPresentations: [],
@@ -627,7 +562,7 @@ class DemoAdapter {
     const newAcc: CerOperationalAcceptanceRecord = {
       id: `demo-acc-${Date.now()}`,
       presentation_id: input.presentation_id,
-      plan_id: pres?.plan_id || 'demo-plan-seed-1',
+      plan_id: pres?.plan_id || '',
       priority_id: pres?.priority_id || '',
       enrollment_id: DEMO_ENROLLMENT_ID,
       participant_user_id: DEMO_USER_MARIANA.id,

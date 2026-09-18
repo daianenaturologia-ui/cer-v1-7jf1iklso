@@ -78,6 +78,22 @@ export const experienceCatalogService = {
         const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
         list.push(CORPO_FISIOLOGIA_EXPERIENCE)
       }
+      if (!list.some((e) => e.id === 'exp-mente-emocoes-07c' || e.code === 'mente_emocoes_cer')) {
+        const { MENTE_EMOCOES_EXPERIENCE } = await import('./build07cPrompts')
+        list.push(MENTE_EMOCOES_EXPERIENCE)
+      }
+      if (
+        !list.some(
+          (e) => e.id === 'exp-regulacao-respostas-07c' || e.code === 'regulacao_respostas_cer',
+        )
+      ) {
+        const { REGULACAO_RESPOSTAS_EXPERIENCE } = await import('./build07cPrompts')
+        list.push(REGULACAO_RESPOSTAS_EXPERIENCE)
+      }
+      if (!list.some((e) => e.id === 'exp-relacoes-07d' || e.code === 'relacoes_cer')) {
+        const { RELACOES_EXPERIENCE } = await import('./build07dPrompts')
+        list.push(RELACOES_EXPERIENCE)
+      }
       if (!list.some((e) => e.id === 'exp-sexualidade-07e' || e.code === 'sexualidade_cer')) {
         const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
         list.push(SEXUALIDADE_EXPERIENCE)
@@ -100,11 +116,17 @@ export const experienceCatalogService = {
       return list
     } catch {
       const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
+      const { MENTE_EMOCOES_EXPERIENCE, REGULACAO_RESPOSTAS_EXPERIENCE } =
+        await import('./build07cPrompts')
+      const { RELACOES_EXPERIENCE } = await import('./build07dPrompts')
       const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
       const { SENTIDO_CONEXAO_EXPERIENCE } = await import('./build07fPrompts')
       const { INTEGRACAO_CONSCIENCIA_EXPERIENCE } = await import('./build07gPrompts')
       return [
         CORPO_FISIOLOGIA_EXPERIENCE,
+        MENTE_EMOCOES_EXPERIENCE,
+        REGULACAO_RESPOSTAS_EXPERIENCE,
+        RELACOES_EXPERIENCE,
         SEXUALIDADE_EXPERIENCE,
         SENTIDO_CONEXAO_EXPERIENCE,
         INTEGRACAO_CONSCIENCIA_EXPERIENCE,
@@ -120,19 +142,31 @@ export const experienceCatalogService = {
   },
 
   async getExperienceByCode(code: string): Promise<CerExperienceRecord | null> {
-    if (code === 'corpo_fisiologia_ayurveda') {
+    if (code === 'corpo_fisiologia_ayurveda' || code === 'exp-corpo-fisiologia-07b') {
       const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
       return CORPO_FISIOLOGIA_EXPERIENCE
     }
-    if (code === 'sexualidade_cer') {
+    if (code === 'mente_emocoes_cer' || code === 'exp-mente-emocoes-07c') {
+      const { MENTE_EMOCOES_EXPERIENCE } = await import('./build07cPrompts')
+      return MENTE_EMOCOES_EXPERIENCE
+    }
+    if (code === 'regulacao_respostas_cer' || code === 'exp-regulacao-respostas-07c') {
+      const { REGULACAO_RESPOSTAS_EXPERIENCE } = await import('./build07cPrompts')
+      return REGULACAO_RESPOSTAS_EXPERIENCE
+    }
+    if (code === 'relacoes_cer' || code === 'exp-relacoes-07d') {
+      const { RELACOES_EXPERIENCE } = await import('./build07dPrompts')
+      return RELACOES_EXPERIENCE
+    }
+    if (code === 'sexualidade_cer' || code === 'exp-sexualidade-07e') {
       const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
       return SEXUALIDADE_EXPERIENCE
     }
-    if (code === 'sentido_conexao_cer') {
+    if (code === 'sentido_conexao_cer' || code === 'exp-sentido-conexao-07f') {
       const { SENTIDO_CONEXAO_EXPERIENCE } = await import('./build07fPrompts')
       return SENTIDO_CONEXAO_EXPERIENCE
     }
-    if (code === 'integracao_consciencia_cer') {
+    if (code === 'integracao_consciencia_cer' || code === 'exp-integracao-consciencia-07g') {
       const { INTEGRACAO_CONSCIENCIA_EXPERIENCE } = await import('./build07gPrompts')
       return INTEGRACAO_CONSCIENCIA_EXPERIENCE
     }
@@ -151,6 +185,18 @@ export const experienceCatalogService = {
     if (id === 'exp-corpo-fisiologia-07b') {
       const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
       return CORPO_FISIOLOGIA_EXPERIENCE
+    }
+    if (id === 'exp-mente-emocoes-07c') {
+      const { MENTE_EMOCOES_EXPERIENCE } = await import('./build07cPrompts')
+      return MENTE_EMOCOES_EXPERIENCE
+    }
+    if (id === 'exp-regulacao-respostas-07c') {
+      const { REGULACAO_RESPOSTAS_EXPERIENCE } = await import('./build07cPrompts')
+      return REGULACAO_RESPOSTAS_EXPERIENCE
+    }
+    if (id === 'exp-relacoes-07d') {
+      const { RELACOES_EXPERIENCE } = await import('./build07dPrompts')
+      return RELACOES_EXPERIENCE
     }
     if (id === 'exp-sexualidade-07e') {
       const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
@@ -174,6 +220,18 @@ export const experienceCatalogService = {
       const { CORPO_FISIOLOGIA_MOMENTS } = await import('./build07bPrompts')
       return CORPO_FISIOLOGIA_MOMENTS
     }
+    if (experienceId === 'exp-mente-emocoes-07c') {
+      const { MENTE_EMOCOES_MOMENTS } = await import('./build07cPrompts')
+      return MENTE_EMOCOES_MOMENTS
+    }
+    if (experienceId === 'exp-regulacao-respostas-07c') {
+      const { REGULACAO_RESPOSTAS_MOMENTS } = await import('./build07cPrompts')
+      return REGULACAO_RESPOSTAS_MOMENTS
+    }
+    if (experienceId === 'exp-relacoes-07d') {
+      const { RELACOES_MOMENTS } = await import('./build07dPrompts')
+      return RELACOES_MOMENTS
+    }
     if (experienceId === 'exp-sexualidade-07e') {
       const { SEXUALIDADE_MOMENTS } = await import('./build07ePrompts')
       return SEXUALIDADE_MOMENTS
@@ -196,6 +254,18 @@ export const experienceCatalogService = {
     if (experienceId === 'exp-corpo-fisiologia-07b') {
       const { BUILD_07B_PROMPTS } = await import('./build07bPrompts')
       return BUILD_07B_PROMPTS
+    }
+    if (experienceId === 'exp-mente-emocoes-07c') {
+      const { BUILD_07C_MENTE_PROMPTS } = await import('./build07cPrompts')
+      return BUILD_07C_MENTE_PROMPTS
+    }
+    if (experienceId === 'exp-regulacao-respostas-07c') {
+      const { BUILD_07C_REGULACAO_PROMPTS } = await import('./build07cPrompts')
+      return BUILD_07C_REGULACAO_PROMPTS
+    }
+    if (experienceId === 'exp-relacoes-07d') {
+      const { BUILD_07D_RELACOES_PROMPTS } = await import('./build07dPrompts')
+      return BUILD_07D_RELACOES_PROMPTS
     }
     if (experienceId === 'exp-sexualidade-07e') {
       const { BUILD_07E_SEXUALIDADE_PROMPTS } = await import('./build07ePrompts')
@@ -256,7 +326,40 @@ export const enrollmentExperienceService = {
   async listByEnrollment(enrollmentId: string): Promise<EnrollmentExperienceRecord[]> {
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {
-      return []
+      // No modo demo, experiências canônicas das dimensões ficam disponíveis para abertura
+      // MAS sem respostas prévias ou autoria falsa
+      const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
+      const { MENTE_EMOCOES_EXPERIENCE, REGULACAO_RESPOSTAS_EXPERIENCE } =
+        await import('./build07cPrompts')
+      const { RELACOES_EXPERIENCE } = await import('./build07dPrompts')
+      const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
+      const { SENTIDO_CONEXAO_EXPERIENCE } = await import('./build07fPrompts')
+      const { INTEGRACAO_CONSCIENCIA_EXPERIENCE } = await import('./build07gPrompts')
+
+      const exps = [
+        CORPO_FISIOLOGIA_EXPERIENCE,
+        MENTE_EMOCOES_EXPERIENCE,
+        REGULACAO_RESPOSTAS_EXPERIENCE,
+        RELACOES_EXPERIENCE,
+        SEXUALIDADE_EXPERIENCE,
+        SENTIDO_CONEXAO_EXPERIENCE,
+        INTEGRACAO_CONSCIENCIA_EXPERIENCE,
+      ]
+
+      return exps.map((exp, idx) => ({
+        id: `demo-enr-exp-${exp.id}`,
+        enrollment_id: enrollmentId,
+        experience_id: exp.id,
+        release_status: 'available',
+        progress_status: 'not_started',
+        current_step_order: 1,
+        version: 1,
+        created: '2025-01-10T10:00:00.000Z',
+        updated: '2025-01-10T10:00:00.000Z',
+        expand: {
+          experience_id: exp,
+        },
+      })) as unknown as EnrollmentExperienceRecord[]
     }
     return await pb.collection('enrollment_experiences').getFullList<EnrollmentExperienceRecord>({
       filter: `enrollment_id = "${enrollmentId}"`,

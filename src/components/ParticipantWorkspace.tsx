@@ -37,14 +37,32 @@ import { ProfessionalExperienceManager } from '@/components/experience/Professio
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
 import { ProfessionalSessionManager } from '@/components/ProfessionalSessionManager'
 
-export type WorkspaceTab = 'resumo' | 'consciencia' | 'plano' | 'experimentos' | 'revisao'
+export type WorkspaceTab =
+  | 'sessoes'
+  | 'consciencia'
+  | 'equilibrio'
+  | 'evolucao'
+  // Compatibilidade legada para parâmetros de busca existentes
+  | 'resumo'
+  | 'plano'
+  | 'experimentos'
+  | 'revisao'
 
 export const ParticipantWorkspace: React.FC = () => {
   const { enrollmentId } = useParams<{ enrollmentId: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
 
-  const currentTab = (searchParams.get('tab') as WorkspaceTab) || 'resumo'
+  const rawTab = searchParams.get('tab') as WorkspaceTab | null
+  // Normalização para a arquitetura aprovada (4 fases + sessões)
+  const currentTab: 'sessoes' | 'consciencia' | 'equilibrio' | 'evolucao' =
+    rawTab === 'consciencia'
+      ? 'consciencia'
+      : rawTab === 'plano' || rawTab === 'experimentos' || rawTab === 'equilibrio'
+        ? 'equilibrio'
+        : rawTab === 'revisao' || rawTab === 'evolucao'
+          ? 'evolucao'
+          : 'sessoes'
 
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [person, setPerson] = useState<PersonRecord | null>(null)
@@ -213,16 +231,16 @@ export const ParticipantWorkspace: React.FC = () => {
         </div>
       </div>
 
-      {/* Navegação por 5 Áreas Clínicas — UMA por vez (carregamento progressivo e modular) */}
+      {/* Navegação pelas 4 Fases e Sessões — Arquitetura CER */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-border/40">
         <Button
           size="sm"
-          variant={currentTab === 'resumo' ? 'default' : 'ghost'}
-          onClick={() => setTab('resumo')}
+          variant={currentTab === 'sessoes' ? 'default' : 'ghost'}
+          onClick={() => setTab('sessoes')}
           className="h-8 text-xs px-3 gap-1.5 shrink-0"
         >
           <User className="w-3.5 h-3.5" />
-          <span>1. Resumo & Atenção</span>
+          <span>Sessões & Atenção</span>
         </Button>
 
         <Button
@@ -232,46 +250,36 @@ export const ParticipantWorkspace: React.FC = () => {
           className="h-8 text-xs px-3 gap-1.5 shrink-0"
         >
           <Compass className="w-3.5 h-3.5" />
-          <span>2. Consciência & Mapa</span>
+          <span>Consciência</span>
         </Button>
 
         <Button
           size="sm"
-          variant={currentTab === 'plano' ? 'default' : 'ghost'}
-          onClick={() => setTab('plano')}
-          className="h-8 text-xs px-3 gap-1.5 shrink-0"
-        >
-          <FileText className="w-3.5 h-3.5" />
-          <span>3. Plano de Cuidado</span>
-        </Button>
-
-        <Button
-          size="sm"
-          variant={currentTab === 'experimentos' ? 'default' : 'ghost'}
-          onClick={() => setTab('experimentos')}
+          variant={currentTab === 'equilibrio' ? 'default' : 'ghost'}
+          onClick={() => setTab('equilibrio')}
           className="h-8 text-xs px-3 gap-1.5 shrink-0"
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>4. Experimentos & Práticas</span>
+          <span>Equilíbrio & Realização</span>
         </Button>
 
         <Button
           size="sm"
-          variant={currentTab === 'revisao' ? 'default' : 'ghost'}
-          onClick={() => setTab('revisao')}
+          variant={currentTab === 'evolucao' ? 'default' : 'ghost'}
+          onClick={() => setTab('evolucao')}
           className="h-8 text-xs px-3 gap-1.5 shrink-0"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          <span>5. Revisão & Ciclo</span>
+          <span>Evolução</span>
         </Button>
       </div>
 
-      {/* ÁREA 1: RESUMO & ATENÇÃO */}
-      {currentTab === 'resumo' && (
+      {/* SESSÕES & ATENÇÃO */}
+      {currentTab === 'sessoes' && (
         <div className="space-y-5">
           <AttentionPanel items={attentionItems} showParticipantName={false} />
 
-          {/* ETAPA 5: Retornos da interagente sobre o próximo passo (cer_operational_acceptances) */}
+          {/* Retornos da interagente sobre o próximo passo (cer_operational_acceptances) */}
           <Card className="border-border/70 shadow-none">
             <CardHeader className="py-3 px-4 bg-muted/20 border-b border-border/40">
               <div className="flex items-center justify-between">
@@ -287,7 +295,7 @@ export const ParticipantWorkspace: React.FC = () => {
               </div>
               <CardDescription className="text-xs">
                 Respostas diretas da participante registradas via aceite operacional compartilhado
-                (sem anotação em notas clínicas privadas).
+                (distintas de anotações privadas).
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 space-y-2.5">
@@ -349,7 +357,7 @@ export const ParticipantWorkspace: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Preparação de Sessão (Reutilizando cerSession) */}
+          {/* Gestor e Preparador de Sessões — Notas privadas e recados */}
           <ProfessionalSessionManager
             enrollmentId={enrollment.id}
             participantName={participantName}
@@ -357,10 +365,9 @@ export const ParticipantWorkspace: React.FC = () => {
         </div>
       )}
 
-      {/* ÁREA 2: CONSCIÊNCIA & MAPA */}
+      {/* CONSCIÊNCIA */}
       {currentTab === 'consciencia' && (
         <div className="space-y-5">
-          {/* Fim da Consciência: aviso consolidado se integrado */}
           {journeyState?.current_stage === 'consciousness' &&
             journeyState?.stage_status === 'integrado' && (
               <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -376,25 +383,25 @@ export const ParticipantWorkspace: React.FC = () => {
                 </div>
                 <Button
                   size="sm"
-                  onClick={() => setTab('plano')}
+                  onClick={() => setTab('equilibrio')}
                   className="h-8 text-xs shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  Ir para Plano de Cuidado
+                  Ir para Equilíbrio & Realização
                 </Button>
               </div>
             )}
 
-          {/* Gestão das Experiências da Consciência */}
+          {/* Gestão das Experiências da Consciência (6 dimensões + integração) */}
           <ProfessionalExperienceManager enrollment={enrollment} />
 
-          {/* Mapa Estruturado / Mandala */}
+          {/* Mapa CER do Participante — Edição e Publicação Explícita */}
           <ProfessionalMapEditor
             enrollmentId={enrollment.id}
             participantName={participantName}
             professionalUserId={pb.authStore.record?.id || ''}
           />
 
-          {/* Conhecimento em Construção */}
+          {/* Conhecimento e Hipóteses em Construção (com distinção epistêmica) */}
           <ProfessionalKnowledgeBuilding
             enrollmentId={enrollment.id}
             participantName={participantName}
@@ -402,45 +409,51 @@ export const ParticipantWorkspace: React.FC = () => {
         </div>
       )}
 
-      {/* ÁREA 3: PLANO DE CUIDADO */}
-      {currentTab === 'plano' && (
-        <div className="space-y-5">
+      {/* EQUILÍBRIO & REALIZAÇÃO */}
+      {currentTab === 'equilibrio' && (
+        <div className="space-y-6">
           <CarePlanEditor
             enrollmentId={enrollment.id}
             participantName={participantName}
             onPlanUpdated={loadWorkspaceData}
           />
+
+          <div className="border-t border-border/50 pt-6 space-y-5">
+            <div className="space-y-1">
+              <h2 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span>Práticas, Recursos e Experimentos</span>
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Atribua experimentos do acervo alinhados às prioridades combinadas com{' '}
+                {participantName}.
+              </p>
+            </div>
+
+            <AssignmentEditor
+              enrollmentId={enrollment.id}
+              participantName={participantName}
+              selectedPractice={selectedPractice}
+              selectedVersion={selectedVersion}
+              onAssignmentCreated={() => {
+                setSelectedPractice(null)
+                setSelectedVersion(null)
+              }}
+            />
+
+            <PracticeSelector
+              selectedPracticeId={selectedPractice?.id}
+              onSelectPractice={(pr, ver) => {
+                setSelectedPractice(pr)
+                setSelectedVersion(ver)
+              }}
+            />
+          </div>
         </div>
       )}
 
-      {/* ÁREA 4: EXPERIMENTOS & PRÁTICAS */}
-      {currentTab === 'experimentos' && (
-        <div className="space-y-5">
-          {/* Atribuidor de Práticas */}
-          <AssignmentEditor
-            enrollmentId={enrollment.id}
-            participantName={participantName}
-            selectedPractice={selectedPractice}
-            selectedVersion={selectedVersion}
-            onAssignmentCreated={() => {
-              setSelectedPractice(null)
-              setSelectedVersion(null)
-            }}
-          />
-
-          {/* Seletor da Biblioteca (reutilizado progressivamente) */}
-          <PracticeSelector
-            selectedPracticeId={selectedPractice?.id}
-            onSelectPractice={(pr, ver) => {
-              setSelectedPractice(pr)
-              setSelectedVersion(ver)
-            }}
-          />
-        </div>
-      )}
-
-      {/* ÁREA 5: REVISÃO & CICLO */}
-      {currentTab === 'revisao' && (
+      {/* EVOLUÇÃO */}
+      {currentTab === 'evolucao' && (
         <div className="space-y-5">
           <ResponseDigest enrollmentId={enrollment.id} participantName={participantName} />
         </div>

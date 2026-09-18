@@ -17,20 +17,30 @@ describe('Correção do Modo Demonstração CER V1 (Limpeza de Sementes e Autori
     expect(accs).toEqual([])
   })
 
-  it('A3: Demonstração nova começa sem sessões ou notas pré-atribuídas a Mariana', () => {
+  it('A3: Demonstração nova começa sem planos, prioridades ou apresentações pré-atribuídos', () => {
+    const plans = demoAdapter.listPlans(DEMO_ENROLLMENT_ID)
+    expect(plans).toEqual([])
+    const presented = demoAdapter.listPresentedForParticipant(DEMO_ENROLLMENT_ID)
+    expect(presented).toEqual([])
+  })
+
+  it('A4: Demonstração nova começa sem sessões, notas ou percepções fixas na preparação de sessão', () => {
     const sessions = demoAdapter.listSessions(DEMO_ENROLLMENT_ID)
     expect(sessions).toEqual([])
     const prep = demoAdapter.computeSessionPreparation(DEMO_ENROLLMENT_ID)
     expect(prep.lastCompletedSession).toBeUndefined()
     expect(prep.lastSessionNote).toBeUndefined()
     expect(prep.approvedNextSessionMessages).toEqual([])
+    expect(prep.recentKnowledgeItems).toEqual([])
   })
 
-  it('B: Migração de cache limpa a chave antiga cer_demo_mode_state_v1 do localStorage', () => {
+  it('B: Migração de cache limpa as chaves antigas cer_demo_mode_state_v1 e v2 do localStorage', () => {
     localStorage.setItem('cer_demo_mode_state_v1', JSON.stringify({ stale: true }))
+    localStorage.setItem('cer_demo_mode_state_v2', JSON.stringify({ stale: true }))
     demoAdapter.resetToDefaultState()
     expect(localStorage.getItem('cer_demo_mode_state_v1')).toBeNull()
-    expect(localStorage.getItem('cer_demo_mode_state_v2')).toBeTruthy()
+    expect(localStorage.getItem('cer_demo_mode_state_v2')).toBeNull()
+    expect(localStorage.getItem('cer_demo_mode_state_v3')).toBeTruthy()
   })
 
   it('C: createNextSessionMessage sem summary_text explícito não grava resumo conferido pelo participante', () => {
