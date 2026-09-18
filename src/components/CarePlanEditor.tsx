@@ -308,6 +308,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
       setSuccessMsg('Plano de Cuidado apresentado para a participante com sucesso.')
       setPresentationPreviewDialogOpen(false)
       await loadPlanDetails(selectedPlan.id)
+      onPlanUpdated?.()
     } catch (err: any) {
       setErrorMsg(err.message || 'Erro ao apresentar plano.')
     } finally {

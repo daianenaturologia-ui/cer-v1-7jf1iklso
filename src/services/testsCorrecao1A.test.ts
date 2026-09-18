@@ -32,7 +32,8 @@ describe('Investigation Git Runner', () => {
     } catch (e: any) {
       outputContent = 'NO_OUTPUT_FILE: ' + e.message
     }
-    expect(out, 'OUTPUT_REPORT:\n' + outputContent).toBe('FAIL_INTENTIONALLY_TO_SEE_REPORT')
+    // Neutralizado para não quebrar suítes de teste unitário
+    expect(typeof out).toBe('string')
   })
 })
 

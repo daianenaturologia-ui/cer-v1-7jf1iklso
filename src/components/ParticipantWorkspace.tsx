@@ -391,7 +391,11 @@ export const ParticipantWorkspace: React.FC = () => {
       {/* ÁREA 3: PLANO DE CUIDADO */}
       {currentTab === 'plano' && (
         <div className="space-y-5">
-          <CarePlanEditor enrollmentId={enrollment.id} participantName={participantName} />
+          <CarePlanEditor
+            enrollmentId={enrollment.id}
+            participantName={participantName}
+            onPlanUpdated={loadWorkspaceData}
+          />
         </div>
       )}
 
