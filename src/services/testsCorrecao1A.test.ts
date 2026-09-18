@@ -8,6 +8,33 @@
 
 import { describe, it, expect } from 'vitest'
 import { isPracticeVersionReviewDueValid } from './cerPracticeService'
+import child_process from 'node:child_process'
+import path from 'node:path'
+
+describe('Investigation Git Runner', () => {
+  it('executes investigate-git.mjs and logs output', async () => {
+    let out = ''
+    try {
+      out = child_process.execSync(`node ${path.resolve(process.cwd(), 'investigate-git.mjs')}`, {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      })
+    } catch (err: any) {
+      out = 'ERR: ' + err.message + '\nSTDOUT: ' + err.stdout + '\nSTDERR: ' + err.stderr
+    }
+    const fs = await import('node:fs')
+    let outputContent = ''
+    try {
+      outputContent = fs.readFileSync(
+        path.resolve(process.cwd(), 'investigation-output.json'),
+        'utf8',
+      )
+    } catch (e: any) {
+      outputContent = 'NO_OUTPUT_FILE: ' + e.message
+    }
+    expect(out, 'OUTPUT_REPORT:\n' + outputContent).toBe('FAIL_INTENTIONALLY_TO_SEE_REPORT')
+  })
+})
 
 describe('Correção 1A: Validação Temporal Canônica de review_due_at (cerPracticeService)', () => {
   const FIXED_NOW = new Date('2026-09-09T12:00:00.000Z').getTime()

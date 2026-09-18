@@ -212,9 +212,10 @@ try {
     samplePackShas: packShas.slice(0, 5),
   }
 
-  throw new Error('INVESTIGATION_REPORT: ' + JSON.stringify(report))
+  const { execFileSync } = await import('node:child_process')
+  execFileSync(process.execPath, [path.join(rootDir, 'investigate-git.mjs')], { stdio: 'inherit' })
 } catch (invErr) {
-  throw invErr
+  console.error('TEMP RUN ERR:', invErr)
 }
 
 console.log('[ETAPA 1] Testando importação em Node puro com VITE_POCKETBASE_URL configurada...')
