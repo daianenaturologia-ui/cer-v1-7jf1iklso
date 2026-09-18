@@ -80,6 +80,10 @@ export const personService = {
  */
 export const productService = {
   async listActive(): Promise<CerProductRecord[]> {
+    const { demoAdapter, DEMO_PRODUCT } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return [DEMO_PRODUCT]
+    }
     return await pb.collection('cer_products').getFullList<CerProductRecord>({
       filter: 'is_active = true',
       sort: 'name',
@@ -105,6 +109,10 @@ export const enrollmentService = {
    * Lista enrollments visíveis para o usuário autenticado (conforme API rules do PB)
    */
   async listAccessible(): Promise<EnrollmentRecord[]> {
+    const { demoAdapter, DEMO_ENROLLMENT } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return [DEMO_ENROLLMENT]
+    }
     return await pb.collection('enrollments').getFullList<EnrollmentRecord>({
       expand:
         'person_id,product_id,professional_enrollment_access_via_enrollment_id.professional_user_id,journey_states_via_enrollment_id',
@@ -116,6 +124,10 @@ export const enrollmentService = {
    * Obtém o enrollment de uma interagente por sua person_id
    */
   async getByPersonId(personId: string): Promise<EnrollmentRecord | null> {
+    const { demoAdapter, DEMO_ENROLLMENT } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return DEMO_ENROLLMENT
+    }
     try {
       const records = await pb.collection('enrollments').getList<EnrollmentRecord>(1, 1, {
         filter: `person_id = "${personId}"`,

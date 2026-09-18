@@ -102,6 +102,10 @@ class CerCarePlanService {
   }
 
   async createDraftPlan(input: CreateCarePlanInput): Promise<CerCarePlanRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.createDraftPlan(input)
+    }
     return await pb.collection('cer_care_plans').create<CerCarePlanRecord>({
       enrollment_id: input.enrollment_id,
       status: 'draft',
@@ -115,6 +119,10 @@ class CerCarePlanService {
   }
 
   async activatePlan(planId: string): Promise<CerCarePlanRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.activatePlan(planId)
+    }
     return await pb.collection('cer_care_plans').update<CerCarePlanRecord>(planId, {
       status: 'active',
     })
@@ -179,6 +187,10 @@ class CerCarePlanService {
   // PRIORITY MANAGEMENT
   // -------------------------------------------------------------
   async listPriorities(planId: string): Promise<CerCarePlanPriorityRecord[]> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.listPriorities(planId)
+    }
     return await pb.collection('cer_care_plan_priorities').getFullList<CerCarePlanPriorityRecord>({
       filter: `plan_id = "${planId}"`,
       sort: 'order_index,created',
@@ -186,6 +198,10 @@ class CerCarePlanService {
   }
 
   async addPriority(input: CreatePriorityInput): Promise<CerCarePlanPriorityRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.addPriority(input)
+    }
     return await pb.collection('cer_care_plan_priorities').create<CerCarePlanPriorityRecord>({
       plan_id: input.plan_id,
       title: input.title,
@@ -247,6 +263,10 @@ class CerCarePlanService {
   async createPresentation(
     input: CreatePlanPresentationInput,
   ): Promise<CerCarePlanPresentationRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.createPresentation(input)
+    }
     const plan = await this.getPlanById(input.plan_id)
     return await pb
       .collection('cer_care_plan_presentations')
@@ -264,6 +284,10 @@ class CerCarePlanService {
   }
 
   async presentPresentation(presentationId: string): Promise<CerCarePlanPresentationRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.presentPresentation(presentationId)
+    }
     return await pb
       .collection('cer_care_plan_presentations')
       .update<CerCarePlanPresentationRecord>(presentationId, {
@@ -287,6 +311,10 @@ class CerCarePlanService {
   async listPresentedForParticipant(
     enrollmentId: string,
   ): Promise<CerCarePlanPresentationRecord[]> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.listPresentedForParticipant(enrollmentId)
+    }
     try {
       return await pb
         .collection('cer_care_plan_presentations')
@@ -302,6 +330,10 @@ class CerCarePlanService {
   async listAcceptancesByEnrollment(
     enrollmentId: string,
   ): Promise<CerOperationalAcceptanceRecord[]> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.listAcceptancesByEnrollment(enrollmentId)
+    }
     try {
       return await pb
         .collection('cer_operational_acceptances')
@@ -318,6 +350,12 @@ class CerCarePlanService {
     acceptance: CerOperationalAcceptanceRecord
     privateNote?: CerOperationalAcceptancePrivateNoteRecord
   }> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      const acc = demoAdapter.recordAcceptance(input)
+      return { acceptance: acc }
+    }
+
     const pres = await pb
       .collection('cer_care_plan_presentations')
       .getOne<CerCarePlanPresentationRecord>(input.presentation_id)

@@ -62,6 +62,11 @@ export const attentionService = {
    * Totalmente em memória, consultando as coleções já existentes com RLS nativo.
    */
   async computeAttentionItems(enrollmentId?: string): Promise<AttentionItem[]> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return []
+    }
+
     const items: AttentionItem[] = []
 
     try {

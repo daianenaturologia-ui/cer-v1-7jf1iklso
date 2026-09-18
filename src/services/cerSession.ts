@@ -21,6 +21,10 @@ export const cerSessionService = {
    * Lista todas as sessões de um enrollment (visíveis ao profissional com acesso ativo)
    */
   async listByEnrollment(enrollmentId: string): Promise<CerSessionRecord[]> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.listSessions(enrollmentId)
+    }
     return await pb.collection('cer_sessions').getFullList<CerSessionRecord>({
       filter: `enrollment_id = "${enrollmentId}"`,
       sort: '-created',
@@ -32,6 +36,11 @@ export const cerSessionService = {
    * Obtém detalhes de uma sessão por ID
    */
   async getById(sessionId: string): Promise<CerSessionRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      const s = demoAdapter.listSessions('').find((x) => x.id === sessionId)
+      if (s) return s
+    }
     return await pb.collection('cer_sessions').getOne<CerSessionRecord>(sessionId, {
       expand: 'professional_user_id,enrollment_id',
     })
@@ -41,6 +50,10 @@ export const cerSessionService = {
    * Cria uma nova sessão agendada para o enrollment
    */
   async createScheduled(enrollmentId: string, scheduledAt?: string): Promise<CerSessionRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.createScheduledSession(enrollmentId, scheduledAt)
+    }
     const currentUserId = pb.authStore.record?.id
     return await pb.collection('cer_sessions').create<CerSessionRecord>({
       enrollment_id: enrollmentId,
@@ -54,6 +67,10 @@ export const cerSessionService = {
    * Inicia a sessão imediatamente (scheduled -> in_progress)
    */
   async startSession(sessionId: string): Promise<CerSessionRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.startSession(sessionId)
+    }
     return await pb.collection('cer_sessions').update<CerSessionRecord>(sessionId, {
       status: 'in_progress',
     })
@@ -63,6 +80,10 @@ export const cerSessionService = {
    * Conclui a sessão (in_progress -> completed)
    */
   async completeSession(sessionId: string): Promise<CerSessionRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.completeSession(sessionId)
+    }
     return await pb.collection('cer_sessions').update<CerSessionRecord>(sessionId, {
       status: 'completed',
     })
@@ -72,6 +93,10 @@ export const cerSessionService = {
    * Cancela a sessão (scheduled -> cancelled)
    */
   async cancelSession(sessionId: string): Promise<CerSessionRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.cancelSession(sessionId)
+    }
     return await pb.collection('cer_sessions').update<CerSessionRecord>(sessionId, {
       status: 'cancelled',
     })
@@ -95,6 +120,10 @@ export const cerSessionNoteService = {
    * Busca a nota canônica de uma sessão específica (se existir)
    */
   async getBySessionId(sessionId: string): Promise<CerSessionNoteRecord | null> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.getSessionNote(sessionId)
+    }
     try {
       const records = await pb.collection('cer_session_notes').getList<CerSessionNoteRecord>(1, 1, {
         filter: `session_id = "${sessionId}"`,
@@ -110,6 +139,10 @@ export const cerSessionNoteService = {
    * Cria a nota canônica para uma sessão
    */
   async create(sessionId: string, text: string): Promise<CerSessionNoteRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.createOrUpdateNote(sessionId, text)
+    }
     const session = await pb.collection('cer_sessions').getOne<CerSessionRecord>(sessionId)
     const currentUserId = pb.authStore.record?.id
     return await pb.collection('cer_session_notes').create<CerSessionNoteRecord>({
@@ -124,6 +157,11 @@ export const cerSessionNoteService = {
    * Atualiza o texto da nota (permitido somente enquanto sessão for scheduled ou in_progress)
    */
   async update(noteId: string, text: string): Promise<CerSessionNoteRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      // No demo mode, localizamos a nota pelo noteId ou atualizamos
+      return demoAdapter.createOrUpdateNote('', text)
+    }
     return await pb.collection('cer_session_notes').update<CerSessionNoteRecord>(noteId, {
       text: text,
     })
@@ -194,6 +232,11 @@ export const cerSessionObservationService = {
 export async function computeSessionPreparation(
   enrollmentId: string,
 ): Promise<SessionPreparationData> {
+  const { demoAdapter } = await import('@/services/demoAdapter')
+  if (demoAdapter.isEnabled()) {
+    return demoAdapter.computeSessionPreparation(enrollmentId)
+  }
+
   // 1. Enrollment
   const enrollment = await pb.collection('enrollments').getOne<EnrollmentRecord>(enrollmentId, {
     expand: 'person_id,product_id',

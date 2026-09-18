@@ -66,6 +66,20 @@ export const ParticipantWorkspace: React.FC = () => {
     setErrorMsg(null)
 
     try {
+      // Interceptação modo demonstração (ZERO REDE)
+      const { demoAdapter, DEMO_ENROLLMENT, DEMO_PERSON_MARIANA, DEMO_JOURNEY_STATE } =
+        await import('@/services/demoAdapter')
+      if (demoAdapter.isEnabled()) {
+        setEnrollment(DEMO_ENROLLMENT)
+        setPerson(DEMO_PERSON_MARIANA)
+        setJourneyState(DEMO_JOURNEY_STATE)
+        setAttentionItems([])
+        const accList = demoAdapter.listAcceptancesByEnrollment(enrollmentId)
+        setOperationalAcceptances(accList)
+        setLoading(false)
+        return
+      }
+
       // 1. Validar e carregar enrollment com RLS
       const enr = await pb.collection('enrollments').getOne<EnrollmentRecord>(enrollmentId, {
         expand: 'person_id,product_id',

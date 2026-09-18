@@ -22,6 +22,10 @@ import { deriveEvidenceCurrency, EvidenceCurrencyResult } from '@/services/orche
  */
 export const featureFlagService = {
   async isEnabled(key: string): Promise<boolean> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return false
+    }
     try {
       const record = await pb
         .collection('feature_flags')
@@ -250,6 +254,10 @@ export const enrollmentExperienceService = {
   },
 
   async listByEnrollment(enrollmentId: string): Promise<EnrollmentExperienceRecord[]> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return []
+    }
     return await pb.collection('enrollment_experiences').getFullList<EnrollmentExperienceRecord>({
       filter: `enrollment_id = "${enrollmentId}"`,
       expand: 'experience_id.dimension_id',
@@ -379,6 +387,10 @@ export const experienceResponseService = {
     enrollmentId: string,
     experienceId: string,
   ): Promise<ExperienceResponseRecord[]> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return []
+    }
     return await pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
       filter: `enrollment_id = "${enrollmentId}" && experience_id = "${experienceId}"`,
       expand: 'prompt_id',

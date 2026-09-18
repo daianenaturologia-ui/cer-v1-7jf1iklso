@@ -150,6 +150,12 @@ export const cerJournalService = {
   async createNextSessionMessage(
     input: CreateNextSessionMessageInput,
   ): Promise<CerNextSessionMessageRecord> {
+    // Interceptação modo demonstração (ZERO REDE)
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.createNextSessionMessage(input)
+    }
+
     const authId = pb.authStore.record?.id
     if (!authId) {
       throw new Error('Usuário autenticado obrigatório para criar recado.')
@@ -225,6 +231,11 @@ export const cerJournalService = {
   async listApprovedMessagesForProfessional(
     enrollmentId: string,
   ): Promise<CerNextSessionMessageRecord[]> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.listMessages(enrollmentId, true)
+    }
+
     try {
       return await pb
         .collection('cer_next_session_messages')
