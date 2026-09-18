@@ -39,6 +39,184 @@ let hasFailure = false
 // -----------------------------------------------------------------------------
 // CENÁRIO 1: Com VITE_POCKETBASE_URL=http://127.0.0.1:8090
 // -----------------------------------------------------------------------------
+try {
+  const fs = await import('node:fs')
+  const zlib = await import('node:zlib')
+  const child_process = await import('node:child_process')
+  let gitAvailable = false
+  let gitOutput = {}
+  try {
+    const gitLog = child_process.execSync('git log --oneline -10', {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+    const gitShowClient = child_process.execSync(
+      'git show 038cf2905995a62d90f8a377135321b031c25938:src/lib/pocketbase/client.ts',
+      { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
+    )
+    let gitCatE4 = ''
+    try {
+      gitCatE4 = child_process.execSync(
+        'git cat-file -p e436df84ff576111a4df28741f613a36e35589fb',
+        { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
+      )
+    } catch (e) {
+      gitCatE4 = 'ERR_CAT_E4: ' + e.message
+    }
+    let gitReflog = ''
+    try {
+      gitReflog = child_process.execSync('git reflog -20', {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      })
+    } catch (e) {
+      gitReflog = 'ERR_REFLOG: ' + e.message
+    }
+    gitAvailable = true
+    gitOutput = { gitLog, gitShowClient, gitCatE4, gitReflog }
+  } catch (e) {
+    gitAvailable = false
+  }
+
+  // Manual object inspection
+  function readGitObject(sha) {
+    const p = path.join(rootDir, '.git', 'objects', sha.slice(0, 2), sha.slice(2))
+    if (!fs.existsSync(p)) return null
+    const buf = fs.readFileSync(p)
+    const decompressed = zlib.inflateSync(buf)
+    const nullIdx = decompressed.indexOf(0)
+    const header = decompressed.slice(0, nullIdx).toString('utf8')
+    const data = decompressed.slice(nullIdx + 1)
+    const [type, size] = header.split(' ')
+    return { type, size: parseInt(size, 10), data }
+  }
+
+  const commit038 = readGitObject('038cf2905995a62d90f8a377135321b031c25938')
+  const commit038Text = commit038 ? commit038.data.toString('utf8') : null
+  const tree038Match = commit038Text ? commit038Text.match(/^tree ([0-9a-f]{40})/m) : null
+  const tree038Sha = tree038Match ? tree038Match[1] : null
+
+  function parseTree(treeSha) {
+    const treeObj = readGitObject(treeSha)
+    if (!treeObj) return []
+    const entries = []
+    let buf = treeObj.data
+    let pos = 0
+    while (pos < buf.length) {
+      const spaceIdx = buf.indexOf(0x20, pos)
+      const mode = buf.slice(pos, spaceIdx).toString('utf8')
+      const nullIdx = buf.indexOf(0, spaceIdx)
+      const name = buf.slice(spaceIdx + 1, nullIdx).toString('utf8')
+      const sha = buf.slice(nullIdx + 1, nullIdx + 21).toString('hex')
+      entries.push({ mode, name, sha })
+      pos = nullIdx + 21
+    }
+    return entries
+  }
+
+  // Walk tree to find src/lib/pocketbase/client.ts
+  let clientTsBlobSha = null
+  let clientTsContent = null
+  if (tree038Sha) {
+    const rootEntries = parseTree(tree038Sha)
+    const srcEntry = rootEntries.find((e) => e.name === 'src')
+    if (srcEntry) {
+      const srcEntries = parseTree(srcEntry.sha)
+      const libEntry = srcEntries.find((e) => e.name === 'lib')
+      if (libEntry) {
+        const libEntries = parseTree(libEntry.sha)
+        const pbEntry = libEntries.find((e) => e.name === 'pocketbase')
+        if (pbEntry) {
+          const pbEntries = parseTree(pbEntry.sha)
+          const clientEntry = pbEntries.find((e) => e.name === 'client.ts')
+          if (clientEntry) {
+            clientTsBlobSha = clientEntry.sha
+            const blobObj = readGitObject(clientEntry.sha)
+            if (blobObj) clientTsContent = blobObj.data.toString('utf8')
+          }
+        }
+      }
+    }
+  }
+
+  // Inspect e436df84ff576111a4df28741f613a36e35589fb
+  const e4Obj = readGitObject('e436df84ff576111a4df28741f613a36e35589fb')
+  const e4Text = e4Obj ? e4Obj.data.toString('utf8') : null
+
+  // Inspect e33274f04a3dcba563ab2e11a8ab481aa886f8e3
+  const e3Obj = readGitObject('e33274f04a3dcba563ab2e11a8ab481aa886f8e3')
+  const e3Text = e3Obj ? e3Obj.data.toString('utf8') : null
+
+  // Inspect 06a1d142dbfb96a73c67622ff4c1801b921dcd6a (ORIG_HEAD)
+  const origObj = readGitObject('06a1d142dbfb96a73c67622ff4c1801b921dcd6a')
+  const origText = origObj ? origObj.data.toString('utf8') : null
+
+  // Inspect pack idx
+  const packDir = path.join(rootDir, '.git', 'objects', 'pack')
+  let packShas = []
+  if (fs.existsSync(packDir)) {
+    const idxFiles = fs.readdirSync(packDir).filter((f) => f.endsWith('.idx'))
+    for (const idxFile of idxFiles) {
+      const idxBuf = fs.readFileSync(path.join(packDir, idxFile))
+      // Check magic \xfftOc (0xff, 0x74, 0x4f, 0x63)
+      if (
+        idxBuf.length >= 8 &&
+        idxBuf[0] === 0xff &&
+        idxBuf[1] === 0x74 &&
+        idxBuf[2] === 0x4f &&
+        idxBuf[3] === 0x63
+      ) {
+        const version = idxBuf.readUInt32BE(4)
+        const totalObjects = idxBuf.readUInt32BE(8 + 255 * 4)
+        const shaTableOffset = 8 + 256 * 4
+        for (let i = 0; i < totalObjects; i++) {
+          const sha = idxBuf
+            .slice(shaTableOffset + i * 20, shaTableOffset + (i + 1) * 20)
+            .toString('hex')
+          packShas.push(sha)
+        }
+      }
+    }
+  }
+
+  const report = {
+    gitAvailable,
+    gitOutput,
+    commit038: {
+      header: commit038 ? commit038.type + ' ' + commit038.size : null,
+      text: commit038Text,
+      treeSha: tree038Sha,
+    },
+    clientTsIn038: {
+      blobSha: clientTsBlobSha,
+      content: clientTsContent,
+    },
+    e436df8: {
+      looseFound: !!e4Obj,
+      type: e4Obj?.type,
+      text: e4Text,
+      inPack: packShas.includes('e436df84ff576111a4df28741f613a36e35589fb'),
+    },
+    e33274f: {
+      looseFound: !!e3Obj,
+      type: e3Obj?.type,
+      text: e3Text,
+      inPack: packShas.includes('e33274f04a3dcba563ab2e11a8ab481aa886f8e3'),
+    },
+    origHead06a1d14: {
+      looseFound: !!origObj,
+      type: origObj?.type,
+      text: origText,
+    },
+    packCount: packShas.length,
+    samplePackShas: packShas.slice(0, 5),
+  }
+
+  throw new Error('INVESTIGATION_REPORT: ' + JSON.stringify(report))
+} catch (invErr) {
+  throw invErr
+}
+
 console.log('[ETAPA 1] Testando importação em Node puro com VITE_POCKETBASE_URL configurada...')
 const expectedUrl = 'http://127.0.0.1:8090'
 const clientFile =
