@@ -98,10 +98,17 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     setLoading(true)
     setErrorMsg(null)
     try {
-      const planRecords = await pb.collection('cer_care_plans').getFullList<CerCarePlanRecord>({
-        filter: `enrollment_id = "${enrollmentId}"`,
-        sort: '-revision_number',
-      })
+      const { demoAdapter } = await import('@/services/demoAdapter')
+      let planRecords: CerCarePlanRecord[] = []
+
+      if (demoAdapter.isEnabled()) {
+        planRecords = demoAdapter.listPlans(enrollmentId)
+      } else {
+        planRecords = await pb.collection('cer_care_plans').getFullList<CerCarePlanRecord>({
+          filter: `enrollment_id = "${enrollmentId}"`,
+          sort: '-revision_number',
+        })
+      }
       setPlans(planRecords)
 
       // Seleciona o plano ativo ou o último draft
@@ -117,14 +124,20 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
       }
 
       // Buscar sugestões de IA para prioridades (priority_suggestion)
-      try {
-        const proposals = await pb.collection('cer_ai_proposals').getFullList<CerAiProposalRecord>({
-          filter: `enrollment_id = "${enrollmentId}" && proposal_type = "priority_suggestion" && status = "pending"`,
-          sort: '-created',
-        })
-        setAiProposals(proposals)
-      } catch {
+      if (demoAdapter.isEnabled()) {
         setAiProposals([])
+      } else {
+        try {
+          const proposals = await pb
+            .collection('cer_ai_proposals')
+            .getFullList<CerAiProposalRecord>({
+              filter: `enrollment_id = "${enrollmentId}" && proposal_type = "priority_suggestion" && status = "pending"`,
+              sort: '-created',
+            })
+          setAiProposals(proposals)
+        } catch {
+          setAiProposals([])
+        }
       }
     } catch (err: any) {
       console.error('Erro ao carregar planos de cuidado:', err)
@@ -136,20 +149,32 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
   const loadPlanDetails = async (planId: string) => {
     try {
-      const [prios, presList, accList] = await Promise.all([
-        cerCarePlanService.listPriorities(planId),
-        pb.collection('cer_care_plan_presentations').getFullList<CerCarePlanPresentationRecord>({
-          filter: `plan_id = "${planId}"`,
-          sort: '-created',
-        }),
-        pb.collection('cer_operational_acceptances').getFullList<CerOperationalAcceptanceRecord>({
-          filter: `enrollment_id = "${enrollmentId}"`,
-          sort: '-created',
-        }),
-      ])
-      setPriorities(prios)
-      setPresentations(presList)
-      setAcceptances(accList)
+      const { demoAdapter } = await import('@/services/demoAdapter')
+      if (demoAdapter.isEnabled()) {
+        const [prios, presList, accList] = await Promise.all([
+          cerCarePlanService.listPriorities(planId),
+          demoAdapter.listPresentedForParticipant(enrollmentId),
+          demoAdapter.listAcceptancesByEnrollment(enrollmentId),
+        ])
+        setPriorities(prios)
+        setPresentations(presList)
+        setAcceptances(accList)
+      } else {
+        const [prios, presList, accList] = await Promise.all([
+          cerCarePlanService.listPriorities(planId),
+          pb.collection('cer_care_plan_presentations').getFullList<CerCarePlanPresentationRecord>({
+            filter: `plan_id = "${planId}"`,
+            sort: '-created',
+          }),
+          pb.collection('cer_operational_acceptances').getFullList<CerOperationalAcceptanceRecord>({
+            filter: `enrollment_id = "${enrollmentId}"`,
+            sort: '-created',
+          }),
+        ])
+        setPriorities(prios)
+        setPresentations(presList)
+        setAcceptances(accList)
+      }
     } catch (err) {
       console.error('Erro ao carregar detalhes do plano:', err)
     }
@@ -268,10 +293,13 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
   const handleDismissAiSuggestion = async (proposalId: string) => {
     try {
-      await pb.collection('cer_ai_proposals').update(proposalId, {
-        status: 'dismissed',
-        decided_at: new Date().toISOString(),
-      })
+      const { demoAdapter } = await import('@/services/demoAdapter')
+      if (!demoAdapter.isEnabled()) {
+        await pb.collection('cer_ai_proposals').update(proposalId, {
+          status: 'dismissed',
+          decided_at: new Date().toISOString(),
+        })
+      }
       setAiProposals((prev) => prev.filter((p) => p.id !== proposalId))
     } catch (err) {
       console.error('Erro ao dispensar sugestão:', err)

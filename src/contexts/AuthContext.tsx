@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import pb from '@/lib/pocketbase/client'
 import type { RecordAuthResponse, RecordModel } from 'pocketbase'
 import type {
@@ -9,6 +9,7 @@ import type {
   UserAccountStatus,
 } from '@/types/cer'
 import { auditService } from '@/services/cer'
+import { demoAdapter } from '@/services/demoAdapter'
 
 interface AuthContextType {
   user: UserAccountRecord | RecordModel | null
@@ -20,6 +21,7 @@ interface AuthContextType {
   isInteragente: boolean
   isProfissional: boolean
   isAdmin: boolean
+  isDemo: boolean
   mfaStatus: 'NOT_IMPLEMENTED'
   login: (email: string, pass: string) => Promise<RecordAuthResponse<RecordModel>>
   logout: () => void
@@ -35,8 +37,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [roles, setRoles] = useState<UserRoleType[]>([])
   const [accountStatus, setAccountStatus] = useState<UserAccountStatus | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isDemoActive, setIsDemoActive] = useState<boolean>(() => demoAdapter.isEnabled())
+
+  const syncDemoState = useCallback(() => {
+    const enabled = demoAdapter.isEnabled()
+    setIsDemoActive(enabled)
+
+    if (enabled) {
+      const demoUser = demoAdapter.getCurrentUser()
+      const demoPerson = demoAdapter.getCurrentPerson()
+      const persona = demoAdapter.getActivePersona()
+
+      setUser({
+        id: demoUser.id,
+        email: demoUser.email,
+        name: demoUser.name,
+        person_id: demoUser.person_id,
+        status: demoUser.status,
+      } as unknown as RecordModel)
+      setPerson(demoPerson)
+      setRoles([persona === 'daiane' ? 'profissional' : 'interagente'])
+      setAccountStatus('active')
+      setIsLoading(false)
+      return true
+    }
+    return false
+  }, [])
 
   const fetchUserData = async (userId: string) => {
+    if (demoAdapter.isEnabled()) {
+      syncDemoState()
+      return
+    }
+
     try {
       // 1. Obter usuário com dados atualizados
       const freshUser = await pb.collection('users').getOne(userId)
@@ -88,18 +121,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   useEffect(() => {
-    const currentUser = pb.authStore.record
-    setUser(currentUser)
+    // Inscrever para atualizações do demoAdapter (troca de persona, enable/disable)
+    const unsubscribeDemo = demoAdapter.subscribe(() => {
+      if (demoAdapter.isEnabled()) {
+        syncDemoState()
+      } else {
+        setIsDemoActive(false)
+        const currentUser = pb.authStore.record
+        setUser(currentUser)
+        if (currentUser?.id) {
+          fetchUserData(currentUser.id).finally(() => setIsLoading(false))
+        } else {
+          setPerson(null)
+          setRoles([])
+          setAccountStatus(null)
+          setIsLoading(false)
+        }
+      }
+    })
 
-    if (currentUser?.id) {
-      fetchUserData(currentUser.id).finally(() => {
-        setIsLoading(false)
-      })
+    if (demoAdapter.isEnabled()) {
+      syncDemoState()
     } else {
-      setIsLoading(false)
+      const currentUser = pb.authStore.record
+      setUser(currentUser)
+
+      if (currentUser?.id) {
+        fetchUserData(currentUser.id).finally(() => {
+          setIsLoading(false)
+        })
+      } else {
+        setIsLoading(false)
+      }
     }
 
-    const unsubscribe = pb.authStore.onChange((_token, model) => {
+    const unsubscribePb = pb.authStore.onChange((_token, model) => {
+      if (demoAdapter.isEnabled()) {
+        return
+      }
       setUser(model)
       if (model?.id) {
         fetchUserData(model.id)
@@ -111,9 +170,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })
 
     return () => {
-      unsubscribe()
+      unsubscribeDemo()
+      unsubscribePb()
     }
-  }, [])
+  }, [syncDemoState])
 
   const login = async (email: string, pass: string) => {
     try {
@@ -151,6 +211,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const logout = () => {
+    if (demoAdapter.isEnabled()) {
+      demoAdapter.disableDemo()
+      setIsDemoActive(false)
+      setUser(null)
+      setPerson(null)
+      setRoles([])
+      setAccountStatus(null)
+      return
+    }
+
     if (user?.id) {
       auditService.log({
         actor_user_id: user.id,
@@ -200,17 +270,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       accountStatus,
       isLoading,
       // Se status for 'invited', o usuário está autenticado para o fluxo FirstLoginPasswordChange
-      isAuthenticated: Boolean(user) && (accountStatus === 'active' || accountStatus === 'invited'),
+      isAuthenticated:
+        isDemoActive ||
+        (Boolean(user) && (accountStatus === 'active' || accountStatus === 'invited')),
       isInteragente: roles.includes('interagente'),
       isProfissional: isProf,
       isAdmin: isAdm,
+      isDemo: isDemoActive,
       mfaStatus: 'NOT_IMPLEMENTED' as const,
       login,
       logout,
       refreshAuthData,
       requestPasswordReset,
     }),
-    [user, person, roles, accountStatus, isLoading, isProf, isAdm],
+    [user, person, roles, accountStatus, isLoading, isProf, isAdm, isDemoActive],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -12,10 +12,11 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card'
-import { AlertCircle, Lock, Mail, CheckCircle2, HelpCircle } from 'lucide-react'
+import { AlertCircle, Lock, Mail, CheckCircle2, HelpCircle, Sparkles } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { FirstLoginPasswordChange } from '@/components/FirstLoginPasswordChange'
 import { DevLoginHelpers } from '@/components/DevLoginHelpers'
+import { demoAdapter } from '@/services/demoAdapter'
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -32,6 +33,11 @@ export const Login: React.FC = () => {
   const location = useLocation()
 
   const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/'
+
+  const handleStartDemo = () => {
+    demoAdapter.enableDemo('mariana')
+    navigate('/', { replace: true })
+  }
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -261,6 +267,19 @@ export const Login: React.FC = () => {
                     <Button type="submit" className="w-full text-sm" disabled={loading}>
                       {loading ? 'Entrando...' : 'Entrar'}
                     </Button>
+
+                    <div className="w-full pt-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleStartDemo}
+                        className="w-full text-xs font-medium border-primary/30 text-primary hover:bg-primary/5 hover:text-primary gap-1.5"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                        <span>Ver demonstração — contas fictícias</span>
+                      </Button>
+                    </div>
+
                     <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
                       A entrada de interagentes ocorre sob convite e acompanhamento profissional.
                       Precisa de ajuda? Fale com sua profissional.

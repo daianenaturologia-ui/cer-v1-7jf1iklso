@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
 import { cerPlannerService } from '@/services/cerPlannerService'
+import { demoAdapter } from '@/services/demoAdapter'
 import type { EnrollmentRecord, CerPlannerItemRecord } from '@/types/cer'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -32,18 +33,22 @@ export const PlannerPage: React.FC = () => {
         setPlannerItems(items)
 
         // CTA de Cycle Review quando participant_review_invited_at ativo
-        try {
-          const reviews = await pb.collection('cer_cycle_reviews').getFullList({
-            filter: `enrollment_id = "${activeEnrollment.id}" && participant_review_invited_at != "" && participant_review_completed_at = ""`,
-            sort: '-created',
-          })
-          if (reviews.length > 0 && reviews[0].care_cycle_id) {
-            setActiveReviewInvite({ cycleId: reviews[0].care_cycle_id })
-          } else {
-            setActiveReviewInvite(null)
+        if (!demoAdapter.isEnabled()) {
+          try {
+            const reviews = await pb.collection('cer_cycle_reviews').getFullList({
+              filter: `enrollment_id = "${activeEnrollment.id}" && participant_review_invited_at != "" && participant_review_completed_at = ""`,
+              sort: '-created',
+            })
+            if (reviews.length > 0 && reviews[0].care_cycle_id) {
+              setActiveReviewInvite({ cycleId: reviews[0].care_cycle_id })
+            } else {
+              setActiveReviewInvite(null)
+            }
+          } catch {
+            /* intentionally ignored */
           }
-        } catch {
-          /* intentionally ignored */
+        } else {
+          setActiveReviewInvite(null)
         }
       }
     } catch (err) {

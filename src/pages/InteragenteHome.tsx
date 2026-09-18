@@ -201,18 +201,22 @@ export const InteragenteHome: React.FC = () => {
         }
 
         // Item 22: Verificar convite ativo de Cycle Review (participant_review_invited_at)
-        try {
-          const reviews = await pb.collection('cer_cycle_reviews').getFullList({
-            filter: `enrollment_id = "${activeEnr.id}" && participant_review_invited_at != "" && participant_review_completed_at = ""`,
-            sort: '-created',
-          })
-          if (reviews.length > 0 && reviews[0].care_cycle_id) {
-            setActiveReviewInvite({ cycleId: reviews[0].care_cycle_id })
-          } else {
-            setActiveReviewInvite(null)
+        if (!demoAdapter.isEnabled()) {
+          try {
+            const reviews = await pb.collection('cer_cycle_reviews').getFullList({
+              filter: `enrollment_id = "${activeEnr.id}" && participant_review_invited_at != "" && participant_review_completed_at = ""`,
+              sort: '-created',
+            })
+            if (reviews.length > 0 && reviews[0].care_cycle_id) {
+              setActiveReviewInvite({ cycleId: reviews[0].care_cycle_id })
+            } else {
+              setActiveReviewInvite(null)
+            }
+          } catch {
+            /* intentionally ignored */
           }
-        } catch {
-          /* intentionally ignored */
+        } else {
+          setActiveReviewInvite(null)
         }
 
         // Item 14: Onboarding aparece uma vez no first access apropriado
@@ -276,20 +280,22 @@ export const InteragenteHome: React.FC = () => {
     setShowOnboarding(false)
     if (enrollment?.id) {
       localStorage.setItem(`cer_onboarding_completed_${enrollment.id}`, 'true')
-      const journeyRecord = enrollment.expand?.journey_states_via_enrollment_id?.[0]
-      if (journeyRecord?.id) {
-        try {
-          await pb.collection('journey_states').update(journeyRecord.id, {
-            current_stage: 'consciousness',
-            stage_status: 'em_andamento',
-            metadata: {
-              ...(journeyRecord.metadata || {}),
-              onboarding_completed: true,
-              onboarding_completed_at: new Date().toISOString(),
-            },
-          })
-        } catch {
-          /* intentionally ignored */
+      if (!demoAdapter.isEnabled()) {
+        const journeyRecord = enrollment.expand?.journey_states_via_enrollment_id?.[0]
+        if (journeyRecord?.id) {
+          try {
+            await pb.collection('journey_states').update(journeyRecord.id, {
+              current_stage: 'consciousness',
+              stage_status: 'em_andamento',
+              metadata: {
+                ...(journeyRecord.metadata || {}),
+                onboarding_completed: true,
+                onboarding_completed_at: new Date().toISOString(),
+              },
+            })
+          } catch {
+            /* intentionally ignored */
+          }
         }
       }
     }
