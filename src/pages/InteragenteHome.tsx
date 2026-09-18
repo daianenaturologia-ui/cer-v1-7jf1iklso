@@ -49,6 +49,7 @@ import { cerPracticeAssignmentService } from '@/services/cerPracticeAssignmentSe
 import { cerPlannerService } from '@/services/cerPlannerService'
 import { cerJournalService } from '@/services/cerJournalService'
 import { cerCarePlanService } from '@/services/cerCarePlanService'
+import { demoAdapter } from '@/services/demoAdapter'
 import type { CerCarePlanPresentationRecord, OperationalAcceptanceResponseType } from '@/types/cer'
 import { ExperimentCard } from '@/components/ExperimentCard'
 import { MandalaStructuredView } from '@/components/MandalaStructuredView'

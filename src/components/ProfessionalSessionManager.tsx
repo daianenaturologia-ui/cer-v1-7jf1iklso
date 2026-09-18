@@ -414,7 +414,9 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                       {msg.summary_text && (
                         <div className="p-2 rounded bg-muted/30 border border-border/30 text-[11px] font-medium text-foreground">
                           <span className="text-[10px] text-muted-foreground uppercase block font-semibold mb-0.5">
-                            Resumo conferido pela interagente:
+                            {(msg as { summary_source?: string }).summary_source === 'system'
+                              ? 'Resumo do sistema:'
+                              : 'Resumo validado pela interagente:'}
                           </span>
                           {msg.summary_text}
                         </div>

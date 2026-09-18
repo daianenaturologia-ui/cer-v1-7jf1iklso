@@ -118,7 +118,7 @@ export const DEMO_ENROLLMENT: EnrollmentRecord = {
 
 interface DemoStateStore {
   activePersona: 'mariana' | 'daiane'
-  messages: CerNextSessionMessageRecord[]
+  messages: (CerNextSessionMessageRecord & { summary_source?: 'participant' | 'system' })[]
   sessions: CerSessionRecord[]
   notes: CerSessionNoteRecord[]
   plans: CerCarePlanRecord[]
@@ -127,50 +127,15 @@ interface DemoStateStore {
   acceptances: CerOperationalAcceptanceRecord[]
 }
 
-const STORAGE_KEY = 'cer_demo_mode_state_v1'
+const STORAGE_KEY = 'cer_demo_mode_state_v2'
+const LEGACY_STORAGE_KEY_V1 = 'cer_demo_mode_state_v1'
 
 function getInitialState(): DemoStateStore {
   return {
     activePersona: 'mariana',
-    messages: [
-      {
-        id: 'demo-msg-seed-1',
-        enrollment_id: DEMO_ENROLLMENT_ID,
-        participant_user_id: DEMO_USER_MARIANA.id,
-        message_text:
-          'O que a traz:\nSinto cansaço ao final da tarde e dificuldade de desacelerar à noite.\n\nO que já a ajuda:\nCaminhar 20 minutos no parque ouvindo sons calmos.\n\nO que deseja cuidar:\nConstruir um ritmo sustentável para meu sono e respiração.',
-        summary_text: 'Sinto cansaço ao final da tarde e dificuldade de desacelerar à noite...',
-        status: 'approved',
-        access_class: 'shared_care',
-        approved_at: '2025-02-10T14:30:00.000Z',
-        created: '2025-02-10T14:00:00.000Z',
-        updated: '2025-02-10T14:30:00.000Z',
-      },
-    ],
-    sessions: [
-      {
-        id: 'demo-session-seed-1',
-        enrollment_id: DEMO_ENROLLMENT_ID,
-        professional_user_id: DEMO_USER_DAIANE.id,
-        scheduled_at: '2025-02-14T15:00:00.000Z',
-        started_at: '2025-02-14T15:02:00.000Z',
-        completed_at: '2025-02-14T15:55:00.000Z',
-        status: 'completed',
-        created: '2025-02-12T10:00:00.000Z',
-        updated: '2025-02-14T15:55:00.000Z',
-      },
-    ],
-    notes: [
-      {
-        id: 'demo-note-seed-1',
-        session_id: 'demo-session-seed-1',
-        enrollment_id: DEMO_ENROLLMENT_ID,
-        author_user_id: DEMO_USER_DAIANE.id,
-        text: 'Acolhimento inicial realizado. Mariana reconheceu boa resposta quando caminha ao ar livre e identificou o pico de ansiedade vespertino. Pactuamos priorizar regulação do descanso noturno.',
-        created: '2025-02-14T15:55:00.000Z',
-        updated: '2025-02-14T15:55:00.000Z',
-      },
-    ],
+    messages: [],
+    sessions: [],
+    notes: [],
     plans: [
       {
         id: 'demo-plan-seed-1',
@@ -236,22 +201,7 @@ function getInitialState(): DemoStateStore {
         updated: '2025-02-15T09:30:00.000Z',
       },
     ],
-    acceptances: [
-      {
-        id: 'demo-acc-seed-1',
-        presentation_id: 'demo-pres-seed-1',
-        plan_id: 'demo-plan-seed-1',
-        priority_id: 'demo-prio-seed-1',
-        enrollment_id: DEMO_ENROLLMENT_ID,
-        participant_user_id: DEMO_USER_MARIANA.id,
-        response_type: 'wants_to_try',
-        shared_comment: 'Faz muito sentido começar com apenas 5 minutos. Quero tentar hoje mesmo!',
-        access_class: 'shared_care',
-        record_status: 'current',
-        created: '2025-02-15T11:00:00.000Z',
-        updated: '2025-02-15T11:00:00.000Z',
-      },
-    ],
+    acceptances: [],
   }
 }
 
@@ -267,6 +217,9 @@ class DemoAdapter {
 
   private loadState(): DemoStateStore {
     try {
+      // Remoção explícita do cache v1 para evitar contaminação por sementes antigas
+      localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
+
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
         return JSON.parse(raw)
@@ -279,6 +232,7 @@ class DemoAdapter {
 
   private saveState(): void {
     try {
+      localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state))
       localStorage.setItem('cer_demo_mode_active', this.isDemoEnabled ? 'true' : 'false')
       this.notify()
@@ -307,6 +261,11 @@ class DemoAdapter {
   }
 
   public enableDemo(persona: 'mariana' | 'daiane' = 'mariana'): void {
+    try {
+      localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
+    } catch {
+      /* ignore */
+    }
     this.isDemoEnabled = true
     this.state.activePersona = persona
     this.saveState()
@@ -316,6 +275,7 @@ class DemoAdapter {
     this.isDemoEnabled = false
     try {
       localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
       localStorage.removeItem('cer_demo_mode_active')
     } catch {
       /* ignore */
@@ -325,6 +285,11 @@ class DemoAdapter {
   }
 
   public resetToDefaultState(): void {
+    try {
+      localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
+    } catch {
+      /* ignore */
+    }
     this.state = getInitialState()
     this.saveState()
   }
@@ -365,20 +330,24 @@ class DemoAdapter {
     enrollment_id: string
     message_text: string
     summary_text?: string
+    summary_source?: 'participant' | 'system'
     as_draft?: boolean
-  }): CerNextSessionMessageRecord {
+  }): CerNextSessionMessageRecord & { summary_source?: 'participant' | 'system' } {
     const isDraft = input.as_draft ?? false
     const cleanText = input.message_text.trim()
-    const summary =
-      input.summary_text?.trim() ||
-      (cleanText.length <= 120 ? cleanText : cleanText.slice(0, 117) + '...')
+    const hasExplicitSummary = Boolean(input.summary_text && input.summary_text.trim().length > 0)
+    const summary = hasExplicitSummary ? input.summary_text!.trim() : undefined
+    const summarySource: 'participant' | 'system' | undefined = hasExplicitSummary
+      ? (input.summary_source ?? 'participant')
+      : undefined
 
-    const newRecord: CerNextSessionMessageRecord = {
+    const newRecord: CerNextSessionMessageRecord & { summary_source?: 'participant' | 'system' } = {
       id: `demo-msg-${Date.now()}`,
       enrollment_id: input.enrollment_id,
       participant_user_id: DEMO_USER_MARIANA.id,
       message_text: cleanText,
       summary_text: summary,
+      summary_source: summarySource,
       status: isDraft ? 'draft' : 'approved',
       access_class: isDraft ? 'participant_private' : 'shared_care',
       approved_at: isDraft ? undefined : new Date().toISOString(),
@@ -499,7 +468,7 @@ class DemoAdapter {
       ],
       recentRecognitions: [],
       recentCompletedExperiences: [],
-      recentPresentations: this.state.presentations.filter((p) => p.status === 'presented'),
+      recentPresentations: [],
       continuityHighlights: {
         criticalRecognitions: [],
         supportiveRecognitions: [],

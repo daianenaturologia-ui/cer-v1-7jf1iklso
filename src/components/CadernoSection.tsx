@@ -686,7 +686,7 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
                       {msg.summary_text && (
                         <div className="p-2 rounded bg-background/80 border border-border/40 space-y-0.5">
                           <span className="text-[10px] font-semibold text-muted-foreground uppercase">
-                            Resumo conferido:
+                            Resumo breve:
                           </span>
                           <p className="text-xs text-foreground font-medium leading-snug">
                             {msg.summary_text}
