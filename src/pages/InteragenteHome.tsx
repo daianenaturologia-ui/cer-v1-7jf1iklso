@@ -1010,20 +1010,13 @@ export const InteragenteHome: React.FC = () => {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 font-semibold text-sm text-emerald-900 dark:text-emerald-200">
                         <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                        <span className="font-serif text-base">
-                          Agora você já pode conhecer a sua Consciência
-                        </span>
+                        <span className="font-serif text-base">Pré-consulta enviada</span>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed pt-1 whitespace-pre-line font-sans">
-                        Suas respostas foram enviadas para Daiane. A partir de agora, você pode
-                        conhecer as seis dimensões do seu ser e responder às avaliações no seu
-                        ritmo.
-                        {'\n\n'}
-                        Se desejar, você pode concluir todas antes do primeiro encontro. Se forem
-                        muitas perguntas para um único momento, poderá continuar durante o período
-                        dos dois primeiros encontros. O importante é não deixar essa etapa para
-                        muito depois, porque essas informações ajudarão Daiane a aproveitar melhor o
-                        tempo com você.
+                        Agora você já pode acessar o próximo passo:{' '}
+                        <strong className="text-foreground">Consciência</strong>. Nessa etapa, você
+                        encontrará as seis dimensões do Ser Integral e poderá responder às
+                        avaliações no seu ritmo.
                       </p>
                     </div>
 
@@ -1033,7 +1026,7 @@ export const InteragenteHome: React.FC = () => {
                         onClick={() => setActivePhase('consciencia')}
                         className="text-xs h-8 px-4 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
                       >
-                        <span>Ir para Consciência</span>
+                        <span>Acessar Consciência</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Button>
                       <Button
@@ -1131,11 +1124,14 @@ export const InteragenteHome: React.FC = () => {
               <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <span className="font-semibold text-foreground text-xs block">
-                    Pronto para o próximo passo?
+                    {hasSentIntakeOnce
+                      ? 'Próximo passo disponível'
+                      : 'Pronto para o próximo passo?'}
                   </span>
                   <p className="text-xs text-muted-foreground">
-                    Depois de enviar seu relato, explore a fase de Consciência para reconhecer seu
-                    momento nas seis dimensões.
+                    {hasSentIntakeOnce
+                      ? 'Nessa etapa, você encontrará as seis dimensões do Ser Integral e poderá responder às avaliações no seu ritmo.'
+                      : 'Depois de enviar seu relato, explore a fase de Consciência para reconhecer seu momento nas seis dimensões.'}
                   </p>
                 </div>
                 <Button
@@ -1143,7 +1139,7 @@ export const InteragenteHome: React.FC = () => {
                   onClick={() => setActivePhase('consciencia')}
                   className="text-xs h-8 px-3 gap-1.5 shrink-0"
                 >
-                  <span>Ir para Consciência</span>
+                  <span>Acessar Consciência</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               </CardContent>
