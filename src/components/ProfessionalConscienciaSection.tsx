@@ -109,7 +109,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
       if (demoAdapter.isEnabled()) {
         const demoResponses = demoAdapter.listExperienceResponses(enrollment.id)
         setEnrollmentExps([])
-        setAllResponses(demoResponses)
+        setAllResponses(Array.isArray(demoResponses) ? demoResponses : [])
         setKnowledgeItems([])
         setLoading(false)
         return
@@ -125,11 +125,14 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
         }),
       ])
 
-      setEnrollmentExps(exps)
-      setKnowledgeItems(kis)
-      setAllResponses(resps)
+      setEnrollmentExps(Array.isArray(exps) ? exps : [])
+      setKnowledgeItems(Array.isArray(kis) ? kis : [])
+      setAllResponses(Array.isArray(resps) ? resps : [])
     } catch (err) {
       console.error('Erro ao carregar dados da Consciência Profissional:', err)
+      setEnrollmentExps([])
+      setKnowledgeItems([])
+      setAllResponses([])
     } finally {
       setLoading(false)
     }
@@ -161,15 +164,15 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
 
   // Helpers de derivação de estado
   const getEnrollmentExpForDim = (experienceId: string): EnrollmentExperienceRecord | undefined => {
-    return enrollmentExps.find(
+    return (enrollmentExps || []).find(
       (e) =>
-        e.experience_id === experienceId ||
-        (e.expand?.experience_id && (e.expand.experience_id as any).id === experienceId),
+        e?.experience_id === experienceId ||
+        (e?.expand?.experience_id && (e.expand.experience_id as any).id === experienceId),
     )
   }
 
   const getResponsesForDim = (experienceId: string): ExperienceResponseRecord[] => {
-    return allResponses.filter((r) => r.experience_id === experienceId)
+    return (allResponses || []).filter((r) => r?.experience_id === experienceId)
   }
 
   const getStatusLabel = (

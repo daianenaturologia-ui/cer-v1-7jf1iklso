@@ -64,10 +64,11 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
   const loadAll = async () => {
     try {
       setLoading(true)
-      const [sessList, prepData] = await Promise.all([
+      const [rawSessList, prepData] = await Promise.all([
         cerSessionService.listByEnrollment(enrollmentId),
         computeSessionPreparation(enrollmentId),
       ])
+      const sessList = Array.isArray(rawSessList) ? rawSessList : []
       setSessions(sessList)
       setPreparation(prepData)
 

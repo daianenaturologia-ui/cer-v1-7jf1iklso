@@ -342,6 +342,9 @@ class DemoAdapter {
 
   // 2. Encontros / Sessões (cerSessionService & cerSessionNoteService)
   public listSessions(enrollmentId?: string): CerSessionRecord[] {
+    if (!Array.isArray(this.state.sessions)) {
+      return []
+    }
     return this.state.sessions
       .filter((s) => (!enrollmentId ? true : s.enrollment_id === enrollmentId))
       .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())

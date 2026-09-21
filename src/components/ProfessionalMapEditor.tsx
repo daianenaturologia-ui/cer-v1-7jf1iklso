@@ -114,12 +114,30 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
         cerMapCandidateService.listCandidatesForEnrollment(enrollmentId),
         cerMapService.canPublishMap(enrollmentId),
       ])
-      setActiveDraft(draft)
-      setPublishedMap(pub)
-      setCandidates(cands)
-      setPublishEligibility(eligibility)
+      const safeDraft = draft
+        ? {
+            ...draft,
+            items: Array.isArray(draft.items) ? draft.items : [],
+          }
+        : null
+      const safePub = pub
+        ? {
+            ...pub,
+            items: Array.isArray(pub.items) ? pub.items : [],
+          }
+        : null
+      setActiveDraft(safeDraft)
+      setPublishedMap(safePub)
+      setCandidates(Array.isArray(cands) ? cands : [])
+      setPublishEligibility(
+        eligibility || {
+          allowed: false,
+          reason: 'O Mapa CER poderá ser compartilhado após o registro do primeiro encontro.',
+          sessionCount: 0,
+        },
+      )
     } catch (err: any) {
-      setErrorMessage(err.message || 'Falha ao carregar Mapa CER.')
+      setErrorMessage(err?.message || 'Falha ao carregar Mapa CER.')
     } finally {
       setLoading(false)
     }
@@ -200,7 +218,8 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
     setSavingItem(true)
     setErrorMessage(null)
     try {
-      const sectionItems = activeDraft.items.filter((it) => it.section === targetSection)
+      const draftItems = Array.isArray(activeDraft.items) ? activeDraft.items : []
+      const sectionItems = draftItems.filter((it) => it?.section === targetSection)
       const nextPos = sectionItems.length + 1
 
       // 1. Criar o item no draft
@@ -258,8 +277,9 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
   // Reordenar item para cima/baixo na seção
   const handleMovePosition = async (item: CerMapItemRecord, direction: 'up' | 'down') => {
     if (!activeDraft) return
-    const sectionItems = activeDraft.items
-      .filter((it) => it.section === item.section)
+    const draftItems = Array.isArray(activeDraft.items) ? activeDraft.items : []
+    const sectionItems = draftItems
+      .filter((it) => it?.section === item?.section)
       .sort((a, b) => a.position - b.position)
 
     const currentIndex = sectionItems.findIndex((it) => it.id === item.id)
@@ -286,11 +306,12 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
   // Validação de recursos antes do publish (Item 21)
   const checkResourcesBalance = (): boolean => {
     if (!activeDraft) return true
-    const hasChallenges = activeDraft.items.some(
-      (it) => it.section === 'quando_saio_do_meu_eixo' || it.section === 'meus_padroes',
+    const draftItems = Array.isArray(activeDraft.items) ? activeDraft.items : []
+    const hasChallenges = draftItems.some(
+      (it) => it?.section === 'quando_saio_do_meu_eixo' || it?.section === 'meus_padroes',
     )
-    const hasResources = activeDraft.items.some(
-      (it) => it.section === 'meus_recursos' || it.section === 'quando_estou_no_meu_eixo',
+    const hasResources = draftItems.some(
+      (it) => it?.section === 'meus_recursos' || it?.section === 'quando_estou_no_meu_eixo',
     )
 
     if (hasChallenges && !hasResources) {
@@ -435,7 +456,8 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <span>Rascunho Ativo (Versão {activeDraft.version_number})</span>
                     <Badge variant="outline" className="text-[10px] font-mono">
-                      {activeDraft.items.length} {activeDraft.items.length === 1 ? 'item' : 'itens'}
+                      {(activeDraft.items || []).length}{' '}
+                      {(activeDraft.items || []).length === 1 ? 'item' : 'itens'}
                     </Badge>
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
@@ -603,14 +625,14 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                 Estrutura Atual do Rascunho v{activeDraft.version_number}
               </h4>
 
-              {activeDraft.items.length === 0 ? (
+              {!activeDraft.items || activeDraft.items.length === 0 ? (
                 <div className="p-6 text-center border border-dashed rounded-lg text-xs text-muted-foreground space-y-1">
                   <p>Rascunho vazio. Adicione itens acima para compor o Mapa CER.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {Object.values(CER_MAP_SECTIONS).map((sec) => {
-                    const secItems = activeDraft.items
+                    const secItems = (activeDraft.items || [])
                       .filter((it) => it.section === sec)
                       .sort((a, b) => a.position - b.position)
 
@@ -706,7 +728,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
           <div className="text-center py-12 space-y-3 border border-dashed rounded-xl">
             <Compass className="w-10 h-10 text-muted-foreground/50 mx-auto" />
             <h3 className="text-sm font-medium text-foreground">
-              Nenhum Mapa CER iniciado para {participantName}
+              O Mapa CER ainda não foi iniciado para esta interagente.
             </h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
               O Mapa CER é uma síntese participante-facing, viva e versionada da compreensão atual.

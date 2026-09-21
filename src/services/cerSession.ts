@@ -23,13 +23,15 @@ export const cerSessionService = {
   async listByEnrollment(enrollmentId: string): Promise<CerSessionRecord[]> {
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {
-      return demoAdapter.listSessions(enrollmentId)
+      const res = demoAdapter.listSessions(enrollmentId)
+      return Array.isArray(res) ? res : []
     }
-    return await pb.collection('cer_sessions').getFullList<CerSessionRecord>({
+    const res = await pb.collection('cer_sessions').getFullList<CerSessionRecord>({
       filter: `enrollment_id = "${enrollmentId}"`,
       sort: '-created',
       expand: 'professional_user_id,enrollment_id',
     })
+    return Array.isArray(res) ? res : []
   },
 
   /**
@@ -197,13 +199,14 @@ export const cerSessionObservationService = {
    * Lista as observações de um enrollment inteiro
    */
   async listByEnrollment(enrollmentId: string): Promise<CerSessionObservationRecord[]> {
-    return await pb
+    const res = await pb
       .collection('cer_session_observations')
       .getFullList<CerSessionObservationRecord>({
         filter: `enrollment_id = "${enrollmentId}"`,
         sort: '-created',
         expand: 'recorded_by_user_id,session_id',
       })
+    return Array.isArray(res) ? res : []
   },
 
   /**
