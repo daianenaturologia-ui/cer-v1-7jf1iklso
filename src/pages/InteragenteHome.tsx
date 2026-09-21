@@ -42,7 +42,9 @@ import {
   Brain,
   Calendar as CalendarIcon,
   RotateCcw,
+  ChevronDown,
 } from 'lucide-react'
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
 import { ExperienceEngine } from '@/components/experience'
 import { ParticipantMapDisplay } from '@/components/ParticipantMapDisplay'
 import { cerMapService } from '@/services/cerMapService'
@@ -381,10 +383,10 @@ export const InteragenteHome: React.FC = () => {
         as_draft: false,
       })
       setIntakeSubmittedMessage(
-        'Seu relato foi enviado com sucesso para Daiane. Ele estará disponível no prontuário para o próximo encontro.',
+        'Seu relato foi enviado com sucesso para Daia. Ele estará disponível no prontuário para o próximo encontro.',
       )
       toast({
-        title: 'Relato enviado para Daiane',
+        title: 'Relato enviado para Daia',
         description:
           'Agradecemos por compartilhar. Você agora pode explorar a fase de Consciência.',
       })
@@ -541,14 +543,16 @@ export const InteragenteHome: React.FC = () => {
           </Card>
         )}
 
-        {/* Identidade e Acolhimento Humano (Clean Tech Copy) */}
+        {/* Identidade e Acolhimento Humano */}
         <div className="space-y-1.5">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground font-serif">
-            Olá, {person?.preferred_name || person?.full_name || 'Interagente'}
+            Olá, {person?.preferred_name || person?.full_name?.split(' ')[0] || 'você'}. Parabéns
+            por escolher cuidar de si.
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Este é o seu espaço de acompanhamento contínuo no CER. O cuidado se dá em fases
-            integradas, no seu tempo.
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Este é o seu espaço de acompanhamento no CER. Você não precisa conhecer todo o
+            aplicativo agora nem fazer tudo de uma vez. Leia com calma, explore no seu ritmo e, se
+            precisar de ajuda, pode me chamar.
           </p>
         </div>
 
@@ -600,48 +604,170 @@ export const InteragenteHome: React.FC = () => {
            ======================================================== */}
         {activePhase === 'comece_aqui' && (
           <div className="space-y-6">
-            {/* Como usar o app CER */}
-            <Card className="border-border/60 bg-muted/20">
-              <CardContent className="p-4 sm:p-5 space-y-2">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-primary font-semibold">
-                  Como funciona o seu espaço
-                </span>
-                <h3 className="font-serif font-semibold text-base text-foreground">
-                  Boas-vindas ao seu caminho no CER
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Aqui você encontra um espaço seguro e acolhedor para se escutar. Antes do nosso
-                  primeiro encontro, convidamos você a responder às três perguntas abaixo. Suas
-                  respostas são salvas como rascunho privado até que você decida enviar com carinho
-                  à profissional.
+            {/* Seção expansível: Entenda como funciona o CER */}
+            <Collapsible className="border border-border/60 rounded-lg bg-muted/20 overflow-hidden">
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full flex items-center justify-between p-4 sm:p-5 h-auto hover:bg-muted/30 text-left font-serif font-semibold text-base text-foreground rounded-none"
+                >
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                    <span>Entenda como funciona o CER</span>
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="px-4 pb-5 sm:px-5 space-y-3.5 text-xs text-muted-foreground leading-relaxed border-t border-border/40 pt-4">
+                <p>
+                  O Método CER nasceu da união de muitos anos de estudo, experiência profissional e
+                  da minha própria trajetória de vida. Ao longo desse caminho, compreendi que o
+                  desenvolvimento humano se torna mais possível quando passamos por três movimentos:
+                  Conscientizar, Equilibrar e Realizar.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 text-xs">
-                  <div className="p-2.5 rounded-lg bg-card border border-border/50">
+
+                <p>
+                  Na Consciência, vamos conhecer como você funciona de maneira integral: em seu
+                  corpo, pensamentos, emoções, padrões de resposta, relações, intimidade, valores e
+                  formas de se conectar com a vida. Também vamos reconhecer seus recursos,
+                  necessidades e aquilo que você deseja cuidar ou desenvolver.
+                </p>
+
+                <p>
+                  No Equilíbrio, vamos compreender e cuidar dos processos físicos, mentais e
+                  emocionais que dificultam suas ações. Para isso, poderemos utilizar diferentes
+                  práticas e recursos, sempre respeitando seu momento, seus limites e o que
+                  realmente faz sentido para você.
+                </p>
+
+                <p>
+                  Na Realização, transformaremos essa compreensão em escolhas e passos possíveis.
+                  Vamos reconhecer a direção que você deseja seguir, as mudanças que quer construir
+                  e os hábitos que podem ajudá-la a levar esse cuidado para a sua vida. A proposta é
+                  criar uma rotina firme o suficiente para sustentar seus objetivos e confortável o
+                  suficiente para ser vivida.
+                </p>
+
+                <p>
+                  Ao longo do caminho, a área Evolução ajudará você a reconhecer sua história,
+                  perceber como está agora e acompanhar as mudanças que vão acontecendo — sem pressa
+                  e sem a obrigação de ter todas as respostas.
+                </p>
+
+                <p>
+                  Este aplicativo pode acompanhar atendimentos individuais e também experiências ou
+                  cursos de desenvolvimento pessoal. As áreas disponíveis dependerão do percurso que
+                  estivermos realizando.
+                </p>
+
+                <p>
+                  Seu acesso é pessoal. Nas experiências e questionários que fazem parte do
+                  acompanhamento individual, suas respostas e resultados poderão chegar ao seu
+                  prontuário profissional para que eu possa compreender seu momento e acompanhá-la
+                  com mais cuidado. O aplicativo sempre deverá indicar claramente o que está privado
+                  e o que será enviado.
+                </p>
+
+                <div className="space-y-2 pt-1">
+                  <p className="font-medium text-foreground">
+                    Ao longo da jornada, e conforme forem adequadas ao momento do acompanhamento,
+                    você também poderá encontrar:
+                  </p>
+                  <ul className="space-y-1.5 pl-3 border-l-2 border-primary/30">
+                    <li>
+                      <strong className="text-foreground">Meu Mapa CER:</strong> uma síntese
+                      integrativa construída a partir do seu percurso, revisada por mim e
+                      compartilhada com você.
+                    </li>
+                    <li>
+                      <strong className="text-foreground">Mandala do Cuidado:</strong> uma visão de
+                      como suas prioridades, recursos, práticas e movimentos estão se organizando no
+                      cotidiano.
+                    </li>
+                    <li>
+                      <strong className="text-foreground">Planner:</strong> um espaço para
+                      transformar os cuidados combinados em passos possíveis na sua rotina.
+                    </li>
+                    <li>
+                      <strong className="text-foreground">Experimentos de Cuidado:</strong> práticas
+                      e recursos escolhidos para o seu momento, sem cobrança por desempenho.
+                    </li>
+                    <li>
+                      <strong className="text-foreground">Meu Caderno:</strong> um espaço pessoal
+                      para registrar percepções por texto ou voz. O que estiver no Caderno
+                      permanecerá privado. Caso queira levar algo para o nosso encontro, haverá uma
+                      ação separada e explícita para compartilhar um recado comigo.
+                    </li>
+                  </ul>
+                  <p className="text-[11px] text-muted-foreground/90 italic pt-1">
+                    Algumas dessas ferramentas aparecerão somente quando estiverem disponíveis e
+                    forem adequadas à etapa da sua jornada.
+                  </p>
+                </div>
+
+                <p className="pt-1">
+                  Se tiver dúvidas sobre o aplicativo ou sobre o acompanhamento, você pode falar
+                  comigo pelo WhatsApp: (49) 99194-6800.
+                </p>
+
+                <p>
+                  Em uma situação urgente, envie-me uma mensagem direta, mas procure também um
+                  atendimento imediato na sua região, pois nem sempre estarei disponível para
+                  responder no mesmo momento.
+                </p>
+
+                <p>
+                  Sinta que este é um espaço de acolhimento para você. Aqui há lugar para reconhecer
+                  sua força, crescer e desenvolver aquilo que deseja — e também para acolher suas
+                  vulnerabilidades com respeito. Não precisamos escolher entre força e
+                  vulnerabilidade: ambas fazem parte de quem somos.
+                </p>
+
+                <div className="pt-2 font-serif text-foreground">
+                  <p>Com carinho,</p>
+                  <p className="font-semibold">Daia</p>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Três orientações */}
+            <Card className="border-border/60 bg-muted/20">
+              <CardContent className="p-4 sm:p-5 space-y-3">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-primary font-semibold">
+                  Orientações importantes
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
+                  <div className="p-3 rounded-lg bg-card border border-border/50 space-y-1">
                     <span className="font-semibold text-foreground block">
-                      1. Escreva no seu ritmo
+                      Responda no seu ritmo
                     </span>
-                    <span className="text-muted-foreground text-[11px]">
-                      Salvar rascunho guarda suas reflexões só para você.
-                    </span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-card border border-border/50">
-                    <span className="font-semibold text-foreground block">2. Envio explícito</span>
-                    <span className="text-muted-foreground text-[11px]">
-                      A profissional só tem acesso quando você clicar em &ldquo;Enviar para
-                      Daiane&rdquo;.
+                    <span className="text-muted-foreground text-[11px] leading-relaxed block">
+                      Você pode começar agora, salvar como rascunho e voltar quando quiser.
                     </span>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-card border border-border/50">
-                    <span className="font-semibold text-foreground block">3. Próximo passo</span>
-                    <span className="text-muted-foreground text-[11px]">
-                      Após o envio, você será convidada a navegar pela Consciência em 6 dimensões.
+                  <div className="p-3 rounded-lg bg-card border border-border/50 space-y-1">
+                    <span className="font-semibold text-foreground block">
+                      Você escolhe quando enviar
+                    </span>
+                    <span className="text-muted-foreground text-[11px] leading-relaxed block">
+                      Enquanto estiver como rascunho, Daia não verá suas respostas. Elas só serão
+                      compartilhadas quando você clicar em &ldquo;Enviar para Daia&rdquo;.
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-card border border-border/50 space-y-1">
+                    <span className="font-semibold text-foreground block">
+                      O que acontece depois
+                    </span>
+                    <span className="text-muted-foreground text-[11px] leading-relaxed block">
+                      Daia utilizará suas respostas para preparar o primeiro encontro. Depois do
+                      envio, você poderá seguir para a área Consciência.
                     </span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* As três perguntas antes do primeiro encontro */}
+            {/* Seu Espaço Inicial de Acolhimento */}
             <Card className="border-primary/40 bg-gradient-to-br from-primary/5 via-card to-card shadow-sm">
               <CardHeader className="pb-3 border-b border-primary/10">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -650,10 +776,15 @@ export const InteragenteHome: React.FC = () => {
                       <HeartHandshake className="w-4 h-4 text-primary" />
                       <span>Seu Espaço Inicial de Acolhimento</span>
                     </CardTitle>
-                    <CardDescription className="text-xs">
-                      Compartilhe suas percepções no seu tempo. Por padrão, nada fica visível à
-                      profissional até você decidir enviar.
-                    </CardDescription>
+                    <div className="text-xs space-y-1 pt-0.5">
+                      <p className="font-bold text-foreground">Antes do nosso primeiro encontro</p>
+                      <p className="text-muted-foreground leading-relaxed">
+                        Conte o que você considera importante para que Daia conheça um pouco do seu
+                        momento. Não existem respostas certas, e você não precisa contar algo que
+                        ainda não se sente pronta para compartilhar. Você pode salvar e continuar
+                        depois.
+                      </p>
+                    </div>
                   </div>
                   <Badge
                     variant="outline"
@@ -669,7 +800,7 @@ export const InteragenteHome: React.FC = () => {
                   <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-300 text-emerald-900 dark:text-emerald-200 text-xs space-y-2">
                     <div className="flex items-center gap-2 font-semibold text-sm">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>Relato Entregue para Daiane</span>
+                      <span>Relato Entregue para Daia</span>
                     </div>
                     <p className="leading-relaxed">{intakeSubmittedMessage}</p>
                     <Button
@@ -686,55 +817,45 @@ export const InteragenteHome: React.FC = () => {
                     {/* Pergunta 1 */}
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground block">
-                        1. O que a traz?
+                        O que motivou sua busca por cuidado e desenvolvimento neste momento?
                       </label>
-                      <p className="text-[11px] text-muted-foreground">
-                        O que motivou sua busca por cuidado e o que tem estado mais presente nos
-                        seus dias?
-                      </p>
                       <Textarea
                         placeholder="Conte com suas palavras o que a fez procurar este acompanhamento..."
                         value={initialIntakeWhatBrings}
                         onChange={(e) => setInitialIntakeWhatBrings(e.target.value)}
-                        className="text-xs min-h-[70px] resize-y"
+                        className="text-xs min-h-[75px] resize-y"
                       />
                     </div>
 
                     {/* Pergunta 2 */}
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground block">
-                        2. O que já a ajuda?
+                        O que você já reconhece como apoio, recurso ou fonte de cuidado quando
+                        precisa?
                       </label>
-                      <p className="text-[11px] text-muted-foreground">
-                        Recursos, práticas, apoios ou momentos em que você percebe mais respiro e
-                        acolhimento.
-                      </p>
                       <Textarea
                         placeholder="Coisas simples ou pessoas que já trazem alívio ou sustentação..."
                         value={initialIntakeWhatHelps}
                         onChange={(e) => setInitialIntakeWhatHelps(e.target.value)}
-                        className="text-xs min-h-[70px] resize-y"
+                        className="text-xs min-h-[75px] resize-y"
                       />
                     </div>
 
                     {/* Pergunta 3 */}
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground block">
-                        3. O que deseja cuidar?
+                        Se pudesse escolher algo para cuidar ou desenvolver ao longo desta jornada,
+                        o que seria?
                       </label>
-                      <p className="text-[11px] text-muted-foreground">
-                        O foco, direção ou transformação que mais faz sentido priorizar neste
-                        momento.
-                      </p>
                       <Textarea
                         placeholder="O que no seu ritmo, corpo ou sentimentos pede atenção agora..."
                         value={initialIntakeWhatCares}
                         onChange={(e) => setInitialIntakeWhatCares(e.target.value)}
-                        className="text-xs min-h-[70px] resize-y"
+                        className="text-xs min-h-[75px] resize-y"
                       />
                     </div>
 
-                    {/* Ações Explícitas: Rascunho vs Enviar para Daiane */}
+                    {/* Ações Explícitas: Rascunho vs Enviar para Daia */}
                     <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border/40">
                       <span className="text-[11px] text-muted-foreground italic">
                         Nada é compartilhado sem seu comando explícito.
@@ -758,7 +879,7 @@ export const InteragenteHome: React.FC = () => {
                           className="text-xs h-8 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
                         >
                           <HeartHandshake className="w-3.5 h-3.5" />
-                          <span>{intakeSending ? 'Enviando...' : 'Enviar para Daiane'}</span>
+                          <span>{intakeSending ? 'Enviando...' : 'Enviar para Daia'}</span>
                         </Button>
                       </div>
                     </div>
@@ -790,76 +911,90 @@ export const InteragenteHome: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Informações da Identidade Humana */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              <Card className="border-border/60 shadow-none">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+            {/* Bloco compacto: Meu perfil */}
+            <Collapsible className="border border-border/60 rounded-lg bg-card shadow-none overflow-hidden">
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full flex items-center justify-between p-3.5 sm:p-4 h-auto hover:bg-muted/30 text-left text-xs text-foreground font-medium rounded-none"
+                >
+                  <span className="flex items-center gap-2">
                     <User className="w-3.5 h-3.5 text-primary" />
-                    <span>Seu Perfil</span>
-                  </div>
-                  <CardTitle className="text-base font-medium">
-                    {person?.full_name || 'Registro em estruturação'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground space-y-1">
-                  <p>E-mail: {person?.email || user?.email}</p>
-                  <p className="text-[11px] text-muted-foreground">Acompanhamento ativo e seguro</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/60 shadow-none">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                    <Compass className="w-3.5 h-3.5 text-primary" />
-                    <span>Modalidade de Cuidado</span>
-                  </div>
-                  <CardTitle className="text-base font-medium">
-                    {enrollment?.expand?.product_id?.name || 'Acompanhamento Individual CER'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span>Vínculo:</span>
-                    <Badge variant="secondary" className="text-[10px] capitalize font-normal">
-                      Ativo
-                    </Badge>
-                  </div>
-                  <p>
-                    Início:{' '}
-                    {enrollment?.created
-                      ? new Date(enrollment.created).toLocaleDateString('pt-BR')
-                      : '—'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/60 shadow-none">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                    <Layers className="w-3.5 h-3.5 text-primary" />
-                    <span>Etapa Atual</span>
-                  </div>
-                  <CardTitle className="text-base font-medium capitalize">
-                    {hasCompletedConsciousness
-                      ? 'Transição e Planejamento'
-                      : enrollment?.expand?.journey_states_via_enrollment_id?.[0]?.current_stage ===
-                          'consciousness'
-                        ? 'Descoberta e Percepção'
-                        : 'Acolhimento'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground space-y-1">
-                  <p>
-                    Status:{' '}
-                    <span className="capitalize">
-                      {hasCompletedConsciousness ? 'Aguardando próxima etapa' : 'Em andamento'}
+                    <span className="font-semibold">Meu perfil</span>
+                    <span className="text-muted-foreground font-normal">
+                      · {person?.full_name || 'Registro em estruturação'}
                     </span>
-                  </p>
-                  <p className="text-[11px] italic">“O ser humano não funciona em partes.”</p>
-                </CardContent>
-              </Card>
-            </div>
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="px-4 pb-4 sm:px-5 border-t border-border/40 pt-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  <div className="p-2.5 rounded bg-muted/20 border border-border/40 space-y-1">
+                    <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                      <User className="w-3 h-3 text-primary" />
+                      Dados cadastrais
+                    </span>
+                    <p className="font-medium text-foreground">
+                      {person?.full_name || 'Registro em estruturação'}
+                    </p>
+                    <p className="text-muted-foreground text-[11px]">
+                      {person?.email || user?.email}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground italic">
+                      Acompanhamento ativo e seguro
+                    </p>
+                  </div>
+
+                  <div className="p-2.5 rounded bg-muted/20 border border-border/40 space-y-1">
+                    <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Compass className="w-3 h-3 text-primary" />
+                      Modalidade de cuidado
+                    </span>
+                    <p className="font-medium text-foreground">
+                      {enrollment?.expand?.product_id?.name || 'Acompanhamento Individual CER'}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <span>Vínculo:</span>
+                      <Badge
+                        variant="secondary"
+                        className="text-[9px] h-4 px-1.5 capitalize font-normal"
+                      >
+                        Ativo
+                      </Badge>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Início:{' '}
+                      {enrollment?.created
+                        ? new Date(enrollment.created).toLocaleDateString('pt-BR')
+                        : '—'}
+                    </p>
+                  </div>
+
+                  <div className="p-2.5 rounded bg-muted/20 border border-border/40 space-y-1">
+                    <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Layers className="w-3 h-3 text-primary" />
+                      Etapa atual
+                    </span>
+                    <p className="font-medium text-foreground capitalize">
+                      {hasCompletedConsciousness
+                        ? 'Transição e Planejamento'
+                        : enrollment?.expand?.journey_states_via_enrollment_id?.[0]
+                              ?.current_stage === 'consciousness'
+                          ? 'Descoberta e Percepção'
+                          : 'Acolhimento'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Status:{' '}
+                      {hasCompletedConsciousness ? 'Aguardando próxima etapa' : 'Em andamento'}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground italic">
+                      “O ser humano não funciona em partes.”
+                    </p>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         )}
 
@@ -868,6 +1003,54 @@ export const InteragenteHome: React.FC = () => {
            ======================================================== */}
         {activePhase === 'consciencia' && (
           <div className="space-y-6">
+            {/* Introdução da Consciência */}
+            <Collapsible
+              defaultOpen
+              className="border border-border/60 rounded-lg bg-card shadow-sm overflow-hidden"
+            >
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full flex items-center justify-between p-4 sm:p-5 h-auto hover:bg-muted/30 text-left font-serif font-semibold text-base text-foreground rounded-none"
+                >
+                  <span className="flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-primary shrink-0" />
+                    <span>Consciência — descobrir como você funciona</span>
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="px-4 pb-5 sm:px-5 space-y-3 text-xs text-muted-foreground leading-relaxed border-t border-border/40 pt-4">
+                <p>
+                  Nesta etapa, vamos olhar para você como um ser inteiro. As seis dimensões
+                  representam diferentes aspectos da sua experiência, mas elas não funcionam
+                  separadamente: corpo, pensamentos, emoções, padrões de resposta, relações,
+                  intimidade, valores e sentido se influenciam continuamente.
+                </p>
+                <p>
+                  Clique em cada dimensão para acessar a experiência que estiver disponível. Não
+                  existem respostas certas, e você não precisa concluir tudo de uma vez. Responda no
+                  seu ritmo e registre apenas aquilo que fizer sentido compartilhar neste momento.
+                </p>
+                <p>
+                  No centro está o seu Mapa CER. Ele será construído aos poucos, a partir das suas
+                  respostas, dos nossos encontros e da minha leitura profissional. O aplicativo
+                  poderá ajudar a organizar informações, mas nenhuma conclusão será publicada
+                  automaticamente. Antes de se tornar uma devolutiva, o Mapa será revisado por mim e
+                  conversado com você.
+                </p>
+                <p>
+                  O objetivo não é colocar você dentro de uma definição. É ajudar você a reconhecer
+                  como funciona, quais recursos já possui, o que precisa de cuidado e quais caminhos
+                  deseja construir.
+                </p>
+                <div className="pt-2 font-serif text-foreground">
+                  <p>Com carinho,</p>
+                  <p className="font-semibold">Daia</p>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
             {/* O Ser em Seis Dimensões + Centro "Meu Mapa CER" */}
             <SerConscienciaMap
               availableExperiences={availableExperiences}
