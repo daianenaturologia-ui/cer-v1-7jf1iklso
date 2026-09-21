@@ -282,10 +282,38 @@ export type CerProductId = (typeof CER_PRODUCTS)[keyof typeof CER_PRODUCTS]
 // INTERFACES DAS ENTIDADES DO BANCO DE DADOS
 // ==========================================
 
+export const PROFESSIONAL_DISPLAY_NAME = 'Daiane' as const
+export const PROFESSIONAL_FIRST_PERSON_SIGNATURE = 'Daia' as const
+
+export const TREATMENT_PREFERENCES = {
+  FEMININO: 'feminino',
+  MASCULINO: 'masculino',
+  NEUTRO: 'neutro',
+  OUTRO: 'outro',
+} as const
+
+export type TreatmentPreference = (typeof TREATMENT_PREFERENCES)[keyof typeof TREATMENT_PREFERENCES]
+
+export const TREATMENT_PREFERENCE_LABELS: Record<TreatmentPreference, string> = {
+  feminino: 'No feminino',
+  masculino: 'No masculino',
+  neutro: 'De forma neutra',
+  outro: 'De outra forma',
+}
+
+export const TREATMENT_PREFERENCE_DESCRIPTIONS: Record<TreatmentPreference, string> = {
+  feminino: 'ex.: acolhida, juntas',
+  masculino: 'ex.: acolhido, juntos',
+  neutro: 'o aplicativo evita palavras marcadas por gênero',
+  outro: 'campo livre',
+}
+
 export interface PersonRecord {
   id: string
   full_name: string
   preferred_name?: string
+  treatment_preference?: TreatmentPreference
+  treatment_preference_custom?: string
   email?: string
   phone?: string
   notes?: string

@@ -55,17 +55,38 @@ export const auditService = {
  */
 export const personService = {
   async getById(id: string): Promise<PersonRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.getPersonById(id)
+    }
     return await pb.collection('persons').getOne<PersonRecord>(id)
   },
 
   async create(data: {
     full_name: string
     preferred_name?: string
+    treatment_preference?: PersonRecord['treatment_preference']
+    treatment_preference_custom?: string
     email?: string
     phone?: string
     notes?: string
   }): Promise<PersonRecord> {
     return await pb.collection('persons').create<PersonRecord>(data)
+  },
+
+  async updateTreatmentPreference(
+    id: string,
+    data: {
+      treatment_preference?: PersonRecord['treatment_preference']
+      treatment_preference_custom?: string
+      preferred_name?: string
+    },
+  ): Promise<PersonRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.updatePerson(id, data)
+    }
+    return await pb.collection('persons').update<PersonRecord>(id, data)
   },
 
   async list(page = 1, perPage = 50): Promise<{ items: PersonRecord[]; totalItems: number }> {

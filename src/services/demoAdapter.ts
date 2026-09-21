@@ -118,6 +118,7 @@ export const DEMO_ENROLLMENT: EnrollmentRecord = {
 
 interface DemoStateStore {
   activePersona: 'mariana' | 'daiane'
+  marianaPersonOverride?: Partial<PersonRecord>
   messages: (CerNextSessionMessageRecord & { summary_source?: 'participant' | 'system' })[]
   sessions: CerSessionRecord[]
   notes: CerSessionNoteRecord[]
@@ -252,7 +253,33 @@ class DemoAdapter {
   }
 
   public getCurrentPerson(): PersonRecord {
-    return this.state.activePersona === 'daiane' ? DEMO_PERSON_DAIANE : DEMO_PERSON_MARIANA
+    if (this.state.activePersona === 'daiane') {
+      return DEMO_PERSON_DAIANE
+    }
+    return {
+      ...DEMO_PERSON_MARIANA,
+      ...(this.state.marianaPersonOverride || {}),
+    }
+  }
+
+  public getPersonById(id: string): PersonRecord {
+    if (id === DEMO_PERSON_DAIANE.id) return DEMO_PERSON_DAIANE
+    return {
+      ...DEMO_PERSON_MARIANA,
+      ...(this.state.marianaPersonOverride || {}),
+    }
+  }
+
+  public updatePerson(id: string, data: Partial<PersonRecord>): PersonRecord {
+    if (id === DEMO_PERSON_MARIANA.id || this.state.activePersona === 'mariana') {
+      this.state.marianaPersonOverride = {
+        ...(this.state.marianaPersonOverride || {}),
+        ...data,
+      }
+      this.saveState()
+      return this.getCurrentPerson()
+    }
+    return DEMO_PERSON_DAIANE
   }
 
   // =========================================================================
