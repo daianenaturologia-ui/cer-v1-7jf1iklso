@@ -36,22 +36,18 @@ if (srcBuf.slice(0, 8).toString('hex') === '89504e470d0a1a0a') {
               ? 'Grayscale'
               : 'Unknown'
 
-  console.log(
-    JSON.stringify(
-      {
-        validPng: true,
-        ihdrType,
-        width,
-        height,
-        bitDepth,
-        colorType,
-        colorTypeStr,
-        bytes: srcBuf.length,
-      },
-      null,
-      2,
-    ),
-  )
+  const info = {
+    validPng: true,
+    ihdrType,
+    width,
+    height,
+    bitDepth,
+    colorType,
+    colorTypeStr,
+    bytes: srcBuf.length,
+    hasAlpha: colorType === 6 || colorType === 4,
+  }
+  console.log(JSON.stringify(info, null, 2))
 } else {
   console.log('Not a standard PNG file!')
 }
