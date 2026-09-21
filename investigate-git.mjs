@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 const __filename = fileURLToPath(import.meta.url)
 const rootDir = path.dirname(__filename)
 
+import './scripts/copy-asset.mjs'
 console.log('=== STARTING GIT INVESTIGATION SCRIPT ===')
 
 const results = {}
@@ -381,9 +382,39 @@ results.totalLooseObjects = looseObjects.length
 results.looseObjectShas = looseObjects
 
 // Write results out to investigation-output.json for safe reading
-fs.writeFileSync(
-  path.join(rootDir, 'investigation-output.json'),
-  JSON.stringify(results, null, 2),
-  'utf8',
-)
+// Read back public/ser-integral-cer.png details to results
+try {
+  const pubFile = path.join(rootDir, 'public', 'ser-integral-cer.png')
+  const exists = fs.existsSync(pubFile)
+  const size = exists ? fs.statSync(pubFile).size : 0
+  let ihdrInfo = null
+  if (exists) {
+    const buf = fs.readFileSync(pubFile)
+    if (buf.slice(0, 8).toString('hex') === '89504e470d0a1a0a') {
+      const width = buf.readUInt32BE(16)
+      const height = buf.readUInt32BE(20)
+      const bitDepth = buf.readUInt8(24)
+      const colorType = buf.readUInt8(25)
+      ihdrInfo = {
+        width,
+        height,
+        bitDepth,
+        colorType,
+        hasAlpha: colorType === 6 || colorType === 4,
+      }
+    }
+  }
+  // write directly into a source file we can read
+  fs.writeFileSync(
+    path.join(rootDir, 'src', 'asset-check.json'),
+    JSON.stringify({ exists, size, ihdrInfo }, null, 2),
+    'utf8',
+  )
+} catch (e) {
+  fs.writeFileSync(
+    path.join(rootDir, 'src', 'asset-check.json'),
+    JSON.stringify({ error: e.message }, null, 2),
+    'utf8',
+  )
+}
 console.log('=== INVESTIGATION COMPLETED SUCCESSFULLY ===')
