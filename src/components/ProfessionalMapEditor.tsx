@@ -92,18 +92,32 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
+  // Trava real de publicação: primeiro encontro registrado
+  const [publishEligibility, setPublishEligibility] = useState<{
+    allowed: boolean
+    reason?: string
+    sessionCount: number
+    hasError?: boolean
+  }>({
+    allowed: false,
+    reason: 'O Mapa CER poderá ser compartilhado após o registro do primeiro encontro.',
+    sessionCount: 0,
+  })
+
   const loadAll = async () => {
     setLoading(true)
     setErrorMessage(null)
     try {
-      const [draft, pub, cands] = await Promise.all([
+      const [draft, pub, cands, eligibility] = await Promise.all([
         cerMapService.getDraftMap(enrollmentId),
         cerMapService.getCurrentPublishedMap(enrollmentId),
         cerMapCandidateService.listCandidatesForEnrollment(enrollmentId),
+        cerMapService.canPublishMap(enrollmentId),
       ])
       setActiveDraft(draft)
       setPublishedMap(pub)
       setCandidates(cands)
+      setPublishEligibility(eligibility)
     } catch (err: any) {
       setErrorMessage(err.message || 'Falha ao carregar Mapa CER.')
     } finally {
@@ -303,7 +317,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
     setPublishing(true)
     setErrorMessage(null)
     try {
-      await cerMapService.publishDraft(activeDraft.id)
+      await cerMapService.publishDraft(activeDraft.id, enrollmentId)
       setWarningMessage(null)
       await loadAll()
       setSuccessMessage('Mapa CER publicado com sucesso! Já disponível para a participante.')
@@ -442,14 +456,33 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                   <Button
                     size="sm"
                     onClick={() => handlePublish(false)}
-                    disabled={publishing}
-                    className="text-xs h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={publishing || !publishEligibility.allowed}
+                    className="text-xs h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!publishEligibility.allowed ? publishEligibility.reason : undefined}
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>{publishing ? 'Publicando...' : 'Publicar Mapa'}</span>
                   </Button>
                 </div>
               </div>
+
+              {/* Banner informativo da Trava do Primeiro Encontro */}
+              {!publishEligibility.allowed && (
+                <div className="p-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span className="font-medium">
+                      O Mapa CER poderá ser compartilhado após o registro do primeiro encontro.
+                    </span>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] font-mono shrink-0 border-amber-400"
+                  >
+                    {publishEligibility.sessionCount} encontro(s)
+                  </Badge>
+                </div>
+              )}
 
               {/* CANDIDATOS DETERMINÍSTICOS (Item 25) */}
               <div className="space-y-2 pt-2 border-t border-border/40">

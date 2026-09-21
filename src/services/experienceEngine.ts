@@ -492,7 +492,7 @@ export const experienceResponseService = {
   ): Promise<ExperienceResponseRecord[]> {
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {
-      return []
+      return demoAdapter.listExperienceResponses(enrollmentId, experienceId)
     }
     return await pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
       filter: `enrollment_id = "${enrollmentId}" && experience_id = "${experienceId}"`,
@@ -559,6 +559,11 @@ export const experienceResponseService = {
     changeReason?: string
   }): Promise<ExperienceResponseRecord> {
     const existing = await this.getResponse(params.enrollmentId, params.promptId)
+
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.saveExperienceResponse(params)
+    }
 
     // Fallback gracioso para ambiente local sintético de teste
     if (

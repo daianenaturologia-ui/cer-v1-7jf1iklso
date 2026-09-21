@@ -35,6 +35,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import {
   LogOut,
@@ -129,6 +136,7 @@ export const InteragenteHome: React.FC = () => {
     >
   >({})
   const [submittingPlanResponse, setSubmittingPlanResponse] = useState<string | null>(null)
+  const [showMapModal, setShowMapModal] = useState(false)
   const { toast } = useToast()
 
   const loadData = async () => {
@@ -1081,7 +1089,7 @@ export const InteragenteHome: React.FC = () => {
                       />
                     </div>
 
-                    {/* Ações Explícitas: Rascunho vs Enviar para Daia */}
+                    {/* Ações Explícitas: Rascunho vs Enviar para Daiane */}
                     <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border/40">
                       <span className="text-[11px] text-muted-foreground italic">
                         Nada é compartilhado sem seu comando explícito.
@@ -1370,9 +1378,35 @@ export const InteragenteHome: React.FC = () => {
                 <SerConscienciaMap
                   availableExperiences={availableExperiences}
                   hasPublishedMap={Boolean(currentMap)}
-                  currentMap={currentMap}
                   onSelectExperience={(expId) => setActiveExperienceId(expId)}
+                  onOpenMap={() => setShowMapModal(true)}
                 />
+
+                {/* Modal / Dialog do Meu Mapa CER para a Interagente */}
+                <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
+                  <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="font-serif">Meu Mapa CER</DialogTitle>
+                      <DialogDescription>
+                        {currentMap
+                          ? 'Síntese integrativa deliberadamente compartilhada por Daiane com você.'
+                          : 'Seu Mapa CER está em construção conjunta com Daiane.'}
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    {currentMap ? (
+                      <ParticipantMapDisplay map={currentMap} />
+                    ) : (
+                      <div className="py-8 text-center space-y-3">
+                        <div className="p-3 bg-amber-500/10 text-amber-700 dark:text-amber-300 rounded-lg max-w-md mx-auto text-xs leading-relaxed border border-amber-300">
+                          <p className="font-medium text-sm mb-1">Mapa em construção</p>
+                          O Mapa CER reúne o que você descobriu ao longo das experiências e é
+                          revisado com carinho após seu primeiro encontro com Daiane.
+                        </div>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
               </>
             )}
             {/* Transição clara Pós-Consciência / Waiting State */}

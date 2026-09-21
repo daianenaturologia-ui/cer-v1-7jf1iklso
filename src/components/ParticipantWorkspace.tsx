@@ -36,6 +36,7 @@ import { ProfessionalMapEditor } from '@/components/ProfessionalMapEditor'
 import { ProfessionalExperienceManager } from '@/components/experience/ProfessionalExperienceManager'
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
 import { ProfessionalSessionManager } from '@/components/ProfessionalSessionManager'
+import { ProfessionalConscienciaSection } from '@/components/ProfessionalConscienciaSection'
 
 export type WorkspaceTab =
   | 'sessoes'
@@ -207,7 +208,36 @@ export const ParticipantWorkspace: React.FC = () => {
             <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">
               Prontuário de Daiane
             </Badge>
-          </div>{' '}
+          </div>
+
+          {/* Preferência de Tratamento e Nome Preferido (Discreto para Daiane) */}
+          <div className="pt-1.5 flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+            {person?.preferred_name && (
+              <span className="inline-flex items-center gap-1">
+                <span className="font-medium text-foreground/80">Nome preferido:</span>
+                <span>{person.preferred_name}</span>
+                <span className="text-muted-foreground/40">•</span>
+              </span>
+            )}
+            {person?.treatment_preference ? (
+              <span className="inline-flex items-center gap-1">
+                <span className="font-medium text-foreground/80">Forma de tratamento:</span>
+                <span>
+                  {person.treatment_preference === 'feminino' && 'Prefere linguagem no feminino'}
+                  {person.treatment_preference === 'masculino' && 'Prefere linguagem no masculino'}
+                  {person.treatment_preference === 'neutro' && 'Prefere linguagem neutra'}
+                  {person.treatment_preference === 'outro' &&
+                    (person.treatment_preference_custom
+                      ? `Preferência personalizada: ${person.treatment_preference_custom}`
+                      : 'De outra forma')}
+                </span>
+              </span>
+            ) : (
+              <span className="italic text-muted-foreground/75">
+                Preferência de tratamento ainda não informada.
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Alertas Rápidos no Topo */}
@@ -365,7 +395,7 @@ export const ParticipantWorkspace: React.FC = () => {
         </div>
       )}
 
-      {/* CONSCIÊNCIA */}
+      {/* CONSCIÊNCIA — Organização em Três Níveis Clínicos */}
       {currentTab === 'consciencia' && (
         <div className="space-y-5">
           {journeyState?.current_stage === 'consciousness' &&
@@ -391,19 +421,12 @@ export const ParticipantWorkspace: React.FC = () => {
               </div>
             )}
 
-          {/* Gestão das Experiências da Consciência (6 dimensões + integração) */}
+          {/* Controle de Progressive Release das experiências */}
           <ProfessionalExperienceManager enrollment={enrollment} />
 
-          {/* Mapa CER do Participante — Edição e Publicação Explícita */}
-          <ProfessionalMapEditor
-            enrollmentId={enrollment.id}
-            participantName={participantName}
-            professionalUserId={pb.authStore.record?.id || ''}
-          />
-
-          {/* Conhecimento e Hipóteses em Construção (com distinção epistêmica) */}
-          <ProfessionalKnowledgeBuilding
-            enrollmentId={enrollment.id}
+          {/* 3 Níveis Clínicos da Consciência: Resumo Essencial, Mapa Integrativo e Relatórios Detalhados */}
+          <ProfessionalConscienciaSection
+            enrollment={enrollment}
             participantName={participantName}
           />
         </div>

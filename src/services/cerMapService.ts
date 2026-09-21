@@ -51,6 +51,11 @@ export const cerMapService = {
   ): Promise<(CerMapRecord & { items: CerMapItemRecord[] }) | null> {
     if (!enrollmentId) return null
 
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.getCurrentPublishedMap(enrollmentId)
+    }
+
     try {
       const maps = await pb.collection('cer_maps').getList<CerMapRecord>(1, 1, {
         filter: `enrollment_id = "${enrollmentId}" && status = "published"`,
@@ -84,6 +89,11 @@ export const cerMapService = {
     | null
   > {
     if (!enrollmentId) return null
+
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.getDraftMap(enrollmentId)
+    }
 
     try {
       const drafts = await pb.collection('cer_maps').getList<CerMapRecord>(1, 1, {
@@ -130,6 +140,10 @@ export const cerMapService = {
    */
   async listAllMaps(enrollmentId: string): Promise<CerMapRecord[]> {
     if (!enrollmentId) return []
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.listAllMaps(enrollmentId)
+    }
     return await pb.collection('cer_maps').getFullList<CerMapRecord>({
       filter: `enrollment_id = "${enrollmentId}"`,
       sort: '-version_number',
@@ -140,6 +154,10 @@ export const cerMapService = {
    * Cria um novo draft do Mapa CER (V1 inicial)
    */
   async createInitialDraft(enrollmentId: string, userId: string): Promise<CerMapRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.createInitialDraft(enrollmentId, userId)
+    }
     return await pb.collection('cer_maps').create<CerMapRecord>({
       enrollment_id: enrollmentId,
       version_number: 1,
@@ -160,6 +178,10 @@ export const cerMapService = {
     publishedMapId: string,
     userId: string,
   ): Promise<CerMapRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.createNextDraftFromPublished(publishedMapId, userId)
+    }
     const pubMap = await pb.collection('cer_maps').getOne<CerMapRecord>(publishedMapId)
     if (pubMap.status !== 'published') {
       throw new Error('Somente mapas publicados podem gerar nova versão de rascunho.')
@@ -217,6 +239,10 @@ export const cerMapService = {
    * Adiciona um item ao draft
    */
   async addMapItem(input: CreateMapItemInput, userId: string): Promise<CerMapItemRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.addMapItem(input, userId)
+    }
     return await pb.collection('cer_map_items').create<CerMapItemRecord>({
       map_id: input.map_id,
       section: input.section,
@@ -240,6 +266,10 @@ export const cerMapService = {
    * Reordena itens dentro de uma seção no draft
    */
   async reorderItems(items: { id: string; position: number }[]): Promise<void> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.reorderItems(items)
+    }
     for (const it of items) {
       await pb.collection('cer_map_items').update(it.id, { position: it.position })
     }
@@ -249,6 +279,10 @@ export const cerMapService = {
    * Vincula uma fonte a um item de draft
    */
   async linkSource(input: LinkSourceInput): Promise<CerMapItemSourceRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.linkSource(input)
+    }
     return await pb.collection('cer_map_item_sources').create<CerMapItemSourceRecord>({
       map_item_id: input.map_item_id,
       source_type: input.source_type,
@@ -261,11 +295,90 @@ export const cerMapService = {
   },
 
   /**
-   * Publica o draft de Mapa CER V(n)
-   * O hook server-side executa o gate completo, carimba published_at e published_by_user_id
-   * e marca qualquer publicado anterior como superseded em transação atômica.
+   * Verifica se a publicação do Mapa é permitida para o enrollment informado.
+   * Regra Obrigatória V1:
+   * O Mapa CER NÃO pode ser publicado antes do primeiro encontro registrado.
+   * Trava Fail-Closed: se a consulta falhar por qualquer erro, o acesso é BLOQUEADO.
    */
-  async publishDraft(mapId: string): Promise<CerMapRecord> {
+  async canPublishMap(enrollmentId: string): Promise<{
+    allowed: boolean
+    reason?: string
+    sessionCount: number
+    hasError?: boolean
+  }> {
+    if (!enrollmentId) {
+      return {
+        allowed: false,
+        reason: 'Enrollment não informado.',
+        sessionCount: 0,
+      }
+    }
+
+    try {
+      const { cerSessionService } = await import('@/services/cerSession')
+      const sessions = await cerSessionService.listSessionsByEnrollment(enrollmentId)
+      const count = Array.isArray(sessions) ? sessions.length : 0
+
+      if (count === 0) {
+        return {
+          allowed: false,
+          reason: 'O Mapa CER poderá ser compartilhado após o registro do primeiro encontro.',
+          sessionCount: 0,
+        }
+      }
+
+      return {
+        allowed: true,
+        sessionCount: count,
+      }
+    } catch (err: any) {
+      // Fail-closed seguro: em caso de erro na consulta, bloqueia terminantemente
+      return {
+        allowed: false,
+        reason: `Falha segura ao verificar sessões registradas: ${err?.message || 'erro de rede/permissão'}. Publicação bloqueada preventivamente.`,
+        sessionCount: 0,
+        hasError: true,
+      }
+    }
+  },
+
+  /**
+   * Publica o draft de Mapa CER V(n)
+   * Valida obrigatoriamente a trava do primeiro encontro (fail-closed) antes de qualquer persistência.
+   */
+  async publishDraft(mapId: string, enrollmentId?: string): Promise<CerMapRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    let targetEnrollmentId = enrollmentId
+
+    if (!targetEnrollmentId) {
+      if (demoAdapter.isEnabled()) {
+        const draft = demoAdapter.getDraftMap('')
+        targetEnrollmentId = draft?.enrollment_id
+      } else {
+        const mapRec = await pb.collection('cer_maps').getOne<CerMapRecord>(mapId)
+        targetEnrollmentId = mapRec.enrollment_id
+      }
+    }
+
+    if (!targetEnrollmentId) {
+      throw new Error(
+        'Falha segura: não foi possível identificar o enrollment do mapa para validação de sessões.',
+      )
+    }
+
+    // TRAVA REAL DE PUBLICAÇÃO: Fail-Closed
+    const gateCheck = await this.canPublishMap(targetEnrollmentId)
+    if (!gateCheck.allowed) {
+      throw new Error(
+        gateCheck.reason ||
+          'O Mapa CER poderá ser compartilhado após o registro do primeiro encontro.',
+      )
+    }
+
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.publishDraft(mapId)
+    }
+
     return await pb.collection('cer_maps').update<CerMapRecord>(mapId, {
       status: 'published',
     })
@@ -275,6 +388,10 @@ export const cerMapService = {
    * Descarta o draft de Mapa CER (Item 27)
    */
   async discardDraft(mapId: string): Promise<CerMapRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.discardDraft(mapId)
+    }
     return await pb.collection('cer_maps').update<CerMapRecord>(mapId, {
       status: 'discarded',
     })

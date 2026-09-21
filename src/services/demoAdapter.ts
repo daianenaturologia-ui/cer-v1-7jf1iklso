@@ -23,6 +23,10 @@ import type {
   CerNextSessionMessageRecord,
   CerSessionRecord,
   CerSessionNoteRecord,
+  CerMapRecord,
+  CerMapItemRecord,
+  CerMapItemSourceRecord,
+  ExperienceResponseRecord,
   EnrollmentRecord,
   PersonRecord,
   CerProductRecord,
@@ -55,6 +59,7 @@ export const DEMO_PERSON_MARIANA: PersonRecord = {
   id: 'demo-person-mariana',
   full_name: 'Mariana Silva',
   preferred_name: 'Mariana',
+  treatment_preference: 'feminino',
   email: 'mariana@cer.local',
   notes: 'Interagente em acompanhamento integral no método CER',
   created: '2025-01-10T10:00:00.000Z',
@@ -121,11 +126,13 @@ interface DemoStateStore {
   marianaPersonOverride?: Partial<PersonRecord>
   messages: (CerNextSessionMessageRecord & { summary_source?: 'participant' | 'system' })[]
   sessions: CerSessionRecord[]
+  maps: (CerMapRecord & { items: (CerMapItemRecord & { sources?: CerMapItemSourceRecord[] })[] })[]
   notes: CerSessionNoteRecord[]
   plans: CerCarePlanRecord[]
   priorities: CerCarePlanPriorityRecord[]
   presentations: CerCarePlanPresentationRecord[]
   acceptances: CerOperationalAcceptanceRecord[]
+  experienceResponses: ExperienceResponseRecord[]
 }
 
 const STORAGE_KEY = 'cer_demo_mode_state_v3'
@@ -142,6 +149,8 @@ function getInitialState(): DemoStateStore {
     priorities: [],
     presentations: [],
     acceptances: [],
+    maps: [],
+    experienceResponses: [],
   }
 }
 
@@ -603,6 +612,241 @@ class DemoAdapter {
     this.state.acceptances.unshift(newAcc)
     this.saveState()
     return newAcc
+  }
+
+  // 5. Mapas CER Demo (cerMapService)
+  public getCurrentPublishedMap(
+    enrollmentId: string,
+  ): (CerMapRecord & { items: CerMapItemRecord[] }) | null {
+    const pub = this.state.maps.find(
+      (m) => m.enrollment_id === enrollmentId && m.status === 'published',
+    )
+    if (!pub) return null
+    return {
+      ...pub,
+      items: pub.items.map((it) => ({
+        id: it.id,
+        map_id: it.map_id,
+        section: it.section,
+        item_text: it.item_text,
+        position: it.position,
+        created_by_user_id: it.created_by_user_id,
+        created: it.created,
+        updated: it.updated,
+      })),
+    }
+  }
+
+  public getDraftMap(
+    enrollmentId: string,
+  ):
+    | (CerMapRecord & { items: (CerMapItemRecord & { sources?: CerMapItemSourceRecord[] })[] })
+    | null {
+    const draft = this.state.maps.find(
+      (m) => m.enrollment_id === enrollmentId && m.status === 'draft',
+    )
+    return draft ? { ...draft } : null
+  }
+
+  public listAllMaps(enrollmentId: string): CerMapRecord[] {
+    return this.state.maps.filter((m) => m.enrollment_id === enrollmentId)
+  }
+
+  public createInitialDraft(enrollmentId: string, userId: string): CerMapRecord {
+    const newMap: CerMapRecord & {
+      items: (CerMapItemRecord & { sources?: CerMapItemSourceRecord[] })[]
+    } = {
+      id: `demo-map-${Date.now()}`,
+      enrollment_id: enrollmentId,
+      version_number: 1,
+      status: 'draft',
+      created_by_user_id: userId,
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+      items: [
+        {
+          id: `demo-map-item-${Date.now()}`,
+          map_id: `demo-map-${Date.now()}`,
+          section: 'minha_natureza',
+          item_text: 'Ritmo sensível que busca clareza e acolhimento nas pausas.',
+          position: 1,
+          created_by_user_id: userId,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString(),
+          sources: [],
+        },
+      ],
+    }
+    this.state.maps.unshift(newMap)
+    this.saveState()
+    return newMap
+  }
+
+  public addMapItem(
+    input: { map_id: string; section: any; item_text: string; position: number },
+    userId: string,
+  ): CerMapItemRecord {
+    const map = this.state.maps.find((m) => m.id === input.map_id)
+    const newItem: CerMapItemRecord & { sources?: CerMapItemSourceRecord[] } = {
+      id: `demo-map-item-${Date.now()}`,
+      map_id: input.map_id,
+      section: input.section,
+      item_text: input.item_text,
+      position: input.position,
+      created_by_user_id: userId,
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+      sources: [],
+    }
+    if (map) {
+      map.items.push(newItem)
+      map.updated = new Date().toISOString()
+      this.saveState()
+    }
+    return newItem
+  }
+
+  public reorderItems(items: { id: string; position: number }[]): void {
+    for (const it of items) {
+      for (const map of this.state.maps) {
+        const found = map.items.find((x) => x.id === it.id)
+        if (found) {
+          found.position = it.position
+        }
+      }
+    }
+    this.saveState()
+  }
+
+  public linkSource(input: any): CerMapItemSourceRecord {
+    const src: CerMapItemSourceRecord = {
+      id: `demo-src-${Date.now()}`,
+      map_item_id: input.map_item_id,
+      source_type: input.source_type,
+      knowledge_item_id: input.knowledge_item_id,
+      recognition_id: input.recognition_id,
+      presentation_id: input.presentation_id,
+      knowledge_version_number: input.knowledge_version_number,
+      knowledge_version_id: input.knowledge_version_id,
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+    }
+    for (const map of this.state.maps) {
+      const it = map.items.find((x) => x.id === input.map_item_id)
+      if (it) {
+        if (!it.sources) it.sources = []
+        it.sources.push(src)
+      }
+    }
+    this.saveState()
+    return src
+  }
+
+  public publishDraft(mapId: string): CerMapRecord {
+    const map = this.state.maps.find((m) => m.id === mapId)
+    if (!map) throw new Error('Mapa não encontrado no modo demo')
+    // Supersede outros publicados
+    for (const m of this.state.maps) {
+      if (m.id !== mapId && m.enrollment_id === map.enrollment_id && m.status === 'published') {
+        m.status = 'superseded'
+      }
+    }
+    map.status = 'published'
+    map.published_at = new Date().toISOString()
+    map.published_by_user_id = DEMO_USER_DAIANE.id
+    map.updated = new Date().toISOString()
+    this.saveState()
+    return { ...map }
+  }
+
+  public discardDraft(mapId: string): CerMapRecord {
+    const map = this.state.maps.find((m) => m.id === mapId)
+    if (!map) throw new Error('Mapa não encontrado no modo demo')
+    map.status = 'discarded'
+    map.updated = new Date().toISOString()
+    this.saveState()
+    return { ...map }
+  }
+
+  public createNextDraftFromPublished(publishedMapId: string, userId: string): CerMapRecord {
+    const pub = this.state.maps.find((m) => m.id === publishedMapId)
+    if (!pub) throw new Error('Mapa publicado não encontrado no modo demo')
+    const newDraft: CerMapRecord & {
+      items: (CerMapItemRecord & { sources?: CerMapItemSourceRecord[] })[]
+    } = {
+      id: `demo-map-${Date.now()}`,
+      enrollment_id: pub.enrollment_id,
+      version_number: pub.version_number + 1,
+      status: 'draft',
+      created_by_user_id: userId,
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+      items: pub.items.map((it) => ({
+        ...it,
+        id: `demo-map-item-${Date.now()}-${Math.random()}`,
+        map_id: `demo-map-${Date.now()}`,
+      })),
+    }
+    this.state.maps.unshift(newDraft)
+    this.saveState()
+    return newDraft
+  }
+
+  // 6. Respostas de Experiências da Consciência (Demo)
+  public listExperienceResponses(
+    enrollmentId?: string,
+    experienceId?: string,
+  ): ExperienceResponseRecord[] {
+    return this.state.experienceResponses.filter((r) => {
+      if (enrollmentId && r.enrollment_id !== enrollmentId) return false
+      if (experienceId && r.experience_id !== experienceId) return false
+      return true
+    })
+  }
+
+  public saveExperienceResponse(params: {
+    enrollmentId: string
+    experienceId: string
+    promptId: string
+    respondentUserId: string
+    responseType: any
+    promptVersion: number
+    structuredValue?: unknown
+    freeText?: string
+    accessClass?: any
+  }): ExperienceResponseRecord {
+    const existing = this.state.experienceResponses.find(
+      (r) => r.enrollment_id === params.enrollmentId && r.prompt_id === params.promptId,
+    )
+    if (existing) {
+      existing.structured_value = params.structuredValue
+      existing.free_text = params.freeText !== undefined ? params.freeText : existing.free_text
+      existing.version = (existing.version || 1) + 1
+      existing.status = 'revised'
+      existing.updated = new Date().toISOString()
+      this.saveState()
+      return { ...existing }
+    } else {
+      const newResp: ExperienceResponseRecord = {
+        id: `demo-resp-${Date.now()}-${Math.random()}`,
+        enrollment_id: params.enrollmentId,
+        experience_id: params.experienceId,
+        prompt_id: params.promptId,
+        respondent_user_id: params.respondentUserId,
+        response_type: params.responseType,
+        access_class: params.accessClass || 'shared_care',
+        structured_value: params.structuredValue,
+        free_text: params.freeText || '',
+        prompt_version: params.promptVersion,
+        version: 1,
+        status: 'saved',
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+      }
+      this.state.experienceResponses.push(newResp)
+      this.saveState()
+      return newResp
+    }
   }
 }
 
