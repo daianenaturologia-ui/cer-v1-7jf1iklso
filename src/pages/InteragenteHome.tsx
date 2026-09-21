@@ -21,7 +21,16 @@ import {
   CerPracticeAssignmentRecord,
   CerPlannerItemRecord,
   CapacityResponseValue,
+  PROFESSIONAL_DISPLAY_NAME,
+  PROFESSIONAL_FIRST_PERSON_SIGNATURE,
+  TREATMENT_PREFERENCES,
+  TreatmentPreference,
+  TREATMENT_PREFERENCE_LABELS,
+  TREATMENT_PREFERENCE_DESCRIPTIONS,
 } from '@/types/cer'
+import { personService } from '@/services/cer'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -93,6 +102,15 @@ export const InteragenteHome: React.FC = () => {
   const [plannerItems, setPlannerItems] = useState<CerPlannerItemRecord[]>([])
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [activeReviewInvite, setActiveReviewInvite] = useState<{ cycleId: string } | null>(null)
+
+  // Preferências de nome e tratamento (Item 2)
+  const [preferredNameInput, setPreferredNameInput] = useState('')
+  const [treatmentPreferenceInput, setTreatmentPreferenceInput] =
+    useState<TreatmentPreference>('neutro')
+  const [treatmentCustomInput, setTreatmentCustomInput] = useState('')
+  const [savingTreatmentPreference, setSavingTreatmentPreference] = useState(false)
+  const [hasCompletedInitialPreference, setHasCompletedInitialPreference] = useState(false)
+
   // ETAPA 1: Relato inicial acolhedor
   const [initialIntakeWhatBrings, setInitialIntakeWhatBrings] = useState('')
   const [initialIntakeWhatHelps, setInitialIntakeWhatHelps] = useState('')
@@ -100,6 +118,8 @@ export const InteragenteHome: React.FC = () => {
   const [intakeSavingDraft, setIntakeSavingDraft] = useState(false)
   const [intakeSending, setIntakeSending] = useState(false)
   const [intakeSubmittedMessage, setIntakeSubmittedMessage] = useState<string | null>(null)
+  const [intakeSentSuccessModal, setIntakeSentSuccessModal] = useState(false)
+  const [hasSentIntakeOnce, setHasSentIntakeOnce] = useState(false)
   // ETAPA 4: Plano apresentado e Retorno Operacional
   const [presentedCarePlans, setPresentedCarePlans] = useState<CerCarePlanPresentationRecord[]>([])
   const [selectedPlanResponses, setSelectedPlanResponses] = useState<
@@ -140,6 +160,16 @@ export const InteragenteHome: React.FC = () => {
         setKnowledgeItems(kiList)
         setPresentations(presList)
         setCurrentMap(mapData)
+
+        // Verificar se já enviou pré-consulta pelo histórico de recados
+        try {
+          const { cerJournalService } = await import('@/services/cerJournalService')
+          const myMsgs = await cerJournalService.listParticipantMessages(activeEnr.id)
+          const hasSent = myMsgs.some((m) => m.status === 'approved')
+          setHasSentIntakeOnce(hasSent)
+        } catch {
+          /* ignore */
+        }
 
         // ETAPA 4: Carregar planos apresentados à participante (status = presented)
         try {
@@ -314,8 +344,47 @@ export const InteragenteHome: React.FC = () => {
   }
 
   useEffect(() => {
+    if (person) {
+      setPreferredNameInput(person.preferred_name || person.full_name || '')
+      setTreatmentPreferenceInput(person.treatment_preference || 'neutro')
+      setTreatmentCustomInput(person.treatment_preference_custom || '')
+      if (
+        person.treatment_preference ||
+        localStorage.getItem(`cer_treatment_pref_completed_${person.id}`)
+      ) {
+        setHasCompletedInitialPreference(true)
+      }
+    }
     loadData()
   }, [person])
+
+  const handleSaveTreatmentPreference = async () => {
+    if (!person?.id) return
+    setSavingTreatmentPreference(true)
+    try {
+      const updated = await personService.updateTreatmentPreference(person.id, {
+        preferred_name: preferredNameInput.trim() || undefined,
+        treatment_preference: treatmentPreferenceInput,
+        treatment_preference_custom:
+          treatmentPreferenceInput === 'outro' ? treatmentCustomInput.trim() : undefined,
+      })
+      localStorage.setItem(`cer_treatment_pref_completed_${person.id}`, 'true')
+      setHasCompletedInitialPreference(true)
+      toast({
+        title: 'Preferências acolhidas',
+        description: 'Sua forma de tratamento e nome preferido foram salvos com carinho.',
+      })
+      await loadData()
+    } catch (err: unknown) {
+      toast({
+        title: 'Não foi possível salvar',
+        description: err instanceof Error ? err.message : 'Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setSavingTreatmentPreference(false)
+    }
+  }
 
   // ETAPA 1: Handlers do Relato Inicial
   const formatIntakeFullText = () => {
@@ -382,11 +451,13 @@ export const InteragenteHome: React.FC = () => {
         message_text: text,
         as_draft: false,
       })
+      setHasSentIntakeOnce(true)
       setIntakeSubmittedMessage(
-        'Seu relato foi enviado com sucesso para Daia. Ele estará disponível no prontuário para o próximo encontro.',
+        `Suas respostas foram enviadas para ${PROFESSIONAL_DISPLAY_NAME}. A partir de agora, você pode conhecer as seis dimensões do seu ser e responder às avaliações no seu ritmo.`,
       )
+      setIntakeSentSuccessModal(true)
       toast({
-        title: 'Relato enviado para Daia',
+        title: `Relato enviado para ${PROFESSIONAL_DISPLAY_NAME}`,
         description:
           'Agradecemos por compartilhar. Você agora pode explorar a fase de Consciência.',
       })
@@ -604,6 +675,135 @@ export const InteragenteHome: React.FC = () => {
            ======================================================== */}
         {activePhase === 'comece_aqui' && (
           <div className="space-y-6">
+            {/* Modal / Card Inicial de Nome Preferido e Tratamento (Item 2) */}
+            {!hasCompletedInitialPreference && (
+              <Card className="border-primary/50 bg-gradient-to-br from-primary/10 via-card to-card shadow-sm">
+                <CardHeader className="pb-3 border-b border-primary/15">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <HeartHandshake className="w-5 h-5 text-primary" />
+                      <CardTitle className="text-base font-serif font-semibold text-foreground">
+                        Como prefere que nos dirijamos a você?
+                      </CardTitle>
+                    </div>
+                    <CardDescription className="text-xs text-muted-foreground leading-relaxed">
+                      Este formulário acolhedor define apenas a linguagem de tratamento do
+                      aplicativo e como Daiane pode chamar você. Ele não pergunta sobre sexo, gênero
+                      ou identidade, e você poderá alterá-lo a qualquer momento em &ldquo;Meu
+                      perfil&rdquo;.
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-5 space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-foreground">
+                      Como você prefere que chamemos você?
+                    </Label>
+                    <Input
+                      placeholder="Seu nome preferido ou apelido de carinho..."
+                      value={preferredNameInput}
+                      onChange={(e) => setPreferredNameInput(e.target.value)}
+                      className="text-xs h-9"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-foreground block">
+                      Como você prefere que o aplicativo se refira a você?
+                    </Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setTreatmentPreferenceInput('feminino')}
+                        className={`p-3 rounded-lg border text-left transition-all ${
+                          treatmentPreferenceInput === 'feminino'
+                            ? 'border-primary bg-primary/10 shadow-xs'
+                            : 'border-border/60 bg-card hover:border-primary/40'
+                        }`}
+                      >
+                        <span className="font-semibold text-foreground block">No feminino</span>
+                        <span className="text-[11px] text-muted-foreground block mt-0.5">
+                          exemplos: &ldquo;acolhida&rdquo;, &ldquo;juntas&rdquo;
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTreatmentPreferenceInput('masculino')}
+                        className={`p-3 rounded-lg border text-left transition-all ${
+                          treatmentPreferenceInput === 'masculino'
+                            ? 'border-primary bg-primary/10 shadow-xs'
+                            : 'border-border/60 bg-card hover:border-primary/40'
+                        }`}
+                      >
+                        <span className="font-semibold text-foreground block">No masculino</span>
+                        <span className="text-[11px] text-muted-foreground block mt-0.5">
+                          exemplos: &ldquo;acolhido&rdquo;, &ldquo;juntos&rdquo;
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTreatmentPreferenceInput('neutro')}
+                        className={`p-3 rounded-lg border text-left transition-all ${
+                          treatmentPreferenceInput === 'neutro'
+                            ? 'border-primary bg-primary/10 shadow-xs'
+                            : 'border-border/60 bg-card hover:border-primary/40'
+                        }`}
+                      >
+                        <span className="font-semibold text-foreground block">De forma neutra</span>
+                        <span className="text-[11px] text-muted-foreground block mt-0.5">
+                          evitar palavras marcadas por gênero
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTreatmentPreferenceInput('outro')}
+                        className={`p-3 rounded-lg border text-left transition-all ${
+                          treatmentPreferenceInput === 'outro'
+                            ? 'border-primary bg-primary/10 shadow-xs'
+                            : 'border-border/60 bg-card hover:border-primary/40'
+                        }`}
+                      >
+                        <span className="font-semibold text-foreground block">De outro modo</span>
+                        <span className="text-[11px] text-muted-foreground block mt-0.5">
+                          abre o campo de texto livre
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {treatmentPreferenceInput === 'outro' && (
+                    <div className="space-y-1.5 pt-1">
+                      <Label className="text-xs font-medium text-foreground">
+                        Descreva como prefere o tratamento:
+                      </Label>
+                      <Input
+                        placeholder="Ex.: prefiro ser chamada pelo nome próprio sem adjetivos..."
+                        value={treatmentCustomInput}
+                        onChange={(e) => setTreatmentCustomInput(e.target.value)}
+                        className="text-xs h-9"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end pt-2">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveTreatmentPreference}
+                      disabled={savingTreatmentPreference}
+                      className="text-xs h-8 px-4 gap-1.5"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>
+                        {savingTreatmentPreference ? 'Guardando...' : 'Salvar Preferência'}
+                      </span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {/* Seção expansível: Entenda como funciona o CER */}
             <Collapsible className="border border-border/60 rounded-lg bg-muted/20 overflow-hidden">
               <CollapsibleTrigger asChild>
@@ -750,8 +950,9 @@ export const InteragenteHome: React.FC = () => {
                       Você escolhe quando enviar
                     </span>
                     <span className="text-muted-foreground text-[11px] leading-relaxed block">
-                      Enquanto estiver como rascunho, Daia não verá suas respostas. Elas só serão
-                      compartilhadas quando você clicar em &ldquo;Enviar para Daia&rdquo;.
+                      Enquanto estiver como rascunho, ${PROFESSIONAL_DISPLAY_NAME} não verá suas
+                      respostas. Elas só serão compartilhadas quando você clicar em &ldquo;Enviar
+                      para ${PROFESSIONAL_DISPLAY_NAME}&rdquo;.
                     </span>
                   </div>
                   <div className="p-3 rounded-lg bg-card border border-border/50 space-y-1">
@@ -759,8 +960,8 @@ export const InteragenteHome: React.FC = () => {
                       O que acontece depois
                     </span>
                     <span className="text-muted-foreground text-[11px] leading-relaxed block">
-                      Daia utilizará suas respostas para preparar o primeiro encontro. Depois do
-                      envio, você poderá seguir para a área Consciência.
+                      ${PROFESSIONAL_DISPLAY_NAME} utilizará suas respostas para preparar o primeiro
+                      encontro. Depois do envio, você poderá seguir para a área Consciência.
                     </span>
                   </div>
                 </div>
@@ -779,10 +980,10 @@ export const InteragenteHome: React.FC = () => {
                     <div className="text-xs space-y-1 pt-0.5">
                       <p className="font-bold text-foreground">Antes do nosso primeiro encontro</p>
                       <p className="text-muted-foreground leading-relaxed">
-                        Conte o que você considera importante para que Daia conheça um pouco do seu
-                        momento. Não existem respostas certas, e você não precisa contar algo que
-                        ainda não se sente pronta para compartilhar. Você pode salvar e continuar
-                        depois.
+                        Conte o que você considera importante para que ${PROFESSIONAL_DISPLAY_NAME}{' '}
+                        conheça um pouco do seu momento. Não existem respostas certas, e você não
+                        precisa contar algo que ainda não sinta segurança para compartilhar. Você
+                        pode salvar e continuar depois.
                       </p>
                     </div>
                   </div>
@@ -797,20 +998,45 @@ export const InteragenteHome: React.FC = () => {
               </CardHeader>
               <CardContent className="p-4 sm:p-5 space-y-4">
                 {intakeSubmittedMessage ? (
-                  <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-300 text-emerald-900 dark:text-emerald-200 text-xs space-y-2">
-                    <div className="flex items-center gap-2 font-semibold text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>Relato Entregue para Daia</span>
+                  <div className="p-5 rounded-xl bg-emerald-500/10 border border-emerald-300 text-emerald-950 dark:text-emerald-100 text-xs space-y-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 font-semibold text-sm text-emerald-900 dark:text-emerald-200">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <span className="font-serif text-base">
+                          Agora você já pode conhecer a sua Consciência
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed pt-1 whitespace-pre-line font-sans">
+                        Suas respostas foram enviadas para Daiane. A partir de agora, você pode
+                        conhecer as seis dimensões do seu ser e responder às avaliações no seu
+                        ritmo.
+                        {'\n\n'}
+                        Se desejar, você pode concluir todas antes do primeiro encontro. Se forem
+                        muitas perguntas para um único momento, poderá continuar durante o período
+                        dos dois primeiros encontros. O importante é não deixar essa etapa para
+                        muito depois, porque essas informações ajudarão Daiane a aproveitar melhor o
+                        tempo com você.
+                      </p>
                     </div>
-                    <p className="leading-relaxed">{intakeSubmittedMessage}</p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIntakeSubmittedMessage(null)}
-                      className="text-xs h-7 mt-1 border-emerald-400 text-emerald-800 dark:text-emerald-200"
-                    >
-                      Escrever outro relato
-                    </Button>
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-emerald-200 dark:border-emerald-800/60">
+                      <Button
+                        size="sm"
+                        onClick={() => setActivePhase('consciencia')}
+                        className="text-xs h-8 px-4 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        <span>Ir para Consciência</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIntakeSubmittedMessage(null)}
+                        className="text-xs h-8 text-muted-foreground hover:text-foreground"
+                      >
+                        Escrever outro relato
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3.5">
@@ -879,7 +1105,11 @@ export const InteragenteHome: React.FC = () => {
                           className="text-xs h-8 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
                         >
                           <HeartHandshake className="w-3.5 h-3.5" />
-                          <span>{intakeSending ? 'Enviando...' : 'Enviar para Daia'}</span>
+                          <span>
+                            {intakeSending
+                              ? 'Enviando...'
+                              : `Enviar para ${PROFESSIONAL_DISPLAY_NAME}`}
+                          </span>
                         </Button>
                       </div>
                     </div>
@@ -930,20 +1160,74 @@ export const InteragenteHome: React.FC = () => {
               </CollapsibleTrigger>
               <CollapsibleContent className="px-4 pb-4 sm:px-5 border-t border-border/40 pt-3">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                  <div className="p-2.5 rounded bg-muted/20 border border-border/40 space-y-1">
-                    <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-                      <User className="w-3 h-3 text-primary" />
-                      Dados cadastrais
-                    </span>
-                    <p className="font-medium text-foreground">
-                      {person?.full_name || 'Registro em estruturação'}
-                    </p>
-                    <p className="text-muted-foreground text-[11px]">
-                      {person?.email || user?.email}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground italic">
-                      Acompanhamento ativo e seguro
-                    </p>
+                  <div className="p-2.5 rounded bg-muted/20 border border-border/40 space-y-2">
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                        <User className="w-3 h-3 text-primary" />
+                        Identidade e Tratamento
+                      </span>
+                      <p className="font-medium text-foreground">
+                        {person?.preferred_name
+                          ? `${person.preferred_name} (${person.full_name})`
+                          : person?.full_name || 'Registro em estruturação'}
+                      </p>
+                      <p className="text-muted-foreground text-[11px]">
+                        {person?.email || user?.email}
+                      </p>
+                    </div>
+
+                    <div className="pt-1.5 border-t border-border/40 space-y-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Nome preferido:</Label>
+                        <Input
+                          value={preferredNameInput}
+                          onChange={(e) => setPreferredNameInput(e.target.value)}
+                          className="h-7 text-xs"
+                          placeholder="Como prefere ser chamada..."
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">
+                          Forma de tratamento:
+                        </Label>
+                        <select
+                          value={treatmentPreferenceInput}
+                          onChange={(e) =>
+                            setTreatmentPreferenceInput(e.target.value as TreatmentPreference)
+                          }
+                          className="w-full text-xs h-7 rounded border border-input bg-background px-2"
+                        >
+                          <option value="neutro">
+                            De forma neutra (evitar marcação de gênero)
+                          </option>
+                          <option value="feminino">No feminino (acolhida, juntas)</option>
+                          <option value="masculino">No masculino (acolhido, juntos)</option>
+                          <option value="outro">De outro modo (personalizado)</option>
+                        </select>
+                      </div>
+                      {treatmentPreferenceInput === 'outro' && (
+                        <div className="space-y-1">
+                          <Label className="text-[10px] text-muted-foreground">
+                            Especificação:
+                          </Label>
+                          <Input
+                            value={treatmentCustomInput}
+                            onChange={(e) => setTreatmentCustomInput(e.target.value)}
+                            className="h-7 text-xs"
+                            placeholder="Como prefere o tratamento..."
+                          />
+                        </div>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleSaveTreatmentPreference}
+                        disabled={savingTreatmentPreference}
+                        className="w-full text-xs h-7 mt-1"
+                      >
+                        {savingTreatmentPreference ? 'Salvando...' : 'Atualizar preferência'}
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="p-2.5 rounded bg-muted/20 border border-border/40 space-y-1">
@@ -1003,66 +1287,94 @@ export const InteragenteHome: React.FC = () => {
            ======================================================== */}
         {activePhase === 'consciencia' && (
           <div className="space-y-6">
-            {/* Introdução da Consciência */}
-            <Collapsible
-              defaultOpen
-              className="border border-border/60 rounded-lg bg-card shadow-sm overflow-hidden"
-            >
-              <CollapsibleTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full flex items-center justify-between p-4 sm:p-5 h-auto hover:bg-muted/30 text-left font-serif font-semibold text-base text-foreground rounded-none"
+            {!hasSentIntakeOnce ? (
+              /* ANTES do envio da pré-consulta: orientação central única em vez de 6 cartões bloqueados */
+              <Card className="border-primary/40 bg-gradient-to-br from-primary/5 via-card to-card shadow-sm">
+                <CardHeader className="text-center pb-2">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
+                    <HeartHandshake className="w-6 h-6" />
+                  </div>
+                  <CardTitle className="font-serif text-lg text-foreground">
+                    O primeiro passo começa no &ldquo;Comece aqui&rdquo;
+                  </CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground max-w-md mx-auto pt-1 leading-relaxed">
+                    Antes de abrir a exploração das seis dimensões, convidamos você a compartilhar
+                    um breve relato inicial com {PROFESSIONAL_DISPLAY_NAME} na aba{' '}
+                    <strong>&ldquo;Comece aqui&rdquo;</strong>. Assim que enviar seu relato, todas
+                    as seis dimensões serão liberadas simultaneamente para você responder no seu
+                    ritmo.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-2 pb-6 flex justify-center">
+                  <Button
+                    onClick={() => setActivePhase('comece_aqui')}
+                    className="text-xs h-8 px-4 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <span>Ir para o Comece aqui</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Introdução da Consciência */}
+                <Collapsible
+                  defaultOpen
+                  className="border border-border/60 rounded-lg bg-card shadow-sm overflow-hidden"
                 >
-                  <span className="flex items-center gap-2">
-                    <Brain className="w-4 h-4 text-primary shrink-0" />
-                    <span>Consciência — descobrir como você funciona</span>
-                  </span>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200" />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="px-4 pb-5 sm:px-5 space-y-3 text-xs text-muted-foreground leading-relaxed border-t border-border/40 pt-4">
-                <p>
-                  Nesta etapa, vamos olhar para você como um ser inteiro. As seis dimensões
-                  representam diferentes aspectos da sua experiência, mas elas não funcionam
-                  separadamente: corpo, pensamentos, emoções, padrões de resposta, relações,
-                  intimidade, valores e sentido se influenciam continuamente.
-                </p>
-                <p>
-                  Clique em cada dimensão para acessar a experiência que estiver disponível. Não
-                  existem respostas certas, e você não precisa concluir tudo de uma vez. Responda no
-                  seu ritmo e registre apenas aquilo que fizer sentido compartilhar neste momento.
-                </p>
-                <p>
-                  No centro está o seu Mapa CER. Ele será construído aos poucos, a partir das suas
-                  respostas, dos nossos encontros e da minha leitura profissional. O aplicativo
-                  poderá ajudar a organizar informações, mas nenhuma conclusão será publicada
-                  automaticamente. Antes de se tornar uma devolutiva, o Mapa será revisado por mim e
-                  conversado com você.
-                </p>
-                <p>
-                  O objetivo não é colocar você dentro de uma definição. É ajudar você a reconhecer
-                  como funciona, quais recursos já possui, o que precisa de cuidado e quais caminhos
-                  deseja construir.
-                </p>
-                <div className="pt-2 font-serif text-foreground">
-                  <p>Com carinho,</p>
-                  <p className="font-semibold">Daia</p>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full flex items-center justify-between p-4 sm:p-5 h-auto hover:bg-muted/30 text-left font-serif font-semibold text-base text-foreground rounded-none"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Brain className="w-4 h-4 text-primary shrink-0" />
+                        <span>Consciência — descobrir como você funciona</span>
+                      </span>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-4 pb-5 sm:px-5 space-y-3 text-xs text-muted-foreground leading-relaxed border-t border-border/40 pt-4">
+                    <p>
+                      Nesta etapa, vamos olhar para você como um ser inteiro. As seis dimensões
+                      representam diferentes aspectos da sua experiência, mas elas não funcionam
+                      separadamente: corpo, pensamentos, emoções, padrões de resposta, relações,
+                      intimidade, valores e sentido se influenciam continuamente.
+                    </p>
+                    <p>
+                      Clique em cada dimensão para acessar a experiência que estiver disponível. Não
+                      existem respostas certas, e você não precisa concluir tudo de uma vez.
+                      Responda no seu ritmo e registre apenas aquilo que fizer sentido compartilhar
+                      neste momento.
+                    </p>
+                    <p>
+                      No centro está o seu Mapa CER. Ele será construído aos poucos, a partir das
+                      suas respostas, dos nossos encontros e da minha leitura profissional. O
+                      aplicativo poderá ajudar a organizar informações, mas nenhuma conclusão será
+                      publicada automaticamente. Antes de se tornar uma devolutiva, o Mapa será
+                      revisado por mim e conversado com você.
+                    </p>
+                    <p>
+                      O objetivo não é colocar você dentro de uma definição. É ajudar você a
+                      reconhecer como funciona, quais recursos já possui, o que precisa de cuidado e
+                      quais caminhos deseja construir.
+                    </p>
+                    <div className="pt-2 font-serif text-foreground">
+                      <p>Com carinho,</p>
+                      <p className="font-semibold">Daia</p>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
 
-            {/* O Ser em Seis Dimensões + Centro "Meu Mapa CER" */}
-            <SerConscienciaMap
-              availableExperiences={availableExperiences}
-              hasPublishedMap={Boolean(currentMap)}
-              onSelectExperience={(expId) => setActiveExperienceId(expId)}
-              onOpenMap={() => {
-                // Rola suavemente até a seção do mapa ou exibe estado
-                const el = document.getElementById('secao-mapa-cer')
-                if (el) el.scrollIntoView({ behavior: 'smooth' })
-              }}
-            />
-
+                {/* O Ser em Seis Dimensões + Centro "Meu Mapa CER" (única entrada para o mapa) */}
+                <SerConscienciaMap
+                  availableExperiences={availableExperiences}
+                  hasPublishedMap={Boolean(currentMap)}
+                  currentMap={currentMap}
+                  onSelectExperience={(expId) => setActiveExperienceId(expId)}
+                />
+              </>
+            )}
             {/* Transição clara Pós-Consciência / Waiting State */}
             {hasCompletedConsciousness && assignments.length === 0 && (
               <Card className="border-primary/40 bg-gradient-to-r from-primary/5 via-card to-card">
@@ -1100,49 +1412,6 @@ export const InteragenteHome: React.FC = () => {
                 </CardContent>
               </Card>
             )}
-
-            {/* Seção Meu Mapa CER (detalhada se publicado, ou status em construção) */}
-            <div id="secao-mapa-cer" className="space-y-4 pt-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-primary" />
-                    <span>Meu Mapa CER</span>
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Síntese clínica e compreensiva estruturada pela profissional a partir da sua
-                    jornada.
-                  </p>
-                </div>
-                {currentMap ? (
-                  <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-300">
-                    Publicado
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-                    Em construção
-                  </Badge>
-                )}
-              </div>
-
-              {currentMap ? (
-                <ParticipantMapDisplay map={currentMap} />
-              ) : (
-                <Card className="border-dashed border-border/80 bg-muted/15">
-                  <CardContent className="py-8 text-center space-y-2">
-                    <Layers className="w-8 h-8 text-muted-foreground mx-auto opacity-50" />
-                    <h4 className="font-serif font-medium text-sm text-foreground">
-                      Mapa em fase de elaboração conjunta
-                    </h4>
-                    <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                      O seu Mapa CER é construído a partir das suas respostas e conversas com a
-                      profissional. Assim que Daiane revisar e publicar uma devolutiva integrativa,
-                      ela ficará visível aqui.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
 
             {/* Percepções apresentadas para reflexão (BUILD 04C) */}
             {presentations.filter((p) => p.channel === 'app').length > 0 && (

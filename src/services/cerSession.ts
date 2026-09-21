@@ -33,6 +33,13 @@ export const cerSessionService = {
   },
 
   /**
+   * Alias de conveniência canônico para listByEnrollment
+   */
+  async listSessionsByEnrollment(enrollmentId: string): Promise<CerSessionRecord[]> {
+    return this.listByEnrollment(enrollmentId)
+  },
+
+  /**
    * Obtém detalhes de uma sessão por ID
    */
   async getById(sessionId: string): Promise<CerSessionRecord> {
