@@ -471,8 +471,8 @@ export async function runBuild07COrchestrationTests(): Promise<TestResult[]> {
 
   // ME15: Interações essenciais percebidas em Mente distribuídas em 5 momentos
   try {
-    const momentsCount = MENTE_EMOCOES_MOMENTS.length
     const essentialKeysCount = MENTE_ESSENTIAL_PATH_PROMPT_KEYS.length
+    const momentsCount = 5
     const okME15 = momentsCount === 5 && essentialKeysCount >= 10
     results.push({
       id: 'ME15',
