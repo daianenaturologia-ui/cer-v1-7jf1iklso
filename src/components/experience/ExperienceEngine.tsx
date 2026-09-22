@@ -904,10 +904,49 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     return labels
   })()
 
+  const emocoesTexto =
+    !isPrefiroNaoResponderP2 && selectedEmotionLabels.length > 0
+      ? selectedEmotionLabels.join(', ')
+      : ''
+
   const selectedEmotionsPhrase =
     !isPrefiroNaoResponderP2 && selectedEmotionLabels.length > 0
       ? formatSelectedEmotionsPhrase(selectedEmotionLabels)
       : ''
+
+  const interpolateEmotionsMarker = (text: string | null | undefined): string => {
+    if (!text) return ''
+    if (!text.includes('{{emocoes_selecionadas}}')) return text
+
+    if (emocoesTexto) {
+      return text.replaceAll('{{emocoes_selecionadas}}', emocoesTexto)
+    }
+
+    // Sem emoções válidas (sem seleção ou "Prefiro não responder"):
+    // Normalizar a frase sem vírgula órfã, sem espaço duplo, sem preposição solta.
+    let cleaned = text
+      .replaceAll(
+        'Ao pensar nas emoções que escolheu — {{emocoes_selecionadas}} —',
+        'Ao pensar no que está presente para você,',
+      )
+      .replaceAll('— {{emocoes_selecionadas}} —', '')
+      .replaceAll('Ao sentir {{emocoes_selecionadas}},', 'Ao pensar sobre isso,')
+      .replaceAll('ao sentir {{emocoes_selecionadas}},', 'ao pensar sobre isso,')
+      .replaceAll('Ao sentir {{emocoes_selecionadas}}', 'Ao pensar sobre isso')
+      .replaceAll('ao sentir {{emocoes_selecionadas}}', 'ao pensar sobre isso')
+      .replaceAll('{{emocoes_selecionadas}}', '')
+      .replaceAll(' ,', ',')
+      .replaceAll('  ', ' ')
+      .trim()
+
+    // Normalização adicional para preposições soltas ou pontuação órfã
+    cleaned = cleaned
+      .replace(/\s+,/g, ',')
+      .replace(/,\s*,+/g, ',')
+      .replace(/\s{2,}/g, ' ')
+
+    return cleaned
+  }
 
   // Microcopy pré-expressão de privacidade
   const privacyMicrocopy =
@@ -922,15 +961,13 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     const componentType = currentPrompt.component_type
     const schema = (currentPrompt.schema_config || {}) as Record<string, any>
 
-    // Interpolação dinâmica de emoções selecionadas para P3 Adaptativo
+    // Interpolação dinâmica de emoções selecionadas para qualquer prompt com template
     let renderedPromptConfig = { ...schema }
     if (schema.dynamic_text_template) {
-      const joinedLabels =
-        selectedEmotionLabels.length > 0 ? selectedEmotionLabels.join(', ') : 'suas emoções'
-      // Ajustar template se necessário
       renderedPromptConfig = {
         ...renderedPromptConfig,
-        interpolatedEmotions: joinedLabels,
+        dynamic_text_template: interpolateEmotionsMarker(schema.dynamic_text_template),
+        interpolatedEmotions: emocoesTexto || 'suas emoções',
         selectedEmotionsPhrase,
       }
     }
@@ -1367,10 +1404,12 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
                   </div>
                 )}
                 <h2 className="text-xl sm:text-2xl font-serif font-medium text-foreground leading-snug">
-                  {currentPrompt.prompt_text}
+                  {interpolateEmotionsMarker(currentPrompt.prompt_text)}
                 </h2>{' '}
                 {momentSubtitle && (
-                  <p className="text-xs text-muted-foreground leading-relaxed">{momentSubtitle}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {interpolateEmotionsMarker(momentSubtitle)}
+                  </p>
                 )}
               </>
             )
@@ -1378,26 +1417,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         </div>
         {currentPrompt.helper_text &&
           (() => {
-            let displayedHelper = currentPrompt.helper_text
-            if (
-              (currentPrompt.schema_config as any)?.prompt_key ===
-                'compreensao_despertar_emocoes' ||
-              currentPrompt.id === 'p-07c-pm1-p3-por-que-se-sente-assim'
-            ) {
-              if (selectedEmotionLabels.length > 0) {
-                const replacement = selectedEmotionLabels.join(', ')
-                displayedHelper = displayedHelper.replace(
-                  '— {{emocoes_selecionadas}} —',
-                  `— ${replacement} —`,
-                )
-              } else {
-                // Sem seleção disponível ou "Prefiro não responder"
-                displayedHelper = displayedHelper.replace(
-                  'Ao pensar nas emoções que escolheu — {{emocoes_selecionadas}} —',
-                  'Ao pensar no que está presente para você,',
-                )
-              }
-            }
+            const displayedHelper = interpolateEmotionsMarker(currentPrompt.helper_text)
             return <p className="text-[11px] text-muted-foreground/80 italic">{displayedHelper}</p>
           })()}
 
