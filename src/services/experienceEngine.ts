@@ -377,20 +377,20 @@ export const enrollmentExperienceService = {
     experienceId: string,
   ): Promise<EnrollmentExperienceRecord | null> {
     const canonicalExpId = resolveExperienceId(experienceId)
-    const { demoAdapter } = await import('@/services/demoAdapter')
-    if (demoAdapter.isEnabled()) {
-      const list = await this.listByEnrollment(enrollmentId)
-      return (
-        list.find(
-          (e) =>
-            e.experience_id === canonicalExpId ||
-            e.id === `demo-enr-exp-${canonicalExpId}` ||
-            (e.expand?.experience_id && (e.expand.experience_id as any).id === canonicalExpId),
-        ) || null
-      )
-    }
-
     try {
+      const { demoAdapter } = await import('@/services/demoAdapter')
+      if (demoAdapter.isEnabled()) {
+        const list = await this.listByEnrollment(enrollmentId)
+        return (
+          list.find(
+            (e) =>
+              e.experience_id === canonicalExpId ||
+              e.id === `demo-enr-exp-${canonicalExpId}` ||
+              (e.expand?.experience_id && (e.expand.experience_id as any).id === canonicalExpId),
+          ) || null
+        )
+      }
+
       return await pb
         .collection('enrollment_experiences')
         .getFirstListItem<EnrollmentExperienceRecord>(
@@ -461,19 +461,18 @@ export const enrollmentExperienceService = {
   async updateReleaseStatus(
     id: string,
     releaseStatus: ExperienceReleaseStatus,
+    enrollmentId: string = 'demo-enrollment-mariana',
   ): Promise<EnrollmentExperienceRecord> {
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {
       const expId = resolveExperienceId(id)
-      const prog = demoAdapter.updateEnrollmentExperienceProgress(
-        'demo-enrollment-mariana',
-        expId,
-        { releaseStatus },
-      )
+      const prog = demoAdapter.updateEnrollmentExperienceProgress(enrollmentId, expId, {
+        releaseStatus,
+      })
       const exp = await experienceCatalogService.getExperienceById(expId)
       return {
         id: `demo-enr-exp-${expId}`,
-        enrollment_id: 'demo-enrollment-mariana',
+        enrollment_id: enrollmentId,
         experience_id: expId,
         release_status: prog.release_status,
         progress_status: prog.progress_status,
@@ -505,24 +504,22 @@ export const enrollmentExperienceService = {
       stepOrder?: number
       progressStatus?: ExperienceProgressStatus
       completed?: boolean
+      enrollmentId?: string
     },
   ): Promise<EnrollmentExperienceRecord> {
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {
       const expId = resolveExperienceId(id)
-      const prog = demoAdapter.updateEnrollmentExperienceProgress(
-        'demo-enrollment-mariana',
-        expId,
-        {
-          stepOrder: params.stepOrder,
-          progressStatus: params.progressStatus,
-          completed: params.completed,
-        },
-      )
+      const effectiveEnrollmentId = params.enrollmentId || 'demo-enrollment-mariana'
+      const prog = demoAdapter.updateEnrollmentExperienceProgress(effectiveEnrollmentId, expId, {
+        stepOrder: params.stepOrder,
+        progressStatus: params.progressStatus,
+        completed: params.completed,
+      })
       const exp = await experienceCatalogService.getExperienceById(expId)
       return {
         id: `demo-enr-exp-${expId}`,
-        enrollment_id: 'demo-enrollment-mariana',
+        enrollment_id: effectiveEnrollmentId,
         experience_id: expId,
         release_status: prog.release_status,
         progress_status: prog.progress_status,
@@ -617,6 +614,11 @@ export const experienceResponseService = {
     promptId: string,
   ): Promise<ExperienceResponseRecord | null> {
     try {
+      const { demoAdapter } = await import('@/services/demoAdapter')
+      if (demoAdapter.isEnabled()) {
+        const responses = demoAdapter.listExperienceResponses(enrollmentId)
+        return responses.find((r) => r.prompt_id === promptId) || null
+      }
       return await pb
         .collection('experience_responses')
         .getFirstListItem<ExperienceResponseRecord>(
@@ -637,15 +639,20 @@ export const experienceResponseService = {
     enrollmentId: string,
     experienceId: string,
   ): Promise<ExperienceResponseRecord[]> {
-    const { demoAdapter } = await import('@/services/demoAdapter')
-    if (demoAdapter.isEnabled()) {
-      return demoAdapter.listExperienceResponses(enrollmentId, experienceId)
+    const canonicalExpId = resolveExperienceId(experienceId)
+    try {
+      const { demoAdapter } = await import('@/services/demoAdapter')
+      if (demoAdapter.isEnabled()) {
+        return demoAdapter.listExperienceResponses(enrollmentId, canonicalExpId)
+      }
+      return await pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
+        filter: `enrollment_id = "${enrollmentId}" && (experience_id = "${canonicalExpId}" || experience_id = "${experienceId}")`,
+        expand: 'prompt_id',
+        sort: 'prompt_id.step_order',
+      })
+    } catch {
+      return []
     }
-    return await pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
-      filter: `enrollment_id = "${enrollmentId}" && experience_id = "${experienceId}"`,
-      expand: 'prompt_id',
-      sort: 'prompt_id.step_order',
-    })
   },
 
   /**

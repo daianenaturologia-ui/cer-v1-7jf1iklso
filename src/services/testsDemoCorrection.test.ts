@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { demoAdapter, DEMO_ENROLLMENT_ID, DEMO_USER_MARIANA, DEMO_USER_DAIANE } from './demoAdapter'
 
 describe('Correção do Modo Demonstração CER V1 (Limpeza de Sementes e Autoria Fiel)', () => {
@@ -166,5 +166,33 @@ describe('Correção do Modo Demonstração CER V1 (Limpeza de Sementes e Autori
     const menteItem = list.find((e) => e.experience_id === 'exp-mente-emocoes-07c')
     expect(menteItem?.progress_status).toBe('in_progress')
     expect(menteItem?.current_step_order).toBe(2)
+  })
+
+  it('G: Zero chamadas PocketBase no demo em listResponsesByExperience e getResponse', async () => {
+    const { experienceResponseService } = await import('./experienceEngine')
+    const pb = (await import('@/lib/pocketbase/client')).default
+    const getFullListSpy = vi.spyOn(pb.collection('experience_responses'), 'getFullList')
+    const getFirstListItemSpy = vi.spyOn(pb.collection('experience_responses'), 'getFirstListItem')
+
+    demoAdapter.enableDemo('mariana')
+
+    // Listar respostas no demo
+    const responses = await experienceResponseService.listResponsesByExperience(
+      DEMO_ENROLLMENT_ID,
+      'exp-mente-emocoes-07c',
+    )
+    expect(getFullListSpy).not.toHaveBeenCalled()
+    expect(Array.isArray(responses)).toBe(true)
+
+    // Obter resposta individual no demo
+    const single = await experienceResponseService.getResponse(
+      DEMO_ENROLLMENT_ID,
+      'non-existent-prompt',
+    )
+    expect(getFirstListItemSpy).not.toHaveBeenCalled()
+    expect(single).toBeNull()
+
+    getFullListSpy.mockRestore()
+    getFirstListItemSpy.mockRestore()
   })
 })

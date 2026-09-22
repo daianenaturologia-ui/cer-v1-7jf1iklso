@@ -3,6 +3,7 @@ import {
   experienceCatalogService,
   enrollmentExperienceService,
   experienceResponseService,
+  resolveExperienceId,
 } from '@/services/experienceEngine'
 import type {
   CerExperienceRecord,
@@ -100,7 +101,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     const loadEngineData = async () => {
       setLoading(true)
       try {
-        const [exp, momentList, promptList, enrExp, existingResponses] = await Promise.all([
+        const results = await Promise.allSettled([
           experienceCatalogService.getExperienceById(experienceId),
           experienceCatalogService.listMomentsByExperience(experienceId),
           experienceCatalogService.listPromptsByExperience(experienceId),
@@ -109,6 +110,97 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         ])
 
         if (!isMounted) return
+
+        let exp: CerExperienceRecord | null =
+          results[0].status === 'fulfilled' ? results[0].value : null
+        let momentList: CerExperienceMomentRecord[] =
+          results[1].status === 'fulfilled' ? results[1].value : []
+        let promptList: CerPromptRecord[] =
+          results[2].status === 'fulfilled' ? results[2].value : []
+        const enrExp: EnrollmentExperienceRecord | null =
+          results[3].status === 'fulfilled' ? results[3].value : null
+        const existingResponses: ExperienceResponseRecord[] =
+          results[4].status === 'fulfilled' ? results[4].value : []
+
+        // Resiliência obrigatória: se experience continuar null após o carregamento
+        // mas existir no catálogo local (ou se momentos/prompts falharem),
+        // deriva deterministicamente do catálogo local para qualquer dimensão canônica
+        const canonicalId = resolveExperienceId(experienceId)
+
+        if (!exp) {
+          if (canonicalId === 'exp-corpo-fisiologia-07b') {
+            const mod = await import('@/services/build07bPrompts')
+            exp = mod.CORPO_FISIOLOGIA_EXPERIENCE
+          } else if (canonicalId === 'exp-mente-emocoes-07c') {
+            const mod = await import('@/services/build07cPrompts')
+            exp = mod.MENTE_EMOCOES_EXPERIENCE
+          } else if (canonicalId === 'exp-regulacao-respostas-07c') {
+            const mod = await import('@/services/build07cPrompts')
+            exp = mod.REGULACAO_RESPOSTAS_EXPERIENCE
+          } else if (canonicalId === 'exp-relacoes-07d') {
+            const mod = await import('@/services/build07dPrompts')
+            exp = mod.RELACOES_EXPERIENCE
+          } else if (canonicalId === 'exp-sexualidade-07e') {
+            const mod = await import('@/services/build07ePrompts')
+            exp = mod.SEXUALIDADE_EXPERIENCE
+          } else if (canonicalId === 'exp-sentido-conexao-07f') {
+            const mod = await import('@/services/build07fPrompts')
+            exp = mod.SENTIDO_CONEXAO_EXPERIENCE
+          } else if (canonicalId === 'exp-integracao-consciencia-07g') {
+            const mod = await import('@/services/build07gPrompts')
+            exp = mod.INTEGRACAO_CONSCIENCIA_EXPERIENCE
+          }
+        }
+
+        if (momentList.length === 0) {
+          if (canonicalId === 'exp-corpo-fisiologia-07b') {
+            const mod = await import('@/services/build07bPrompts')
+            momentList = mod.CORPO_FISIOLOGIA_MOMENTS
+          } else if (canonicalId === 'exp-mente-emocoes-07c') {
+            const mod = await import('@/services/build07cPrompts')
+            momentList = mod.MENTE_EMOCOES_MOMENTS
+          } else if (canonicalId === 'exp-regulacao-respostas-07c') {
+            const mod = await import('@/services/build07cPrompts')
+            momentList = mod.REGULACAO_RESPOSTAS_MOMENTS
+          } else if (canonicalId === 'exp-relacoes-07d') {
+            const mod = await import('@/services/build07dPrompts')
+            momentList = mod.RELACOES_MOMENTS
+          } else if (canonicalId === 'exp-sexualidade-07e') {
+            const mod = await import('@/services/build07ePrompts')
+            momentList = mod.SEXUALIDADE_MOMENTS
+          } else if (canonicalId === 'exp-sentido-conexao-07f') {
+            const mod = await import('@/services/build07fPrompts')
+            momentList = mod.SENTIDO_CONEXAO_MOMENTS
+          } else if (canonicalId === 'exp-integracao-consciencia-07g') {
+            const mod = await import('@/services/build07gPrompts')
+            momentList = mod.INTEGRACAO_CONSCIENCIA_MOMENTS
+          }
+        }
+
+        if (promptList.length === 0) {
+          if (canonicalId === 'exp-corpo-fisiologia-07b') {
+            const mod = await import('@/services/build07bPrompts')
+            promptList = mod.BUILD_07B_PROMPTS
+          } else if (canonicalId === 'exp-mente-emocoes-07c') {
+            const mod = await import('@/services/build07cPrompts')
+            promptList = mod.BUILD_07C_MENTE_PROMPTS
+          } else if (canonicalId === 'exp-regulacao-respostas-07c') {
+            const mod = await import('@/services/build07cPrompts')
+            promptList = mod.BUILD_07C_REGULACAO_PROMPTS
+          } else if (canonicalId === 'exp-relacoes-07d') {
+            const mod = await import('@/services/build07dPrompts')
+            promptList = mod.BUILD_07D_RELACOES_PROMPTS
+          } else if (canonicalId === 'exp-sexualidade-07e') {
+            const mod = await import('@/services/build07ePrompts')
+            promptList = mod.BUILD_07E_SEXUALIDADE_PROMPTS
+          } else if (canonicalId === 'exp-sentido-conexao-07f') {
+            const mod = await import('@/services/build07fPrompts')
+            promptList = mod.BUILD_07F_SENTIDO_PROMPTS
+          } else if (canonicalId === 'exp-integracao-consciencia-07g') {
+            const mod = await import('@/services/build07gPrompts')
+            promptList = mod.BUILD_07G_INTEGRACAO_PROMPTS
+          }
+        }
 
         setExperience(exp)
         setMoments(momentList)
