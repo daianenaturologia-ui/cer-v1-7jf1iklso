@@ -524,14 +524,14 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       return
     }
 
-    if (orch.isCompleted || !orch.nextPrompt) {
-      handleCompleteExperience()
+    if (isLastStep || orch.isCompleted || !orch.nextPrompt) {
+      await handleCompleteExperience()
     } else {
       const nextIdx = prompts.findIndex((p) => p.id === orch.nextPrompt!.id)
       if (nextIdx >= 0) {
         setCurrentStepIndex(nextIdx)
       } else {
-        handleCompleteExperience()
+        await handleCompleteExperience()
       }
     }
   }
@@ -581,6 +581,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     if (enrollmentExp) {
       const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
         completed: true,
+        progressStatus: 'completed',
+        enrollmentId,
       })
       setEnrollmentExp(updated)
     }
