@@ -58,6 +58,29 @@ export interface ExperienceEngineProps {
   onCompleted?: () => void
 }
 
+export const EMOTION_ID_TO_LABEL: Record<string, string> = {
+  medo: 'medo',
+  ansiedade_apreensao: 'ansiedade ou apreensão',
+  tristeza: 'tristeza',
+  apatia_desanimo: 'apatia ou desânimo',
+  raiva: 'raiva',
+  alegria: 'alegria',
+  calma: 'calma',
+  culpa: 'culpa',
+  vergonha: 'vergonha',
+}
+
+export function formatSelectedEmotionsPhrase(selectedLabels: string[]): string {
+  const filtered = selectedLabels.map((s) => s.trim()).filter(Boolean)
+  if (filtered.length === 0) return ''
+  if (filtered.length === 1) {
+    return `Você selecionou: ${filtered[0]}.`
+  }
+  const last = filtered[filtered.length - 1]
+  const initial = filtered.slice(0, -1).join(', ')
+  return `Você selecionou: ${initial} e ${last}.`
+}
+
 type EngineStage = 'opening' | 'moments' | 'closing'
 
 export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
@@ -808,6 +831,70 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const pSchema = (currentPrompt.schema_config || {}) as any
   const accessDestination = pSchema.access_destination || 'shared_care'
 
+  // Resolução dinâmica de emoções da P2 (emocoes_recorrentes) em tempo de render
+  const emocoesRecPrompt = prompts.find(
+    (p) => (p.schema_config as any)?.prompt_key === 'emocoes_recorrentes',
+  )
+  const emocoesResp = emocoesRecPrompt ? responsesMap[emocoesRecPrompt.id] : null
+  const isPrefiroNaoResponderP2 =
+    emocoesResp?.metadata_flags?.skip_reason === 'prefiro_nao_responder' ||
+    (emocoesResp?.structured_value as any)?.skip_reason === 'prefiro_nao_responder' ||
+    (emocoesResp?.structured_value as any)?.choice === 'prefiro_nao_responder' ||
+    emocoesResp?.response_type === 'prefiro_nao_responder'
+
+  const selectedEmotionLabels: string[] = (() => {
+    if (!emocoesResp || isPrefiroNaoResponderP2) return []
+    const sVal = emocoesResp.structured_value as any
+    const rawList: any[] = Array.isArray(sVal)
+      ? sVal
+      : Array.isArray(sVal?.value)
+        ? sVal.value
+        : Array.isArray(sVal?.choice)
+          ? sVal.choice
+          : Array.isArray(sVal?.selectedOptionIds)
+            ? sVal.selectedOptionIds
+            : []
+
+    const customText =
+      (typeof sVal === 'object' &&
+        sVal !== null &&
+        (sVal.custom_text || sVal.outra_emocao_text || sVal.free_text)) ||
+      emocoesResp.free_text ||
+      ''
+
+    const labels: string[] = []
+    for (const item of rawList) {
+      if (
+        item === 'prefiro_nao_responder' ||
+        (typeof item === 'object' && item?.id === 'prefiro_nao_responder')
+      ) {
+        continue
+      }
+      const id = typeof item === 'string' ? item : item?.id || String(item)
+      if (id === 'outra_emocao') {
+        const textFromItem = typeof item === 'object' && item !== null ? item.custom_text : null
+        const label = (textFromItem || customText || '').trim()
+        if (label) {
+          labels.push(label)
+        }
+      } else if (EMOTION_ID_TO_LABEL[id]) {
+        labels.push(EMOTION_ID_TO_LABEL[id])
+      } else {
+        // Fallback: se houver opção no schema do prompt, usar o title correspondente em minúsculas
+        const opt = (emocoesRecPrompt?.schema_config as any)?.options?.find((o: any) => o.id === id)
+        if (opt?.title) {
+          labels.push(opt.title.toLowerCase())
+        }
+      }
+    }
+    return labels
+  })()
+
+  const selectedEmotionsPhrase =
+    !isPrefiroNaoResponderP2 && selectedEmotionLabels.length > 0
+      ? formatSelectedEmotionsPhrase(selectedEmotionLabels)
+      : ''
+
   // Microcopy pré-expressão de privacidade
   const privacyMicrocopy =
     accessDestination === 'participant_private'
@@ -824,31 +911,13 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     // Interpolação dinâmica de emoções selecionadas para P3 Adaptativo
     let renderedPromptConfig = { ...schema }
     if (schema.dynamic_text_template) {
-      const emocoesResp =
-        responsesMap[
-          prompts.find((p) => (p.schema_config as any)?.prompt_key === 'emocoes_recorrentes')?.id ||
-            ''
-        ]
-      const sVal = emocoesResp?.structured_value as any
-      const list: string[] = Array.isArray(sVal)
-        ? sVal
-        : Array.isArray(sVal?.value)
-          ? sVal.value
-          : Array.isArray(sVal?.choice)
-            ? sVal.choice
-            : []
-      const emocoesLabels = list.map((id) => {
-        const opt = (
-          prompts.find((p) => (p.schema_config as any)?.prompt_key === 'emocoes_recorrentes')
-            ?.schema_config as any
-        )?.options?.find((o: any) => o.id === id)
-        return opt?.title || id
-      })
-      const joinedLabels = emocoesLabels.length > 0 ? emocoesLabels.join(', ') : 'suas emoções'
+      const joinedLabels =
+        selectedEmotionLabels.length > 0 ? selectedEmotionLabels.join(', ') : 'suas emoções'
       // Ajustar template se necessário
       renderedPromptConfig = {
         ...renderedPromptConfig,
         interpolatedEmotions: joinedLabels,
+        selectedEmotionsPhrase,
       }
     }
 
@@ -864,6 +933,14 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           <div className="space-y-4 max-w-xl mx-auto">
             {/* Campo de texto livre PRIMEIRO */}
             <div className="space-y-2">
+              {renderedPromptConfig.selectedEmotionsPhrase && (
+                <div
+                  data-testid="selected-emotions-label"
+                  className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-xs sm:text-sm text-foreground/90 font-medium leading-relaxed"
+                >
+                  {renderedPromptConfig.selectedEmotionsPhrase}
+                </div>
+              )}
               <textarea
                 value={freeVal}
                 onChange={(e) => {
@@ -1285,9 +1362,30 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             )
           })()}
         </div>
-        {currentPrompt.helper_text && (
-          <p className="text-[11px] text-muted-foreground/80 italic">{currentPrompt.helper_text}</p>
-        )}
+        {currentPrompt.helper_text &&
+          (() => {
+            let displayedHelper = currentPrompt.helper_text
+            if (
+              (currentPrompt.schema_config as any)?.prompt_key ===
+                'compreensao_despertar_emocoes' ||
+              currentPrompt.id === 'p-07c-pm1-p3-por-que-se-sente-assim'
+            ) {
+              if (selectedEmotionLabels.length > 0) {
+                const replacement = selectedEmotionLabels.join(', ')
+                displayedHelper = displayedHelper.replace(
+                  '— {{emocoes_selecionadas}} —',
+                  `— ${replacement} —`,
+                )
+              } else {
+                // Sem seleção disponível ou "Prefiro não responder"
+                displayedHelper = displayedHelper.replace(
+                  'Ao pensar nas emoções que escolheu — {{emocoes_selecionadas}} —',
+                  'Ao pensar no que está presente para você,',
+                )
+              }
+            }
+            return <p className="text-[11px] text-muted-foreground/80 italic">{displayedHelper}</p>
+          })()}
 
         {/* Microcopy Pré-Expressão de Privacidade (Build 07A) */}
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/90 bg-muted/20 px-2.5 py-1 rounded-md border border-border/40 w-fit">
