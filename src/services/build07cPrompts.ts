@@ -656,31 +656,31 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
       options: [
         {
           id: 'cartao_1_fazer_certo',
-          title: 'CARTÃO 1 — BUSCAR FAZER TUDO DO JEITO CERTO',
+          title: 'INSISTENTE — Buscar fazer tudo do jeito certo',
           description:
             'Gosto de organizar, revisar e realizar bem o que faço. Em alguns momentos, posso me cobrar excessivamente, ter dificuldade com erros ou sentir irritação quando as coisas não acontecem como considero correto.',
         },
         {
           id: 'cartao_2_cuidar_pessoas',
-          title: 'CARTÃO 2 — CUIDAR DAS PESSOAS E DEIXAR MINHAS NECESSIDADES PARA DEPOIS',
+          title: 'PRESTATIVO — Cuidar das pessoas e deixar minhas necessidades para depois',
           description:
             'Percebo facilmente o que as outras pessoas precisam e gosto de ajudar. Algumas vezes, posso ter dificuldade de expressar minhas próprias necessidades, dizer não ou reconhecer quando estou oferecendo mais do que consigo sustentar.',
         },
         {
           id: 'cartao_3_produtividade_conquistas',
-          title: 'CARTÃO 3 — BUSCAR VALOR POR MEIO DA PRODUTIVIDADE E DAS CONQUISTAS',
+          title: 'HIPER-REALIZADOR — Buscar valor por meio da produtividade e das conquistas',
           description:
             'Realizar e alcançar objetivos pode me trazer energia e satisfação. Em alguns momentos, posso sentir que preciso produzir, demonstrar competência ou alcançar resultados para reconhecer meu próprio valor.',
         },
         {
           id: 'cartao_4_perder_sensacao_escolha',
-          title: 'CARTÃO 4 — PERDER A SENSAÇÃO DE ESCOLHA DIANTE DAS DIFICULDADES',
+          title: 'VÍTIMA — Perder a sensação de escolha diante das dificuldades',
           description:
             'Quando alguma coisa dói ou parece difícil demais, posso sentir que não tenho força, saída ou possibilidade de mudar a situação. Nesses momentos, posso precisar de tempo e apoio para recuperar o movimento.',
         },
         {
           id: 'cartao_5_compreender_pela_razao',
-          title: 'CARTÃO 5 — TENTAR COMPREENDER TUDO PELA RAZÃO',
+          title: 'HIPER-RACIONAL — Tentar compreender tudo pela razão',
           description:
             'Pensar e analisar me ajuda a organizar as experiências. Em alguns momentos, posso me concentrar tanto em compreender racionalmente que me afasto do que sinto ou tenho dificuldade de demonstrar vulnerabilidade.',
         },
@@ -724,31 +724,31 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
       options: [
         {
           id: 'cartao_6_antecipar_riscos',
-          title: 'CARTÃO 6 — ANTECIPAR O QUE PODE DAR ERRADO',
+          title: 'HIPERVIGILANTE — Antecipar o que pode dar errado',
           description:
             'Perceber riscos me ajuda a me preparar. Em alguns momentos, posso permanecer em alerta, imaginar problemas ou ter dificuldade de relaxar mesmo quando gostaria.',
         },
         {
           id: 'cartao_7_novos_estimulos',
-          title: 'CARTÃO 7 — MANTER-ME EM ATIVIDADE OU BUSCAR NOVOS ESTÍMULOS',
+          title: 'INQUIETO — Manter-me em atividade ou buscar novos estímulos',
           description:
             'Movimento, curiosidade e novas experiências podem trazer energia. Em alguns momentos, posso me ocupar, iniciar várias coisas ou buscar distrações para não permanecer em contato com algo difícil.',
         },
         {
           id: 'cartao_8_assumir_controle',
-          title: 'CARTÃO 8 — ASSUMIR O CONTROLE',
+          title: 'COMANDANTE — Assumir o controle',
           description:
             'Tomar a frente e assumir responsabilidades pode ajudar a organizar situações. Em alguns momentos, posso sentir tensão ou irritação quando dependo de outras pessoas ou quando as coisas não acontecem como espero.',
         },
         {
           id: 'cartao_9_evitar_desconfortos',
-          title: 'CARTÃO 9 — EVITAR DESCONFORTOS, CONFLITOS OU DECISÕES DIFÍCEIS',
+          title: 'EVITATIVO — Evitar desconfortos, conflitos ou decisões difíceis',
           description:
             'Preservar a harmonia e escolher o momento adequado pode ser cuidadoso. Em alguns momentos, posso adiar conversas, decisões ou tarefas importantes para não lidar com o desconforto.',
         },
         {
           id: 'cartao_10_cobrar_e_criticar',
-          title: 'CARTÃO 10 — COBRAR E PERCEBER O QUE ESTÁ ERRADO',
+          title: 'CRÍTICO — Cobrar e perceber o que está errado',
           description:
             'Meu senso crítico pode me ajudar a perceber problemas e fazer ajustes. Em alguns momentos, posso concentrar minha atenção no que está errado comigo, com outras pessoas ou com as circunstâncias.',
         },
@@ -799,43 +799,43 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
       options: [
         {
           id: 'cartao_1_fazer_certo',
-          title: 'Buscar fazer tudo do jeito certo',
+          title: 'INSISTENTE — Buscar fazer tudo do jeito certo',
         },
         {
           id: 'cartao_2_cuidar_pessoas',
-          title: 'Cuidar das pessoas e deixar minhas necessidades para depois',
+          title: 'PRESTATIVO — Cuidar das pessoas e deixar minhas necessidades para depois',
         },
         {
           id: 'cartao_3_produtividade_conquistas',
-          title: 'Buscar valor por meio da produtividade e das conquistas',
+          title: 'HIPER-REALIZADOR — Buscar valor por meio da produtividade e das conquistas',
         },
         {
           id: 'cartao_4_perder_sensacao_escolha',
-          title: 'Perder a sensação de escolha diante das dificuldades',
+          title: 'VÍTIMA — Perder a sensação de escolha diante das dificuldades',
         },
         {
           id: 'cartao_5_compreender_pela_razao',
-          title: 'Tentar compreender tudo pela razão',
+          title: 'HIPER-RACIONAL — Tentar compreender tudo pela razão',
         },
         {
           id: 'cartao_6_antecipar_riscos',
-          title: 'Antecipar o que pode dar errado',
+          title: 'HIPERVIGILANTE — Antecipar o que pode dar errado',
         },
         {
           id: 'cartao_7_novos_estimulos',
-          title: 'Manter-me em atividade ou buscar novos estímulos',
+          title: 'INQUIETO — Manter-me em atividade ou buscar novos estímulos',
         },
         {
           id: 'cartao_8_assumir_controle',
-          title: 'Assumir o controle',
+          title: 'COMANDANTE — Assumir o controle',
         },
         {
           id: 'cartao_9_evitar_desconfortos',
-          title: 'Evitar desconfortos, conflitos ou decisões difíceis',
+          title: 'EVITATIVO — Evitar desconfortos, conflitos ou decisões difíceis',
         },
         {
           id: 'cartao_10_cobrar_e_criticar',
-          title: 'Cobrar e perceber o que está errado',
+          title: 'CRÍTICO — Cobrar e perceber o que está errado',
         },
         {
           id: 'nenhum_dificuldade_importante',
