@@ -23,6 +23,7 @@ import {
   Timeline,
   FreeReflection,
   ProtectionPatternsChart,
+  MindEmotionsReport,
 } from '@/components/experience'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -97,6 +98,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 }) => {
   const [experience, setExperience] = useState<CerExperienceRecord | null>(null)
   const [showPatternsChart, setShowPatternsChart] = useState(false)
+  const [showMindEmotionsReport, setShowMindEmotionsReport] = useState(false)
   const [moments, setMoments] = useState<CerExperienceMomentRecord[]>([])
   const [prompts, setPrompts] = useState<CerPromptRecord[]>([])
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
@@ -870,28 +872,26 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           />
         </div>
 
-        {/* Botão e Gráfico de Padrões de Proteção (Camada 2A - Somente Mente & Emoções) */}
+        {/* Botão e Retrato de Mente & Emoções (Somente Mente & Emoções) */}
         {isClosingMenteEmocoes && (
           <div className="py-2 space-y-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setShowPatternsChart((prev) => !prev)}
+              onClick={() => setShowMindEmotionsReport(true)}
               className="text-xs font-medium border-primary/40 text-primary hover:bg-primary/5 hover:text-primary gap-1.5 h-9"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Ver meus padrões de funcionamento</span>
+              <span>Ver meu retrato de Mente & Emoções</span>
             </Button>
 
-            {showPatternsChart && (
-              <div className="text-left pt-2">
-                <ProtectionPatternsChart
-                  p7Responses={consolidatedP7Responses}
-                  p8InterferingIds={consolidatedP8InterferingIds}
-                  treatmentVariant={treatmentVariant}
-                  onClose={() => setShowPatternsChart(false)}
-                />
-              </div>
+            {showMindEmotionsReport && (
+              <MindEmotionsReport
+                isOpen={showMindEmotionsReport}
+                onClose={() => setShowMindEmotionsReport(false)}
+                responses={responsesMap}
+                treatmentVariant={treatmentVariant}
+              />
             )}
           </div>
         )}

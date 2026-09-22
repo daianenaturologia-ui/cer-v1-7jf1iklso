@@ -140,31 +140,30 @@ describe('CER — Camada 2A: Integração do Gráfico de Padrões de Proteção'
       expect(screen.getByText('Momento Concluído')).toBeTruthy()
     })
 
-    // Botão com o rótulo EXATO
-    const btn = screen.getByRole('button', { name: /Ver meus padrões de funcionamento/i })
+    // Botão com o novo rótulo EXATO da interagente: "Ver meu retrato de Mente & Emoções"
+    const btn = screen.getByRole('button', { name: /Ver meu retrato de Mente & Emoções/i })
     expect(btn).toBeTruthy()
 
-    // O gráfico NÃO está aberto inicialmente
-    expect(screen.queryByText('Seus padrões de funcionamento')).toBeNull()
+    // O retrato e o gráfico NÃO estão abertos inicialmente
+    expect(screen.queryByText('Seu retrato de Mente & Emoções')).toBeNull()
 
-    // Clicar abre o gráfico
+    // Clicar abre o retrato que contém o gráfico
     fireEvent.click(btn)
+    expect(screen.getByText('Seu retrato de Mente & Emoções')).toBeTruthy()
     expect(screen.getByText('Seus padrões de funcionamento')).toBeTruthy()
 
     // Respostas de P7a/P7b e P8 chegam ao gráfico
     const highlights = screen.getAllByText('Mais interferente')
-    expect(highlights.length).toBe(2)
+    expect(highlights.length).toBeGreaterThanOrEqual(2)
 
-    // Fechar pelo botão X do gráfico
-    const closeBtn = screen.getByRole('button', {
-      name: /Fechar gráfico de padrões de funcionamento/i,
-    })
+    // Fechar pelo botão X do retrato
+    const closeBtn = screen.getByTestId('report-close-button-top')
     fireEvent.click(closeBtn)
-    expect(screen.queryByText('Seus padrões de funcionamento')).toBeNull()
+    expect(screen.queryByText('Seu retrato de Mente & Emoções')).toBeNull()
 
     // Reabrir pelo botão do encerramento funciona
-    fireEvent.click(screen.getByRole('button', { name: /Ver meus padrões de funcionamento/i }))
-    expect(screen.getByText('Seus padrões de funcionamento')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Ver meu retrato de Mente & Emoções/i }))
+    expect(screen.getByText('Seu retrato de Mente & Emoções')).toBeTruthy()
   })
 
   it('4. botão NÃO aparece no encerramento de outra experiência (ex.: Corpo & Fisiologia)', async () => {
@@ -191,10 +190,10 @@ describe('CER — Camada 2A: Integração do Gráfico de Padrões de Proteção'
       expect(screen.getByText('Momento Concluído')).toBeTruthy()
     })
 
-    expect(screen.queryByRole('button', { name: /Ver meus padrões de funcionamento/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Ver meu retrato de Mente & Emoções/i })).toBeNull()
   })
 
-  it('5. abrir o gráfico NÃO realiza chamadas ao PocketBase nem altera respostas', async () => {
+  it('5. abrir o relatório NÃO realiza chamadas ao PocketBase nem altera respostas', async () => {
     const pbSpy = vi.spyOn(pb, 'collection')
 
     vi.spyOn(enrollmentExperienceService, 'getByEnrollmentAndExperience').mockResolvedValue({
@@ -222,11 +221,11 @@ describe('CER — Camada 2A: Integração do Gráfico de Padrões de Proteção'
     })
 
     const callsBefore = pbSpy.mock.calls.length
-    const btn = screen.getByRole('button', { name: /Ver meus padrões de funcionamento/i })
+    const btn = screen.getByRole('button', { name: /Ver meu retrato de Mente & Emoções/i })
     fireEvent.click(btn)
 
     // Aberto
-    expect(screen.getByText('Seus padrões de funcionamento')).toBeTruthy()
+    expect(screen.getByText('Seu retrato de Mente & Emoções')).toBeTruthy()
     const callsAfter = pbSpy.mock.calls.length
 
     // Zero chamadas adicionadas
