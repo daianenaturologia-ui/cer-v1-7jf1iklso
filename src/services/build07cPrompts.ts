@@ -37,15 +37,15 @@ export const MENTE_EMOCOES_EXPERIENCE: CerExperienceRecord = {
   id: MENTE_EMOCOES_EXPERIENCE_ID,
   dimension_id: MENTE_EMOCOES_DIMENSION_ID,
   code: 'mente_emocoes_cer',
-  title: 'Mente & Emoções — compreender o que acontece dentro de você',
+  title: 'Mente & Emoções — compreender como você funciona por dentro',
   subtitle:
-    'Como suas emoções se manifestam, quais movimentos acontecem em sua mente e como você se trata por dentro.',
+    'Investigação do seu funcionamento habitual e repetido ao longo dos últimos anos.',
   order_index: 3,
   is_pilot: false,
   opening_text:
-    'A mente e as emoções não são a mesma coisa, mas estão profundamente interligadas.\n\nAs emoções envolvem sensações, movimentos internos e respostas do corpo diante do que vivemos. A mente participa desse processo por meio dos pensamentos, lembranças, interpretações e expectativas. O que pensamos pode intensificar ou suavizar uma emoção — e o que sentimos também pode influenciar nossa atenção, nossas escolhas e a maneira como interpretamos uma situação.\n\nNesta experiência, vamos conhecer um pouco melhor como você percebe suas emoções, quais movimentos costumam acontecer em sua mente e como você se trata por dentro em diferentes momentos.\n\nNão existem respostas certas ou erradas. Responda sem julgamento: apenas observe e descreva, com honestidade e gentileza, o que percebe sobre si.\n\nConsidere principalmente como você esteve nas últimas duas semanas, mas observe também se isso é parecido ou diferente da sua maneira habitual de funcionar.\n\nEste é um retrato do seu momento atual — não é um diagnóstico e não define quem você é. Você pode ter funcionado de formas diferentes no passado e poderá desenvolver novas maneiras de sentir, pensar e responder no futuro.\n\nSe precisar, faça uma pausa e continue depois. Suas respostas ficarão salvas.\n\nCom carinho,\nDaia',
+    'A mente e as emoções não são a mesma coisa, mas estão profundamente interligadas.\n\nAs emoções envolvem sensações, mudanças no corpo, impulsos e respostas diante do que vivemos. A mente participa desse processo por meio dos pensamentos, lembranças, interpretações, expectativas e histórias que contamos para nós mesmos.\n\nO que pensamos pode intensificar ou suavizar uma emoção. Ao mesmo tempo, aquilo que sentimos pode influenciar nossa atenção, nossas escolhas e a maneira como interpretamos uma situação.\n\nNesta experiência, vamos observar como o seu funcionamento mental e emocional costuma acontecer e quais movimentos tendem a se repetir em diferentes momentos da sua vida.\n\nNão existem respostas certas ou erradas. Responda sem julgamento. Apenas observe e descreva, com honestidade e gentileza, o que percebe sobre si.\n\nPense principalmente no que costuma se repetir ao longo dos últimos anos — e não apenas em uma situação isolada ou em como você está hoje. Se perceber que alguma coisa mudou recentemente, você também poderá contar.\n\nEste não é um teste diagnóstico e suas respostas não definem quem você é. Algumas formas de pensar, sentir e agir podem ter ajudado você a enfrentar momentos difíceis. Com consciência, elas também podem ser compreendidas, cuidadas e transformadas.\n\nAs respostas desta experiência serão compartilhadas com Daiane para ajudar na compreensão do seu processo e na construção do seu Mapa CER. Você poderá escolher \'Prefiro não responder\' sempre que precisar.\n\nFaça no seu ritmo. Você pode pausar e continuar depois.\n\nCom carinho,\nDaia',
   closing_text:
-    'Seu retrato emocional e mental foi acolhido. Esse olhar sensível nos ajuda a compreender seus processos e recursos com profundidade e respeito ao seu momento.',
+    'Obrigada por olhar para o seu funcionamento com atenção e honestidade.\n\nSuas respostas não definem quem você é. Elas ajudam a reconhecer movimentos que se repetem, recursos que já existem e aspectos que podem receber mais cuidado.\n\nDaiane poderá acessar as respostas compartilhadas e utilizá-las, junto com as demais dimensões e com aquilo que conhecerá sobre você nos encontros, para construir uma compreensão integrativa do seu momento.\n\nNada será transformado automaticamente em diagnóstico ou conclusão definitiva.',
   version: 2,
   created: new Date().toISOString(),
   updated: new Date().toISOString(),
@@ -77,9 +77,9 @@ export const MENTE_EMOCOES_MOMENTS: CerExperienceMomentRecord[] = [
   {
     id: 'mom-mente-1',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
-    moment_key: 'meu_mundo_emocional',
-    title: 'Meu Mundo Emocional',
-    subtitle: 'Como você percebe suas emoções e o que tem estado mais presente.',
+    moment_key: 'meu_funcionamento_emocional',
+    title: 'Meu funcionamento emocional',
+    subtitle: 'Perguntas 1 a 3 — Investigação do seu funcionamento emocional habitual.',
     order_index: 1,
     is_active: true,
     version: 2,
@@ -89,9 +89,9 @@ export const MENTE_EMOCOES_MOMENTS: CerExperienceMomentRecord[] = [
   {
     id: 'mom-mente-2',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
-    moment_key: 'olhar_mais_de_perto',
-    title: 'Olhar Mais de Perto',
-    subtitle: 'As camadas que acompanham o que você sente.',
+    moment_key: 'o_que_penso_e_o_que_faco',
+    title: 'O que penso e o que faço',
+    subtitle: 'Perguntas 4 a 6 — Pensamentos, comportamentos e diálogo interno associados.',
     order_index: 2,
     is_active: true,
     version: 2,
@@ -101,9 +101,9 @@ export const MENTE_EMOCOES_MOMENTS: CerExperienceMomentRecord[] = [
   {
     id: 'mom-mente-3',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
-    moment_key: 'minha_mente_em_movimento',
-    title: 'Minha Mente em Movimento',
-    subtitle: 'Movimentos mentais que ajudam, pesam e aparecem sob pressão.',
+    moment_key: 'meus_movimentos_automaticos',
+    title: 'Meus movimentos automáticos',
+    subtitle: 'Perguntas 7 a 9 — Dez movimentos automáticos CER e contextos de ativação.',
     order_index: 3,
     is_active: true,
     version: 2,
@@ -113,9 +113,9 @@ export const MENTE_EMOCOES_MOMENTS: CerExperienceMomentRecord[] = [
   {
     id: 'mom-mente-4',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
-    moment_key: 'como_eu_me_trato_por_dentro',
-    title: 'Como Eu Me Trato por Dentro',
-    subtitle: 'Para onde vai a cobrança, como ela afeta você e como acolhe suas conquistas.',
+    moment_key: 'seguranca_e_sobrecarga',
+    title: 'Segurança e sobrecarga',
+    subtitle: 'Perguntas 10 e 11 — Funcionamento em segurança, bem-estar e sobrecarga.',
     order_index: 4,
     is_active: true,
     version: 2,
@@ -125,10 +125,9 @@ export const MENTE_EMOCOES_MOMENTS: CerExperienceMomentRecord[] = [
   {
     id: 'mom-mente-5',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
-    moment_key: 'dois_retratos_de_mim',
-    title: 'Dois Retratos de Mim',
-    subtitle:
-      'Quando há espaço interno, quando a sobrecarga pesa e o que ajuda a recuperar o respiro.',
+    moment_key: 'meus_recursos',
+    title: 'Meus recursos',
+    subtitle: 'Perguntas 12 e 13 — Recursos de recuperação e campo final aberto.',
     order_index: 5,
     is_active: true,
     version: 2,
@@ -198,23 +197,22 @@ export const REGULACAO_RESPOSTAS_MOMENTS: CerExperienceMomentRecord[] = [
 
 export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
   // ----------------------------------------------------
-  // MOMENTO 1 — MEU MUNDO EMOCIONAL
-  // P1: Como você percebe que uma emoção chegou? (Free text FIRST + expander colapsado com 7 ideias)
-  // P2: Quais emoções estiveram mais presentes nas últimas duas semanas? (Multi-select até 4, 8 cards)
-  // P3 (Adaptativo): Você consegue compreender o que parece despertar essas emoções?
-  // P4: Pensando nas últimas duas semanas, a maneira como você viveu suas emoções está...
+  // MOMENTO 1 — MEU FUNCIONAMENTO EMOCIONAL (Perguntas 1 a 3)
   // ----------------------------------------------------
+
+  // PERGUNTA 1
   {
-    id: 'p-07c-pm1-geral',
+    id: 'p-07c-pm1-p1-funcionamento-emocional',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
     moment_id: 'mom-mente-1',
     step_order: 1,
     prompt_order: 1,
-    step_title: 'Como você percebe que uma emoção chegou',
-    step_subtitle: 'Seu jeito de reconhecer e sentir no dia a dia.',
+    step_title: 'Meu funcionamento emocional',
+    step_subtitle: 'Pergunta 1 de 13',
     component_type: 'FreeReflection',
-    prompt_text: 'Como você percebe que uma emoção chegou?',
-    helper_text: 'Conte espontaneamente como você percebe.',
+    prompt_text: 'Como você descreveria o seu funcionamento emocional?',
+    helper_text:
+      'Quando pensa na maneira como costuma sentir e viver suas emoções, o que percebe sobre si?\n\nVocê reconhece com facilidade o que está sentindo? Sente as emoções intensamente? Costuma guardá-las? Precisa de tempo para compreendê-las? Elas mudam rapidamente ou tendem a permanecer por bastante tempo?\n\nDescreva do seu jeito. Não é necessário escrever muito.',
     is_required: true,
     version: 2,
     schema_config: {
@@ -222,24 +220,29 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
       concept_key: 'emotion_recognition_style',
       temporality: 'longitudinal',
       access_destination: 'participant_shared',
+      placeholder: 'Descreva do seu jeito. Não é necessário escrever muito...',
       open_first: {
         enabled: true,
         help_label: 'Precisa de algumas ideias para começar?',
-        option_set_ref: 'opt_estilo_reconhecimento_emocional',
+        option_set_ref: 'opt_ideias_funcionamento_emocional',
       },
       option_set: {
-        id: 'opt_estilo_reconhecimento_emocional',
+        id: 'opt_ideias_funcionamento_emocional',
         items: [
           { id: 'reconheco_rapidamente', label: 'Reconheço rapidamente o que estou sentindo.' },
           { id: 'sinto_corpo_primeiro', label: 'Sinto primeiro no corpo e compreendo depois.' },
+          { id: 'sinto_intensidade', label: 'Sinto com intensidade.' },
           {
-            id: 'mudou_sem_nome',
-            label: 'Percebo que alguma coisa mudou, mas tenho dificuldade de dar um nome.',
+            id: 'mudou_dificuldade_nomear',
+            label: 'Percebo que alguma coisa mudou, mas tenho dificuldade de nomear.',
           },
-          { id: 'penso_antes', label: 'Começo a pensar ou analisar antes de perceber a emoção.' },
-          { id: 'preciso_tempo', label: 'Geralmente preciso de tempo para entender o que senti.' },
-          { id: 'varia_situacao', label: 'Isso varia muito conforme a situação.' },
-          { id: 'ainda_nao_sei', label: 'Ainda não sei dizer.' },
+          { id: 'preciso_tempo', label: 'Preciso de tempo para entender o que senti.' },
+          { id: 'penso_analiso_antes', label: 'Costumo pensar e analisar antes de conseguir sentir.' },
+          { id: 'guardo_escondo', label: 'Costumo guardar ou esconder o que sinto.' },
+          { id: 'mudam_rapidamente', label: 'Minhas emoções mudam rapidamente.' },
+          { id: 'permanecem_bastante', label: 'Algumas emoções permanecem comigo por bastante tempo.' },
+          { id: 'varia_conforme_situacao', label: 'Isso varia muito conforme a situação.' },
+          { id: 'ainda_nao_sei', label: 'Ainda não sei descrever.' },
         ],
       },
       orchestration: {
@@ -250,24 +253,25 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
     created: new Date().toISOString(),
     updated: new Date().toISOString(),
   },
+
+  // PERGUNTA 2
   {
-    id: 'p-07c-pm1-recorrentes',
+    id: 'p-07c-pm1-p2-emocoes-presentes',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
     moment_id: 'mom-mente-1',
     step_order: 2,
     prompt_order: 2,
     step_title: 'Emoções mais presentes',
-    step_subtitle: 'Nas últimas duas semanas.',
+    step_subtitle: 'Pergunta 2 de 13',
     component_type: 'MultiSelectCards',
-    prompt_text: 'Quais emoções estiveram mais presentes nas últimas duas semanas?',
-    helper_text:
-      'Escolha até quatro. Não é necessário escolher apenas emoções difíceis: queremos compreender o seu momento de forma inteira.',
+    prompt_text: 'Quais emoções ou estados emocionais costumam estar mais presentes na sua vida?',
+    helper_text: 'Escolha até quatro que você reconhece com maior frequência no seu funcionamento habitual.',
     is_required: true,
     version: 2,
     schema_config: {
       prompt_key: 'emocoes_recorrentes',
       concept_key: 'recurrent_emotional_experience',
-      temporality: 'current_state',
+      temporality: 'longitudinal',
       access_destination: 'participant_shared',
       max_selections: 4,
       options: [
@@ -275,19 +279,31 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
           id: 'medo',
           title: 'MEDO',
           description:
-            'Pode aparecer como sensação de ameaça ou insegurança, preocupação, alerta, apreensão, ansiedade ou vontade de evitar alguma situação.',
+            'Pode aparecer quando você percebe uma ameaça, um risco ou a possibilidade de algo difícil acontecer. Pode trazer vontade de evitar, fugir, proteger-se ou procurar segurança.',
+        },
+        {
+          id: 'ansiedade_apreensao',
+          title: 'ANSIEDADE OU APREENSÃO',
+          description:
+            'Pode aparecer como inquietação, antecipação do futuro, sensação de urgência, pensamentos acelerados ou dificuldade de relaxar — mesmo quando não existe um perigo claramente identificado.',
         },
         {
           id: 'tristeza',
           title: 'TRISTEZA',
           description:
-            'Pode aparecer como sensação de perda, desânimo, peso, vontade de chorar, diminuição de energia ou necessidade de recolhimento.',
+            'Pode aparecer como sensação de perda, dor, saudade, vontade de chorar, necessidade de recolhimento ou diminuição momentânea da energia.',
+        },
+        {
+          id: 'apatia_desanimo',
+          title: 'APATIA OU DESÂNIMO',
+          description:
+            'Pode aparecer como falta de interesse, motivação ou vontade, dificuldade de se envolver com as coisas ou sensação de estar emocionalmente distante.',
         },
         {
           id: 'raiva',
           title: 'RAIVA',
           description:
-            'Pode aparecer quando algo atravessa seus limites, frustra uma necessidade ou parece injusto. Pode ser sentida como irritação, impaciência, tensão ou vontade de reagir.',
+            'Pode aparecer quando alguma coisa atravessa seus limites, frustra uma necessidade ou parece injusta. Pode ser sentida como irritação, impaciência, tensão ou vontade de reagir.',
         },
         {
           id: 'alegria',
@@ -305,7 +321,7 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
           id: 'culpa',
           title: 'CULPA',
           description:
-            'Pode aparecer quando você sente que fez ou deixou de fazer alguma coisa importante e deseja reparar.',
+            'Pode aparecer quando você sente que fez ou deixou de fazer alguma coisa importante e surge vontade de reparar.',
         },
         {
           id: 'vergonha',
@@ -316,10 +332,9 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
         {
           id: 'outra_emocao',
           title: 'OUTRA EMOÇÃO OU ESTADO',
-          description:
-            'Outro estado ou emoção que esteve presente e que você prefere nomear com suas palavras.',
+          description: 'Campo para a pessoa nomear do seu jeito.',
           allow_custom_text: true,
-          custom_text_placeholder: 'Escreva qual emoção ou estado esteve presente',
+          custom_text_placeholder: 'Escreva outra emoção ou estado que costuma estar presente...',
         },
       ],
       orchestration: {
@@ -342,19 +357,20 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
     created: new Date().toISOString(),
     updated: new Date().toISOString(),
   },
+
+  // PERGUNTA 3 (Adaptativa com placeholder dinâmico)
   {
-    // P3 Adaptativo (apenas a partir das emoções selecionadas em P2)
-    id: 'p-07c-pm1-despertar',
+    id: 'p-07c-pm1-p3-por-que-se-sente-assim',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
     moment_id: 'mom-mente-1',
     step_order: 3,
     prompt_order: 3,
-    step_title: 'O que parece despertar essas emoções',
-    step_subtitle: 'Compreensão das situações, pensamentos ou necessidades.',
-    component_type: 'ChoiceCards',
-    prompt_text: 'Você consegue compreender o que parece despertar essas emoções?',
+    step_title: 'O que costuma despertar essas emoções',
+    step_subtitle: 'Pergunta 3 de 13',
+    component_type: 'FreeReflection',
+    prompt_text: 'Você consegue descrever por que você se sente assim?',
     helper_text:
-      'Ao pensar nas emoções que você escolheu, você costuma perceber as situações, pensamentos, lembranças ou necessidades que parecem estar relacionados ao que sente?',
+      'Ao pensar nas emoções que escolheu — {{emocoes_selecionadas}} — o que percebe que costuma despertá-las ou intensificá-las?\n\nPode estar relacionado a situações, relações, pensamentos, lembranças, necessidades, frustrações ou mudanças no seu corpo e na sua rotina.\n\nVocê não precisa encontrar uma única causa ou ter certeza. Conte apenas o que consegue perceber.',
     is_required: false,
     version: 2,
     schema_config: {
@@ -362,51 +378,10 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
       concept_key: 'emotional_triggers_awareness',
       temporality: 'context_dependent',
       access_destination: 'participant_shared',
-      adaptive_label: 'Uma pergunta a mais para compreender melhor sua experiência',
+      adaptive_label: 'Uma pergunta a mais para compreender melhor sua experiência.',
       dynamic_text_template:
-        'Ao pensar em {{emocoes_selecionadas}}, você costuma perceber as situações, pensamentos, lembranças ou necessidades que parecem estar relacionados ao que sente?',
-      per_emotion_expander: {
-        enabled: true,
-        prompt_label_template: 'O que parece estar relacionado à sua {{emocao}}?',
-        helper_text: 'Espaço opcional para você descrever do seu jeito.',
-      },
-      options: [
-        {
-          id: 'geralmente_compreendo',
-          title: 'Geralmente consigo compreender.',
-          description: 'Costumo notar o que mobilizou a emoção.',
-        },
-        {
-          id: 'as_vezes_preciso_tempo',
-          title: 'Às vezes compreendo, mas preciso de algum tempo.',
-          description: 'A compreensão chega depois de digerir o momento.',
-        },
-        {
-          id: 'reconheco_mas_nao_entendo_por_que_afeta',
-          title: 'Reconheço a situação, mas nem sempre entendo por que ela me afeta.',
-          description: 'Vejo o acontecimento, mas a intensidade ou o efeito intrigam.',
-        },
-        {
-          id: 'dificuldade_identificar',
-          title: 'Tenho dificuldade de identificar o que despertou a emoção.',
-          description: 'Fica difícil apontar o que deu início ao estado.',
-        },
-        {
-          id: 'surge_sem_motivo_claro',
-          title: 'Algumas vezes parece surgir sem um motivo claro.',
-          description: 'A emoção chega de forma espontânea ou súbita.',
-        },
-        {
-          id: 'varia_conforme_emocao',
-          title: 'Isso varia conforme a emoção.',
-          description: 'Com algumas é evidente, com outras é mais opaco.',
-        },
-        {
-          id: 'ainda_nao_sei',
-          title: 'Ainda não sei dizer.',
-          description: 'Prefiro observar com o tempo.',
-        },
-      ],
+        'Ao pensar nas emoções que escolheu — {{emocoes_selecionadas}} — o que percebe que costuma despertá-las ou intensificá-las?\n\nPode estar relacionado a situações, relações, pensamentos, lembranças, necessidades, frustrações ou mudanças no seu corpo e na sua rotina.\n\nVocê não precisa encontrar uma única causa ou ter certeza. Conte apenas o que consegue perceber.',
+      placeholder: 'Conte apenas o que consegue perceber...',
       orchestration: {
         path_role: 'adaptive',
         requires_branch_open: true,
@@ -415,57 +390,220 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
     created: new Date().toISOString(),
     updated: new Date().toISOString(),
   },
+
+  // ----------------------------------------------------
+  // MOMENTO 2 — O QUE PENSO E O QUE FAÇO (Perguntas 4 a 6)
+  // ----------------------------------------------------
+
+  // PERGUNTA 4
   {
-    // P4: Comparação habitual (metadata current_state, sem classificação)
-    id: 'p-07c-pm1-modo-habitual',
+    id: 'p-07c-pm2-p4-pensamentos-associados',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
-    moment_id: 'mom-mente-1',
+    moment_id: 'mom-mente-2',
     step_order: 4,
-    prompt_order: 4,
-    step_title: 'A forma como viveu suas emoções',
-    step_subtitle: 'Nas últimas duas semanas.',
-    component_type: 'ChoiceCards',
-    prompt_text: 'Pensando nas últimas duas semanas, a maneira como você viveu suas emoções está:',
+    prompt_order: 1,
+    step_title: 'O que passa pela mente',
+    step_subtitle: 'Pergunta 4 de 13',
+    component_type: 'FreeReflection',
+    prompt_text: 'O que costuma passar pela sua mente quando essas emoções aparecem?',
     helper_text:
-      'Observe como seu momento atual se relaciona com o seu jeito habitual de funcionar.',
+      'Ao sentir {{emocoes_selecionadas}}, quais pensamentos, preocupações, lembranças ou cobranças costumam surgir?\n\nVocê pode escrever frases que aparecem em sua mente, mesmo que pareçam repetitivas, contraditórias ou difíceis de explicar.',
     is_required: true,
     version: 2,
     schema_config: {
-      prompt_key: 'emocoes_comparacao_habitual',
-      concept_key: 'emotional_current_state_comparison',
-      temporality: 'current_state',
+      prompt_key: 'pensamento_associado',
+      concept_key: 'associated_thought_pattern',
+      temporality: 'recurring',
       access_destination: 'participant_shared',
-      metadata_classification: 'current_state_only',
+      dynamic_text_template:
+        'Ao sentir {{emocoes_selecionadas}}, quais pensamentos, preocupações, lembranças ou cobranças costumam surgir?\n\nVocê pode escrever frases que aparecem em sua mente, mesmo que pareçam repetitivas, contraditórias ou difíceis de explicar.',
+      placeholder: 'Escreva pensamentos ou frases que costumam surgir...',
+      open_first: {
+        enabled: true,
+        help_label: 'Precisa de algumas ideias para começar?',
+        option_set_ref: 'opt_ideias_pensamentos_associados',
+      },
+      option_set: {
+        id: 'opt_ideias_pensamentos_associados',
+        items: [
+          { id: 'preciso_resolver', label: '“Preciso resolver isso.”' },
+          { id: 'vai_dar_errado', label: '“Alguma coisa vai dar errado.”' },
+          { id: 'nao_deveria_sentir_assim', label: '“Não deveria estar me sentindo assim.”' },
+          { id: 'nao_vou_conseguir', label: '“Não vou conseguir.”' },
+          { id: 'preciso_dar_conta', label: '“Preciso dar conta.”' },
+          { id: 'quero_sair_dessa_situacao', label: '“Quero sair dessa situação.”' },
+        ],
+      },
+      orchestration: {
+        path_role: 'essential',
+        requires_branch_open: false,
+      },
+    },
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+  },
+
+  // PERGUNTA 5
+  {
+    id: 'p-07c-pm2-p5-comportamento-associado',
+    experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
+    moment_id: 'mom-mente-2',
+    step_order: 5,
+    prompt_order: 2,
+    step_title: 'Como você costuma agir',
+    step_subtitle: 'Pergunta 5 de 13',
+    component_type: 'MultiSelectCards',
+    prompt_text: 'Como você costuma agir quando sente essas emoções?',
+    helper_text:
+      'Quando essas emoções aparecem, o que você costuma fazer? Você pode descrever do seu jeito no campo opcional e selecionar quais desses movimentos também aparecem em você.',
+    is_required: true,
+    version: 2,
+    schema_config: {
+      prompt_key: 'comportamento_associado',
+      concept_key: 'associated_behavior_pattern',
+      temporality: 'recurring',
+      access_destination: 'participant_shared',
+      allow_free_text_addition: true,
+      free_text_addition_placeholder: 'Descreva do seu jeito (opcional)...',
       options: [
         {
-          id: 'parecida_habitual',
-          title: 'Parecida com o meu jeito habitual',
-          description: 'Dentro do ritmo e da intensidade costumeiros.',
+          id: 'resolver_imediatamente',
+          title: 'Tento resolver tudo imediatamente.',
         },
         {
-          id: 'mais_intensa',
-          title: 'Mais intensa do que costuma ser',
-          description: 'Com mobilizações mais fortes ou frequentes.',
+          id: 'controlar_situacao',
+          title: 'Procuro controlar a situação.',
         },
         {
-          id: 'mais_dificil_compreender_expressar',
-          title: 'Mais difícil de compreender ou expressar',
-          description: 'Mais confusa, retida ou com menor clareza.',
+          id: 'agir_impulsivamente',
+          title: 'Falo ou reajo impulsivamente.',
         },
         {
-          id: 'mais_tranquila',
-          title: 'Mais tranquila do que costuma ser',
-          description: 'Com maior serenidade e menos oscilação.',
+          id: 'silencio_afastamento',
+          title: 'Fico em silêncio ou me afasto.',
         },
         {
-          id: 'diferente_outro_modo',
-          title: 'Diferente de outro modo',
-          description: 'Com nuances singulares deste período.',
+          id: 'evitar_adiar',
+          title: 'Evito a situação ou adio o que preciso fazer.',
         },
         {
-          id: 'ainda_nao_sei',
-          title: 'Ainda não sei dizer',
-          description: 'Difícil comparar neste instante.',
+          id: 'sem_saber_como_agir',
+          title: 'Fico sem saber como agir.',
+        },
+        {
+          id: 'pedir_ajuda_conversar',
+          title: 'Procuro alguém para conversar ou pedir ajuda.',
+        },
+        {
+          id: 'agradar_cuidar_outros',
+          title: 'Tento agradar ou cuidar de outras pessoas.',
+        },
+        {
+          id: 'trabalhar_produzir_atividade',
+          title: 'Trabalho, produzo ou me mantenho em atividade.',
+        },
+        {
+          id: 'procurar_distracao',
+          title: 'Procuro distração no celular, nas compras, na comida, em séries ou em outras atividades.',
+        },
+        {
+          id: 'compreender_organizar_sentimento',
+          title: 'Tento compreender e organizar o que estou sentindo.',
+        },
+        {
+          id: 'acao_para_acalmar',
+          title: 'Faço alguma coisa que me ajuda a me acalmar.',
+        },
+        {
+          id: 'varia_conforme_emocao',
+          title: 'Meu comportamento varia conforme a emoção.',
+        },
+        {
+          id: 'outro_comportamento',
+          title: 'Outro comportamento.',
+          allow_custom_text: true,
+          custom_text_placeholder: 'Escreva outro comportamento...',
+        },
+        {
+          id: 'ainda_nao_identifico',
+          title: 'Ainda não consigo identificar.',
+        },
+      ],
+      orchestration: {
+        path_role: 'essential',
+        requires_branch_open: false,
+      },
+    },
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+  },
+
+  // PERGUNTA 6
+  {
+    id: 'p-07c-pm2-p6-dialogo-interno',
+    experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
+    moment_id: 'mom-mente-2',
+    step_order: 6,
+    prompt_order: 3,
+    step_title: 'Diálogo interno',
+    step_subtitle: 'Pergunta 6 de 13',
+    component_type: 'ChoiceCards',
+    prompt_text: 'Como você costuma conversar consigo nesses momentos?',
+    helper_text:
+      'Quando está vivendo uma emoção difícil ou quando alguma coisa não acontece como gostaria, como costuma ser a sua voz interna?\n\nSe quiser, escreva no campo opcional uma frase que costuma dizer para si.',
+    is_required: true,
+    version: 2,
+    schema_config: {
+      prompt_key: 'self_dialogue_erro',
+      concept_key: 'internal_dialogue_style',
+      temporality: 'recurring',
+      access_destination: 'participant_shared',
+      allow_free_text_addition: true,
+      free_text_addition_placeholder: 'Se quiser, escreva uma frase que costuma dizer para si...',
+      options: [
+        {
+          id: 'compreender_acolher',
+          title: 'Tento me compreender e me acolher.',
+        },
+        {
+          id: 'entender_e_agir',
+          title: 'Procuro entender o que aconteceu e o que posso fazer.',
+        },
+        {
+          id: 'cobro_solucao_rapida',
+          title: 'Cobro de mim uma solução rápida.',
+        },
+        {
+          id: 'deveria_ter_agido_diferente',
+          title: 'Penso que deveria ter agido de outra maneira.',
+        },
+        {
+          id: 'nunca_faco_suficiente',
+          title: 'Sinto que nunca faço o suficiente.',
+        },
+        {
+          id: 'comparo_outras_pessoas',
+          title: 'Comparo-me com outras pessoas.',
+        },
+        {
+          id: 'critico_outras_pessoas',
+          title: 'Critico outras pessoas.',
+        },
+        {
+          id: 'situacao_deveria_ser_diferente',
+          title: 'Sinto que a situação ou a vida deveria ser diferente.',
+        },
+        {
+          id: 'tento_nao_pensar',
+          title: 'Tento não pensar sobre o assunto.',
+        },
+        {
+          id: 'varia_muito',
+          title: 'Isso varia muito.',
+        },
+        {
+          id: 'ainda_nao_percebo',
+          title: 'Ainda não consigo perceber.',
         },
       ],
       orchestration: {
@@ -478,59 +616,489 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
   },
 
   // ----------------------------------------------------
-  // MOMENTO 2 — OLHAR MAIS DE PERTO
-  // P1: Quando você olha mais de perto, o que encontra? (Free text first + expander com ideias revisadas)
-  // P2: Pensamento que acompanha a emoção (sensível: categoria compartilhada + texto privado por padrão)
+  // MOMENTO 3 — MEUS MOVIMENTOS AUTOMÁTICOS (Perguntas 7 a 9)
   // ----------------------------------------------------
+
+  // PERGUNTA 7A: Cartões 1 a 5
   {
-    id: 'p-07c-pm2-experiencia',
+    id: 'p-07c-pm3-p7a-movimentos-1-5',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
-    moment_id: 'mom-mente-2',
-    step_order: 5,
+    moment_id: 'mom-mente-3',
+    step_order: 7,
     prompt_order: 1,
-    step_title: 'Olhar mais de perto',
-    step_subtitle: 'O que você costuma encontrar ao olhar com atenção.',
-    component_type: 'FreeReflection',
-    prompt_text: 'Quando você olha mais de perto, o que encontra?',
+    step_title: 'Meus movimentos automáticos (1 a 5)',
+    step_subtitle: 'Pergunta 7 de 13 — Parte 1 de 2',
+    component_type: 'MultiSelectCards',
+    prompt_text: 'O quanto esses movimentos aparecem em você?',
     helper_text:
-      'Às vezes, uma emoção vem acompanhada de outras emoções, sensações ou pensamentos.\n\nQuando você olha com um pouco mais de atenção para o que sente, o que costuma encontrar?\n\nConte espontaneamente ou abra algumas ideias para ajudar a observar.',
+      'Todos nós desenvolvemos maneiras de enfrentar pressão, insegurança, frustração e dor emocional.\n\nMuitas dessas estratégias possuem um lado que ajuda: podem trazer organização, proteção, realização, cuidado, rapidez ou segurança. Porém, quando se tornam rígidas ou intensas demais, também podem consumir energia e dificultar nossas escolhas.\n\nAs próximas situações não definem sua personalidade. Queremos apenas observar quais movimentos costumam se repetir.\n\nSelecione a intensidade que melhor descreve seu funcionamento para estes cinco primeiros movimentos.',
     is_required: true,
     version: 2,
     schema_config: {
-      prompt_key: 'experiencia_complexa',
-      concept_key: 'complex_emotional_experience',
+      prompt_key: 'movimentos_automaticos_frequencia_p1',
+      concept_key: 'automatic_movement_frequency_set1',
+      temporality: 'longitudinal',
+      access_destination: 'participant_shared',
+      movement_scale_options: [
+        'Quase nunca acontece comigo.',
+        'Aparece em algumas situações.',
+        'Repete-se com frequência.',
+        'Aparece com muita força quando estou sob pressão.',
+        'Ainda não sei dizer.',
+      ],
+      options: [
+        {
+          id: 'cartao_1_fazer_certo',
+          title: 'CARTÃO 1 — BUSCAR FAZER TUDO DO JEITO CERTO',
+          description:
+            'Gosto de organizar, revisar e realizar bem o que faço. Em alguns momentos, posso me cobrar excessivamente, ter dificuldade com erros ou sentir irritação quando as coisas não acontecem como considero correto.',
+        },
+        {
+          id: 'cartao_2_cuidar_pessoas',
+          title: 'CARTÃO 2 — CUIDAR DAS PESSOAS E DEIXAR MINHAS NECESSIDADES PARA DEPOIS',
+          description:
+            'Percebo facilmente o que as outras pessoas precisam e gosto de ajudar. Algumas vezes, posso ter dificuldade de expressar minhas próprias necessidades, dizer não ou reconhecer quando estou oferecendo mais do que consigo sustentar.',
+        },
+        {
+          id: 'cartao_3_produtividade_conquistas',
+          title: 'CARTÃO 3 — BUSCAR VALOR POR MEIO DA PRODUTIVIDADE E DAS CONQUISTAS',
+          description:
+            'Realizar e alcançar objetivos pode me trazer energia e satisfação. Em alguns momentos, posso sentir que preciso produzir, demonstrar competência ou alcançar resultados para reconhecer meu próprio valor.',
+        },
+        {
+          id: 'cartao_4_perder_sensacao_escolha',
+          title: 'CARTÃO 4 — PERDER A SENSAÇÃO DE ESCOLHA DIANTE DAS DIFICULDADES',
+          description:
+            'Quando alguma coisa dói ou parece difícil demais, posso sentir que não tenho força, saída ou possibilidade de mudar a situação. Nesses momentos, posso precisar de tempo e apoio para recuperar o movimento.',
+        },
+        {
+          id: 'cartao_5_compreender_pela_razao',
+          title: 'CARTÃO 5 — TENTAR COMPREENDER TUDO PELA RAZÃO',
+          description:
+            'Pensar e analisar me ajuda a organizar as experiências. Em alguns momentos, posso me concentrar tanto em compreender racionalmente que me afasto do que sinto ou tenho dificuldade de demonstrar vulnerabilidade.',
+        },
+      ],
+      orchestration: {
+        path_role: 'essential',
+        requires_branch_open: false,
+      },
+    },
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+  },
+
+  // PERGUNTA 7B: Cartões 6 a 10
+  {
+    id: 'p-07c-pm3-p7b-movimentos-6-10',
+    experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
+    moment_id: 'mom-mente-3',
+    step_order: 8,
+    prompt_order: 2,
+    step_title: 'Meus movimentos automáticos (6 a 10)',
+    step_subtitle: 'Pergunta 7 de 13 — Parte 2 de 2',
+    component_type: 'MultiSelectCards',
+    prompt_text: 'O quanto esses movimentos aparecem em você?',
+    helper_text:
+      'Estes são os outros cinco movimentos. Selecione a intensidade que melhor descreve seu funcionamento habitual.',
+    is_required: true,
+    version: 2,
+    schema_config: {
+      prompt_key: 'movimentos_automaticos_frequencia_p2',
+      concept_key: 'automatic_movement_frequency_set2',
+      temporality: 'longitudinal',
+      access_destination: 'participant_shared',
+      movement_scale_options: [
+        'Quase nunca acontece comigo.',
+        'Aparece em algumas situações.',
+        'Repete-se com frequência.',
+        'Aparece com muita força quando estou sob pressão.',
+        'Ainda não sei dizer.',
+      ],
+      options: [
+        {
+          id: 'cartao_6_antecipar_riscos',
+          title: 'CARTÃO 6 — ANTECIPAR O QUE PODE DAR ERRADO',
+          description:
+            'Perceber riscos me ajuda a me preparar. Em alguns momentos, posso permanecer em alerta, imaginar problemas ou ter dificuldade de relaxar mesmo quando gostaria.',
+        },
+        {
+          id: 'cartao_7_novos_estimulos',
+          title: 'CARTÃO 7 — MANTER-ME EM ATIVIDADE OU BUSCAR NOVOS ESTÍMULOS',
+          description:
+            'Movimento, curiosidade e novas experiências podem trazer energia. Em alguns momentos, posso me ocupar, iniciar várias coisas ou buscar distrações para não permanecer em contato com algo difícil.',
+        },
+        {
+          id: 'cartao_8_assumir_controle',
+          title: 'CARTÃO 8 — ASSUMIR O CONTROLE',
+          description:
+            'Tomar a frente e assumir responsabilidades pode ajudar a organizar situações. Em alguns momentos, posso sentir tensão ou irritação quando dependo de outras pessoas ou quando as coisas não acontecem como espero.',
+        },
+        {
+          id: 'cartao_9_evitar_desconfortos',
+          title: 'CARTÃO 9 — EVITAR DESCONFORTOS, CONFLITOS OU DECISÕES DIFÍCEIS',
+          description:
+            'Preservar a harmonia e escolher o momento adequado pode ser cuidadoso. Em alguns momentos, posso adiar conversas, decisões ou tarefas importantes para não lidar com o desconforto.',
+        },
+        {
+          id: 'cartao_10_cobrar_e_criticar',
+          title: 'CARTÃO 10 — COBRAR E PERCEBER O QUE ESTÁ ERRADO',
+          description:
+            'Meu senso crítico pode me ajudar a perceber problemas e fazer ajustes. Em alguns momentos, posso concentrar minha atenção no que está errado comigo, com outras pessoas ou com as circunstâncias.',
+        },
+      ],
+      orchestration: {
+        path_role: 'essential',
+        requires_branch_open: false,
+        routes: [
+          {
+            id: 'r_pm3_adaptive_interferencia',
+            when: {
+              any_of: [{ field: 'selected_count_gte', operator: 'equals', value: 1 }],
+            },
+            then: {
+              action: 'open_branch',
+              target_prompt_key: 'movimentos_interferencia_atual',
+            },
+          },
+        ],
+      },
+    },
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+  },
+
+  // PERGUNTA 8 (Adaptativa — condicional aos movimentos frequentes/sob pressão)
+  {
+    id: 'p-07c-pm3-p8-interferencia-movimentos',
+    experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
+    moment_id: 'mom-mente-3',
+    step_order: 9,
+    prompt_order: 3,
+    step_title: 'Movimentos que mais interferem',
+    step_subtitle: 'Pergunta 8 de 13',
+    component_type: 'MultiSelectCards',
+    prompt_text: 'Quais desses movimentos mais interferem na sua vida atualmente?',
+    helper_text:
+      'Escolha até três movimentos que você sente que mais consomem sua energia, dificultam suas escolhas ou afastam você da vida que deseja construir.',
+    is_required: false,
+    version: 2,
+    schema_config: {
+      prompt_key: 'movimentos_interferencia_atual',
+      concept_key: 'burdensome_movement_selection',
+      temporality: 'current_state',
+      access_destination: 'participant_shared',
+      adaptive_label: 'Uma pergunta a mais para compreender melhor sua experiência.',
+      max_selections: 3,
+      options: [
+        {
+          id: 'cartao_1_fazer_certo',
+          title: 'Buscar fazer tudo do jeito certo',
+        },
+        {
+          id: 'cartao_2_cuidar_pessoas',
+          title: 'Cuidar das pessoas e deixar minhas necessidades para depois',
+        },
+        {
+          id: 'cartao_3_produtividade_conquistas',
+          title: 'Buscar valor por meio da produtividade e das conquistas',
+        },
+        {
+          id: 'cartao_4_perder_sensacao_escolha',
+          title: 'Perder a sensação de escolha diante das dificuldades',
+        },
+        {
+          id: 'cartao_5_compreender_pela_razao',
+          title: 'Tentar compreender tudo pela razão',
+        },
+        {
+          id: 'cartao_6_antecipar_riscos',
+          title: 'Antecipar o que pode dar errado',
+        },
+        {
+          id: 'cartao_7_novos_estimulos',
+          title: 'Manter-me em atividade ou buscar novos estímulos',
+        },
+        {
+          id: 'cartao_8_assumir_controle',
+          title: 'Assumir o controle',
+        },
+        {
+          id: 'cartao_9_evitar_desconfortos',
+          title: 'Evitar desconfortos, conflitos ou decisões difíceis',
+        },
+        {
+          id: 'cartao_10_cobrar_e_criticar',
+          title: 'Cobrar e perceber o que está errado',
+        },
+        {
+          id: 'nenhum_dificuldade_importante',
+          title: 'Não reconheço nenhum deles como uma dificuldade importante.',
+        },
+        {
+          id: 'ainda_nao_sei',
+          title: 'Ainda não sei dizer.',
+        },
+      ],
+      orchestration: {
+        path_role: 'adaptive',
+        requires_branch_open: true,
+      },
+    },
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+  },
+
+  // PERGUNTA 9
+  {
+    id: 'p-07c-pm3-p9-situacoes-ativacao',
+    experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
+    moment_id: 'mom-mente-3',
+    step_order: 10,
+    prompt_order: 4,
+    step_title: 'Situações em que esses movimentos aparecem',
+    step_subtitle: 'Pergunta 9 de 13',
+    component_type: 'MultiSelectCards',
+    prompt_text: 'Em quais situações esses movimentos costumam aparecer?',
+    helper_text:
+      'Pense nos movimentos que você acabou de escolher. Em quais situações eles costumam aparecer com mais força?\n\nSe quiser, conte no campo opcional uma situação em que percebeu isso acontecer. Pode ser uma situação recente ou algo que costuma se repetir. Não é necessário explicar por que aconteceu.',
+    is_required: true,
+    version: 2,
+    schema_config: {
+      prompt_key: 'situacoes_ativacao_movimentos',
+      concept_key: 'movement_activation_context',
       temporality: 'recurring',
       access_destination: 'participant_shared',
+      allow_free_text_addition: true,
+      free_text_addition_placeholder:
+        'Se quiser, conte uma situação em que percebeu isso acontecer (opcional)...',
+      options: [
+        {
+          id: 'sob_pressao_responsabilidades',
+          title: 'Quando estou sob pressão ou com muitas responsabilidades.',
+        },
+        {
+          id: 'nao_acontece_planejado',
+          title: 'Quando alguma coisa não acontece como planejei.',
+        },
+        {
+          id: 'medo_errar_decepcionar',
+          title: 'Quando tenho medo de errar ou decepcionar alguém.',
+        },
+        {
+          id: 'criticado_ou_questionado',
+          title: 'Quando sou criticado ou questionado.',
+        },
+        {
+          id: 'depender_outras_pessoas',
+          title: 'Quando preciso depender de outras pessoas.',
+        },
+        {
+          id: 'sem_controle_situacao',
+          title: 'Quando sinto que não tenho controle sobre uma situação.',
+        },
+        {
+          id: 'conflito_ou_desagradar',
+          title: 'Quando existe conflito ou risco de desagradar alguém.',
+        },
+        {
+          id: 'rejeitado_ignorado_desvalorizado',
+          title: 'Quando me sinto rejeitado, ignorado ou pouco valorizado.',
+        },
+        {
+          id: 'cansado_sem_energia',
+          title: 'Quando estou cansado ou sem energia.',
+        },
+        {
+          id: 'decisao_importante',
+          title: 'Quando preciso tomar uma decisão importante.',
+        },
+        {
+          id: 'situacao_nova_incerta',
+          title: 'Quando enfrento alguma situação nova ou incerta.',
+        },
+        {
+          id: 'vulneravel_emocionalmente',
+          title: 'Quando estou emocionalmente vulnerável.',
+        },
+        {
+          id: 'muitas_situacoes_diferentes',
+          title: 'Esses movimentos aparecem em muitas situações diferentes.',
+        },
+        {
+          id: 'ainda_nao_identifico',
+          title: 'Ainda não consigo identificar.',
+        },
+        {
+          id: 'outra_situacao',
+          title: 'Outra situação.',
+          allow_custom_text: true,
+          custom_text_placeholder: 'Descreva outra situação...',
+        },
+      ],
+      orchestration: {
+        path_role: 'essential',
+        requires_branch_open: false,
+      },
+    },
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+  },
+
+  // ----------------------------------------------------
+  // MOMENTO 4 — SEGURANÇA E SOBRECARGA (Perguntas 10 e 11)
+  // ----------------------------------------------------
+
+  // PERGUNTA 10
+  {
+    id: 'p-07c-pm4-p10-seguranca-bem-estar',
+    experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
+    moment_id: 'mom-mente-4',
+    step_order: 11,
+    prompt_order: 1,
+    step_title: 'Segurança e bem-estar',
+    step_subtitle: 'Pergunta 10 de 13',
+    component_type: 'MultiSelectCards',
+    prompt_text: 'Como você costuma se sentir e se comportar quando está em segurança e bem-estar?',
+    helper_text:
+      'Pense nos momentos em que você se sente com mais tranquilidade, energia e espaço interno.\n\nComo costuma se sentir? E o que consegue fazer com mais facilidade? Descreva do seu jeito se quiser e escolha o que reconhece em você nesses momentos.',
+    is_required: true,
+    version: 2,
+    schema_config: {
+      prompt_key: 'dois_retratos_espaco',
+      concept_key: 'safety_and_wellbeing_functioning',
+      temporality: 'context_dependent',
+      access_destination: 'participant_shared',
+      allow_free_text_addition: true,
+      free_text_addition_placeholder: 'Descreva do seu jeito (opcional)...',
+      options: [
+        {
+          id: 'calma_tranquilidade',
+          title: 'Sinto mais calma e tranquilidade.',
+        },
+        {
+          id: 'clareza_sentimento',
+          title: 'Consigo perceber com clareza o que estou sentindo.',
+        },
+        {
+          id: 'clareza_pensamento',
+          title: 'Penso com mais clareza.',
+        },
+        {
+          id: 'energia_vitalidade',
+          title: 'Sinto mais energia e vitalidade.',
+        },
+        {
+          id: 'criatividade',
+          title: 'Tenho mais criatividade.',
+        },
+        {
+          id: 'decisoes_seguranca',
+          title: 'Consigo tomar decisões com mais segurança.',
+        },
+        {
+          id: 'flexibilidade_mudancas',
+          title: 'Tenho mais flexibilidade diante de mudanças.',
+        },
+        {
+          id: 'estabelecer_limites',
+          title: 'Consigo estabelecer limites.',
+        },
+        {
+          id: 'expressar_necessidades',
+          title: 'Expresso melhor o que preciso.',
+        },
+        {
+          id: 'pedir_receber_ajuda',
+          title: 'Consigo pedir ou receber ajuda.',
+        },
+        {
+          id: 'aproximar_confianca',
+          title: 'Aproximo-me das pessoas com mais confiança.',
+        },
+        {
+          id: 'paciencia_comigo_outros',
+          title: 'Tenho mais paciência comigo e com os outros.',
+        },
+        {
+          id: 'descansar_sem_culpa',
+          title: 'Consigo descansar sem tanta culpa.',
+        },
+        {
+          id: 'reconhecer_qualidades_conquistas',
+          title: 'Reconheço melhor minhas qualidades e conquistas.',
+        },
+        {
+          id: 'cuidar_de_mim',
+          title: 'Tenho vontade de cuidar de mim.',
+        },
+        {
+          id: 'alegria_leveza_interesse',
+          title: 'Sinto mais alegria, leveza ou interesse pela vida.',
+        },
+        {
+          id: 'organizar_sem_pressao',
+          title: 'Consigo organizar e realizar o que é importante sem me pressionar excessivamente.',
+        },
+        {
+          id: 'outra_experiencia',
+          title: 'Outra experiência.',
+          allow_custom_text: true,
+          custom_text_placeholder: 'Descreva outra experiência...',
+        },
+        {
+          id: 'ainda_nao_reconheco',
+          title: 'Ainda não consigo reconhecer como fico nesses momentos.',
+        },
+      ],
+      orchestration: {
+        path_role: 'essential',
+        requires_branch_open: false,
+      },
+    },
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+  },
+
+  // PERGUNTA 11
+  {
+    id: 'p-07c-pm4-p11-sobrecarga',
+    experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
+    moment_id: 'mom-mente-4',
+    step_order: 12,
+    prompt_order: 2,
+    step_title: 'Quando a sobrecarga aumenta',
+    step_subtitle: 'Pergunta 11 de 13',
+    component_type: 'FreeReflection',
+    prompt_text: 'O que muda quando a sobrecarga aumenta?',
+    helper_text:
+      'Quando sente que chegou ao limite, o que costuma mudar em seus pensamentos, emoções ou comportamentos?\n\nCampo opcional. Abra as ideias abaixo se quiser apoios para pensar.',
+    is_required: false,
+    version: 2,
+    schema_config: {
+      prompt_key: 'dois_retratos_sobrecarga',
+      concept_key: 'overload_state_functioning',
+      temporality: 'context_dependent',
+      access_destination: 'participant_shared',
+      placeholder: 'Descreva o que costuma mudar em seus pensamentos, emoções ou comportamentos...',
       open_first: {
         enabled: true,
         help_label: 'Precisa de algumas ideias para começar?',
-        option_set_ref: 'opt_experiencia_complexa_apoio',
+        option_set_ref: 'opt_ideias_sobrecarga',
       },
       option_set: {
-        id: 'opt_experiencia_complexa_apoio',
+        id: 'opt_ideias_sobrecarga',
         items: [
-          {
-            id: 'emocoes_juntas',
-            label:
-              'Às vezes percebo que uma emoção vem acompanhada de outra, como tristeza com raiva ou alívio com receio.',
-          },
-          {
-            id: 'sensacoes_corpo',
-            label:
-              'Às vezes sinto sensações físicas nítidas, como aperto no peito, nó na garganta ou tensão.',
-          },
-          {
-            id: 'emocao_sozinha',
-            label: 'Às vezes a emoção aparece sozinha, bem definida e clara.',
-          },
-          {
-            id: 'pensamentos_lembrancas',
-            label: 'Às vezes me dou conta de lembranças ou pensamentos rápidos que vieram junto.',
-          },
-          {
-            id: 'dificil_observar',
-            label: 'Tenho dificuldade de observar o que mais está presente.',
-          },
+          { id: 'alerta_preocupado', label: 'Fico mais alerta ou preocupado com o que pode acontecer.' },
+          { id: 'mais_exigente', label: 'Fico mais exigente comigo ou com outras pessoas.' },
+          { id: 'controlar_mais', label: 'Tento controlar mais as situações.' },
+          { id: 'impaciente_reage', label: 'Fico impaciente ou reajo rapidamente.' },
+          { id: 'dificuldade_decidir_agir', label: 'Tenho dificuldade de decidir ou agir.' },
+          { id: 'afasto_silencio', label: 'Afasto-me ou fico em silêncio.' },
+          { id: 'evito_tarefas', label: 'Evito tarefas, conversas ou decisões.' },
+          { id: 'manter_atividade', label: 'Procuro me manter em atividade.' },
+          { id: 'perco_contato_necessidades', label: 'Perco contato com minhas necessidades.' },
+          { id: 'dificuldade_perceber_recursos', label: 'Sinto dificuldade de perceber meus recursos.' },
+          { id: 'outro_movimento', label: 'Outro movimento.' },
           { id: 'ainda_nao_sei', label: 'Ainda não sei dizer.' },
         ],
       },
@@ -542,66 +1110,104 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
     created: new Date().toISOString(),
     updated: new Date().toISOString(),
   },
+
+  // ----------------------------------------------------
+  // MOMENTO 5 — MEUS RECURSOS (Perguntas 12 e 13)
+  // ----------------------------------------------------
+
+  // PERGUNTA 12
   {
-    // Tela sensível 1: Pensamento associado à emoção
-    // Categoria compartilhada com Daiane, texto livre privado por padrão
-    id: 'p-07c-pm2-pensamento',
+    id: 'p-07c-pm5-p12-recursos-espaco-interno',
     experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
-    moment_id: 'mom-mente-2',
-    step_order: 6,
-    prompt_order: 2,
-    step_title: 'O pensamento que costuma acompanhar a emoção',
-    step_subtitle: 'A fala mental nesses momentos.',
-    component_type: 'ChoiceCards',
-    prompt_text: 'Nesses momentos, que tipo de pensamento costuma passar pela sua mente?',
+    moment_id: 'mom-mente-5',
+    step_order: 13,
+    prompt_order: 1,
+    step_title: 'O que ajuda a recuperar espaço interno',
+    step_subtitle: 'Pergunta 12 de 13',
+    component_type: 'MultiSelectCards',
+    prompt_text: 'O que ajuda você a recuperar espaço interno?',
     helper_text:
-      'A opção que você escolher será compartilhada com Daiane para apoiar a compreensão do seu momento. O texto livre a seguir é opcional e só seu.',
+      'Quando está emocionalmente sobrecarregado ou com a mente muito agitada, o que costuma ajudar — mesmo que seja apenas um pouco?\n\nExiste alguma coisa que costuma trazer alívio no momento, mas depois faz você se sentir pior? Você pode registrar no campo opcional abaixo.',
     is_required: true,
     version: 2,
     schema_config: {
-      prompt_key: 'pensamento_associado',
-      concept_key: 'associated_thought_pattern',
+      prompt_key: 'recursos_recuperar_espaco',
+      concept_key: 'recovery_resources_and_short_term_relief',
       temporality: 'recurring',
       access_destination: 'participant_shared',
-      // Divisão de privacidade sensível: categoria compartilhada, texto privado por padrão
-      privacy_split: {
-        enabled: true,
-        shared_category_label: 'Sua escolha acima é compartilhada com Daiane.',
-        private_text_note: 'Este texto é só seu e não será compartilhado com Daiane.',
-        share_checkbox_label: 'Quero compartilhar também este texto com Daiane.',
-        default_shared: false,
-      },
+      allow_free_text_addition: true,
+      free_text_addition_placeholder:
+        'Existe alguma coisa que costuma trazer alívio no momento, mas depois faz você se sentir pior? (Opcional — ex: excesso de comida, álcool, compras, trabalho excessivo, celular, isolamento, adiamento)...',
       options: [
         {
-          id: 'preciso_dar_conta',
-          title: '“Eu preciso dar conta de tudo”',
-          description:
-            'Sensação de urgência, responsabilidade solitária ou necessidade de resolver.',
+          id: 'descansar_silencio',
+          title: 'Descansar ou ficar em silêncio.',
         },
         {
-          id: 'vai_dar_errado',
-          title: '“E se der tudo errado ou algo ruim acontecer?”',
-          description: 'Preocupação com desfechos difíceis ou consequências.',
+          id: 'dormir',
+          title: 'Dormir.',
         },
         {
-          id: 'deveria_ter_feito_melhor',
-          title: '“Eu deveria ter agido de outro jeito”',
-          description: 'Revisão mental do que aconteceu ou autocrítica.',
+          id: 'movimentar_corpo',
+          title: 'Movimentar o corpo.',
         },
         {
-          id: 'nao_tem_pensamento_claro',
-          title: 'Não vem um pensamento claro, fico sem palavras',
-          description: 'Sinto mais o impacto no corpo sem frases articuladas.',
+          id: 'respirar_meditar',
+          title: 'Respirar, meditar ou realizar alguma prática.',
         },
         {
-          id: 'outro_tipo_pensamento',
-          title: 'Passa outro tipo de pensamento pela minha mente',
-          description: 'Uma fala interna com outras nuances.',
+          id: 'pequeno_proximo_passo',
+          title: 'Organizar um pequeno próximo passo.',
         },
         {
-          id: 'ainda_nao_sei',
-          title: 'Ainda não sei dizer',
-          description: 'Prefiro observar antes de nomear.',
+          id: 'conversar_alguem_confianca',
+          title: 'Conversar com alguém em quem confio.',
+        },
+        {
+          id: 'pedir_ajuda',
+          title: 'Pedir ajuda.',
+        },
+        {
+          id: 'estar_natureza',
+          title: 'Estar na natureza.',
+        },
+        {
+          id: 'algo_criativo',
+          title: 'Fazer algo criativo.',
+        },
+        {
+          id: 'ouvir_musica',
+          title: 'Ouvir música.',
+        },
+        {
+          id: 'escrever',
+          title: 'Escrever.',
+        },
+        {
+          id: 'chorar',
+          title: 'Chorar.',
+        },
+        {
+          id: 'colocar_limites',
+          title: 'Colocar limites.',
+        },
+        {
+          id: 'resolver_pendencia',
+          title: 'Resolver alguma pendência.',
+        },
+        {
+          id: 'afastar_temporariamente',
+          title: 'Afastar-me temporariamente da situação.',
+        },
+        {
+          id: 'ainda_nao_descobri',
+          title: 'Ainda não descobri o que me ajuda.',
+        },
+        {
+          id: 'outra_coisa',
+          title: 'Outra coisa.',
+          allow_custom_text: true,
+          custom_text_placeholder: 'Escreva outra coisa que costuma ajudar...',
         },
       ],
       orchestration: {
@@ -612,6 +1218,37 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
     created: new Date().toISOString(),
     updated: new Date().toISOString(),
   },
+
+  // PERGUNTA 13
+  {
+    id: 'p-07c-pm5-p13-campo-final-opcional',
+    experience_id: MENTE_EMOCOES_EXPERIENCE_ID,
+    moment_id: 'mom-mente-5',
+    step_order: 14,
+    prompt_order: 2,
+    step_title: 'Espaço aberto',
+    step_subtitle: 'Pergunta 13 de 13',
+    component_type: 'FreeReflection',
+    prompt_text: 'Existe alguma coisa importante que não perguntamos?',
+    helper_text:
+      'Se existe algum aspecto do seu funcionamento mental ou emocional que você considera importante e não encontrou espaço para contar, escreva aqui.\n\nCampo opcional.',
+    is_required: false,
+    version: 2,
+    schema_config: {
+      prompt_key: 'campo_final_opcional',
+      concept_key: 'unprompted_experience_aspects',
+      temporality: 'longitudinal',
+      access_destination: 'participant_shared',
+      placeholder: 'Se desejar acrescentar algo sobre o seu funcionamento mental ou emocional...',
+      orchestration: {
+        path_role: 'essential',
+        requires_branch_open: false,
+      },
+    },
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+  },
+]
 
   // ----------------------------------------------------
   // MOMENTO 3 — MINHA MENTE EM MOVIMENTO
@@ -2030,23 +2667,18 @@ export const BUILD_07C_ALL_PROMPTS: CerPromptRecord[] = [
   ...BUILD_07C_REGULACAO_PROMPTS,
 ]
 
-// Chaves canônicas de caminho essencial de Mente (Momento 1 ao 5)
+// Chaves canônicas de caminho essencial de Mente (Momento 1 ao 5 — V2 Aprovada)
 export const MENTE_ESSENTIAL_PATH_PROMPT_KEYS = [
   'mundo_emocional_geral', // Momento 1 - P1
   'emocoes_recorrentes', // Momento 1 - P2
-  'emocoes_comparacao_habitual', // Momento 1 - P4
-  'experiencia_complexa', // Momento 2 - P1
-  'pensamento_associado', // Momento 2 - P2 (categoria compartilhada / texto privado)
-  'mente_movimento_ajuda', // Momento 3 - P1
-  'mente_movimento_cansa', // Momento 3 - P2
-  'movimentos_sob_pressao', // Momento 3 - P4
-  'self_dialogue_erro', // Momento 4 - P1 (categoria compartilhada / texto privado)
-  'direcao_da_cobranca', // Momento 4 - P2
-  'efeito_da_cobranca', // Momento 4 - P3
-  'self_dialogue_realizacao', // Momento 4 - P4
-  'dois_retratos_espaco', // Momento 5 - P1
-  'dois_retratos_sobrecarga', // Momento 5 - P2
-  'recursos_recuperar_espaco', // Momento 5 - P3
+  'pensamento_associado', // Momento 2 - P4
+  'comportamento_associado', // Momento 2 - P5
+  'self_dialogue_erro', // Momento 2 - P6
+  'movimentos_automaticos_frequencia_p1', // Momento 3 - P7a
+  'movimentos_automaticos_frequencia_p2', // Momento 3 - P7b
+  'situacoes_ativacao_movimentos', // Momento 3 - P9
+  'dois_retratos_espaco', // Momento 4 - P10
+  'recursos_recuperar_espaco', // Momento 5 - P12
 ]
 
 // Chaves canônicas de caminho essencial de Regulação (PR1..PR4)
