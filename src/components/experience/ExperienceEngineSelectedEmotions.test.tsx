@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import {
   ExperienceEngine,
@@ -70,7 +70,7 @@ describe('Pergunta 3 de Mente & Emoções — Resolução Dinâmica de Emoções
       access_class: 'participant_shared',
       prompt_version: 2,
       version: 1,
-      status: 'active',
+      status: 'saved',
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
     }
