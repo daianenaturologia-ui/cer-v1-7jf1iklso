@@ -111,9 +111,10 @@ export async function runBuild07COrchestrationTests(): Promise<TestResult[]> {
     const pm2 = BUILD_07C_MENTE_PROMPTS.find(
       (p) => p.schema_config?.prompt_key === 'experiencia_complexa',
     )
-    const expectedText =
-      'Às vezes uma emoção vem acompanhada de outras. Quando você olha mais de perto, o que encontra?'
-    const hasText = pm2?.prompt_text === expectedText
+    const expectedTitle = 'Quando você olha mais de perto, o que encontra?'
+    const hasText =
+      pm2?.prompt_text === expectedTitle &&
+      (pm2?.helper_text || '').includes('Quando você olha com um pouco mais de atenção')
     results.push({
       id: 'ME2',
       name: 'ME2 — PM2 Olhar Mais de Perto preserva o texto obrigatório normativo',
@@ -186,17 +187,18 @@ export async function runBuild07COrchestrationTests(): Promise<TestResult[]> {
     })
   }
 
-  // ME5: PM2 pensamento associado é estritamente participant_private
+  // ME5: PM2 pensamento associado possui divisão de privacidade (categoria compartilhada + texto privado por padrão)
   try {
     const pm2Pensamento = BUILD_07C_MENTE_PROMPTS.find(
       (p) => p.schema_config?.prompt_key === 'pensamento_associado',
     )
-    const isPrivate = pm2Pensamento?.schema_config?.access_destination === 'participant_private'
+    const privacySplit = (pm2Pensamento?.schema_config as any)?.privacy_split
+    const okSplit = Boolean(privacySplit?.enabled) && privacySplit?.default_shared === false
     results.push({
       id: 'ME5',
-      name: 'ME5 — Pensamento associado possui access_destination participant_private',
-      status: isPrivate ? 'PASSOU' : 'NÃO PASSOU',
-      details: `Access destination configurado: ${pm2Pensamento?.schema_config?.access_destination}`,
+      name: 'ME5 — Pensamento associado possui privacy_split (categoria compartilhada + texto privado por padrão)',
+      status: okSplit ? 'PASSOU' : 'NÃO PASSOU',
+      details: `privacy_split enabled: ${privacySplit?.enabled}, default_shared: ${privacySplit?.default_shared}`,
     })
   } catch (e: any) {
     results.push({
@@ -300,7 +302,7 @@ export async function runBuild07COrchestrationTests(): Promise<TestResult[]> {
     })
   }
 
-  // ME9: PM4 Face Erro é participant_private e Face Realização é participant_shared
+  // ME9: PM4 Diálogo diante de erro possui privacy_split e Face Realização é participant_shared
   try {
     const pm4Erro = BUILD_07C_MENTE_PROMPTS.find(
       (p) => p.schema_config?.prompt_key === 'self_dialogue_erro',
@@ -308,15 +310,15 @@ export async function runBuild07COrchestrationTests(): Promise<TestResult[]> {
     const pm4Realizacao = BUILD_07C_MENTE_PROMPTS.find(
       (p) => p.schema_config?.prompt_key === 'self_dialogue_realizacao',
     )
-    const erroPrivate = pm4Erro?.schema_config?.access_destination === 'participant_private'
+    const erroSplit = Boolean((pm4Erro?.schema_config as any)?.privacy_split?.enabled)
     const realizacaoShared =
       pm4Realizacao?.schema_config?.access_destination === 'participant_shared'
-    const okME9 = erroPrivate && realizacaoShared
+    const okME9 = erroSplit && realizacaoShared
     results.push({
       id: 'ME9',
-      name: 'ME9 — PM4 Face Erro é participant_private e Face Realização é participant_shared',
+      name: 'ME9 — PM4 Diálogo Erro possui privacy_split e Face Realização é participant_shared',
       status: okME9 ? 'PASSOU' : 'NÃO PASSOU',
-      details: `Face Erro: ${pm4Erro?.schema_config?.access_destination}, Face Realização: ${pm4Realizacao?.schema_config?.access_destination}`,
+      details: `Erro split: ${erroSplit}, Face Realização: ${pm4Realizacao?.schema_config?.access_destination}`,
     })
   } catch (e: any) {
     results.push({
@@ -429,16 +431,23 @@ export async function runBuild07COrchestrationTests(): Promise<TestResult[]> {
     const allowedKeys = new Set([
       'recurrent_emotional_experience',
       'emotion_recognition_style',
+      'emotional_triggers_awareness',
+      'emotional_current_state_comparison',
       'complex_emotional_experience',
       'component_emotion_reported',
       'associated_thought_pattern',
       'recurring_mental_tendency',
       'mental_tendency_perceived_help',
       'mental_tendency_perceived_cost',
+      'mental_movements_under_pressure',
+      'movements_resource_cost_reflection',
       'self_dialogue_after_mistake',
+      'inner_demand_direction',
+      'inner_demand_perceived_effect',
       'self_dialogue_after_success',
       'contextual_self_trait',
       'contextual_self_trait_under_load',
+      'inner_space_recovery_resources',
       'emergent_mental_resource',
     ])
     const usedKeys = BUILD_07C_MENTE_PROMPTS.map((p) => p.schema_config?.concept_key).filter(
@@ -460,15 +469,16 @@ export async function runBuild07COrchestrationTests(): Promise<TestResult[]> {
     })
   }
 
-  // ME15: Interações essenciais percebidas em Mente = exatamente 5 blocos
+  // ME15: Interações essenciais percebidas em Mente distribuídas em 5 momentos
   try {
-    const count = MENTE_ESSENTIAL_PATH_PROMPT_KEYS.length
-    const okME15 = count >= 8 && count <= 10
+    const momentsCount = MENTE_EMOCOES_MOMENTS.length
+    const essentialKeysCount = MENTE_ESSENTIAL_PATH_PROMPT_KEYS.length
+    const okME15 = momentsCount === 5 && essentialKeysCount >= 10
     results.push({
       id: 'ME15',
-      name: 'ME15 — Caminho de Mente preserva a meta de 5 interações percebidas',
+      name: 'ME15 — Caminho de Mente estruturado em 5 momentos fixos canônicos',
       status: okME15 ? 'PASSOU' : 'NÃO PASSOU',
-      details: `Prompts essenciais mapeados: ${count}`,
+      details: `Momentos fixos: ${momentsCount}, Prompts essenciais: ${essentialKeysCount}`,
     })
   } catch (e: any) {
     results.push({
@@ -2531,18 +2541,19 @@ export async function runBuild07COrchestrationTests(): Promise<TestResult[]> {
     const rEmoGeral = createMockResponse('r_e2e_1_emogeral', 'mundo_emocional_geral', {
       value: 'Sinto as emoções com clareza no corpo',
     })
-    const rEmoRec = createMockResponse('r_e2e_1_emorec', 'emocoes_recorrentes', [
-      'ansiedade_apreensao',
-      'irritacao_raiva',
-    ])
+    const rEmoRec = createMockResponse('r_e2e_1_emorec', 'emocoes_recorrentes', ['medo', 'raiva'])
     const rComplexa = createMockResponse('r_e2e_1_comp', 'experiencia_complexa', {
       value: 'Uma irritação acompanhada de medo de errar',
     })
     const rPensamentoPriv = createMockResponse(
       'r_e2e_1_pens',
       'pensamento_associado',
-      { value: 'Eu deveria ter feito tudo sozinha' },
-      'participant_private',
+      {
+        choice: 'deveria_ter_feito_melhor',
+        private_text: 'Eu deveria ter feito tudo sozinha',
+        share_private_text_with_professional: false,
+      },
+      'participant_shared',
     )
 
     const lookupThought = await contextReuseService.findReusableContext({
@@ -2720,6 +2731,308 @@ export async function runBuild07COrchestrationTests(): Promise<TestResult[]> {
     results.push({
       id: 'E2E-07C-6',
       name: 'E2E-07C-6 — Mixed privacy isolation',
+      status: 'NÃO PASSOU',
+      details: e.message,
+    })
+  }
+
+  // ==========================================
+  // GRUPO NOVO: ESPECIFICAÇÃO REESCRITA CER V1 (ME16–ME28)
+  // ==========================================
+
+  // ME16: Opening text/title com Daia e sem Sabotador/Vítima/Sábio
+  try {
+    const exp = MENTE_EMOCOES_EXPERIENCE
+    const hasDaia = exp.opening_text.includes('Com carinho,\nDaia')
+    const hasExactTitle =
+      exp.title === 'Mente & Emoções — compreender o que acontece dentro de você'
+    const forbidden = [
+      'Sabotador',
+      'Vítima',
+      'Sábio',
+      'inimigo interno',
+      'quociente de inteligência positiva',
+    ]
+    const hasForbidden = forbidden.some(
+      (t) => exp.opening_text.includes(t) || exp.title.includes(t),
+    )
+    results.push({
+      id: 'ME16',
+      name: 'ME16 — Opening screen com título exato, assinatura Daia e zero termos proibidos',
+      status: hasDaia && hasExactTitle && !hasForbidden ? 'PASSOU' : 'NÃO PASSOU',
+      details: `hasDaia: ${hasDaia}, hasTitle: ${hasExactTitle}, hasForbidden: ${hasForbidden}`,
+    })
+  } catch (e: any) {
+    results.push({
+      id: 'ME16',
+      name: 'ME16 — Opening screen',
+      status: 'NÃO PASSOU',
+      details: e.message,
+    })
+  }
+
+  // ME17: 8 emoções com descrições normativas aprovadas
+  try {
+    const pEmocoes = BUILD_07C_MENTE_PROMPTS.find(
+      (p) => p.schema_config?.prompt_key === 'emocoes_recorrentes',
+    )
+    const options = (pEmocoes?.schema_config?.options as any[]) || []
+    const requiredKeys = [
+      'medo',
+      'tristeza',
+      'raiva',
+      'alegria',
+      'calma',
+      'culpa',
+      'vergonha',
+      'outra_emocao',
+    ]
+    const allKeysPresent = requiredKeys.every((k) => options.some((o) => o.id === k))
+    const medoDesc = options.find((o) => o.id === 'medo')?.description || ''
+    const hasMedoText = medoDesc.includes('Pode aparecer como sensação de ameaça ou insegurança')
+    results.push({
+      id: 'ME17',
+      name: 'ME17 — 8 cards de emoções com descrições aprovadas e seleção até 4',
+      status:
+        allKeysPresent && hasMedoText && (pEmocoes?.schema_config as any)?.max_selections === 4
+          ? 'PASSOU'
+          : 'NÃO PASSOU',
+      details: `Keys presentes: ${allKeysPresent}, Descrição medo correta: ${hasMedoText}`,
+    })
+  } catch (e: any) {
+    results.push({
+      id: 'ME17',
+      name: 'ME17 — 8 cards de emoções',
+      status: 'NÃO PASSOU',
+      details: e.message,
+    })
+  }
+
+  // ME18: Pergunta adaptativa P3 usa apenas emoções selecionadas
+  try {
+    const pDespertar = BUILD_07C_MENTE_PROMPTS.find(
+      (p) => p.schema_config?.prompt_key === 'compreensao_despertar_emocoes',
+    )
+    const isAdaptive = (pDespertar?.schema_config as any)?.orchestration?.path_role === 'adaptive'
+    const hasTemplate = Boolean(
+      (pDespertar?.schema_config as any)?.dynamic_text_template?.includes(
+        '{{emocoes_selecionadas}}',
+      ),
+    )
+    const hasExpander = Boolean((pDespertar?.schema_config as any)?.per_emotion_expander?.enabled)
+    const noCauseWord = !(
+      (pDespertar?.schema_config as any)?.per_emotion_expander?.prompt_label_template || ''
+    )
+      .toLowerCase()
+      .includes('qual é a causa')
+    results.push({
+      id: 'ME18',
+      name: 'ME18 — Pergunta P3 adaptativa interpola emoções selecionadas sem termos causais obrigatórios',
+      status: isAdaptive && hasTemplate && hasExpander && noCauseWord ? 'PASSOU' : 'NÃO PASSOU',
+      details: `isAdaptive: ${isAdaptive}, hasTemplate: ${hasTemplate}, hasExpander: ${hasExpander}`,
+    })
+  } catch (e: any) {
+    results.push({
+      id: 'ME18',
+      name: 'ME18 — P3 adaptativo',
+      status: 'NÃO PASSOU',
+      details: e.message,
+    })
+  }
+
+  // ME19: P4 Comparação habitual com metadata current_state sem classificação
+  try {
+    const pModo = BUILD_07C_MENTE_PROMPTS.find(
+      (p) => p.schema_config?.prompt_key === 'emocoes_comparacao_habitual',
+    )
+    const okP4 =
+      (pModo?.schema_config as any)?.metadata_classification === 'current_state_only' &&
+      pModo?.schema_config?.temporality === 'current_state'
+    results.push({
+      id: 'ME19',
+      name: 'ME19 — P4 comparação habitual com metadata current_state e zero classificação diagnóstica',
+      status: okP4 ? 'PASSOU' : 'NÃO PASSOU',
+      details: `metadata_classification: ${(pModo?.schema_config as any)?.metadata_classification}`,
+    })
+  } catch (e: any) {
+    results.push({
+      id: 'ME19',
+      name: 'ME19 — P4 modo habitual',
+      status: 'NÃO PASSOU',
+      details: e.message,
+    })
+  }
+
+  // ME20: 9 cards de movimentos sob pressão e ausência de termos de Sabotadores
+  try {
+    const pMov = BUILD_07C_MENTE_PROMPTS.find(
+      (p) => p.schema_config?.prompt_key === 'movimentos_sob_pressao',
+    )
+    const options = (pMov?.schema_config?.options as any[]) || []
+    const requiredCards = [
+      'BUSCAR FAZER DO JEITO CERTO',
+      'CUIDAR E AJUDAR',
+      'PRODUZIR E ALCANÇAR',
+      'PERDER A SENSAÇÃO DE ESCOLHA',
+      'ENTENDER TUDO PELA RAZÃO',
+      'ANTECIPAR RISCOS',
+      'MANTER-ME EM MOVIMENTO',
+      'ASSUMIR O CONTROLE',
+      'EVITAR DESCONFORTOS E CONFLITOS',
+    ]
+    const allPresent = requiredCards.every((title) => options.some((o) => o.title === title))
+    const forbiddenSaboteur = [
+      'sabotador',
+      'vítima',
+      'sábio',
+      'hiper-realizador',
+      'inquieto',
+      'esquivo',
+    ]
+    const hasForbidden = options.some((o) =>
+      forbiddenSaboteur.some(
+        (f) => o.title.toLowerCase().includes(f) || o.description.toLowerCase().includes(f),
+      ),
+    )
+    results.push({
+      id: 'ME20',
+      name: 'ME20 — 9 cards de movimentos sob pressão presentes e zero termos de sabotadores',
+      status: allPresent && !hasForbidden && options.length === 9 ? 'PASSOU' : 'NÃO PASSOU',
+      details: `Cards presentes: ${allPresent}, Ausência de sabotadores: ${!hasForbidden}, Total cards: ${options.length}`,
+    })
+  } catch (e: any) {
+    results.push({
+      id: 'ME20',
+      name: 'ME20 — 9 cards sob pressão',
+      status: 'NÃO PASSOU',
+      details: e.message,
+    })
+  }
+
+  // ME21: Direção da cobrança e efeito sem o rótulo "Crítico"
+  try {
+    const pDir = BUILD_07C_MENTE_PROMPTS.find(
+      (p) => p.schema_config?.prompt_key === 'direcao_da_cobranca',
+    )
+    const pEf = BUILD_07C_MENTE_PROMPTS.find(
+      (p) => p.schema_config?.prompt_key === 'efeito_da_cobranca',
+    )
+    const dirPresent = Boolean(pDir)
+    const efPresent = Boolean(pEf)
+    const textAll =
+      `${pDir?.prompt_text} ${pDir?.step_title} ${pEf?.prompt_text} ${pEf?.step_title} ${JSON.stringify(pDir?.schema_config)} ${JSON.stringify(pEf?.schema_config)}`.toLowerCase()
+    const hasCritico = textAll.includes('crítico') || textAll.includes('critico')
+    results.push({
+      id: 'ME21',
+      name: 'ME21 — Direção da cobrança e efeito da cobrança presentes sem o rótulo "Crítico"',
+      status: dirPresent && efPresent && !hasCritico ? 'PASSOU' : 'NÃO PASSOU',
+      details: `Dir: ${dirPresent}, Ef: ${efPresent}, HasCritico: ${hasCritico}`,
+    })
+  } catch (e: any) {
+    results.push({
+      id: 'ME21',
+      name: 'ME21 — Cobrança sem crítico',
+      status: 'NÃO PASSOU',
+      details: e.message,
+    })
+  }
+
+  // ME22: Linguagem inclusiva e neutra
+  try {
+    const allPromptsText = BUILD_07C_MENTE_PROMPTS.map(
+      (p) => `${p.step_title} ${p.prompt_text} ${p.helper_text || ''}`,
+    ).join(' ')
+    const hasOldFeminineTitle = allPromptsText.includes('Quando estou sobrecarregada')
+    const hasNeutralTitle = allPromptsText.includes('Quando a sobrecarga pesa')
+    results.push({
+      id: 'ME22',
+      name: 'ME22 — Títulos e formulações com linguagem neutra e inclusiva',
+      status: !hasOldFeminineTitle && hasNeutralTitle ? 'PASSOU' : 'NÃO PASSOU',
+      details: `Sem sobrecarregada: ${!hasOldFeminineTitle}, Com neutralidade: ${hasNeutralTitle}`,
+    })
+  } catch (e: any) {
+    results.push({
+      id: 'ME22',
+      name: 'ME22 — Linguagem inclusiva',
+      status: 'NÃO PASSOU',
+      details: e.message,
+    })
+  }
+
+  // ME23: Divisão de privacidade nas duas telas sensíveis
+  try {
+    const pm2 = BUILD_07C_MENTE_PROMPTS.find(
+      (p) => p.schema_config?.prompt_key === 'pensamento_associado',
+    )
+    const pm4 = BUILD_07C_MENTE_PROMPTS.find(
+      (p) => p.schema_config?.prompt_key === 'self_dialogue_erro',
+    )
+    const split2 = (pm2?.schema_config as any)?.privacy_split
+    const split4 = (pm4?.schema_config as any)?.privacy_split
+    const okSplits =
+      split2?.enabled &&
+      split4?.enabled &&
+      split2.default_shared === false &&
+      split4.default_shared === false
+    results.push({
+      id: 'ME23',
+      name: 'ME23 — Telas sensíveis com categoria compartilhada e texto livre privado por padrão',
+      status: okSplits ? 'PASSOU' : 'NÃO PASSOU',
+      details: `Split PM2: ${split2?.enabled}, Split PM4: ${split4?.enabled}`,
+    })
+  } catch (e: any) {
+    results.push({
+      id: 'ME23',
+      name: 'ME23 — Divisão de privacidade',
+      status: 'NÃO PASSOU',
+      details: e.message,
+    })
+  }
+
+  // ME24: Recursos para recuperar espaço interno sem prescrição automática
+  try {
+    const pRec = BUILD_07C_MENTE_PROMPTS.find(
+      (p) => p.schema_config?.prompt_key === 'recursos_recuperar_espaco',
+    )
+    const okRec = Boolean(
+      pRec &&
+      pRec.component_type === 'MultiSelectCards' &&
+      (pRec.schema_config as any)?.allow_free_text_addition,
+    )
+    results.push({
+      id: 'ME24',
+      name: 'ME24 — Recursos para recuperar espaço interno com multi-select e texto livre sem prescrição',
+      status: okRec ? 'PASSOU' : 'NÃO PASSOU',
+      details: `ComponentType: ${pRec?.component_type}, allow_free_text: ${(pRec?.schema_config as any)?.allow_free_text_addition}`,
+    })
+  } catch (e: any) {
+    results.push({
+      id: 'ME24',
+      name: 'ME24 — Recursos de recuperação',
+      status: 'NÃO PASSOU',
+      details: e.message,
+    })
+  }
+
+  // ME25: Ausência das expressões "privacidade privada" e "privacidade pré-expressão"
+  try {
+    const allJSON = JSON.stringify(BUILD_07C_ALL_PROMPTS).toLowerCase()
+    const forbiddenPrivacyStrings = [
+      'privacidade privada',
+      'privacidade pré-expressão',
+      'privacidade pre-expressao',
+    ]
+    const hasForbiddenPrivacy = forbiddenPrivacyStrings.some((s) => allJSON.includes(s))
+    results.push({
+      id: 'ME25',
+      name: 'ME25 — Ausência estrita das strings "privacidade privada" e "privacidade pré-expressão"',
+      status: !hasForbiddenPrivacy ? 'PASSOU' : 'NÃO PASSOU',
+      details: `hasForbiddenPrivacy: ${hasForbiddenPrivacy}`,
+    })
+  } catch (e: any) {
+    results.push({
+      id: 'ME25',
+      name: 'ME25 — Expressões proibidas de privacidade',
       status: 'NÃO PASSOU',
       details: e.message,
     })

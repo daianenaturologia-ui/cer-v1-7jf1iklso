@@ -362,6 +362,48 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         }
       }
 
+      // Metadata enriquecida por resposta (sem score, sem diagnóstico)
+      const pKey = pSchema.prompt_key
+      const temporality = pSchema.temporality || 'recurring'
+      const isFreeSpeech =
+        currentPrompt.component_type === 'FreeReflection' || Boolean(currentDraftText)
+      const isStructured = Boolean(valToSave && typeof valToSave === 'object')
+
+      const responseMetadata = {
+        participant_free_speech: isFreeSpeech,
+        structured_selection: isStructured,
+        temporality,
+        current_state_vs_habitual:
+          pSchema.metadata_classification === 'current_state_only'
+            ? 'current_state'
+            : 'habitual_pattern',
+        context: pKey === 'movimentos_sob_pressao' ? 'under_pressure' : 'general',
+        resource: pKey === 'recursos_recuperar_espaco' || pKey === 'mente_movimento_ajuda',
+        perceived_cost: pKey === 'mente_movimento_cansa' || pKey === 'efeito_da_cobranca',
+        access_class: targetAccessClass,
+        indicator_to_confirm:
+          pKey === 'movimentos_sob_pressao' ? 'mental_movements_under_pressure' : null,
+        absent_information: valToSave === null || valToSave === undefined,
+      }
+
+      if (typeof structToSave === 'object' && structToSave !== null) {
+        structToSave.metadata = responseMetadata
+      }
+
+      // Tratar texto livre privado em telas com privacy_split:
+      // se share_private_text_with_professional for falso, o freeText NÃO é enviado ao campo compartilhado
+      let effectiveFreeText =
+        currentPrompt.component_type === 'FreeReflection'
+          ? (currentDraftValue as string) || currentDraftText
+          : currentDraftText
+
+      if (pSchema.privacy_split?.enabled) {
+        const canShareText = Boolean(structToSave?.share_private_text_with_professional)
+        if (!canShareText) {
+          effectiveFreeText = '' // Permanece estritamente privado, mantido apenas no structured_value com flag privada
+        }
+      }
+
       const saved = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
@@ -370,10 +412,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         responseType: currentPrompt.component_type,
         promptVersion: currentPrompt.version,
         structuredValue: structToSave,
-        freeText:
-          currentPrompt.component_type === 'FreeReflection'
-            ? (currentDraftValue as string) || currentDraftText
-            : currentDraftText,
+        freeText: effectiveFreeText,
         accessClass: targetAccessClass,
         changeReason: responsesMap[currentPrompt.id]
           ? 'Atualização pelo interagente durante a experiência'
@@ -731,6 +770,9 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     currentStepOrder: currentPrompt.step_order,
   })
 
+  const isMenteEmocoes =
+    experience?.id === 'exp-mente-emocoes-07c' ||
+    resolveExperienceId(experienceId) === 'exp-mente-emocoes-07c'
   const eligibleList = orchDerived.status === 'AVAILABLE' ? orchDerived.eligiblePrompts : prompts
   const currentEligibleIndex = eligibleList.findIndex((p) => p.id === currentPrompt.id)
   const displayStepNumber =
@@ -738,6 +780,30 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const displayTotalCount = eligibleList.length
   const isFirstStep = currentStepIndex === 0
   const isLastStep = currentEligibleIndex === eligibleList.length - 1
+
+  // Determinar momento canônico (1 a 5 para Mente & Emoções)
+  const currentMomentData =
+    (currentPrompt.expand?.moment_id as CerExperienceMomentRecord) ||
+    moments.find((m) => m.id === currentPrompt.moment_id)
+  const currentMomentIndex = moments.findIndex((m) => m.id === currentPrompt.moment_id)
+  const momentOrder =
+    currentMomentData?.order_index || (currentMomentIndex >= 0 ? currentMomentIndex + 1 : 1)
+  const totalMomentsCount = moments.length || 5
+
+  // Etapas dentro do momento atual (excluindo adaptive da contagem total fixa para não inflar)
+  const promptsInCurrentMoment = prompts.filter((p) => p.moment_id === currentPrompt.moment_id)
+  const currentPromptInMomentIndex = promptsInCurrentMoment.findIndex(
+    (p) => p.id === currentPrompt.id,
+  )
+  const isAdaptivePrompt =
+    (currentPrompt.schema_config as any)?.orchestration?.path_role === 'adaptive'
+  const essentialPromptsInMoment = promptsInCurrentMoment.filter(
+    (p) => (p.schema_config as any)?.orchestration?.path_role !== 'adaptive',
+  )
+  const momentStepNumber = isAdaptivePrompt
+    ? essentialPromptsInMoment.length
+    : currentPromptInMomentIndex + 1
+  const momentTotalSteps = essentialPromptsInMoment.length || promptsInCurrentMoment.length
 
   const pSchema = (currentPrompt.schema_config || {}) as any
   const accessDestination = pSchema.access_destination || 'shared_care'
@@ -755,28 +821,313 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     const componentType = currentPrompt.component_type
     const schema = (currentPrompt.schema_config || {}) as Record<string, any>
 
+    // Interpolação dinâmica de emoções selecionadas para P3 Adaptativo
+    let renderedPromptConfig = { ...schema }
+    if (schema.dynamic_text_template) {
+      const emocoesResp =
+        responsesMap[
+          prompts.find((p) => (p.schema_config as any)?.prompt_key === 'emocoes_recorrentes')?.id ||
+            ''
+        ]
+      const sVal = emocoesResp?.structured_value as any
+      const list: string[] = Array.isArray(sVal)
+        ? sVal
+        : Array.isArray(sVal?.value)
+          ? sVal.value
+          : Array.isArray(sVal?.choice)
+            ? sVal.choice
+            : []
+      const emocoesLabels = list.map((id) => {
+        const opt = (
+          prompts.find((p) => (p.schema_config as any)?.prompt_key === 'emocoes_recorrentes')
+            ?.schema_config as any
+        )?.options?.find((o: any) => o.id === id)
+        return opt?.title || id
+      })
+      const joinedLabels = emocoesLabels.length > 0 ? emocoesLabels.join(', ') : 'suas emoções'
+      // Ajustar template se necessário
+      renderedPromptConfig = {
+        ...renderedPromptConfig,
+        interpolatedEmotions: joinedLabels,
+      }
+    }
+
     switch (componentType) {
-      case 'ChoiceCards':
+      case 'FreeReflection': {
+        const optionSet = schema.option_set?.items || []
+        const freeVal =
+          typeof currentDraftValue === 'object' && currentDraftValue !== null
+            ? (currentDraftValue as any).value || currentDraftText
+            : (currentDraftValue as string) || currentDraftText
+
         return (
-          <ChoiceCards
-            config={schema as any}
-            value={
-              typeof currentDraftValue === 'object' && currentDraftValue !== null
-                ? (currentDraftValue as any).value || (currentDraftValue as any).selectedOptionId
-                : (currentDraftValue as string)
-            }
-            onChange={(val) => setCurrentDraftValue(val)}
-            allowSkip={true}
-            onSkip={handleLegitimateSkip}
-          />
+          <div className="space-y-4 max-w-xl mx-auto">
+            {/* Campo de texto livre PRIMEIRO */}
+            <div className="space-y-2">
+              <textarea
+                value={freeVal}
+                onChange={(e) => {
+                  const txt = e.target.value
+                  setCurrentDraftValue(txt)
+                  setCurrentDraftText(txt)
+                }}
+                placeholder={schema.placeholder || 'Conte espontaneamente como você percebe...'}
+                rows={5}
+                className="w-full text-sm leading-relaxed p-4 rounded-xl border border-border/70 bg-card/60 resize-y focus:outline-none focus:ring-1 focus:ring-primary text-foreground font-normal"
+              />
+            </div>
+
+            {/* Expander colapsado de apoio com ideias opcionais */}
+            {schema.open_first?.enabled && (
+              <div className="pt-2 border-t border-border/40 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowOpenFirstSuggestions(!showOpenFirstSuggestions)
+                    if (!showOpenFirstSuggestions) {
+                      setCurrentNamingOrigin('selected_after_prompting')
+                    }
+                  }}
+                  className="text-xs text-primary hover:underline flex items-center gap-1.5 font-medium"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>
+                    {schema.open_first.help_label || 'Precisa de algumas ideias para começar?'}
+                  </span>
+                </button>
+
+                {showOpenFirstSuggestions && optionSet.length > 0 && (
+                  <div className="p-3.5 rounded-xl bg-card border border-border/70 space-y-2.5 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between pb-1 border-b border-border/40">
+                      <span className="text-xs font-medium text-foreground">
+                        Ideias que você pode usar ou adaptar:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowOpenFirstSuggestions(false)}
+                        className="text-muted-foreground hover:text-foreground text-[11px]"
+                      >
+                        Ocultar ideias
+                      </button>
+                    </div>
+                    <div className="space-y-1.5">
+                      {optionSet.map((opt: any) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            const newText = freeVal ? `${freeVal}\n${opt.label}` : opt.label
+                            setCurrentDraftValue(newText)
+                            setCurrentDraftText(newText)
+                            setCurrentNamingOrigin('selected_after_prompting')
+                          }}
+                          className="w-full text-left p-2.5 rounded-lg border border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-colors text-xs text-foreground/90 flex items-start gap-2"
+                        >
+                          <span className="text-primary font-mono text-[10px] mt-0.5">•</span>
+                          <span>{opt.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Alternativas legítimas Não sei / Prefiro não responder */}
+            <div className="flex items-center gap-2 pt-2 text-xs">
+              <button
+                type="button"
+                onClick={() => handleLegitimateSkip('nao_sei')}
+                className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
+              >
+                Não sei dizer agora
+              </button>
+              <span className="text-muted-foreground/40">•</span>
+              <button
+                type="button"
+                onClick={() => handleLegitimateSkip('prefiro_nao_responder')}
+                className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
+              >
+                Prefiro não responder
+              </button>
+            </div>
+          </div>
         )
+      }
+      case 'ChoiceCards': {
+        const choiceVal =
+          typeof currentDraftValue === 'object' && currentDraftValue !== null
+            ? (currentDraftValue as any).choice ||
+              (currentDraftValue as any).value ||
+              (currentDraftValue as any).selectedOptionId
+            : (currentDraftValue as string)
+
+        const privacySplit = schema.privacy_split
+        const isPrivacySplitActive = Boolean(privacySplit?.enabled)
+        const structObj =
+          typeof currentDraftValue === 'object' && currentDraftValue !== null
+            ? (currentDraftValue as any)
+            : {}
+        const privateText = currentDraftText || structObj.free_text || structObj.private_text || ''
+        const sharePrivateText = Boolean(structObj.share_private_text_with_professional)
+
+        return (
+          <div className="space-y-4">
+            {isPrivacySplitActive && (
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-xs text-foreground/90 space-y-1">
+                <span className="font-medium block">
+                  {privacySplit.shared_category_label ||
+                    'Sua escolha de categoria acima será compartilhada com Daiane.'}
+                </span>
+              </div>
+            )}
+
+            <ChoiceCards
+              config={renderedPromptConfig as any}
+              value={choiceVal}
+              onChange={(val) => {
+                if (isPrivacySplitActive) {
+                  setCurrentDraftValue({
+                    ...structObj,
+                    choice: val,
+                    selectedOptionId: val,
+                    free_text: privateText,
+                    share_private_text_with_professional: sharePrivateText,
+                  })
+                } else {
+                  setCurrentDraftValue(val)
+                }
+              }}
+              allowSkip={true}
+              onSkip={handleLegitimateSkip}
+            />
+
+            {/* Expander opcional por emoção (P3 Adaptativo) */}
+            {schema.per_emotion_expander?.enabled && choiceVal && (
+              <div className="pt-3 border-t border-border/40 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowOpenFirstSuggestions(!showOpenFirstSuggestions)}
+                  className="text-xs text-primary hover:underline flex items-center gap-1.5 font-medium"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>
+                    {showOpenFirstSuggestions
+                      ? 'Fechar anotação sobre o que parece estar relacionado'
+                      : 'O que parece estar relacionado? (Opcional)'}
+                  </span>
+                </button>
+                {showOpenFirstSuggestions && (
+                  <div className="p-3 rounded-lg bg-card border border-border/70 space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      {schema.per_emotion_expander.helper_text ||
+                        'Espaço opcional para você descrever do seu jeito.'}
+                    </p>
+                    <textarea
+                      value={currentDraftText}
+                      onChange={(e) => {
+                        setCurrentDraftText(e.target.value)
+                        if (typeof currentDraftValue === 'object' && currentDraftValue !== null) {
+                          setCurrentDraftValue({ ...currentDraftValue, free_text: e.target.value })
+                        }
+                      }}
+                      placeholder="Descreva o que parece estar relacionado..."
+                      rows={3}
+                      className="w-full text-xs p-3 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Bloco de Privacidade Estrita nas telas sensíveis */}
+            {isPrivacySplitActive && (
+              <div className="pt-4 border-t border-border/60 space-y-3">
+                <div className="space-y-1">
+                  <span className="text-xs font-medium text-foreground block">
+                    Reflexão pessoal (opcional):
+                  </span>
+                  <p className="text-[11px] text-muted-foreground italic">
+                    {privacySplit.private_text_note ||
+                      'Este texto é só seu e não será compartilhado com Daiane.'}
+                  </p>
+                </div>
+                <textarea
+                  value={privateText}
+                  onChange={(e) => {
+                    const text = e.target.value
+                    setCurrentDraftText(text)
+                    setCurrentDraftValue({
+                      ...structObj,
+                      choice: choiceVal,
+                      selectedOptionId: choiceVal,
+                      free_text: text,
+                      private_text: text,
+                      share_private_text_with_professional: sharePrivateText,
+                    })
+                  }}
+                  placeholder="Escreva livremente aqui se desejar registrar com suas palavras..."
+                  rows={3}
+                  className="w-full text-xs p-3 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                />
+
+                <label className="flex items-center gap-2 cursor-pointer pt-1 text-xs text-foreground/90 select-none">
+                  <input
+                    type="checkbox"
+                    checked={sharePrivateText}
+                    onChange={(e) => {
+                      const checked = e.target.checked
+                      setCurrentDraftValue({
+                        ...structObj,
+                        choice: choiceVal,
+                        selectedOptionId: choiceVal,
+                        free_text: privateText,
+                        private_text: privateText,
+                        share_private_text_with_professional: checked,
+                      })
+                    }}
+                    className="rounded border-border text-primary focus:ring-primary w-3.5 h-3.5"
+                  />
+                  <span>
+                    {privacySplit.share_checkbox_label ||
+                      'Quero compartilhar também este texto com Daiane.'}
+                  </span>
+                </label>
+              </div>
+            )}
+          </div>
+        )
+      }
       case 'MultiSelectCards':
         return (
-          <MultiSelectCards
-            config={schema as any}
-            value={Array.isArray(currentDraftValue) ? (currentDraftValue as string[]) : []}
-            onChange={(val) => setCurrentDraftValue(val)}
-          />
+          <div className="space-y-4">
+            <MultiSelectCards
+              config={renderedPromptConfig as any}
+              value={Array.isArray(currentDraftValue) ? (currentDraftValue as string[]) : []}
+              onChange={(val) => setCurrentDraftValue(val)}
+            />
+
+            {/* Texto livre opcional para recursos de recuperação ou outra coisa */}
+            {schema.allow_free_text_addition && (
+              <div className="pt-3 border-t border-border/40 space-y-2">
+                <span className="text-xs font-medium text-foreground block">
+                  Quer registrar algo do seu jeito? (Opcional)
+                </span>
+                <textarea
+                  value={currentDraftText}
+                  onChange={(e) => {
+                    setCurrentDraftText(e.target.value)
+                  }}
+                  placeholder={
+                    schema.free_text_addition_placeholder ||
+                    'Escreva do seu jeito o que costuma ajudar...'
+                  }
+                  rows={2}
+                  className="w-full text-xs p-3 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                />
+              </div>
+            )}
+          </div>
         )
       case 'SimpleScale':
         return (
@@ -829,36 +1180,6 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             onChange={(val) => setCurrentDraftValue(val)}
           />
         )
-      case 'FreeReflection':
-        return (
-          <FreeReflection
-            config={schema as any}
-            value={
-              typeof currentDraftValue === 'object' && currentDraftValue !== null
-                ? (currentDraftValue as any).value || currentDraftText
-                : (currentDraftValue as string) || currentDraftText
-            }
-            onChange={(val) => {
-              setCurrentDraftValue(val)
-              setCurrentDraftText(val)
-            }}
-            openFirstConfig={
-              pSchema.open_first?.enabled
-                ? {
-                    enabled: true,
-                    helpLabel: pSchema.open_first.help_label || 'Ver opções de apoio',
-                    optionSetRef: pSchema.open_first.option_set_ref,
-                  }
-                : undefined
-            }
-            showSuggestions={showOpenFirstSuggestions}
-            onHelpRequested={() => {
-              setShowOpenFirstSuggestions(!showOpenFirstSuggestions)
-              setCurrentNamingOrigin('selected_after_prompting')
-            }}
-            namingOrigin={currentNamingOrigin}
-          />
-        )
       default:
         return (
           <div className="p-4 text-xs text-muted-foreground border rounded-lg">
@@ -887,7 +1208,9 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             aria-live="polite"
             role="status"
           >
-            Momento {displayStepNumber} de {displayTotalCount}
+            {isMenteEmocoes
+              ? `Momento ${momentOrder} de ${totalMomentsCount} — ${currentMomentData?.title || 'Momento'} • Etapa ${momentStepNumber} de ${momentTotalSteps}`
+              : `Momento ${displayStepNumber} de ${displayTotalCount}`}
           </span>
         </div>
 
@@ -943,9 +1266,18 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
                     </span>
                   )}
                 </div>
+                {isAdaptivePrompt && (
+                  <div className="p-2 rounded-md bg-muted/40 border border-border/60 text-xs text-muted-foreground flex items-center gap-1.5 w-fit">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <span>
+                      {(currentPrompt.schema_config as any)?.adaptive_label ||
+                        'Uma pergunta a mais para compreender melhor sua experiência'}
+                    </span>
+                  </div>
+                )}
                 <h2 className="text-xl sm:text-2xl font-serif font-medium text-foreground leading-snug">
                   {currentPrompt.prompt_text}
-                </h2>
+                </h2>{' '}
                 {momentSubtitle && (
                   <p className="text-xs text-muted-foreground leading-relaxed">{momentSubtitle}</p>
                 )}

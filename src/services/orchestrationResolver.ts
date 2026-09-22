@@ -467,7 +467,7 @@ export function resolveExperienceOrchestration(params: {
   }
 
   // 3.6. Regras de Orquestração do Build 07C:
-  // a) PM1: emocoes_recorrentes com 2+ emoções selecionadas -> abre emocoes_espaco_expressao_branch
+  // a) PM1: emocoes_recorrentes com 1+ emoções selecionadas -> abre compreensao_despertar_emocoes (e legado emocoes_espaco_expressao_branch se >= 2)
   const emocoesRecResp = responseByPromptKey.get('emocoes_recorrentes')
   if (emocoesRecResp) {
     const sVal = emocoesRecResp.structured_value as any
@@ -478,6 +478,9 @@ export function resolveExperienceOrchestration(params: {
         : Array.isArray(sVal?.choice)
           ? sVal.choice
           : []
+    if (list.length >= 1) {
+      openSet.add('compreensao_despertar_emocoes')
+    }
     if (list.length >= 2) {
       openSet.add('emocoes_espaco_expressao_branch')
     }
@@ -504,6 +507,22 @@ export function resolveExperienceOrchestration(params: {
     )
     if (hasOverlap) {
       openSet.add('mente_movimento_profundidade_branch')
+    }
+  }
+
+  // c) PM3: Movimentos sob pressão (1+ selecionados) -> abre movimentos_pressao_reflexao
+  const movPressaoResp = responseByPromptKey.get('movimentos_sob_pressao')
+  if (movPressaoResp) {
+    const sVal = movPressaoResp.structured_value as any
+    const list = Array.isArray(sVal)
+      ? sVal
+      : Array.isArray(sVal?.value)
+        ? sVal.value
+        : Array.isArray(sVal?.choice)
+          ? sVal.choice
+          : []
+    if (list.length >= 1) {
+      openSet.add('movimentos_pressao_reflexao')
     }
   }
 

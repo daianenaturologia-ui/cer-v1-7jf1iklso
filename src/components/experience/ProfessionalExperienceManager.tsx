@@ -122,6 +122,17 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
     }
   }
 
+  // Estatísticas de visualização profissional sem vazamento de privacidade
+  const sharedResponsesCount = responses.filter(
+    (r) => r.access_class === 'participant_shared' || r.access_class === 'shared_care',
+  ).length
+  const privateRecordsCount = responses.filter((r) => {
+    if (r.access_class === 'participant_private') return true
+    const sVal = r.structured_value as any
+    if (sVal?.private_text && !sVal?.share_private_text_with_professional) return true
+    return false
+  }).length
+
   return (
     <Card className="border-border/80 shadow-none">
       <CardHeader className="pb-3">
@@ -283,8 +294,19 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
             <DialogTitle className="text-base font-semibold">
               Respostas Registradas — {selectedExpForResponses?.expand?.experience_id?.title}
             </DialogTitle>
-            <DialogDescription className="text-xs">
-              Registro canônico autoral da interagente (Build 02 — sem interpretação ou score)
+            <DialogDescription className="text-xs space-y-1">
+              <span>
+                Registro canônico autoral da interagente (sem interpretação, score ou diagnóstico).
+              </span>
+              <div className="flex items-center gap-2 pt-1 font-mono text-[11px] text-foreground font-medium">
+                <span className="text-primary">
+                  {sharedResponsesCount} respostas compartilhadas
+                </span>
+                <span>•</span>
+                <span className="text-muted-foreground">
+                  {privateRecordsCount} registros mantidos em privacidade pela interagente
+                </span>
+              </div>
             </DialogDescription>
           </DialogHeader>
 
@@ -339,15 +361,22 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
                       </div>
                     </div>
 
-                    {/* Texto Livre quando houver */}
-                    {resp.free_text && (
+                    {/* Texto Livre quando houver (somente compartilhado com a profissional) */}
+                    {resp.free_text && resp.access_class !== 'participant_private' && (
                       <div className="pt-1">
                         <span className="text-[10px] text-muted-foreground font-medium block">
-                          Reflexão em texto livre:
+                          Reflexão em texto livre compartilhada:
                         </span>
                         <p className="text-foreground text-xs italic bg-background p-2 rounded border border-border/40 mt-0.5">
                           “{resp.free_text}”
                         </p>
+                      </div>
+                    )}
+
+                    {resp.access_class === 'participant_private' && (
+                      <div className="pt-1 p-2 rounded bg-muted/40 border border-border/40 text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <Lock className="w-3.5 h-3.5 text-muted-foreground/70" />
+                        <span>Registro confidencial mantido em privacidade pela interagente.</span>
                       </div>
                     )}
 
