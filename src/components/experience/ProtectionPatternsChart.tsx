@@ -105,25 +105,49 @@ const DEFAULT_DESCRIPTION =
 export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = ({
   p7Responses = {},
   p8InterferingIds = [],
-  treatmentVariant = 'formal',
+  treatmentVariant = 'neutro',
   onClose,
   title = DEFAULT_TITLE,
   description = DEFAULT_DESCRIPTION,
 }) => {
-  // 10 padrões canônicos na ordem de CER_PROTECTION_PATTERNS
-  const patterns: CerProtectionPatternDefinition[] = CER_PROTECTION_PATTERNS
+  // 10 padrões canônicos únicos (chaves canônicas)
+  const canonicalKeys = [
+    'insistente',
+    'prestativo',
+    'hiper_realizador',
+    'vitima',
+    'hiper_racional',
+    'hipervigilante',
+    'inquieto',
+    'comandante',
+    'evitativo',
+    'critico',
+  ] as const
+
+  const patterns: CerProtectionPatternDefinition[] = React.useMemo(() => {
+    return canonicalKeys
+      .map((key) => CER_PROTECTION_PATTERNS[key])
+      .filter((p): p is CerProtectionPatternDefinition => Boolean(p))
+  }, [])
 
   const normalizedP8Set = React.useMemo(() => {
-    return new Set((p8InterferingIds || []).map((id) => String(id).trim().toLowerCase()))
+    return new Set(
+      (p8InterferingIds || []).map((id) => {
+        const raw = String(id).trim().toLowerCase()
+        const resolved = CER_PROTECTION_PATTERNS[raw]?.canonicalKey || raw
+        return resolved
+      }),
+    )
   }, [p8InterferingIds])
 
   // Função para recuperar a resposta qualitativa de um padrão
   const getPatternIntensity = (pattern: CerProtectionPatternDefinition): QualitativeIntensity => {
+    // Busca por id canônico, baseName, ou variações de id de cartão mapeadas no padrão
     const rawValue =
       p7Responses[pattern.id] ||
-      p7Responses[pattern.id.toLowerCase()] ||
-      p7Responses[pattern.nome.toLowerCase()] ||
-      p7Responses[pattern.nome]
+      p7Responses[pattern.canonicalKey] ||
+      p7Responses[pattern.baseName.toLowerCase()] ||
+      p7Responses[pattern.baseName]
 
     if (!rawValue || typeof rawValue !== 'string') {
       return 'Não sei identificar'
@@ -138,7 +162,12 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
     const lower = trimmed.toLowerCase()
     if (lower.includes('quase nunca')) return 'Quase nunca'
     if (lower.includes('algumas')) return 'Em algumas situações'
-    if (lower.includes('frequentemente') || lower.includes('frequente')) return 'Frequentemente'
+    if (
+      lower.includes('frequentemente') ||
+      lower.includes('frequente') ||
+      lower.includes('frequência')
+    )
+      return 'Frequentemente'
     if (lower.includes('pressão') || lower.includes('pressao')) return 'Com força sob pressão'
     if (lower.includes('não sei') || lower.includes('nao sei') || lower.includes('desconhecido')) {
       return 'Não sei identificar'
@@ -151,8 +180,9 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
     return patterns.map((p) => {
       const intensity = getPatternIntensity(p)
       const config = INTENSITY_CONFIGS[intensity]
-      const isInterfering = normalizedP8Set.has(p.id.toLowerCase())
-      const label = patternLabel(p, treatmentVariant)
+      const isInterfering =
+        normalizedP8Set.has(p.id.toLowerCase()) || normalizedP8Set.has(p.canonicalKey.toLowerCase())
+      const label = patternLabel(p.id, treatmentVariant)
 
       return {
         definition: p,
@@ -233,7 +263,7 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
         >
           {patternData.map((item) => {
             const { definition, label, intensity, config, isInterfering } = item
-            const altText = `${label} (${definition.nome}): percepção declarada como ${
+            const altText = `${label} (${definition.baseName}): percepção declarada como ${
               config.isUnknown ? 'informação ainda não disponível (não sei identificar)' : intensity
             }.${isInterfering ? ' Indicado por você como mais interferente.' : ''}`
 
@@ -255,9 +285,9 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
                     <span className="font-medium text-stone-900 dark:text-stone-100 text-sm sm:text-base">
                       {label}
                     </span>
-                    {label !== definition.nome && (
+                    {label !== definition.baseName && (
                       <span className="text-xs text-stone-500 dark:text-stone-400">
-                        ({definition.nome})
+                        ({definition.baseName})
                       </span>
                     )}
                     {isInterfering && (
@@ -285,7 +315,7 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
 
                 {/* Descrição resumida do padrão */}
                 <p className="text-xs text-stone-600 dark:text-stone-400 mb-2 leading-relaxed">
-                  {definition.descricao}
+                  {definition.movementDescription}
                 </p>
 
                 {/* Barra visual comparável qualitativa */}

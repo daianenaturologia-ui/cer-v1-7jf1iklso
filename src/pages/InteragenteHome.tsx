@@ -2088,6 +2088,14 @@ export const InteragenteHome: React.FC = () => {
               experienceId={activeExperienceId}
               enrollmentId={enrollment.id}
               respondentUserId={user.id}
+              treatmentVariant={
+                person?.treatment_preference === 'feminino' ||
+                person?.treatment_preference === 'masculino' ||
+                person?.treatment_preference === 'neutro' ||
+                person?.treatment_preference === 'outro'
+                  ? person.treatment_preference
+                  : 'neutro'
+              }
               onClose={() => {
                 setActiveExperienceId(null)
                 loadData()

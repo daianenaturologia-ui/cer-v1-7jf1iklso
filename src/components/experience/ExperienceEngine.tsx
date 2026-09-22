@@ -22,6 +22,7 @@ import {
   ScenarioChoice,
   Timeline,
   FreeReflection,
+  ProtectionPatternsChart,
 } from '@/components/experience'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -55,6 +56,7 @@ export interface ExperienceEngineProps {
   enrollmentId: string
   respondentUserId: string
   initialResponses?: ExperienceResponseRecord[]
+  treatmentVariant?: 'feminino' | 'masculino' | 'neutro' | 'outro'
   onClose?: () => void
   onCompleted?: () => void
 }
@@ -89,10 +91,12 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   enrollmentId,
   respondentUserId,
   initialResponses,
+  treatmentVariant = 'neutro',
   onClose,
   onCompleted,
 }) => {
   const [experience, setExperience] = useState<CerExperienceRecord | null>(null)
+  const [showPatternsChart, setShowPatternsChart] = useState(false)
   const [moments, setMoments] = useState<CerExperienceMomentRecord[]>([])
   const [prompts, setPrompts] = useState<CerPromptRecord[]>([])
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
@@ -733,7 +737,105 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   // -------------------------------------------------------------
   // FASE 3: FECHAMENTO SIMPLES (SEM SCORE, COM MENSAGEM ACOLHEDORA)
   // -------------------------------------------------------------
+  const isClosingMenteEmocoes =
+    experience?.id === 'exp-mente-emocoes-07c' ||
+    resolveExperienceId(experienceId) === 'exp-mente-emocoes-07c'
+
   if (engineStage === 'closing') {
+    // Extração pura de respostas para o ProtectionPatternsChart a partir do responsesMap
+    const p7aResp =
+      responsesMap['p-07c-pm3-p7a-movimentos-1-5'] ||
+      Object.values(responsesMap).find(
+        (r) =>
+          prompts.find((p) => p.id === r.prompt_id)?.schema_config &&
+          (prompts.find((p) => p.id === r.prompt_id)?.schema_config as any)?.prompt_key ===
+            'movimentos_automaticos_frequencia_p1',
+      )
+    const p7bResp =
+      responsesMap['p-07c-pm3-p7b-movimentos-6-10'] ||
+      Object.values(responsesMap).find(
+        (r) =>
+          prompts.find((p) => p.id === r.prompt_id)?.schema_config &&
+          (prompts.find((p) => p.id === r.prompt_id)?.schema_config as any)?.prompt_key ===
+            'movimentos_automaticos_frequencia_p2',
+      )
+    const p8Resp =
+      responsesMap['p-07c-pm3-p8-interferencia-movimentos'] ||
+      Object.values(responsesMap).find(
+        (r) =>
+          prompts.find((p) => p.id === r.prompt_id)?.schema_config &&
+          (prompts.find((p) => p.id === r.prompt_id)?.schema_config as any)?.prompt_key ===
+            'movimentos_interferencia_atual',
+      )
+
+    const consolidatedP7Responses: Record<string, string> = {}
+    const extractP7Values = (resp: ExperienceResponseRecord | undefined) => {
+      if (!resp) return
+      const sVal = resp.structured_value as any
+      if (!sVal) return
+      if (typeof sVal === 'object' && !Array.isArray(sVal)) {
+        for (const [k, v] of Object.entries(sVal)) {
+          if (k === 'metadata' || k === 'collection_origin' || k === 'naming_origin') continue
+          if (typeof v === 'string') {
+            consolidatedP7Responses[k] = v
+          } else if (v && typeof v === 'object' && (v as any).value) {
+            consolidatedP7Responses[k] = String((v as any).value)
+          }
+        }
+      } else if (Array.isArray(sVal)) {
+        for (const item of sVal) {
+          if (typeof item === 'string') {
+            consolidatedP7Responses[item] = 'Frequentemente'
+          } else if (item && typeof item === 'object') {
+            const key = item.id || item.pattern_id || item.card_id
+            const val = item.intensity || item.value || item.choice || 'Frequentemente'
+            if (key) consolidatedP7Responses[key] = String(val)
+          }
+        }
+      }
+    }
+
+    extractP7Values(p7aResp)
+    extractP7Values(p7bResp)
+
+    const consolidatedP8InterferingIds: string[] = (() => {
+      if (!p8Resp) return []
+      const sVal = p8Resp.structured_value as any
+      if (!sVal) return []
+      if (Array.isArray(sVal)) {
+        return sVal.map((x) => (typeof x === 'string' ? x : x?.id || String(x))).filter(Boolean)
+      }
+      if (Array.isArray(sVal.choice)) {
+        return sVal.choice
+          .map((x: any) => (typeof x === 'string' ? x : x?.id || String(x)))
+          .filter(Boolean)
+      }
+      if (Array.isArray(sVal.value)) {
+        return sVal.value
+          .map((x: any) => (typeof x === 'string' ? x : x?.id || String(x)))
+          .filter(Boolean)
+      }
+      if (Array.isArray(sVal.selectedOptionIds)) {
+        return sVal.selectedOptionIds
+          .map((x: any) => (typeof x === 'string' ? x : x?.id || String(x)))
+          .filter(Boolean)
+      }
+      if (typeof sVal === 'string') {
+        return [sVal]
+      }
+      if (typeof sVal === 'object') {
+        const keys = Object.keys(sVal).filter(
+          (k) =>
+            k !== 'metadata' &&
+            k !== 'collection_origin' &&
+            k !== 'naming_origin' &&
+            Boolean(sVal[k]),
+        )
+        return keys
+      }
+      return []
+    })()
+
     return (
       <div className="max-w-xl mx-auto py-10 px-4 space-y-6 text-center">
         <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
@@ -743,7 +845,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         <div className="space-y-2">
           <h2 className="text-2xl font-serif font-medium text-foreground">Momento Concluído</h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-            {experience.closing_text ||
+            {experience?.closing_text ||
               'Pronto. Esse registro passa a fazer parte da sua jornada. Obrigado por dedicar este momento a você.'}
           </p>
         </div>
@@ -767,6 +869,32 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             className="w-full text-xs p-3 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
           />
         </div>
+
+        {/* Botão e Gráfico de Padrões de Proteção (Camada 2A - Somente Mente & Emoções) */}
+        {isClosingMenteEmocoes && (
+          <div className="py-2 space-y-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowPatternsChart((prev) => !prev)}
+              className="text-xs font-medium border-primary/40 text-primary hover:bg-primary/5 hover:text-primary gap-1.5 h-9"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Ver meus padrões de funcionamento</span>
+            </Button>
+
+            {showPatternsChart && (
+              <div className="text-left pt-2">
+                <ProtectionPatternsChart
+                  p7Responses={consolidatedP7Responses}
+                  p8InterferingIds={consolidatedP8InterferingIds}
+                  treatmentVariant={treatmentVariant}
+                  onClose={() => setShowPatternsChart(false)}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground bg-muted/30 py-2.5 px-4 rounded-xl border border-border/50">
           <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
