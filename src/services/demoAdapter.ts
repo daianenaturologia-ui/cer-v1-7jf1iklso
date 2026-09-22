@@ -27,6 +27,8 @@ import type {
   CerMapItemRecord,
   CerMapItemSourceRecord,
   ExperienceResponseRecord,
+  ExperienceProgressStatus,
+  ExperienceReleaseStatus,
   EnrollmentRecord,
   PersonRecord,
   CerProductRecord,
@@ -133,6 +135,17 @@ interface DemoStateStore {
   presentations: CerCarePlanPresentationRecord[]
   acceptances: CerOperationalAcceptanceRecord[]
   experienceResponses: ExperienceResponseRecord[]
+  enrollmentExperienceProgress?: Record<
+    string,
+    {
+      progress_status: ExperienceProgressStatus
+      release_status: ExperienceReleaseStatus
+      current_step_order: number
+      started_at?: string
+      completed_at?: string
+      last_interaction_at: string
+    }
+  >
 }
 
 const STORAGE_KEY = 'cer_demo_mode_state_v3'
@@ -151,6 +164,7 @@ function getInitialState(): DemoStateStore {
     acceptances: [],
     maps: [],
     experienceResponses: [],
+    enrollmentExperienceProgress: {},
   }
 }
 
@@ -795,7 +809,64 @@ class DemoAdapter {
     return newDraft
   }
 
-  // 6. Respostas de Experiências da Consciência (Demo)
+  // 6. Respostas de Experiências da Consciência e Progresso de Enrollment (Demo)
+  public getEnrollmentExperienceProgress(enrollmentId: string, experienceId: string) {
+    if (!this.state.enrollmentExperienceProgress) {
+      this.state.enrollmentExperienceProgress = {}
+    }
+    const key = `${enrollmentId}:${experienceId}`
+    return this.state.enrollmentExperienceProgress[key] || null
+  }
+
+  public updateEnrollmentExperienceProgress(
+    enrollmentId: string,
+    experienceId: string,
+    params: {
+      stepOrder?: number
+      progressStatus?: ExperienceProgressStatus
+      releaseStatus?: ExperienceReleaseStatus
+      completed?: boolean
+    },
+  ) {
+    if (!this.state.enrollmentExperienceProgress) {
+      this.state.enrollmentExperienceProgress = {}
+    }
+    const key = `${enrollmentId}:${experienceId}`
+    const current = this.state.enrollmentExperienceProgress[key] || {
+      progress_status: 'not_started',
+      release_status: 'available',
+      current_step_order: 1,
+      last_interaction_at: new Date().toISOString(),
+    }
+
+    const now = new Date().toISOString()
+    const updated = { ...current, last_interaction_at: now }
+
+    if (typeof params.stepOrder === 'number') {
+      updated.current_step_order = params.stepOrder
+    }
+    if (params.progressStatus) {
+      updated.progress_status = params.progressStatus
+      if (params.progressStatus === 'in_progress') {
+        updated.release_status = 'in_progress'
+        if (!updated.started_at) updated.started_at = now
+      }
+    }
+    if (params.releaseStatus) {
+      updated.release_status = params.releaseStatus
+    }
+    if (params.completed) {
+      updated.progress_status = 'completed'
+      updated.release_status = 'completed'
+      updated.completed_at = now
+    }
+
+    this.state.enrollmentExperienceProgress[key] = updated
+    this.saveState()
+    return updated
+  }
+
+  // Respostas de Experiências da Consciência (Demo)
   public listExperienceResponses(
     enrollmentId?: string,
     experienceId?: string,

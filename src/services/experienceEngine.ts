@@ -18,6 +18,70 @@ import type {
 import { deriveEvidenceCurrency, EvidenceCurrencyResult } from '@/services/orchestrationResolver'
 
 /**
+ * Mapeamento de chaves de dimensões, slugs e identificadores sintéticos
+ * para os IDs canônicos das experiências correspondentes.
+ */
+export const DIMENSION_TO_EXPERIENCE_ID: Record<string, string> = {
+  // Chaves de dimensão do Ser Integral
+  mente_emocoes: 'exp-mente-emocoes-07c',
+  corpo_fisiologia: 'exp-corpo-fisiologia-07b',
+  regulacao_respostas: 'exp-regulacao-respostas-07c',
+  relacoes: 'exp-relacoes-07d',
+  sexualidade: 'exp-sexualidade-07e',
+  sentido_conexao: 'exp-sentido-conexao-07f',
+  integracao_consciencia: 'exp-integracao-consciencia-07g',
+
+  // Slugs e códigos de schema
+  mente_emocoes_cer: 'exp-mente-emocoes-07c',
+  corpo_fisiologia_ayurveda: 'exp-corpo-fisiologia-07b',
+  regulacao_respostas_cer: 'exp-regulacao-respostas-07c',
+  relacoes_cer: 'exp-relacoes-07d',
+  sexualidade_cer: 'exp-sexualidade-07e',
+  sentido_conexao_cer: 'exp-sentido-conexao-07f',
+  integracao_consciencia_cer: 'exp-integracao-consciencia-07g',
+
+  // IDs canônicos já mapeados diretamente
+  'exp-corpo-fisiologia-07b': 'exp-corpo-fisiologia-07b',
+  'exp-mente-emocoes-07c': 'exp-mente-emocoes-07c',
+  'exp-regulacao-respostas-07c': 'exp-regulacao-respostas-07c',
+  'exp-relacoes-07d': 'exp-relacoes-07d',
+  'exp-sexualidade-07e': 'exp-sexualidade-07e',
+  'exp-sentido-conexao-07f': 'exp-sentido-conexao-07f',
+  'exp-integracao-consciencia-07g': 'exp-integracao-consciencia-07g',
+}
+
+/**
+ * Normaliza qualquer identificador de experiência:
+ * suporta chave de dimensão ('mente_emocoes'), prefixos ('dim-mente_emocoes', 'demo-enr-exp-exp-mente-emocoes-07c'),
+ * códigos do schema ('mente_emocoes_cer') ou IDs canônicos ('exp-mente-emocoes-07c').
+ */
+export function resolveExperienceId(raw: string): string {
+  if (!raw) return raw
+  const trimmed = raw.trim()
+
+  // 1. Verificação direta no mapa
+  if (DIMENSION_TO_EXPERIENCE_ID[trimmed]) {
+    return DIMENSION_TO_EXPERIENCE_ID[trimmed]
+  }
+
+  // 2. Prefixo de registro sintético demo: 'demo-enr-exp-*'
+  if (trimmed.startsWith('demo-enr-exp-')) {
+    const stripped = trimmed.replace(/^demo-enr-exp-/, '')
+    return resolveExperienceId(stripped)
+  }
+
+  // 3. Prefixo de dimensão: 'dim-*'
+  if (trimmed.startsWith('dim-')) {
+    const stripped = trimmed.replace(/^dim-/, '')
+    if (DIMENSION_TO_EXPERIENCE_ID[stripped]) {
+      return DIMENSION_TO_EXPERIENCE_ID[stripped]
+    }
+  }
+
+  return trimmed
+}
+
+/**
  * Serviço de Feature Flags
  */
 export const featureFlagService = {
@@ -182,105 +246,108 @@ export const experienceCatalogService = {
   },
 
   async getExperienceById(id: string): Promise<CerExperienceRecord> {
-    if (id === 'exp-corpo-fisiologia-07b') {
+    const canonicalId = resolveExperienceId(id)
+    if (canonicalId === 'exp-corpo-fisiologia-07b') {
       const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
       return CORPO_FISIOLOGIA_EXPERIENCE
     }
-    if (id === 'exp-mente-emocoes-07c') {
+    if (canonicalId === 'exp-mente-emocoes-07c') {
       const { MENTE_EMOCOES_EXPERIENCE } = await import('./build07cPrompts')
       return MENTE_EMOCOES_EXPERIENCE
     }
-    if (id === 'exp-regulacao-respostas-07c') {
+    if (canonicalId === 'exp-regulacao-respostas-07c') {
       const { REGULACAO_RESPOSTAS_EXPERIENCE } = await import('./build07cPrompts')
       return REGULACAO_RESPOSTAS_EXPERIENCE
     }
-    if (id === 'exp-relacoes-07d') {
+    if (canonicalId === 'exp-relacoes-07d') {
       const { RELACOES_EXPERIENCE } = await import('./build07dPrompts')
       return RELACOES_EXPERIENCE
     }
-    if (id === 'exp-sexualidade-07e') {
+    if (canonicalId === 'exp-sexualidade-07e') {
       const { SEXUALIDADE_EXPERIENCE } = await import('./build07ePrompts')
       return SEXUALIDADE_EXPERIENCE
     }
-    if (id === 'exp-sentido-conexao-07f') {
+    if (canonicalId === 'exp-sentido-conexao-07f') {
       const { SENTIDO_CONEXAO_EXPERIENCE } = await import('./build07fPrompts')
       return SENTIDO_CONEXAO_EXPERIENCE
     }
-    if (id === 'exp-integracao-consciencia-07g') {
+    if (canonicalId === 'exp-integracao-consciencia-07g') {
       const { INTEGRACAO_CONSCIENCIA_EXPERIENCE } = await import('./build07gPrompts')
       return INTEGRACAO_CONSCIENCIA_EXPERIENCE
     }
-    return await pb.collection('cer_experiences').getOne<CerExperienceRecord>(id, {
+    return await pb.collection('cer_experiences').getOne<CerExperienceRecord>(canonicalId, {
       expand: 'dimension_id',
     })
   },
 
   async listMomentsByExperience(experienceId: string): Promise<CerExperienceMomentRecord[]> {
-    if (experienceId === 'exp-corpo-fisiologia-07b') {
+    const canonicalId = resolveExperienceId(experienceId)
+    if (canonicalId === 'exp-corpo-fisiologia-07b') {
       const { CORPO_FISIOLOGIA_MOMENTS } = await import('./build07bPrompts')
       return CORPO_FISIOLOGIA_MOMENTS
     }
-    if (experienceId === 'exp-mente-emocoes-07c') {
+    if (canonicalId === 'exp-mente-emocoes-07c') {
       const { MENTE_EMOCOES_MOMENTS } = await import('./build07cPrompts')
       return MENTE_EMOCOES_MOMENTS
     }
-    if (experienceId === 'exp-regulacao-respostas-07c') {
+    if (canonicalId === 'exp-regulacao-respostas-07c') {
       const { REGULACAO_RESPOSTAS_MOMENTS } = await import('./build07cPrompts')
       return REGULACAO_RESPOSTAS_MOMENTS
     }
-    if (experienceId === 'exp-relacoes-07d') {
+    if (canonicalId === 'exp-relacoes-07d') {
       const { RELACOES_MOMENTS } = await import('./build07dPrompts')
       return RELACOES_MOMENTS
     }
-    if (experienceId === 'exp-sexualidade-07e') {
+    if (canonicalId === 'exp-sexualidade-07e') {
       const { SEXUALIDADE_MOMENTS } = await import('./build07ePrompts')
       return SEXUALIDADE_MOMENTS
     }
-    if (experienceId === 'exp-sentido-conexao-07f') {
+    if (canonicalId === 'exp-sentido-conexao-07f') {
       const { SENTIDO_CONEXAO_MOMENTS } = await import('./build07fPrompts')
       return SENTIDO_CONEXAO_MOMENTS
     }
-    if (experienceId === 'exp-integracao-consciencia-07g') {
+    if (canonicalId === 'exp-integracao-consciencia-07g') {
       const { INTEGRACAO_CONSCIENCIA_MOMENTS } = await import('./build07gPrompts')
       return INTEGRACAO_CONSCIENCIA_MOMENTS
     }
     return await pb.collection('cer_experience_moments').getFullList<CerExperienceMomentRecord>({
-      filter: `experience_id = "${experienceId}" && is_active = true`,
+      filter: `experience_id = "${canonicalId}" && is_active = true`,
       sort: 'order_index',
     })
   },
 
   async listPromptsByExperience(experienceId: string): Promise<CerPromptRecord[]> {
-    if (experienceId === 'exp-corpo-fisiologia-07b') {
+    const canonicalId = resolveExperienceId(experienceId)
+    if (canonicalId === 'exp-corpo-fisiologia-07b') {
       const { BUILD_07B_PROMPTS } = await import('./build07bPrompts')
       return BUILD_07B_PROMPTS
     }
-    if (experienceId === 'exp-mente-emocoes-07c') {
+    if (canonicalId === 'exp-mente-emocoes-07c') {
       const { BUILD_07C_MENTE_PROMPTS } = await import('./build07cPrompts')
       return BUILD_07C_MENTE_PROMPTS
     }
-    if (experienceId === 'exp-regulacao-respostas-07c') {
+    if (canonicalId === 'exp-regulacao-respostas-07c') {
       const { BUILD_07C_REGULACAO_PROMPTS } = await import('./build07cPrompts')
       return BUILD_07C_REGULACAO_PROMPTS
     }
-    if (experienceId === 'exp-relacoes-07d') {
+    if (canonicalId === 'exp-relacoes-07d') {
       const { BUILD_07D_RELACOES_PROMPTS } = await import('./build07dPrompts')
       return BUILD_07D_RELACOES_PROMPTS
     }
-    if (experienceId === 'exp-sexualidade-07e') {
+    if (canonicalId === 'exp-sexualidade-07e') {
       const { BUILD_07E_SEXUALIDADE_PROMPTS } = await import('./build07ePrompts')
       return BUILD_07E_SEXUALIDADE_PROMPTS
     }
-    if (experienceId === 'exp-sentido-conexao-07f') {
+    if (canonicalId === 'exp-sentido-conexao-07f') {
       const { BUILD_07F_SENTIDO_PROMPTS } = await import('./build07fPrompts')
       return BUILD_07F_SENTIDO_PROMPTS
     }
-    if (experienceId === 'exp-integracao-consciencia-07g') {
+    if (canonicalId === 'exp-integracao-consciencia-07g') {
       const { BUILD_07G_INTEGRACAO_PROMPTS } = await import('./build07gPrompts')
       return BUILD_07G_INTEGRACAO_PROMPTS
     }
     return await pb.collection('cer_prompts').getFullList<CerPromptRecord>({
-      filter: `experience_id = "${experienceId}"`,
+      filter: `experience_id = "${canonicalId}"`,
       sort: 'step_order',
       expand: 'moment_id',
     })
@@ -309,11 +376,25 @@ export const enrollmentExperienceService = {
     enrollmentId: string,
     experienceId: string,
   ): Promise<EnrollmentExperienceRecord | null> {
+    const canonicalExpId = resolveExperienceId(experienceId)
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      const list = await this.listByEnrollment(enrollmentId)
+      return (
+        list.find(
+          (e) =>
+            e.experience_id === canonicalExpId ||
+            e.id === `demo-enr-exp-${canonicalExpId}` ||
+            (e.expand?.experience_id && (e.expand.experience_id as any).id === canonicalExpId),
+        ) || null
+      )
+    }
+
     try {
       return await pb
         .collection('enrollment_experiences')
         .getFirstListItem<EnrollmentExperienceRecord>(
-          `enrollment_id = "${enrollmentId}" && experience_id = "${experienceId}"`,
+          `enrollment_id = "${enrollmentId}" && (experience_id = "${canonicalExpId}" || experience_id = "${experienceId}")`,
           {
             expand: 'experience_id,enrollment_id',
           },
@@ -327,7 +408,7 @@ export const enrollmentExperienceService = {
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {
       // No modo demo, experiências canônicas das dimensões ficam disponíveis para abertura
-      // MAS sem respostas prévias ou autoria falsa
+      // MAS sem respostas prévias ou autoria falsa. Progresso e step persistem localmente via demoAdapter.
       const { CORPO_FISIOLOGIA_EXPERIENCE } = await import('./build07bPrompts')
       const { MENTE_EMOCOES_EXPERIENCE, REGULACAO_RESPOSTAS_EXPERIENCE } =
         await import('./build07cPrompts')
@@ -346,20 +427,26 @@ export const enrollmentExperienceService = {
         INTEGRACAO_CONSCIENCIA_EXPERIENCE,
       ]
 
-      return exps.map((exp, idx) => ({
-        id: `demo-enr-exp-${exp.id}`,
-        enrollment_id: enrollmentId,
-        experience_id: exp.id,
-        release_status: 'available',
-        progress_status: 'not_started',
-        current_step_order: 1,
-        version: 1,
-        created: '2025-01-10T10:00:00.000Z',
-        updated: '2025-01-10T10:00:00.000Z',
-        expand: {
-          experience_id: exp,
-        },
-      })) as unknown as EnrollmentExperienceRecord[]
+      return exps.map((exp) => {
+        const prog = demoAdapter.getEnrollmentExperienceProgress(enrollmentId, exp.id)
+        return {
+          id: `demo-enr-exp-${exp.id}`,
+          enrollment_id: enrollmentId,
+          experience_id: exp.id,
+          release_status: prog?.release_status || 'available',
+          progress_status: prog?.progress_status || 'not_started',
+          current_step_order: prog?.current_step_order || 1,
+          version: 1,
+          started_at: prog?.started_at,
+          completed_at: prog?.completed_at,
+          last_interaction_at: prog?.last_interaction_at || '2025-01-10T10:00:00.000Z',
+          created: '2025-01-10T10:00:00.000Z',
+          updated: prog?.last_interaction_at || '2025-01-10T10:00:00.000Z',
+          expand: {
+            experience_id: exp,
+          },
+        }
+      }) as unknown as EnrollmentExperienceRecord[]
     }
     return await pb.collection('enrollment_experiences').getFullList<EnrollmentExperienceRecord>({
       filter: `enrollment_id = "${enrollmentId}"`,
@@ -375,6 +462,34 @@ export const enrollmentExperienceService = {
     id: string,
     releaseStatus: ExperienceReleaseStatus,
   ): Promise<EnrollmentExperienceRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      const expId = resolveExperienceId(id)
+      const prog = demoAdapter.updateEnrollmentExperienceProgress(
+        'demo-enrollment-mariana',
+        expId,
+        { releaseStatus },
+      )
+      const exp = await experienceCatalogService.getExperienceById(expId)
+      return {
+        id: `demo-enr-exp-${expId}`,
+        enrollment_id: 'demo-enrollment-mariana',
+        experience_id: expId,
+        release_status: prog.release_status,
+        progress_status: prog.progress_status,
+        current_step_order: prog.current_step_order,
+        version: 1,
+        started_at: prog.started_at,
+        completed_at: prog.completed_at,
+        last_interaction_at: prog.last_interaction_at,
+        created: '2025-01-10T10:00:00.000Z',
+        updated: prog.last_interaction_at,
+        expand: {
+          experience_id: exp,
+        },
+      } as unknown as EnrollmentExperienceRecord
+    }
+
     return await pb.collection('enrollment_experiences').update<EnrollmentExperienceRecord>(id, {
       release_status: releaseStatus,
       last_interaction_at: new Date().toISOString(),
@@ -392,6 +507,38 @@ export const enrollmentExperienceService = {
       completed?: boolean
     },
   ): Promise<EnrollmentExperienceRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      const expId = resolveExperienceId(id)
+      const prog = demoAdapter.updateEnrollmentExperienceProgress(
+        'demo-enrollment-mariana',
+        expId,
+        {
+          stepOrder: params.stepOrder,
+          progressStatus: params.progressStatus,
+          completed: params.completed,
+        },
+      )
+      const exp = await experienceCatalogService.getExperienceById(expId)
+      return {
+        id: `demo-enr-exp-${expId}`,
+        enrollment_id: 'demo-enrollment-mariana',
+        experience_id: expId,
+        release_status: prog.release_status,
+        progress_status: prog.progress_status,
+        current_step_order: prog.current_step_order,
+        version: 1,
+        started_at: prog.started_at,
+        completed_at: prog.completed_at,
+        last_interaction_at: prog.last_interaction_at,
+        created: '2025-01-10T10:00:00.000Z',
+        updated: prog.last_interaction_at,
+        expand: {
+          experience_id: exp,
+        },
+      } as unknown as EnrollmentExperienceRecord
+    }
+
     const updateData: Record<string, unknown> = {
       last_interaction_at: new Date().toISOString(),
     }
@@ -558,12 +705,15 @@ export const experienceResponseService = {
     accessClass?: VisibilityClass
     changeReason?: string
   }): Promise<ExperienceResponseRecord> {
-    const existing = await this.getResponse(params.enrollmentId, params.promptId)
+    const canonicalExpId = resolveExperienceId(params.experienceId)
+    const effectiveParams = { ...params, experienceId: canonicalExpId }
 
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {
-      return demoAdapter.saveExperienceResponse(params)
+      return demoAdapter.saveExperienceResponse(effectiveParams)
     }
+
+    const existing = await this.getResponse(effectiveParams.enrollmentId, effectiveParams.promptId)
 
     // Fallback gracioso para ambiente local sintético de teste
     if (

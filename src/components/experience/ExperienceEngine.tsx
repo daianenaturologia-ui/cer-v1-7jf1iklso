@@ -461,11 +461,20 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
   if (!experience || prompts.length === 0) {
     return (
-      <div className="p-8 text-center space-y-4">
-        <p className="text-sm text-muted-foreground">Nenhuma experiência encontrada.</p>
-        <Button variant="outline" size="sm" onClick={onClose} className="text-xs">
-          Voltar
-        </Button>
+      <div className="max-w-md mx-auto py-16 px-4 text-center space-y-5">
+        <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
+          <Sparkles className="w-6 h-6 stroke-[2]" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm text-foreground/90 leading-relaxed font-sans">
+            Esta experiência está sendo preparada e estará disponível em breve.
+          </p>
+        </div>
+        <div className="pt-2">
+          <Button variant="outline" size="sm" onClick={onClose} className="text-xs h-9 px-6">
+            Voltar
+          </Button>
+        </div>
       </div>
     )
   }

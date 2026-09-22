@@ -111,4 +111,60 @@ describe('Correção do Modo Demonstração CER V1 (Limpeza de Sementes e Autori
       'Resposta 1: Relato sobre respiração ao entardecer',
     ])
   })
+
+  it('F: Normalização de experienceId para chave de dimensão mente_emocoes e persistência demo local', async () => {
+    const {
+      resolveExperienceId,
+      experienceCatalogService,
+      enrollmentExperienceService,
+      experienceResponseService,
+    } = await import('./experienceEngine')
+
+    // 1. Normalização do ID canônico
+    expect(resolveExperienceId('mente_emocoes')).toBe('exp-mente-emocoes-07c')
+    expect(resolveExperienceId('dim-mente_emocoes')).toBe('exp-mente-emocoes-07c')
+    expect(resolveExperienceId('demo-enr-exp-exp-mente-emocoes-07c')).toBe('exp-mente-emocoes-07c')
+
+    // 2. Catálogo carrega sem erro usando chave de dimensão mente_emocoes
+    const exp = await experienceCatalogService.getExperienceById('mente_emocoes')
+    expect(exp.id).toBe('exp-mente-emocoes-07c')
+    expect(exp.title).toContain('Mente & Emoções')
+
+    const moments = await experienceCatalogService.listMomentsByExperience('mente_emocoes')
+    expect(moments).toHaveLength(5)
+
+    const prompts = await experienceCatalogService.listPromptsByExperience('mente_emocoes')
+    expect(prompts.length).toBeGreaterThan(0)
+
+    // 3. Atualizar progresso e verificar persistência sem chamar PocketBase
+    const updated = await enrollmentExperienceService.updateProgress(
+      'demo-enr-exp-exp-mente-emocoes-07c',
+      {
+        progressStatus: 'in_progress',
+        stepOrder: 2,
+      },
+    )
+    expect(updated.progress_status).toBe('in_progress')
+    expect(updated.current_step_order).toBe(2)
+
+    // 4. Salvar resposta demo
+    const resp = await experienceResponseService.saveResponse({
+      enrollmentId: DEMO_ENROLLMENT_ID,
+      experienceId: 'mente_emocoes',
+      promptId: prompts[0].id,
+      respondentUserId: DEMO_USER_MARIANA.id,
+      responseType: prompts[0].component_type,
+      promptVersion: prompts[0].version,
+      structuredValue: { value: 'teste' },
+      freeText: 'Rascunho de teste',
+    })
+    expect(resp.prompt_id).toBe(prompts[0].id)
+    expect(resp.free_text).toBe('Rascunho de teste')
+
+    // 5. Retomar lista pelo enrollment e confirmar que o status persistiu
+    const list = await enrollmentExperienceService.listByEnrollment(DEMO_ENROLLMENT_ID)
+    const menteItem = list.find((e) => e.experience_id === 'exp-mente-emocoes-07c')
+    expect(menteItem?.progress_status).toBe('in_progress')
+    expect(menteItem?.current_step_order).toBe(2)
+  })
 })
