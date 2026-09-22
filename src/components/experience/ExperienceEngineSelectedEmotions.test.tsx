@@ -6,7 +6,7 @@ import {
   formatSelectedEmotionsPhrase,
 } from '@/components/experience/ExperienceEngine'
 import { BUILD_07C_MENTE_PROMPTS } from '@/services/build07cPrompts'
-import { CerExperienceResponseRecord } from '@/types/cer'
+import { ExperienceResponseRecord } from '@/types/cer'
 import React from 'react'
 
 describe('Pergunta 3 de Mente & Emoções — Resolução Dinâmica de Emoções Selecionadas', () => {
@@ -58,16 +58,19 @@ describe('Pergunta 3 de Mente & Emoções — Resolução Dinâmica de Emoções
   })
 
   it('renderiza dinamicamente na P3 em tempo de render com 1 escolha', () => {
-    const mockP2Response: CerExperienceResponseRecord = {
+    const mockP2Response: ExperienceResponseRecord = {
       id: 'resp-p2',
       enrollment_id: 'enr-demo',
       experience_id: 'exp-mente-emocoes-07c',
+      respondent_user_id: 'user-demo',
       prompt_id: 'p-07c-pm1-p2-emocoes-recorrentes',
       response_type: 'MultiSelectCards',
       structured_value: ['ansiedade_apreensao'],
       free_text: '',
       access_class: 'participant_shared',
       prompt_version: 2,
+      version: 1,
+      status: 'active',
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
     }

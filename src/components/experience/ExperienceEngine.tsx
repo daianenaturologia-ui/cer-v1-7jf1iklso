@@ -54,6 +54,7 @@ export interface ExperienceEngineProps {
   experienceId: string
   enrollmentId: string
   respondentUserId: string
+  initialResponses?: ExperienceResponseRecord[]
   onClose?: () => void
   onCompleted?: () => void
 }
@@ -87,6 +88,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   experienceId,
   enrollmentId,
   respondentUserId,
+  initialResponses,
   onClose,
   onCompleted,
 }) => {
@@ -94,7 +96,18 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const [moments, setMoments] = useState<CerExperienceMomentRecord[]>([])
   const [prompts, setPrompts] = useState<CerPromptRecord[]>([])
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
-  const [responsesMap, setResponsesMap] = useState<Record<string, ExperienceResponseRecord>>({})
+  const [responsesMap, setResponsesMap] = useState<Record<string, ExperienceResponseRecord>>(() => {
+    if (initialResponses && initialResponses.length > 0) {
+      const map: Record<string, ExperienceResponseRecord> = {}
+      for (const r of initialResponses) {
+        if (r.prompt_id) {
+          map[r.prompt_id] = r
+        }
+      }
+      return map
+    }
+    return {}
+  })
   const [orderingInteracted, setOrderingInteracted] = useState(false)
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
@@ -836,11 +849,12 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     (p) => (p.schema_config as any)?.prompt_key === 'emocoes_recorrentes',
   )
   const emocoesResp = emocoesRecPrompt ? responsesMap[emocoesRecPrompt.id] : null
+  const emocoesRespAny = emocoesResp as any
   const isPrefiroNaoResponderP2 =
-    emocoesResp?.metadata_flags?.skip_reason === 'prefiro_nao_responder' ||
-    (emocoesResp?.structured_value as any)?.skip_reason === 'prefiro_nao_responder' ||
-    (emocoesResp?.structured_value as any)?.choice === 'prefiro_nao_responder' ||
-    emocoesResp?.response_type === 'prefiro_nao_responder'
+    emocoesRespAny?.metadata_flags?.skip_reason === 'prefiro_nao_responder' ||
+    emocoesRespAny?.structured_value?.skip_reason === 'prefiro_nao_responder' ||
+    emocoesRespAny?.structured_value?.choice === 'prefiro_nao_responder' ||
+    (emocoesRespAny?.response_type as string) === 'prefiro_nao_responder'
 
   const selectedEmotionLabels: string[] = (() => {
     if (!emocoesResp || isPrefiroNaoResponderP2) return []
