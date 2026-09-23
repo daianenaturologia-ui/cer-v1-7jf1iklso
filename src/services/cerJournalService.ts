@@ -212,6 +212,12 @@ export const cerJournalService = {
    * Listar todos os recados da interagente autenticada (rascunhos, aprovados e retirados)
    */
   async listParticipantMessages(enrollmentId: string): Promise<CerNextSessionMessageRecord[]> {
+    // Interceptação modo demonstração (ZERO REDE)
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.listMessages(enrollmentId, false)
+    }
+
     const authId = pb.authStore.record?.id
     if (!authId) return []
 

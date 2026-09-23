@@ -37,7 +37,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 describe('Correção Executiva 1 de 2: Pré-consulta visível e Daiane sem prefixo $', () => {
   beforeEach(() => {
     localStorage.clear()
-    demoAdapter.setEnabled(true)
+    demoAdapter.enableDemo('mariana')
     // Reset state in demoAdapter to known initial state
     ;(demoAdapter as any).state.messages = []
   })
@@ -123,7 +123,7 @@ describe('Correção Executiva 1 de 2: Pré-consulta visível e Daiane sem prefi
     // Confirmar persistência no demoAdapter
     const approved = (demoAdapter as any).state.messages.filter((m: any) => m.status === 'approved')
     expect(approved.length).toBe(1)
-    expect(approved[0].author_type).toBe('participant')
+    expect(approved[0].participant_user_id).toBeDefined()
 
     // Cenário F: Recarregar / remontar e confirmar que o bloco continua visível
     unmount2()
@@ -182,14 +182,15 @@ describe('Correção Executiva 1 de 2: Pré-consulta visível e Daiane sem prefi
     })
 
     expect(createdMsg.status).toBe('approved')
-    expect(createdMsg.author_type).toBe('participant')
+    expect(createdMsg.participant_user_id).toBeDefined()
 
     // Daiane consulta as mensagens como profissional
-    const messagesForProf = await cerJournalService.listApprovedMessagesForProfessional('enr_mariana_demo_01')
+    const messagesForProf =
+      await cerJournalService.listApprovedMessagesForProfessional('enr_mariana_demo_01')
     expect(messagesForProf.length).toBeGreaterThanOrEqual(1)
     const profViewMsg = messagesForProf.find((m) => m.id === createdMsg.id)
     expect(profViewMsg).toBeDefined()
-    expect(profViewMsg?.author_type).toBe('participant')
+    expect(profViewMsg?.participant_user_id).toBeDefined()
     expect(profViewMsg?.message_text).toContain('Dor lombar e cansaço')
   })
 })
