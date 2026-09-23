@@ -15,6 +15,7 @@ export type QualitativeIntensity =
   | 'Frequentemente'
   | 'Com força sob pressão'
   | 'Não sei identificar'
+  | 'Informação ainda não disponível'
 
 export interface ProtectionPatternsChartProps {
   /**
@@ -93,6 +94,15 @@ const INTENSITY_CONFIGS: Record<QualitativeIntensity, IntensityConfig> = {
     barColor: 'bg-stone-300 dark:bg-stone-600',
     badgeBg:
       'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700',
+    badgeText: 'Não sei identificar',
+    isUnknown: true,
+  },
+  'Informação ainda não disponível': {
+    label: 'Informação ainda não disponível',
+    widthPercent: 0,
+    barColor: 'bg-transparent',
+    badgeBg:
+      'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 italic',
     badgeText: 'Informação ainda não disponível',
     isUnknown: true,
   },
@@ -149,7 +159,11 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
       p7Responses[pattern.baseName.toLowerCase()] ||
       p7Responses[pattern.baseName]
 
-    if (!rawValue || typeof rawValue !== 'string') {
+    if (rawValue === undefined || rawValue === null || rawValue === '') {
+      return 'Informação ainda não disponível'
+    }
+
+    if (typeof rawValue !== 'string') {
       return 'Não sei identificar'
     }
 
@@ -264,7 +278,11 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
           {patternData.map((item) => {
             const { definition, label, intensity, config, isInterfering } = item
             const altText = `${label} (${definition.baseName}): percepção declarada como ${
-              config.isUnknown ? 'informação ainda não disponível (não sei identificar)' : intensity
+              intensity === 'Informação ainda não disponível'
+                ? 'informação ainda não disponível (frequência ainda não registrada)'
+                : config.isUnknown
+                  ? 'informação declarada como não sei identificar'
+                  : intensity
             }.${isInterfering ? ' Indicado por você como mais interferente.' : ''}`
 
             return (
@@ -359,16 +377,22 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
                   <strong className="text-stone-800 dark:text-stone-200">{item.label}</strong>:
                   categoria declarada como{' '}
                   <span className="italic">
-                    {item.config.isUnknown
-                      ? 'Informação ainda não disponível (Não sei identificar)'
-                      : item.intensity}
+                    {item.intensity === 'Informação ainda não disponível'
+                      ? 'Informação ainda não disponível'
+                      : item.config.isUnknown
+                        ? 'Não sei identificar'
+                        : item.intensity}
                   </span>
                   .
                   {item.isInterfering && (
                     <span className="text-amber-800 dark:text-amber-300 font-medium">
                       {' '}
                       (Identificado por você na Pergunta 8 como padrão que mais interfere na sua
-                      vida atual).
+                      vida atual
+                      {item.intensity === 'Informação ainda não disponível'
+                        ? ', embora sua presença/frequência ainda não tenha sido registrada'
+                        : ''}
+                      ).
                     </span>
                   )}
                 </li>

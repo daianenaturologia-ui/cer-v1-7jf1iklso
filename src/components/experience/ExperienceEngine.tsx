@@ -178,6 +178,11 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       if (stepOrder) {
         map[`p${stepOrder}`] = enriched
         map[`me_p${stepOrder}`] = enriched
+        if (stepOrder === 14) {
+          map['p13'] = enriched
+          map['me_p13'] = enriched
+          map['campo_final_opcional'] = enriched
+        }
       }
     }
     return map
@@ -313,8 +318,33 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           if (promptKey) {
             map[promptKey] = enrichedResp
           }
+          if (matchedPrompt?.step_order) {
+            map[`p${matchedPrompt.step_order}`] = enrichedResp
+            if (matchedPrompt.step_order === 14) {
+              map['p13'] = enrichedResp
+              map['me_p13'] = enrichedResp
+              map['campo_final_opcional'] = enrichedResp
+            }
+          }
         }
         setResponsesMap(map)
+
+        // Inicializar reflexão de fechamento a partir da P13 caso já preenchida
+        const p13Existing =
+          map['p-07c-pm5-p13-campo-final-opcional'] ||
+          map['campo_final_opcional'] ||
+          map['p13'] ||
+          map['p14']
+        if (p13Existing) {
+          const sVal = p13Existing.structured_value as any
+          const txt =
+            p13Existing.free_text ||
+            (typeof sVal === 'object' && sVal !== null ? sVal.value || sVal.text : sVal) ||
+            ''
+          if (typeof txt === 'string' && txt.trim()) {
+            setClosingReflection(txt.trim())
+          }
+        }
 
         // Verificar se há registros incompatíveis da demo arquivados ou ativos
         const isMenteExp = canonicalId === 'exp-mente-emocoes-07c'
@@ -349,7 +379,28 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           })
         } else {
           setOrchestrationFailed(false)
-          if (enrExp?.progress_status === 'completed') {
+          // Regra de Integridade Canônica:
+          // Se o status for completed mas faltarem respostas canônicas obrigatórias (ex.: dados incompatíveis arquivados),
+          // deve falhar fechado: exigir nova resposta, não mostrar retrato como completo, oferecer refazer.
+          let isSafelyCompleted = enrExp?.progress_status === 'completed'
+          if (isSafelyCompleted && isMenteExp) {
+            const { demoAdapter } = await import('@/services/demoAdapter')
+            if (demoAdapter.isEnabled()) {
+              const coverage = demoAdapter.checkMenteEmocoesCoverage(enrollmentId)
+              if (!coverage.isCoverageComplete) {
+                isSafelyCompleted = false
+                setMenteEmocoesNeedsRedo(true)
+                setHasIncompatibleMenteDemo(true)
+                // Corrige o progresso para falhar fechado
+                await enrollmentExperienceService.updateProgress(enrExp!.id, {
+                  progressStatus: 'in_progress',
+                  enrollmentId,
+                })
+              }
+            }
+          }
+
+          if (isSafelyCompleted) {
             setEngineStage('closing')
           } else {
             setCurrentStepIndex(orchResult.currentStepIndex)
@@ -548,6 +599,16 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         stepOrder: currentPrompt.step_order,
       })
 
+      // Se for a P13 (campo final opcional), sincroniza reflexão de fechamento
+      if (
+        currentPrompt.id === 'p-07c-pm5-p13-campo-final-opcional' ||
+        pKey === 'campo_final_opcional'
+      ) {
+        if (typeof effectiveFreeText === 'string') {
+          setClosingReflection(effectiveFreeText)
+        }
+      }
+
       // Enriquecer registro local com chaves canônicas
       const enrichedSaved: ExperienceResponseRecord = {
         ...saved,
@@ -560,7 +621,17 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         ...prev,
         [currentPrompt.id]: enrichedSaved,
         ...(pKey ? { [pKey]: enrichedSaved } : {}),
+        ...(currentPrompt.step_order ? { [`p${currentPrompt.step_order}`]: enrichedSaved } : {}),
+        ...(currentPrompt.step_order === 14 ? { p13: enrichedSaved, me_p13: enrichedSaved } : {}),
       }))
+      if (
+        currentPrompt.id === 'p-07c-pm5-p13-campo-final-opcional' ||
+        pKey === 'campo_final_opcional'
+      ) {
+        if (typeof effectiveFreeText === 'string') {
+          setClosingReflection(effectiveFreeText)
+        }
+      }
       setLastSavedTime(
         new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       )
@@ -586,8 +657,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
     // Recalcular orquestração com as respostas atualizadas
     const currentResponses = Object.values(responsesMap)
-    // Incluir temporariamente a resposta do passo atual caso o state responsesMap ainda não tenha sido atualizado
+    // Incluir temporariamente a resposta do passo atual com metadados canônicos completos
     const currentPrompt = prompts[currentStepIndex]
+    const pSchema = (currentPrompt.schema_config || {}) as any
+    const pKey = pSchema.prompt_key
     const updatedResponses = [...currentResponses.filter((r) => r.prompt_id !== currentPrompt.id)]
     updatedResponses.push({
       id: 'temp_resp',
@@ -596,14 +669,18 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       prompt_id: currentPrompt.id,
       respondent_user_id: respondentUserId,
       response_type: currentPrompt.component_type,
-      access_class: (currentPrompt.schema_config as any)?.access_destination || 'shared_care',
+      access_class: pSchema.access_destination || 'shared_care',
       structured_value: currentDraftValue,
+      free_text: currentDraftText,
       prompt_version: currentPrompt.version,
       version: 1,
       status: 'saved',
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
-    })
+      ...(pKey ? { prompt_key: pKey } : {}),
+      ...(currentPrompt.id ? { canonical_prompt_id: currentPrompt.id } : {}),
+      ...(currentPrompt.step_order ? { step_order: currentPrompt.step_order } : {}),
+    } as any)
 
     const orch = resolveExperienceOrchestration({
       prompts,
@@ -702,6 +779,32 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   }
 
   const handleCompleteExperience = async () => {
+    // Validar se perguntas obrigatórias sem resposta impedem o status completed
+    // Se for Mente & Emoções, verificar a cobertura canônica
+    if (isMenteEmocoes) {
+      const { demoAdapter } = await import('@/services/demoAdapter')
+      if (demoAdapter.isEnabled()) {
+        const coverage = demoAdapter.checkMenteEmocoesCoverage(enrollmentId)
+        if (!coverage.isCoverageComplete) {
+          // Bloqueia completed se faltarem obrigatórias sem escolha explícita nem resposta
+          // Falha fechado: volta para moments no primeiro passo não respondido
+          const missingKey = Object.entries(coverage.details).find(
+            ([, val]) => val.status === 'missing_or_incompatible',
+          )?.[0]
+          if (missingKey) {
+            const missingIdx = prompts.findIndex(
+              (p) => (p.schema_config as any)?.prompt_key === missingKey || p.id === missingKey,
+            )
+            if (missingIdx >= 0) {
+              setCurrentStepIndex(missingIdx)
+            }
+          }
+          setEngineStage('moments')
+          return
+        }
+      }
+    }
+
     if (enrollmentExp) {
       const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
         completed: true,
@@ -908,6 +1011,61 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     resolveExperienceId(experienceId) === 'exp-mente-emocoes-07c'
 
   if (engineStage === 'closing') {
+    // Se for Mente & Emoções com dados incompatíveis arquivados ou sem obrigatórias,
+    // não apresentar o fechamento com retrato completo; exibir o banner seguro e opção de refazer.
+    if (isClosingMenteEmocoes && menteEmocoesNeedsRedo) {
+      return (
+        <div className="max-w-xl mx-auto py-10 px-4 space-y-6 text-center">
+          <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-2">
+            <AlertCircle className="w-6 h-6 stroke-[2]" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-serif font-medium text-foreground">
+              Retrato Não Disponível
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+              Esta demonstração foi atualizada. Para construir seu retrato com segurança, responda
+              novamente à experiência Mente & Emoções.
+            </p>
+          </div>
+          <div
+            data-testid="banner-demo-mente-emocoes-redo"
+            className="p-4 sm:p-5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-950 dark:text-amber-200 text-sm leading-relaxed space-y-3 text-left"
+          >
+            <p className="font-medium text-foreground">
+              Esta demonstração foi atualizada. Para construir seu retrato com segurança, responda
+              novamente à experiência Mente & Emoções.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                const { demoAdapter } = await import('@/services/demoAdapter')
+                if (demoAdapter.isEnabled()) {
+                  demoAdapter.resetMenteEmocoes(enrollmentId)
+                }
+                setMenteEmocoesNeedsRedo(false)
+                setHasIncompatibleMenteDemo(false)
+                setResponsesMap({})
+                setCurrentStepIndex(0)
+                setEngineStage('moments')
+              }}
+              className="border-amber-600/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/10 font-medium text-xs h-8 gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Refazer Mente & Emoções
+            </Button>
+          </div>
+          <div className="pt-2">
+            <Button onClick={onClose} variant="outline" className="text-xs px-6 h-9">
+              Voltar ao Início
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
     // Extração pura de respostas para o ProtectionPatternsChart a partir do responsesMap
     const p7aResp =
       responsesMap['p-07c-pm3-p7a-movimentos-1-5'] ||
@@ -1002,6 +1160,56 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       return []
     })()
 
+    const handleSaveClosingReflection = async (text: string) => {
+      setClosingReflection(text)
+      const p13Prompt = prompts.find(
+        (p) => (p.schema_config as any)?.prompt_key === 'campo_final_opcional',
+      )
+      if (p13Prompt) {
+        const pKey = 'campo_final_opcional'
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: p13Prompt.id,
+          respondentUserId,
+          responseType: 'FreeReflection',
+          promptVersion: p13Prompt.version,
+          structuredValue: {
+            value: text,
+            collection_origin: 'newly_collected',
+            prompt_key: pKey,
+            canonical_prompt_id: p13Prompt.id,
+            metadata: {
+              participant_free_speech: true,
+              structured_selection: false,
+              prompt_key: pKey,
+              canonical_prompt_id: p13Prompt.id,
+              step_order: p13Prompt.step_order,
+            },
+          },
+          freeText: text,
+          accessClass: 'participant_shared',
+          changeReason: 'Atualização no encerramento da experiência',
+          promptKey: pKey,
+          canonicalPromptId: p13Prompt.id,
+          stepOrder: p13Prompt.step_order,
+        })
+        const enriched: ExperienceResponseRecord = {
+          ...saved,
+          prompt_key: pKey,
+          step_order: p13Prompt.step_order,
+          canonical_prompt_id: p13Prompt.id,
+        } as any
+        setResponsesMap((prev) => ({
+          ...prev,
+          [p13Prompt.id]: enriched,
+          [pKey]: enriched,
+          p13: enriched,
+          p14: enriched,
+        }))
+      }
+    }
+
     return (
       <div className="max-w-xl mx-auto py-10 px-4 space-y-6 text-center">
         <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
@@ -1029,7 +1237,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
           <textarea
             value={closingReflection}
-            onChange={(e) => setClosingReflection(e.target.value)}
+            onChange={(e) => handleSaveClosingReflection(e.target.value)}
             placeholder="Escreva livremente aqui se quiser complementar..."
             rows={3}
             className="w-full text-xs p-3 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-primary text-foreground"

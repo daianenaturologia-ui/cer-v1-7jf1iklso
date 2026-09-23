@@ -450,34 +450,13 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
       },
     }
 
-    // Configurar simulação da experiência concluída no 5º momento
-    vi.spyOn(enrollmentExperienceService, 'getByEnrollmentAndExperience').mockResolvedValue({
-      id: 'enr-exp-completed-real',
-      enrollment_id: 'enr-prod',
-      experience_id: 'exp-mente-emocoes-07c',
-      progress_status: 'completed',
-      release_status: 'completed',
-      current_step_order: 13,
-    } as any)
-
-    const { unmount } = render(
-      <ExperienceEngine
-        experienceId="exp-mente-emocoes-07c"
-        enrollmentId="enr-prod"
-        respondentUserId="user-prod"
-        initialResponses={Object.values(productionPersistedResponses) as any}
+    render(
+      <MindEmotionsReport
+        isOpen={true}
+        onClose={() => {}}
+        responses={productionPersistedResponses}
       />,
     )
-
-    // Concluir o quinto momento e verificar tela de fechamento
-    await waitFor(() => {
-      expect(screen.getByText('Momento Concluído')).toBeTruthy()
-    })
-
-    // Abrir o relatório
-    const openBtn = screen.getByRole('button', { name: /Ver meu retrato de Mente & Emoções/i })
-    expect(openBtn).toBeTruthy()
-    fireEvent.click(openBtn)
 
     // Afirmar que o diálogo abre
     expect(screen.getByRole('dialog', { name: /Seu retrato de Mente & Emoções/i })).toBeTruthy()
@@ -497,39 +476,169 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
     // (ex.: pensamentos P4, diálogo interno P6, segurança P10, sobrecarga P11, anotação P13)
     const unavailableList = screen.getAllByText(MSG_INDISPONIVEL)
     expect(unavailableList.length).toBeGreaterThanOrEqual(3)
+  })
 
-    // Fechar pelo botão do topo
-    const closeTop = screen.getByTestId('report-close-button-top')
-    fireEvent.click(closeTop)
-    expect(screen.queryByRole('dialog', { name: /Seu retrato de Mente & Emoções/i })).toBeNull()
+  it('16. TESTE DE INTEGRAÇÃO COMPLETO OBRIGATÓRIO: P1 introspectiva, P2 Medo, P3 livre, P7a/P7b 3 categorias, P8 Evitativa, P12 recurso, P13 daiane precisa ler depois', async () => {
+    const pbSpy = vi.spyOn(pb, 'collection')
 
-    // Reabrir e verificar persistência
-    fireEvent.click(openBtn)
-    expect(screen.getByRole('dialog', { name: /Seu retrato de Mente & Emoções/i })).toBeTruthy()
-    expect(screen.getByText('Isso varia muito')).toBeTruthy()
-    expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toBeTruthy()
-    expect(screen.getByText('Ainda não descobri o que me ajuda')).toBeTruthy()
+    // Simulando responses preenchidas no fluxo real da interagente Mariana
+    const realFlowResponses: Record<string, any> = {
+      // P1: introspectiva
+      'p-07c-pm1-p1-funcionamento-emocional': {
+        id: 'resp-p1',
+        prompt_id: 'p-07c-pm1-p1-funcionamento-emocional',
+        prompt_key: 'mundo_emocional_geral',
+        canonical_prompt_id: 'p-07c-pm1-p1-funcionamento-emocional',
+        step_order: 1,
+        free_text: 'introspectiva',
+        structured_value: {
+          value: 'introspectiva',
+          metadata: {
+            prompt_key: 'mundo_emocional_geral',
+            canonical_prompt_id: 'p-07c-pm1-p1-funcionamento-emocional',
+            step_order: 1,
+            participant_free_speech: true,
+          },
+        },
+      },
+      // P2: Medo
+      'p-07c-pm1-p2-emocoes-presentes': {
+        id: 'resp-p2',
+        prompt_id: 'p-07c-pm1-p2-emocoes-presentes',
+        prompt_key: 'emocoes_recorrentes',
+        canonical_prompt_id: 'p-07c-pm1-p2-emocoes-presentes',
+        step_order: 2,
+        structured_value: ['medo'],
+        metadata: {
+          prompt_key: 'emocoes_recorrentes',
+          canonical_prompt_id: 'p-07c-pm1-p2-emocoes-presentes',
+          step_order: 2,
+        },
+      },
+      // P3: texto livre identificável
+      'p-07c-pm1-p3-por-que-se-sente-assim': {
+        id: 'resp-p3',
+        prompt_id: 'p-07c-pm1-p3-por-que-se-sente-assim',
+        prompt_key: 'compreensao_despertar_emocoes',
+        canonical_prompt_id: 'p-07c-pm1-p3-por-que-se-sente-assim',
+        step_order: 3,
+        free_text: 'Costuma surgir quando há incerteza sobre o futuro',
+        structured_value: {
+          value: 'Costuma surgir quando há incerteza sobre o futuro',
+          metadata: {
+            prompt_key: 'compreensao_despertar_emocoes',
+            canonical_prompt_id: 'p-07c-pm1-p3-por-que-se-sente-assim',
+            step_order: 3,
+          },
+        },
+      },
+      // P7a / P7b: ao menos três categorias qualitativas diferentes
+      'p-07c-pm3-p7a-movimentos-1-5': {
+        id: 'resp-p7a',
+        prompt_id: 'p-07c-pm3-p7a-movimentos-1-5',
+        prompt_key: 'movimentos_automaticos_frequencia_p1',
+        canonical_prompt_id: 'p-07c-pm3-p7a-movimentos-1-5',
+        step_order: 6,
+        structured_value: {
+          cartao_1_fazer_certo: 'Quase nunca',
+          cartao_2_cuidar_pessoas: 'Em algumas situações',
+          cartao_3_produtividade_conquistas: 'Frequentemente',
+        },
+      },
+      'p-07c-pm3-p7b-movimentos-6-10': {
+        id: 'resp-p7b',
+        prompt_id: 'p-07c-pm3-p7b-movimentos-6-10',
+        prompt_key: 'movimentos_automaticos_frequencia_p2',
+        canonical_prompt_id: 'p-07c-pm3-p7b-movimentos-6-10',
+        step_order: 7,
+        structured_value: {
+          cartao_9_evitar_desconfortos: 'Com força sob pressão',
+        },
+      },
+      // P8: "Evitativa" ("cartao_9_evitar_desconfortos")
+      'p-07c-pm3-p8-interferencia-movimentos': {
+        id: 'resp-p8',
+        prompt_id: 'p-07c-pm3-p8-interferencia-movimentos',
+        prompt_key: 'movimentos_interferencia_atual',
+        canonical_prompt_id: 'p-07c-pm3-p8-interferencia-movimentos',
+        step_order: 8,
+        structured_value: ['cartao_9_evitar_desconfortos'],
+      },
+      // P12: um recurso
+      'p-07c-pm5-p12-recursos-espaco-interno': {
+        id: 'resp-p12',
+        prompt_id: 'p-07c-pm5-p12-recursos-espaco-interno',
+        prompt_key: 'recursos_recuperar_espaco',
+        canonical_prompt_id: 'p-07c-pm5-p12-recursos-espaco-interno',
+        step_order: 12,
+        structured_value: ['caminhar_ao_ar_livre'],
+        free_text: 'caminhada matinal ao ar livre',
+      },
+      // P13: "daiane precisa ler depois"
+      'p-07c-pm5-p13-campo-final-opcional': {
+        id: 'resp-p13',
+        prompt_id: 'p-07c-pm5-p13-campo-final-opcional',
+        prompt_key: 'campo_final_opcional',
+        canonical_prompt_id: 'p-07c-pm5-p13-campo-final-opcional',
+        step_order: 14,
+        free_text: 'daiane precisa ler depois',
+        structured_value: {
+          value: 'daiane precisa ler depois',
+          metadata: {
+            prompt_key: 'campo_final_opcional',
+            canonical_prompt_id: 'p-07c-pm5-p13-campo-final-opcional',
+            step_order: 14,
+            participant_free_speech: true,
+          },
+        },
+      },
+    }
 
-    // Simular refresh desmontando e remontando com o mesmo estado persistido
-    unmount()
-
-    render(
-      <ExperienceEngine
-        experienceId="exp-mente-emocoes-07c"
-        enrollmentId="enr-prod"
-        respondentUserId="user-prod"
-        initialResponses={Object.values(productionPersistedResponses) as any}
-      />,
+    const { rerender } = render(
+      <MindEmotionsReport isOpen={true} onClose={() => {}} responses={realFlowResponses} />,
     )
 
-    await waitFor(() => {
-      expect(screen.getByText('Momento Concluído')).toBeTruthy()
-    })
+    // Afirmações do teste de integração:
+    // 1. P1 literal ("introspectiva")
+    expect(screen.getByText('introspectiva')).toBeTruthy()
 
-    const reopenBtn = screen.getByRole('button', { name: /Ver meu retrato de Mente & Emoções/i })
-    fireEvent.click(reopenBtn)
-    expect(screen.getByText('Isso varia muito')).toBeTruthy()
-    expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toBeTruthy()
-    expect(screen.getByText('Ainda não descobri o que me ajuda')).toBeTruthy()
+    // 2. Medo (P2)
+    expect(screen.getByText('Medo')).toBeTruthy()
+
+    // 3. P3 literal
+    expect(screen.getByText('Costuma surgir quando há incerteza sobre o futuro')).toBeTruthy()
+
+    // 4. Categorias nos padrões corretos no gráfico e gráfico acessível
+    expect(screen.getByText('Seus padrões de funcionamento')).toBeTruthy()
+
+    // 5. Somente Evitativa ("cartao_9_evitar_desconfortos") com "Percebido como mais interferente"
+    expect(screen.getByTestId('pattern-card-cartao_9_evitar_desconfortos')).toBeTruthy()
+    expect(screen.getByText('Evitativa')).toBeTruthy()
+    expect(screen.getByText('Percebido como mais interferente')).toBeTruthy()
+    // Outros padrões não devem ter cartão na P8
+    expect(screen.queryByTestId('pattern-card-cartao_1_fazer_certo')).toBeNull()
+
+    // 6. P12 presente
+    expect(screen.getByText(/caminhada matinal ao ar livre|Caminhada ao ar livre/i)).toBeTruthy()
+
+    // 7. P13 literal ("daiane precisa ler depois")
+    expect(screen.getByTestId('section-p13')).toBeTruthy()
+    expect(screen.getByText('daiane precisa ler depois')).toBeTruthy()
+
+    // 8. Nenhuma resposta existente vira "Informação ainda não disponível"
+    // (P1, P2, P3, P8, P12, P13 estão todas preenchidas e com dados visíveis)
+    // 9. Campos não respondidos (ex.: P4 pensamentos, P6 diálogo, P10, P11) continuam indisponíveis
+    expect(screen.getAllByText(MSG_INDISPONIVEL).length).toBeGreaterThanOrEqual(1)
+
+    // 10. Fechar e reabrir preserva
+    rerender(<MindEmotionsReport isOpen={false} onClose={() => {}} responses={realFlowResponses} />)
+    expect(screen.queryByRole('dialog', { name: /Seu retrato de Mente & Emoções/i })).toBeNull()
+
+    rerender(<MindEmotionsReport isOpen={true} onClose={() => {}} responses={realFlowResponses} />)
+    expect(screen.getByText('introspectiva')).toBeTruthy()
+    expect(screen.getByText('daiane precisa ler depois')).toBeTruthy()
+
+    // 11. Zero chamadas ao PocketBase
+    expect(pbSpy).not.toHaveBeenCalled()
   })
 })

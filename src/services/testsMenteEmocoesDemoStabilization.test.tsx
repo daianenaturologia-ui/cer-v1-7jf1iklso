@@ -454,4 +454,76 @@ describe('Estabilização dos Dados de Mente & Emoções no Modo Demonstração 
     expect(msgs).toHaveLength(1)
     expect(msgs[0].message_text).toBe('Mensagem de pré-consulta intacta')
   })
+
+  // Regressão da Migração exigida pelo prompt:
+  // Cenário com progresso legado `completed` + respostas incompatíveis arquivadas + ausência das obrigatórias canônicas
+  // -> deve sair de completed, mostrar o aviso e exigir "Refazer Mente & Emoções".
+  it('Regressão de migração: progresso legado completed com respostas incompatíveis arquivadas e obrigatórias ausentes sai de completed e mostra aviso', () => {
+    const rawLegacyState = {
+      activePersona: 'mariana' as const,
+      messages: [],
+      sessions: [],
+      notes: [],
+      plans: [],
+      priorities: [],
+      presentations: [],
+      acceptances: [],
+      maps: [],
+      // Respostas legadas incompatíveis sem identificação canônica
+      experienceResponses: [
+        {
+          id: 'old-incompatible-resp-1',
+          enrollment_id: DEMO_ENROLLMENT_ID,
+          experience_id: 'exp-mente-emocoes-07c',
+          prompt_id: 'random-old-id',
+          free_text: 'texto antigo que foi arquivado',
+        } as any,
+      ],
+      enrollmentExperienceProgress: {
+        [`${DEMO_ENROLLMENT_ID}:exp-mente-emocoes-07c`]: {
+          id: 'prog-1',
+          enrollment_id: DEMO_ENROLLMENT_ID,
+          experience_id: 'exp-mente-emocoes-07c',
+          progress_status: 'completed',
+          release_status: 'completed',
+          completed_at: '2025-01-01T00:00:00Z',
+        },
+      },
+    }
+
+    // Executar a migração de compatibilidade
+    const migrated = demoAdapter.migrateIncompatibleMenteEmocoes(rawLegacyState as any)
+
+    // 1. Respostas incompatíveis foram arquivadas
+    expect(migrated.experienceResponses).toHaveLength(0)
+    expect(migrated.retiredExperienceResponses).toHaveLength(1)
+
+    // 2. Progresso antigo NÃO segue completed (falha fechado)
+    const prog =
+      migrated.enrollmentExperienceProgress[`${DEMO_ENROLLMENT_ID}:exp-mente-emocoes-07c`]
+    expect(prog.progress_status).toBe('in_progress')
+    expect(prog.release_status).toBe('in_progress')
+    expect(prog.completed_at).toBeUndefined()
+
+    // 3. Flag de refazer ativada
+    expect(migrated.menteEmocoesNeedsRedo).toBe(true)
+
+    // 4. Renderizar o ExperienceEngine ou componente e verificar o aviso literal
+    render(
+      <MindEmotionsReport
+        isOpen={true}
+        onClose={() => {}}
+        responses={[]}
+        hasIncompatibleDemoData={true}
+        onRetakeExperience={() => {}}
+      />,
+    )
+
+    expect(
+      screen.getByText(
+        'Esta demonstração foi atualizada. Para construir seu retrato com segurança, responda novamente à experiência Mente & Emoções.',
+      ),
+    ).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Refazer Mente & Emoções/i })).toBeTruthy()
+  })
 })

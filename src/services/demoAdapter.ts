@@ -35,6 +35,7 @@ import type {
   JourneyStateRecord,
   SessionPreparationData,
 } from '@/types/cer'
+import { BUILD_07C_MENTE_PROMPTS } from './build07cPrompts'
 
 export interface DemoUserAccount {
   id: string
@@ -239,7 +240,10 @@ class DemoAdapter {
     })[] = []
 
     for (const r of store.experienceResponses) {
-      const isMente = r.experience_id === MENTE_EMOCOES_EXPERIENCE_ID
+      const isMente =
+        r.experience_id === MENTE_EMOCOES_EXPERIENCE_ID ||
+        r.experience_id === 'mente_emocoes' ||
+        r.experience_id === 'mente_emocoes_cer'
       const rAny = r as any
       const sMeta =
         r.structured_value && typeof r.structured_value === 'object'
@@ -268,6 +272,26 @@ class DemoAdapter {
         retired_count: (store.menteEmocoesMigrationMeta?.retired_count || 0) + toRetire.length,
       }
 
+      // Regra 6 e 7: Se uma migração arquivar respostas incompatíveis, o progresso antigo
+      // NÃO pode continuar como `completed`. Falha fechado: remove status completed!
+      if (store.enrollmentExperienceProgress) {
+        for (const expKey of [
+          `${DEMO_ENROLLMENT_ID}:${MENTE_EMOCOES_EXPERIENCE_ID}`,
+          `${DEMO_ENROLLMENT_ID}:mente_emocoes`,
+          `${DEMO_ENROLLMENT_ID}:mente_emocoes_cer`,
+        ]) {
+          const prog = store.enrollmentExperienceProgress[expKey]
+          if (
+            prog &&
+            (prog.progress_status === 'completed' || prog.release_status === 'completed')
+          ) {
+            prog.progress_status = 'in_progress'
+            prog.release_status = 'in_progress'
+            delete prog.completed_at
+          }
+        }
+      }
+
       // Salva também no arquivo técnico separado DEMO_ARCHIVED_INCOMPATIBLE_KEY
       try {
         let existingArchived: ExperienceResponseRecord[] = []
@@ -291,6 +315,89 @@ class DemoAdapter {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
       } catch {
         /* ignore */
+      }
+    }
+
+    // Regra B: Verificação Canônica de Coerência do status completed
+    // Se o progresso indicar completed, mas as obrigatórias canônicas não estiverem cobertas
+    // (ex.: após arquivamento ou respostas incompatíveis/ausentes), falhar fechado imediatamente.
+    if (store.enrollmentExperienceProgress) {
+      for (const expKey of [
+        `${DEMO_ENROLLMENT_ID}:${MENTE_EMOCOES_EXPERIENCE_ID}`,
+        `${DEMO_ENROLLMENT_ID}:mente_emocoes`,
+        `${DEMO_ENROLLMENT_ID}:mente_emocoes_cer`,
+      ]) {
+        const prog = store.enrollmentExperienceProgress[expKey]
+        if (prog && (prog.progress_status === 'completed' || prog.release_status === 'completed')) {
+          // Checar cobertura usando o store atual
+          const requiredCanonicalKeys = [
+            'mundo_emocional_geral',
+            'emocoes_recorrentes',
+            'compreensao_despertar_emocoes',
+            'pensamento_associado',
+            'comportamento_associado',
+            'self_dialogue_erro',
+            'movimentos_automaticos_frequencia_p1',
+            'movimentos_automaticos_frequencia_p2',
+            'movimentos_interferencia_atual',
+            'situacoes_ativacao_movimentos',
+            'dois_retratos_espaco',
+            'dois_retratos_sobrecarga',
+            'recursos_recuperar_espaco',
+          ]
+          const menteResponses = store.experienceResponses.filter(
+            (r) =>
+              r.enrollment_id === DEMO_ENROLLMENT_ID &&
+              (r.experience_id === MENTE_EMOCOES_EXPERIENCE_ID ||
+                r.experience_id === 'mente_emocoes' ||
+                r.experience_id === 'mente_emocoes_cer'),
+          )
+          const allRequiredPresent = requiredCanonicalKeys.every((rk) => {
+            return menteResponses.some((r) => {
+              const rAny = r as any
+              const sMeta =
+                r.structured_value && typeof r.structured_value === 'object'
+                  ? (r.structured_value as any).metadata
+                  : undefined
+              const keyMatches = rAny.prompt_key === rk || sMeta?.prompt_key === rk
+              if (!keyMatches) return false
+              const sVal = r.structured_value as any
+              if (
+                sVal?.is_legitimate_skip ||
+                sVal?.metadata?.is_legitimate_skip ||
+                sVal?.skip_reason ||
+                r.response_type === ('prefiro_nao_responder' as any) ||
+                r.response_type === ('nao_sei' as any)
+              ) {
+                return true
+              }
+              if (typeof r.free_text === 'string' && r.free_text.trim().length > 0) return true
+              if (sVal !== undefined && sVal !== null) {
+                if (typeof sVal === 'string' && sVal.trim().length > 0) return true
+                if (typeof sVal === 'number') return true
+                if (Array.isArray(sVal) && sVal.length > 0) return true
+                if (typeof sVal === 'object') {
+                  const keys = Object.keys(sVal).filter(
+                    (k) =>
+                      k !== 'metadata' &&
+                      k !== 'collection_origin' &&
+                      k !== 'naming_origin' &&
+                      Boolean(sVal[k]),
+                  )
+                  if (keys.length > 0) return true
+                }
+              }
+              return false
+            })
+          })
+
+          if (!allRequiredPresent) {
+            prog.progress_status = 'in_progress'
+            prog.release_status = 'in_progress'
+            delete prog.completed_at
+            store.menteEmocoesNeedsRedo = true
+          }
+        }
       }
     }
 
@@ -460,7 +567,221 @@ class DemoAdapter {
    * Retorna se a experiência Mente & Emoções requer ser refeita devido a registros antigos incompatíveis.
    */
   public isMenteEmocoesRedoNeeded(): boolean {
-    return Boolean(this.state.menteEmocoesNeedsRedo)
+    if (this.state.menteEmocoesNeedsRedo) return true
+    // Verificação canônica de integridade: se não tem cobertura canônica de Mente & Emoções
+    const coverage = this.checkMenteEmocoesCoverage()
+    if (!coverage.isCoverageComplete && this.isMenteEmocoesCompleted()) {
+      return true
+    }
+    return false
+  }
+
+  public isMenteEmocoesCompleted(): boolean {
+    const key = `${DEMO_ENROLLMENT_ID}:${MENTE_EMOCOES_EXPERIENCE_ID}`
+    const progress = this.state.enrollmentExperienceProgress?.[key]
+    return progress?.progress_status === 'completed' || progress?.release_status === 'completed'
+  }
+
+  public checkMenteEmocoesCoverage(enrollmentId: string = DEMO_ENROLLMENT_ID): {
+    isCoverageComplete: boolean
+    answeredCount: number
+    totalRequiredCount: number
+    missingKeys: string[]
+    details: Record<
+      string,
+      {
+        status: 'answered' | 'legitimate_skip' | 'optional_empty' | 'missing_or_incompatible'
+        reason?: string
+      }
+    >
+  } {
+    // 13 perguntas canônicas de Mente & Emoções
+    // P1: mundo_emocional_geral (required)
+    // P2: emocoes_recorrentes (required)
+    // P3: compreensao_despertar_emocoes (required)
+    // P4: pensamento_associado (required)
+    // P5: comportamento_associado (required)
+    // P6: self_dialogue_erro (required)
+    // P7a: movimentos_automaticos_frequencia_p1 (required)
+    // P7b: movimentos_automaticos_frequencia_p2 (required)
+    // P8: movimentos_interferencia_atual (required)
+    // P9: situacoes_ativacao_movimentos (required)
+    // P10: dois_retratos_espaco (required)
+    // P11: dois_retratos_sobrecarga (required)
+    // P12: recursos_recuperar_espaco (required)
+    // P13: campo_final_opcional (optional)
+    const requiredCanonicalKeys = [
+      { key: 'mundo_emocional_geral', promptId: 'p-07c-pm1-p1-funcionamento-emocional', order: 1 },
+      { key: 'emocoes_recorrentes', promptId: 'p-07c-pm1-p2-emocoes-presentes', order: 2 },
+      {
+        key: 'compreensao_despertar_emocoes',
+        promptId: 'p-07c-pm1-p3-por-que-se-sente-assim',
+        order: 3,
+      },
+      { key: 'pensamento_associado', promptId: 'p-07c-pm2-p4-pensamentos-associados', order: 4 },
+      {
+        key: 'comportamento_associado',
+        promptId: 'p-07c-pm2-p5-comportamento-associado',
+        order: 5,
+      },
+      { key: 'self_dialogue_erro', promptId: 'p-07c-pm2-p6-dialogo-interno', order: 6 },
+      {
+        key: 'movimentos_automaticos_frequencia_p1',
+        promptId: 'p-07c-pm3-p7a-movimentos-1-5',
+        order: 7,
+      },
+      {
+        key: 'movimentos_automaticos_frequencia_p2',
+        promptId: 'p-07c-pm3-p7b-movimentos-6-10',
+        order: 8,
+      },
+      {
+        key: 'movimentos_interferencia_atual',
+        promptId: 'p-07c-pm3-p8-interferencia-movimentos',
+        order: 9,
+      },
+      {
+        key: 'situacoes_ativacao_movimentos',
+        promptId: 'p-07c-pm3-p9-situacoes-ativacao',
+        order: 10,
+      },
+      { key: 'dois_retratos_espaco', promptId: 'p-07c-pm4-p10-seguranca-bem-estar', order: 11 },
+      { key: 'dois_retratos_sobrecarga', promptId: 'p-07c-pm4-p11-sobrecarga', order: 12 },
+      {
+        key: 'recursos_recuperar_espaco',
+        promptId: 'p-07c-pm5-p12-recursos-espaco-interno',
+        order: 13,
+      },
+    ]
+
+    const responses = this.listExperienceResponses(enrollmentId, MENTE_EMOCOES_EXPERIENCE_ID)
+    const details: Record<
+      string,
+      {
+        status: 'answered' | 'legitimate_skip' | 'optional_empty' | 'missing_or_incompatible'
+        reason?: string
+      }
+    > = {}
+    const missingKeys: string[] = []
+    let answeredCount = 0
+
+    for (const req of requiredCanonicalKeys) {
+      const resp = responses.find((r) => {
+        const rAny = r as any
+        const sMeta =
+          r.structured_value && typeof r.structured_value === 'object'
+            ? (r.structured_value as any).metadata
+            : undefined
+        return (
+          r.prompt_id === req.promptId ||
+          rAny.canonical_prompt_id === req.promptId ||
+          rAny.prompt_key === req.key ||
+          sMeta?.prompt_key === req.key ||
+          sMeta?.canonical_prompt_id === req.promptId
+        )
+      })
+
+      if (!resp) {
+        details[req.key] = { status: 'missing_or_incompatible', reason: 'not_found' }
+        missingKeys.push(req.key)
+        continue
+      }
+
+      const sVal = resp.structured_value as any
+      const isLegitSkip =
+        sVal?.is_legitimate_skip ||
+        sVal?.metadata?.is_legitimate_skip ||
+        sVal?.skip_reason === 'nao_sei' ||
+        sVal?.skip_reason === 'prefiro_nao_responder' ||
+        resp.response_type === ('prefiro_nao_responder' as any) ||
+        resp.response_type === ('nao_sei' as any)
+
+      if (isLegitSkip) {
+        details[req.key] = {
+          status: 'legitimate_skip',
+          reason: sVal?.skip_reason || 'legitimate_skip',
+        }
+        answeredCount++
+        continue
+      }
+
+      // Checar se há dados reais
+      let hasData = false
+      if (typeof resp.free_text === 'string' && resp.free_text.trim().length > 0) hasData = true
+      if (sVal !== undefined && sVal !== null) {
+        if (typeof sVal === 'string' && sVal.trim().length > 0) hasData = true
+        else if (typeof sVal === 'number') hasData = true
+        else if (Array.isArray(sVal) && sVal.length > 0) hasData = true
+        else if (typeof sVal === 'object') {
+          if (typeof sVal.value === 'string' && sVal.value.trim().length > 0) hasData = true
+          else if (typeof sVal.choice === 'string' && sVal.choice.trim().length > 0) hasData = true
+          else if (Array.isArray(sVal.choice) && sVal.choice.length > 0) hasData = true
+          else if (Array.isArray(sVal.value) && sVal.value.length > 0) hasData = true
+          else if (Array.isArray(sVal.selectedOptionIds) && sVal.selectedOptionIds.length > 0)
+            hasData = true
+          else {
+            const keys = Object.keys(sVal).filter(
+              (k) =>
+                k !== 'metadata' &&
+                k !== 'collection_origin' &&
+                k !== 'naming_origin' &&
+                Boolean(sVal[k]),
+            )
+            if (keys.length > 0) hasData = true
+          }
+        }
+      }
+
+      if (hasData) {
+        details[req.key] = { status: 'answered' }
+        answeredCount++
+      } else {
+        details[req.key] = { status: 'missing_or_incompatible', reason: 'empty_required' }
+        missingKeys.push(req.key)
+      }
+    }
+
+    // P13 opcional (p-07c-pm5-p13-campo-final-opcional)
+    const p13Resp = responses.find((r) => {
+      const rAny = r as any
+      const sMeta =
+        r.structured_value && typeof r.structured_value === 'object'
+          ? (r.structured_value as any).metadata
+          : undefined
+      return (
+        r.prompt_id === 'p-07c-pm5-p13-campo-final-opcional' ||
+        rAny.canonical_prompt_id === 'p-07c-pm5-p13-campo-final-opcional' ||
+        rAny.prompt_key === 'campo_final_opcional' ||
+        sMeta?.prompt_key === 'campo_final_opcional' ||
+        rAny.step_order === 14 ||
+        rAny.step_order === 13
+      )
+    })
+    if (!p13Resp) {
+      details['campo_final_opcional'] = { status: 'optional_empty' }
+    } else {
+      const sVal = p13Resp.structured_value as any
+      const hasContent =
+        (typeof p13Resp.free_text === 'string' && p13Resp.free_text.trim().length > 0) ||
+        (typeof sVal === 'string' && sVal.trim().length > 0) ||
+        (sVal &&
+          typeof sVal === 'object' &&
+          typeof sVal.value === 'string' &&
+          sVal.value.trim().length > 0)
+      if (hasContent) {
+        details['campo_final_opcional'] = { status: 'answered' }
+      } else {
+        details['campo_final_opcional'] = { status: 'optional_empty' }
+      }
+    }
+
+    return {
+      isCoverageComplete: missingKeys.length === 0,
+      answeredCount,
+      totalRequiredCount: requiredCanonicalKeys.length,
+      missingKeys,
+      details,
+    }
   }
 
   /**
@@ -1102,18 +1423,79 @@ class DemoAdapter {
     canonicalPromptId?: string
     stepOrder?: number
   }): ExperienceResponseRecord {
+    // Resolução canônica universal defensiva:
+    const sObj =
+      typeof params.structuredValue === 'object' && params.structuredValue !== null
+        ? (params.structuredValue as any)
+        : null
+    const meta = sObj?.metadata || {}
+
+    let effectivePromptKey = params.promptKey || meta.prompt_key || sObj?.prompt_key
+    let effectiveCanonicalPromptId =
+      params.canonicalPromptId ||
+      meta.canonical_prompt_id ||
+      sObj?.canonical_prompt_id ||
+      params.promptId
+    let effectiveStepOrder = params.stepOrder ?? meta.step_order ?? sObj?.step_order
+
+    // Fallback por catálogo de Mente & Emoções se não identificado
+    if (!effectivePromptKey || effectiveStepOrder === undefined) {
+      const allPrompts = BUILD_07C_MENTE_PROMPTS
+      const matched = allPrompts.find(
+        (p) => p.id === params.promptId || p.id === effectiveCanonicalPromptId,
+      )
+      if (matched) {
+        if (!effectivePromptKey) effectivePromptKey = (matched.schema_config as any)?.prompt_key
+        if (effectiveStepOrder === undefined) effectiveStepOrder = matched.step_order
+        if (!effectiveCanonicalPromptId) effectiveCanonicalPromptId = matched.id
+      }
+    }
+
+    // Se structuredValue for string/primitivo ou não tiver metadata, envolver defensivamente garantindo metadata
+    let enrichedStructuredValue = params.structuredValue
+    if (
+      typeof params.structuredValue === 'string' ||
+      typeof params.structuredValue === 'number' ||
+      typeof params.structuredValue === 'boolean'
+    ) {
+      enrichedStructuredValue = {
+        value: params.structuredValue,
+        prompt_key: effectivePromptKey,
+        canonical_prompt_id: effectiveCanonicalPromptId,
+        collection_origin: 'newly_collected',
+        metadata: {
+          prompt_key: effectivePromptKey,
+          canonical_prompt_id: effectiveCanonicalPromptId,
+          step_order: effectiveStepOrder,
+          participant_free_speech: typeof params.structuredValue === 'string',
+        },
+      }
+    } else if (sObj && !sObj.metadata) {
+      enrichedStructuredValue = {
+        ...sObj,
+        prompt_key: effectivePromptKey || sObj.prompt_key,
+        canonical_prompt_id: effectiveCanonicalPromptId || sObj.canonical_prompt_id,
+        metadata: {
+          prompt_key: effectivePromptKey || sObj.prompt_key,
+          canonical_prompt_id: effectiveCanonicalPromptId || sObj.canonical_prompt_id,
+          step_order: effectiveStepOrder,
+        },
+      }
+    }
+
     const existing = this.state.experienceResponses.find(
       (r) => r.enrollment_id === params.enrollmentId && r.prompt_id === params.promptId,
     )
     if (existing) {
-      existing.structured_value = params.structuredValue
+      existing.structured_value = enrichedStructuredValue
       existing.free_text = params.freeText !== undefined ? params.freeText : existing.free_text
       existing.version = (existing.version || 1) + 1
       existing.status = 'revised'
       existing.updated = new Date().toISOString()
-      if (params.promptKey) (existing as any).prompt_key = params.promptKey
-      if (params.stepOrder !== undefined) (existing as any).step_order = params.stepOrder
-      if (params.canonicalPromptId) (existing as any).canonical_prompt_id = params.canonicalPromptId
+      if (effectivePromptKey) (existing as any).prompt_key = effectivePromptKey
+      if (effectiveStepOrder !== undefined) (existing as any).step_order = effectiveStepOrder
+      if (effectiveCanonicalPromptId)
+        (existing as any).canonical_prompt_id = effectiveCanonicalPromptId
       this.saveState()
       return { ...existing }
     } else {
@@ -1125,7 +1507,7 @@ class DemoAdapter {
         respondent_user_id: params.respondentUserId,
         response_type: params.responseType,
         access_class: params.accessClass || 'shared_care',
-        structured_value: params.structuredValue,
+        structured_value: enrichedStructuredValue,
         free_text: params.freeText || '',
         prompt_version: params.promptVersion,
         version: 1,
@@ -1133,9 +1515,10 @@ class DemoAdapter {
         created: new Date().toISOString(),
         updated: new Date().toISOString(),
       }
-      if (params.promptKey) (newResp as any).prompt_key = params.promptKey
-      if (params.stepOrder !== undefined) (newResp as any).step_order = params.stepOrder
-      if (params.canonicalPromptId) (newResp as any).canonical_prompt_id = params.canonicalPromptId
+      if (effectivePromptKey) (newResp as any).prompt_key = effectivePromptKey
+      if (effectiveStepOrder !== undefined) (newResp as any).step_order = effectiveStepOrder
+      if (effectiveCanonicalPromptId)
+        (newResp as any).canonical_prompt_id = effectiveCanonicalPromptId
       this.state.experienceResponses.push(newResp)
       this.saveState()
       return newResp

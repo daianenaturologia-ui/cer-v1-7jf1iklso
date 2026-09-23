@@ -146,6 +146,15 @@ export function evaluateFieldState(val: any): {
       if (!trimmed) return { isRefusal: false, isEmpty: true }
       return { isRefusal: false, isEmpty: false, text: trimmed, data: val }
     }
+    if (typeof val.free_text === 'string') {
+      const trimmed = val.free_text.trim()
+      if (!trimmed) return { isRefusal: false, isEmpty: true }
+      return { isRefusal: false, isEmpty: false, text: trimmed, data: val }
+    }
+    if (val.structured_value !== undefined && val.structured_value !== null) {
+      const sState = evaluateFieldState(val.structured_value)
+      if (!sState.isEmpty) return sState
+    }
   }
 
   if (typeof val === 'string') {
@@ -227,6 +236,12 @@ export function extractQuestionResponse(
     if (r.step_order !== undefined && r.step_order !== null) {
       candidateKeys.push(`p${r.step_order}`)
       candidateKeys.push(`me_p${r.step_order}`)
+      // Especial para Mente & Emoções onde step_order 14 é a Pergunta 13
+      if (r.step_order === 14) {
+        candidateKeys.push('p13')
+        candidateKeys.push('me_p13')
+        candidateKeys.push('campo_final_opcional')
+      }
     }
     if (r.prompt_order !== undefined && r.prompt_order !== null) {
       candidateKeys.push(`p${r.prompt_order}`)
@@ -298,7 +313,10 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
   // P1: Funcionamento emocional geral
   const p1Raw =
     (typeof responses === 'object' && !Array.isArray(responses)
-      ? responses['p-07c-pm1-p1-funcionamento-emocional'] || responses['mundo_emocional_geral']
+      ? responses['p-07c-pm1-p1-funcionamento-emocional'] ||
+        responses['mundo_emocional_geral'] ||
+        responses['p1'] ||
+        responses['me_p1']
       : undefined) ||
     extractQuestionResponse(responses, [
       'p-07c-pm1-p1-funcionamento-emocional',
@@ -310,7 +328,6 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'pergunta_1',
     ])
   const p1State = evaluateFieldState(p1Raw)
-
   // P2: Emoções mais presentes
   const p2Raw =
     (typeof responses === 'object' && !Array.isArray(responses)
@@ -487,7 +504,10 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
   // Alívio imediato (perguntado no campo opcional da P12 - recursos_recuperar_espaco)
   const p12PromptRaw =
     (typeof responses === 'object' && !Array.isArray(responses)
-      ? responses['p-07c-pm5-p12-recursos-espaco-interno'] || responses['recursos_recuperar_espaco']
+      ? responses['p-07c-pm5-p12-recursos-espaco-interno'] ||
+        responses['recursos_recuperar_espaco'] ||
+        responses['p13'] ||
+        responses['me_p13']
       : undefined) ||
     extractQuestionResponse(responses, [
       'p-07c-pm5-p12-recursos-espaco-interno',
@@ -715,7 +735,14 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
   // --- 6. PERGUNTA 13 (Livre / Opcional) ---
   const p13Raw =
     (typeof responses === 'object' && !Array.isArray(responses)
-      ? responses['p-07c-pm5-p13-campo-final-opcional'] || responses['campo_final_opcional']
+      ? responses['p-07c-pm5-p13-campo-final-opcional'] ||
+        responses['campo_final_opcional'] ||
+        responses['p13'] ||
+        responses['me_p13'] ||
+        responses['p14'] ||
+        responses['me_p14'] ||
+        responses['p-07c-pm5-p14'] ||
+        responses['closing_reflection']
       : undefined) ||
     extractQuestionResponse(responses, [
       'p-07c-pm5-p13-campo-final-opcional',
@@ -723,7 +750,10 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'me_p13',
       'p13',
       'q13',
+      'p14',
+      'me_p14',
       'additional_notes',
+      'closing_reflection',
       'pergunta_13',
     ])
   const p13State = evaluateFieldState(p13Raw)
@@ -731,7 +761,11 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
     !p13State.isEmpty &&
     (p13State.isRefusal ||
       (typeof p13State.text === 'string' && p13State.text.trim().length > 0) ||
-      (typeof p13Raw === 'string' && p13Raw.trim().length > 0))
+      (typeof p13Raw === 'string' && p13Raw.trim().length > 0) ||
+      (typeof p13Raw?.free_text === 'string' && p13Raw.free_text.trim().length > 0) ||
+      (typeof p13Raw?.structured_value?.value === 'string' &&
+        p13Raw.structured_value.value.trim().length > 0) ||
+      (typeof p13Raw?.structured_value === 'string' && p13Raw.structured_value.trim().length > 0))
 
   // Render text helper for state
   const renderStateText = (state: ReturnType<typeof evaluateFieldState>, rawFallback?: any) => {
@@ -760,6 +794,23 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
     if (typeof rawFallback === 'string' && rawFallback.trim()) {
       return (
         <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{rawFallback}</p>
+      )
+    }
+    if (typeof rawFallback?.free_text === 'string' && rawFallback.free_text.trim()) {
+      return (
+        <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+          {rawFallback.free_text.trim()}
+        </p>
+      )
+    }
+    if (
+      typeof rawFallback?.structured_value?.value === 'string' &&
+      rawFallback.structured_value.value.trim()
+    ) {
+      return (
+        <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+          {rawFallback.structured_value.value.trim()}
+        </p>
       )
     }
     return <p className="text-sm italic text-muted-foreground">{MSG_INDISPONIVEL}</p>
