@@ -9,6 +9,8 @@ import { BUILD_07C_MENTE_PROMPTS } from '@/services/build07cPrompts'
 import { ExperienceResponseRecord } from '@/types/cer'
 import React from 'react'
 
+// Trigger QA run
+
 describe('Pergunta 3 de Mente & Emoções — Resolução Dinâmica de Emoções Selecionadas', () => {
   it('mapeia corretamente todos os IDs canônicos para seus rótulos humanos', () => {
     expect(EMOTION_ID_TO_LABEL['medo']).toBe('medo')
