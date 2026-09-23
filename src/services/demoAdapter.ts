@@ -216,70 +216,61 @@ class DemoAdapter {
       }
     }
 
-    // Higienizar sessões (title, summary, notes)
-    if (Array.isArray(store.sessions)) {
-      for (const s of store.sessions) {
-        if (s.title) s.title = this.sanitizeLegacyDaianeText(s.title)
-        if (s.summary) s.summary = this.sanitizeLegacyDaianeText(s.summary)
-        if (s.notes) s.notes = this.sanitizeLegacyDaianeText(s.notes)
-      }
-    }
-
-    // Higienizar anotações de sessão (text, synthesis_text)
+    // Higienizar anotações de sessão (text)
     if (Array.isArray(store.notes)) {
       for (const n of store.notes) {
         if (n.text) n.text = this.sanitizeLegacyDaianeText(n.text)
-        if (n.synthesis_text) n.synthesis_text = this.sanitizeLegacyDaianeText(n.synthesis_text)
       }
     }
 
-    // Higienizar planos de cuidado (title, goal, notes)
+    // Higienizar planos de cuidado (direction_statement, professional_context, professional_rationale)
     if (Array.isArray(store.plans)) {
       for (const p of store.plans) {
-        if (p.title) p.title = this.sanitizeLegacyDaianeText(p.title)
-        if (p.goal) p.goal = this.sanitizeLegacyDaianeText(p.goal)
-        if (p.notes) p.notes = this.sanitizeLegacyDaianeText(p.notes)
+        if (p.direction_statement)
+          p.direction_statement = this.sanitizeLegacyDaianeText(p.direction_statement)
+        if (p.professional_context)
+          p.professional_context = this.sanitizeLegacyDaianeText(p.professional_context)
+        if (p.professional_rationale)
+          p.professional_rationale = this.sanitizeLegacyDaianeText(p.professional_rationale)
       }
     }
 
-    // Higienizar prioridades de plano de cuidado (label, description)
+    // Higienizar prioridades de plano de cuidado (title, description, professional_rationale)
     if (Array.isArray(store.priorities)) {
       for (const pr of store.priorities) {
-        if (pr.label) pr.label = this.sanitizeLegacyDaianeText(pr.label)
+        if (pr.title) pr.title = this.sanitizeLegacyDaianeText(pr.title)
         if (pr.description) pr.description = this.sanitizeLegacyDaianeText(pr.description)
+        if (pr.professional_rationale)
+          pr.professional_rationale = this.sanitizeLegacyDaianeText(pr.professional_rationale)
       }
     }
 
-    // Higienizar apresentações (presentation_notes, participant_view_content)
+    // Higienizar apresentações (participant_title, participant_summary, practical_invitation)
     if (Array.isArray(store.presentations)) {
       for (const pres of store.presentations) {
-        if (pres.presentation_notes)
-          pres.presentation_notes = this.sanitizeLegacyDaianeText(pres.presentation_notes)
-        if (pres.participant_view_content)
-          pres.participant_view_content = this.sanitizeLegacyDaianeText(
-            pres.participant_view_content,
-          )
+        if (pres.participant_title)
+          pres.participant_title = this.sanitizeLegacyDaianeText(pres.participant_title)
+        if (pres.participant_summary)
+          pres.participant_summary = this.sanitizeLegacyDaianeText(pres.participant_summary)
+        if (pres.practical_invitation)
+          pres.practical_invitation = this.sanitizeLegacyDaianeText(pres.practical_invitation)
       }
     }
 
-    // Higienizar acceptances (participant_notes)
+    // Higienizar acceptances (shared_comment)
     if (Array.isArray(store.acceptances)) {
       for (const acc of store.acceptances) {
-        if (acc.participant_notes)
-          acc.participant_notes = this.sanitizeLegacyDaianeText(acc.participant_notes)
+        if (acc.shared_comment)
+          acc.shared_comment = this.sanitizeLegacyDaianeText(acc.shared_comment)
       }
     }
 
-    // Higienizar mapas (title, notes) e seus itens (title, description, notes)
+    // Higienizar itens do mapa (item_text)
     if (Array.isArray(store.maps)) {
       for (const map of store.maps) {
-        if (map.title) map.title = this.sanitizeLegacyDaianeText(map.title)
-        if (map.notes) map.notes = this.sanitizeLegacyDaianeText(map.notes)
         if (Array.isArray(map.items)) {
           for (const item of map.items) {
-            if (item.title) item.title = this.sanitizeLegacyDaianeText(item.title)
-            if (item.description) item.description = this.sanitizeLegacyDaianeText(item.description)
-            if (item.notes) item.notes = this.sanitizeLegacyDaianeText(item.notes)
+            if (item.item_text) item.item_text = this.sanitizeLegacyDaianeText(item.item_text)
           }
         }
       }
