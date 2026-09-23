@@ -1,0 +1,54 @@
+import { createHash } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const root = dirname(fileURLToPath(import.meta.url))
+const manifest = JSON.parse(await readFile(resolve(root, 'asset-manifest.json'), 'utf8'))
+
+function pngInfo(buffer) {
+  const signature = '89504e470d0a1a0a'
+  if (buffer.subarray(0, 8).toString('hex') !== signature) {
+    throw new Error('assinatura PNG inválida')
+  }
+
+  const width = buffer.readUInt32BE(16)
+  const height = buffer.readUInt32BE(20)
+  const colorType = buffer.readUInt8(25)
+  const hasAlpha = colorType === 4 || colorType === 6
+  return { width, height, hasAlpha }
+}
+
+const results = []
+let failed = false
+
+for (const asset of manifest.approved_files) {
+  try {
+    const bytes = await readFile(resolve(root, asset.file))
+    const hash = createHash('sha256').update(bytes).digest('hex')
+    const info = pngInfo(bytes)
+    const errors = []
+
+    if (hash !== asset.sha256) errors.push('hash divergente')
+    if (info.width !== asset.width || info.height !== asset.height) {
+      errors.push(`dimensão ${info.width}x${info.height}`)
+    }
+    if (asset.alpha_required && !info.hasAlpha) errors.push('sem canal alfa')
+
+    if (errors.length) {
+      failed = true
+      results.push({ id: asset.id, status: 'FAIL', detail: errors.join(', ') })
+    } else {
+      results.push({ id: asset.id, status: 'PASS', detail: `${info.width}x${info.height}, RGBA` })
+    }
+  } catch (error) {
+    failed = true
+    results.push({ id: asset.id, status: 'FAIL', detail: error.message })
+  }
+}
+
+console.table(results)
+console.log(`\nPersonalização do avatar: ${manifest.next_stage_requirements.status}`)
+console.log(manifest.next_stage_requirements.reason)
+
+if (failed) process.exitCode = 1
