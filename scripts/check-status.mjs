@@ -15,5 +15,9 @@ for (const f of files) {
   const p = path.resolve(f)
   const exists = fs.existsSync(p)
   const size = exists ? fs.statSync(p).size : 0
-  console.log(`${f}: exists=${exists}, size=${size}`)
+  let snippet = ''
+  if (exists && size > 0 && f.endsWith('.txt')) {
+    snippet = fs.readFileSync(p, 'utf8').substring(0, 30).trim()
+  }
+  console.log(`${f}: exists=${exists}, size=${size}, snippet=${snippet}`)
 }

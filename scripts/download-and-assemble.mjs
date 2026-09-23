@@ -1,20 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const downloads = [
-  {
-    name: 'ayv-feminino-amplo.png.base64.txt',
-    url: 'https://dagtlwojkqyivnjgveda.supabase.co/storage/v1/object/public/message-attachments/45c9a80b-ca48-4f2a-8654-6ef660d8d25f/ayv-feminino-amplo.png.base64-27a03.txt',
-  },
-  {
-    name: 'ayv-masculino-leve.png.base64.txt',
-    url: 'https://dagtlwojkqyivnjgveda.supabase.co/storage/v1/object/public/message-attachments/45c9a80b-ca48-4f2a-8654-6ef660d8d25f/ayv-masculino-leve.png.base64-0896d.txt',
-  },
-  {
-    name: 'ayv-masculino-intermediario.png.base64.txt',
-    url: 'https://dagtlwojkqyivnjgveda.supabase.co/storage/v1/object/public/message-attachments/45c9a80b-ca48-4f2a-8654-6ef660d8d25f/ayv-masculino-intermediario.png.base64-8615e.txt',
-  },
-]
+const downloads = []
 
 const targetDir = path.resolve('lote_0a_base64')
 fs.mkdirSync(targetDir, { recursive: true })
@@ -23,20 +10,8 @@ async function run() {
   const results = []
   for (const item of downloads) {
     try {
-      console.log(`Downloading ${item.name} from ${item.url}...`)
-      const resp = await fetch(item.url)
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status} ${resp.statusText}`)
-      }
-      const text = await resp.text()
-      if (!text || text.trim().length === 0) {
-        throw new Error('Arquivo vazio retornado')
-      }
-      if (text.trim().startsWith('<html') || text.trim().startsWith('<!DOCTYPE')) {
-        throw new Error('Conteúdo retornado é HTML, não base64')
-      }
+      console.log(`Checking ${item.name}...`)
       const destPath = path.join(targetDir, item.name)
-      fs.writeFileSync(destPath, text, 'utf8')
       const stats = fs.statSync(destPath)
       results.push({ name: item.name, status: 'OK', bytes: stats.size })
     } catch (err) {
@@ -44,7 +19,7 @@ async function run() {
     }
   }
 
-  // Also copy the 3 from src/assets/ to canonical names in lote_0a_base64/
+  // Copy all 6 from src/assets/ to canonical names in lote_0a_base64/
   const localCopies = [
     {
       src: 'src/assets/ayv-feminino-leve.png.base64-dadb7.txt',
@@ -53,6 +28,18 @@ async function run() {
     {
       src: 'src/assets/ayv-feminino-intermediario.png.base64-e4647.txt',
       dest: 'ayv-feminino-intermediario.png.base64.txt',
+    },
+    {
+      src: 'src/assets/ayv-feminino-amplo.png.base64-050fe.txt',
+      dest: 'ayv-feminino-amplo.png.base64.txt',
+    },
+    {
+      src: 'src/assets/ayv-masculino-leve.png.base64-e094e.txt',
+      dest: 'ayv-masculino-leve.png.base64.txt',
+    },
+    {
+      src: 'src/assets/ayv-masculino-intermediario.png.base64-e638e.txt',
+      dest: 'ayv-masculino-intermediario.png.base64.txt',
     },
     {
       src: 'src/assets/ayv-masculino-amplo.png.base64-f1064.txt',
@@ -75,11 +62,9 @@ async function run() {
     }
   }
 
-  // Copy decoder original do usuário
-  const userDecoderSrc = path.resolve('src/assets/decode-ayurveda-assets-mjs-9bca9.txt')
+  // Ensure decoder exists in lote_0a_base64
   const userDecoderDest = path.join(targetDir, 'decode-ayurveda-assets.mjs')
-  if (fs.existsSync(userDecoderSrc)) {
-    fs.copyFileSync(userDecoderSrc, userDecoderDest)
+  if (fs.existsSync(userDecoderDest)) {
     results.push({
       name: 'decode-ayurveda-assets.mjs',
       status: 'OK_DECODER',
@@ -89,7 +74,7 @@ async function run() {
     results.push({
       name: 'decode-ayurveda-assets.mjs',
       status: 'FAIL_DECODER',
-      error: 'não encontrado em src/assets',
+      error: 'não encontrado em lote_0a_base64',
     })
   }
 

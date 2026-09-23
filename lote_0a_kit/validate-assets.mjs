@@ -4,7 +4,6 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = dirname(fileURLToPath(import.meta.url))
-const manifest = JSON.parse(await readFile(resolve(root, 'asset-manifest.json'), 'utf8'))
 
 function pngInfo(buffer) {
   const signature = '89504e470d0a1a0a'
@@ -19,36 +18,65 @@ function pngInfo(buffer) {
   return { width, height, hasAlpha }
 }
 
-const results = []
-let failed = false
+export async function validateAssets() {
+  const manifest = JSON.parse(await readFile(resolve(root, 'asset-manifest.json'), 'utf8'))
+  const results = []
+  let failed = false
 
-for (const asset of manifest.approved_files) {
-  try {
-    const bytes = await readFile(resolve(root, asset.file))
-    const hash = createHash('sha256').update(bytes).digest('hex')
-    const info = pngInfo(bytes)
-    const errors = []
+  for (const asset of manifest.approved_files) {
+    try {
+      const bytes = await readFile(resolve(root, asset.file))
+      const hash = createHash('sha256').update(bytes).digest('hex')
+      const info = pngInfo(bytes)
+      const errors = []
 
-    if (hash !== asset.sha256) errors.push('hash divergente')
-    if (info.width !== asset.width || info.height !== asset.height) {
-      errors.push(`dimensão ${info.width}x${info.height}`)
-    }
-    if (asset.alpha_required && !info.hasAlpha) errors.push('sem canal alfa')
+      if (hash !== asset.sha256) errors.push('hash divergente')
+      if (info.width !== asset.width || info.height !== asset.height) {
+        errors.push(`dimensão ${info.width}x${info.height}`)
+      }
+      if (asset.alpha_required && !info.hasAlpha) errors.push('sem canal alfa')
 
-    if (errors.length) {
+      if (errors.length) {
+        failed = true
+        results.push({
+          id: asset.id,
+          file: asset.file,
+          status: 'FAIL',
+          detail: errors.join(', '),
+          hash,
+        })
+      } else {
+        results.push({
+          id: asset.id,
+          file: asset.file,
+          status: 'PASS',
+          detail: `${info.width}x${info.height}, RGBA`,
+          hash,
+        })
+      }
+    } catch (error) {
       failed = true
-      results.push({ id: asset.id, status: 'FAIL', detail: errors.join(', ') })
-    } else {
-      results.push({ id: asset.id, status: 'PASS', detail: `${info.width}x${info.height}, RGBA` })
+      results.push({
+        id: asset.id,
+        file: asset.file,
+        status: 'FAIL',
+        detail: error.message,
+        hash: null,
+      })
     }
-  } catch (error) {
-    failed = true
-    results.push({ id: asset.id, status: 'FAIL', detail: error.message })
   }
+
+  console.table(results)
+  console.log(`\nPersonalização do avatar: ${manifest.next_stage_requirements.status}`)
+  console.log(manifest.next_stage_requirements.reason)
+
+  if (failed) {
+    process.exitCode = 1
+    throw new Error('Falha na validação de um ou mais assets')
+  }
+  return results
 }
 
-console.table(results)
-console.log(`\nPersonalização do avatar: ${manifest.next_stage_requirements.status}`)
-console.log(manifest.next_stage_requirements.reason)
-
-if (failed) process.exitCode = 1
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await validateAssets()
+}

@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import { AYURVEDA_LOTE_0A_MANIFEST } from './ayurvedaAssetsRegistry'
+import { decodeAll } from '../../lote_0a_base64/decode-ayurveda-assets.mjs'
+import { validateAssets } from '../../lote_0a_kit/validate-assets.mjs'
 
-describe('Lote 0A — Validação de Estrutura e Registro Técnico', () => {
+describe('Lote 0A — Decodificação e Validação dos 6 Assets Oficiais', () => {
   it('registra o manifesto técnico com clinical_use desativado e personalização bloqueada', () => {
     expect(AYURVEDA_LOTE_0A_MANIFEST.manifest_version).toBe('1.0.0')
     expect(AYURVEDA_LOTE_0A_MANIFEST.clinical_use).toBe(false)
@@ -24,16 +26,20 @@ describe('Lote 0A — Validação de Estrutura e Registro Técnico', () => {
     expect(parsed.approved_files).toHaveLength(6)
   })
 
-  it('detecta estritamente o estado de presença de cada PNG sem tentar mascarar ou substituir', () => {
-    const kitAssetsDir = path.resolve('lote_0a_kit/assets')
-    for (const asset of AYURVEDA_LOTE_0A_MANIFEST.approved_files) {
-      const assetPath = path.resolve('lote_0a_kit', asset.file)
-      // Se não estiver fisicamente salvo no filesystem local, o teste registra que o asset
-      // não foi sintetizado nem falsificado
-      const exists = fs.existsSync(assetPath)
-      if (!exists) {
-        expect(exists).toBe(false)
-      }
+  it('decodifica todos os 6 assets base64 com SHA-256 idêntico e sem falhas', async () => {
+    const decodeResults = await decodeAll()
+    expect(decodeResults).toHaveLength(6)
+    for (const res of decodeResults) {
+      expect(res.status).toBe('PASS')
+      expect(res.hash).toBeDefined()
+    }
+  })
+
+  it('valida os 6 PNGs em lote_0a_kit/assets com hash, 1024x1536 e canal alfa RGBA', async () => {
+    const validationResults = await validateAssets()
+    expect(validationResults).toHaveLength(6)
+    for (const res of validationResults) {
+      expect(res.status).toBe('PASS')
     }
   })
 })

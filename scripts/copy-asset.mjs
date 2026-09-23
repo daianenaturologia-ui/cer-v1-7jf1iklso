@@ -9,6 +9,36 @@ try {
   console.error('[copy-asset] error:', e)
 }
 
+// Copy official Ayurveda assets to public/assets/ayurveda/
+const ayurvedaAssets = [
+  'ayv-feminino-leve.png',
+  'ayv-feminino-intermediario.png',
+  'ayv-feminino-amplo.png',
+  'ayv-masculino-leve.png',
+  'ayv-masculino-intermediario.png',
+  'ayv-masculino-amplo.png',
+]
+
+const ayvTargetDir = path.resolve('public/assets/ayurveda')
+fs.mkdirSync(ayvTargetDir, { recursive: true })
+
+for (const assetName of ayurvedaAssets) {
+  const srcAyv = path.resolve('lote_0a_kit/assets', assetName)
+  if (fs.existsSync(srcAyv)) {
+    const destAyv = path.join(ayvTargetDir, assetName)
+    fs.copyFileSync(srcAyv, destAyv)
+    console.log(
+      `[copy-asset] Copied Ayurveda asset ${assetName} (${fs.statSync(destAyv).size} bytes)`,
+    )
+  }
+}
+
+// Also keep copy of asset-manifest.json in public/assets/ayurveda/
+const manifestSrc = path.resolve('lote_0a_kit/asset-manifest.json')
+if (fs.existsSync(manifestSrc)) {
+  fs.copyFileSync(manifestSrc, path.join(ayvTargetDir, 'asset-manifest.json'))
+}
+
 const src = path.resolve('src/assets/ser-integral-cer-4eb44.png')
 const dest = path.resolve('public/ser-integral-cer.png')
 
