@@ -2,7 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import React from 'react'
 import { ExperienceEngine } from './ExperienceEngine'
-import { MindEmotionsReport, MSG_RECUSA, MSG_INDISPONIVEL } from './MindEmotionsReport'
+import {
+  MindEmotionsReport,
+  MSG_RECUSA,
+  MSG_INDISPONIVEL,
+  extractQuestionResponse,
+} from './MindEmotionsReport'
 import { enrollmentExperienceService } from '../../services/experienceEngine'
 import pb from '../../lib/pocketbase/client'
 
@@ -12,6 +17,10 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
   })
 
   const fullResponsesFixture: Record<string, any> = {
+    // P1: Funcionamento emocional geral
+    'p-07c-pm1-p1-funcionamento-emocional': {
+      free_text: 'Isso varia muito ao longo do dia.',
+    },
     // P2: Emoções
     'p-07c-pm1-p2-emocoes-presentes': {
       structured_value: ['ansiedade_apreensao', 'tristeza', 'outra_emocao'],
@@ -343,5 +352,184 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
 
     // Nenhuma chamada PocketBase
     expect(pbSpy).not.toHaveBeenCalled()
+  })
+
+  it('14. extractQuestionResponse universal resolver aceita mapa por ID persistido, arrays e chaves canônicas', () => {
+    const rawResponses = {
+      'db-uuid-1': {
+        id: 'db-uuid-1',
+        prompt_id: 'db-uuid-1',
+        prompt_key: 'mundo_emocional_geral',
+        step_order: 1,
+        free_text: 'Isso varia muito',
+      },
+      'db-uuid-2': {
+        id: 'db-uuid-2',
+        prompt_id: 'db-uuid-2',
+        prompt_key: 'movimentos_automaticos_frequencia_p2',
+        step_order: 7,
+        structured_value: { cartao_10_cobrar_e_criticar: 'Frequentemente' },
+      },
+    }
+
+    const p1Found = extractQuestionResponse(rawResponses, [
+      'p-07c-pm1-p1-funcionamento-emocional',
+      'mundo_emocional_geral',
+      'p1',
+    ])
+    expect(p1Found).toBeTruthy()
+    expect(p1Found.free_text).toBe('Isso varia muito')
+
+    // Array support
+    const arrayResponses = Object.values(rawResponses)
+    const p7bFound = extractQuestionResponse(arrayResponses, [
+      'p-07c-pm3-p7b-movimentos-6-10',
+      'movimentos_automaticos_frequencia_p2',
+      'p7b',
+    ])
+    expect(p7bFound).toBeTruthy()
+    expect(p7bFound.prompt_key).toBe('movimentos_automaticos_frequencia_p2')
+  })
+
+  it('15. TESTE DE INTEGRAÇÃO OBRIGATÓRIO: caminho real de produção com P1, P7b, P8, P12, persistência e campos não respondidos', async () => {
+    // Simulação do payload real persistido pelo demoAdapter / PocketBase
+    const productionPersistedResponses: Record<string, any> = {
+      'real-prompt-id-p1': {
+        id: 'resp-p1',
+        prompt_id: 'real-prompt-id-p1',
+        prompt_key: 'mundo_emocional_geral',
+        step_order: 1,
+        free_text: 'Isso varia muito',
+        structured_value: {
+          value: 'Isso varia muito',
+          metadata: {
+            prompt_key: 'mundo_emocional_geral',
+            canonical_prompt_id: 'p-07c-pm1-p1-funcionamento-emocional',
+          },
+        },
+      },
+      'real-prompt-id-p7b': {
+        id: 'resp-p7b',
+        prompt_id: 'real-prompt-id-p7b',
+        prompt_key: 'movimentos_automaticos_frequencia_p2',
+        step_order: 7,
+        structured_value: {
+          cartao_10_cobrar_e_criticar: 'Frequentemente',
+          metadata: {
+            prompt_key: 'movimentos_automaticos_frequencia_p2',
+            canonical_prompt_id: 'p-07c-pm3-p7b-movimentos-6-10',
+          },
+        },
+      },
+      'real-prompt-id-p8': {
+        id: 'resp-p8',
+        prompt_id: 'real-prompt-id-p8',
+        prompt_key: 'movimentos_interferencia_atual',
+        step_order: 8,
+        structured_value: {
+          selectedOptionIds: ['cartao_10_cobrar_e_criticar'],
+          metadata: {
+            prompt_key: 'movimentos_interferencia_atual',
+            canonical_prompt_id: 'p-07c-pm3-p8-interferencia-movimentos',
+          },
+        },
+      },
+      'real-prompt-id-p12': {
+        id: 'resp-p12',
+        prompt_id: 'real-prompt-id-p12',
+        prompt_key: 'recursos_recuperar_espaco',
+        step_order: 12,
+        free_text: 'Ainda não descobri o que me ajuda',
+        structured_value: {
+          free_text: 'Ainda não descobri o que me ajuda',
+          metadata: {
+            prompt_key: 'recursos_recuperar_espaco',
+            canonical_prompt_id: 'p-07c-pm5-p12-recursos-espaco-interno',
+          },
+        },
+      },
+    }
+
+    // Configurar simulação da experiência concluída no 5º momento
+    vi.spyOn(enrollmentExperienceService, 'getByEnrollmentAndExperience').mockResolvedValue({
+      id: 'enr-exp-completed-real',
+      enrollment_id: 'enr-prod',
+      experience_id: 'exp-mente-emocoes-07c',
+      progress_status: 'completed',
+      release_status: 'completed',
+      current_step_order: 13,
+    } as any)
+
+    const { unmount } = render(
+      <ExperienceEngine
+        experienceId="exp-mente-emocoes-07c"
+        enrollmentId="enr-prod"
+        respondentUserId="user-prod"
+        initialResponses={Object.values(productionPersistedResponses) as any}
+      />,
+    )
+
+    // Concluir o quinto momento e verificar tela de fechamento
+    await waitFor(() => {
+      expect(screen.getByText('Momento Concluído')).toBeTruthy()
+    })
+
+    // Abrir o relatório
+    const openBtn = screen.getByRole('button', { name: /Ver meu retrato de Mente & Emoções/i })
+    expect(openBtn).toBeTruthy()
+    fireEvent.click(openBtn)
+
+    // Afirmar que o diálogo abre
+    expect(screen.getByRole('dialog', { name: /Seu retrato de Mente & Emoções/i })).toBeTruthy()
+
+    // 1. P1: Funcionamento emocional ("Isso varia muito")
+    expect(screen.getByText('Como você descreveu seu funcionamento emocional')).toBeTruthy()
+    expect(screen.getByText('Isso varia muito')).toBeTruthy()
+
+    // 2. P7b / P8: "Crítico" ("cartao_10_cobrar_e_criticar") nos padrões mais interferentes
+    expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toBeTruthy()
+    expect(screen.getByText('Crítico')).toBeTruthy()
+
+    // 3. P12: Recurso ("Ainda não descobri o que me ajuda")
+    expect(screen.getByText('Ainda não descobri o que me ajuda')).toBeTruthy()
+
+    // 4. Afirmar que campos realmente não respondidos permanecem "Informação ainda não disponível"
+    // (ex.: pensamentos P4, diálogo interno P6, segurança P10, sobrecarga P11, anotação P13)
+    const unavailableList = screen.getAllByText(MSG_INDISPONIVEL)
+    expect(unavailableList.length).toBeGreaterThanOrEqual(3)
+
+    // Fechar pelo botão do topo
+    const closeTop = screen.getByTestId('report-close-button-top')
+    fireEvent.click(closeTop)
+    expect(screen.queryByRole('dialog', { name: /Seu retrato de Mente & Emoções/i })).toBeNull()
+
+    // Reabrir e verificar persistência
+    fireEvent.click(openBtn)
+    expect(screen.getByRole('dialog', { name: /Seu retrato de Mente & Emoções/i })).toBeTruthy()
+    expect(screen.getByText('Isso varia muito')).toBeTruthy()
+    expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toBeTruthy()
+    expect(screen.getByText('Ainda não descobri o que me ajuda')).toBeTruthy()
+
+    // Simular refresh desmontando e remontando com o mesmo estado persistido
+    unmount()
+
+    render(
+      <ExperienceEngine
+        experienceId="exp-mente-emocoes-07c"
+        enrollmentId="enr-prod"
+        respondentUserId="user-prod"
+        initialResponses={Object.values(productionPersistedResponses) as any}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Momento Concluído')).toBeTruthy()
+    })
+
+    const reopenBtn = screen.getByRole('button', { name: /Ver meu retrato de Mente & Emoções/i })
+    fireEvent.click(reopenBtn)
+    expect(screen.getByText('Isso varia muito')).toBeTruthy()
+    expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toBeTruthy()
+    expect(screen.getByText('Ainda não descobri o que me ajuda')).toBeTruthy()
   })
 })

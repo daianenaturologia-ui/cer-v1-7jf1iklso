@@ -711,6 +711,9 @@ export const experienceResponseService = {
     freeText?: string
     accessClass?: VisibilityClass
     changeReason?: string
+    promptKey?: string
+    canonicalPromptId?: string
+    stepOrder?: number
   }): Promise<ExperienceResponseRecord> {
     const canonicalExpId = resolveExperienceId(params.experienceId)
     const effectiveParams = { ...params, experienceId: canonicalExpId }

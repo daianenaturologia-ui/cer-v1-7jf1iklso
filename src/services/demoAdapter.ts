@@ -888,6 +888,9 @@ class DemoAdapter {
     structuredValue?: unknown
     freeText?: string
     accessClass?: any
+    promptKey?: string
+    canonicalPromptId?: string
+    stepOrder?: number
   }): ExperienceResponseRecord {
     const existing = this.state.experienceResponses.find(
       (r) => r.enrollment_id === params.enrollmentId && r.prompt_id === params.promptId,
@@ -898,6 +901,9 @@ class DemoAdapter {
       existing.version = (existing.version || 1) + 1
       existing.status = 'revised'
       existing.updated = new Date().toISOString()
+      if (params.promptKey) (existing as any).prompt_key = params.promptKey
+      if (params.stepOrder !== undefined) (existing as any).step_order = params.stepOrder
+      if (params.canonicalPromptId) (existing as any).canonical_prompt_id = params.canonicalPromptId
       this.saveState()
       return { ...existing }
     } else {
@@ -917,6 +923,9 @@ class DemoAdapter {
         created: new Date().toISOString(),
         updated: new Date().toISOString(),
       }
+      if (params.promptKey) (newResp as any).prompt_key = params.promptKey
+      if (params.stepOrder !== undefined) (newResp as any).step_order = params.stepOrder
+      if (params.canonicalPromptId) (newResp as any).canonical_prompt_id = params.canonicalPromptId
       this.state.experienceResponses.push(newResp)
       this.saveState()
       return newResp

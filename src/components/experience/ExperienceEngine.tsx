@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   experienceCatalogService,
   enrollmentExperienceService,
@@ -106,8 +106,18 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     if (initialResponses && initialResponses.length > 0) {
       const map: Record<string, ExperienceResponseRecord> = {}
       for (const r of initialResponses) {
+        const pKey =
+          (r as any).prompt_key ||
+          (r.structured_value as any)?.metadata?.prompt_key ||
+          (r.structured_value as any)?.prompt_key
         if (r.prompt_id) {
           map[r.prompt_id] = r
+        }
+        if (pKey) {
+          map[pKey] = r
+        }
+        if (r.id) {
+          map[r.id] = r
         }
       }
       return map
@@ -135,6 +145,40 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   // Resposta em edição do momento atual
   const [currentDraftValue, setCurrentDraftValue] = useState<unknown>(null)
   const [currentDraftText, setCurrentDraftText] = useState('')
+
+  // Normalização universal de respostas para o MindEmotionsReport
+  const normalizedResponsesForReport: Record<string, ExperienceResponseRecord> = useMemo(() => {
+    const map: Record<string, ExperienceResponseRecord> = { ...responsesMap }
+    for (const [key, resp] of Object.entries(responsesMap)) {
+      if (!resp) continue
+      const matchedPrompt = prompts.find((p) => p.id === resp.prompt_id || p.id === key)
+      const promptKey =
+        (matchedPrompt?.schema_config as any)?.prompt_key ||
+        (resp as any).prompt_key ||
+        (resp.structured_value as any)?.metadata?.prompt_key ||
+        (resp.structured_value as any)?.prompt_key
+      const stepOrder = matchedPrompt?.step_order || (resp as any).step_order
+      const canonicalPromptId =
+        matchedPrompt?.id || (resp as any).canonical_prompt_id || resp.prompt_id
+
+      const enriched: ExperienceResponseRecord = {
+        ...resp,
+        ...(promptKey ? { prompt_key: promptKey } : {}),
+        ...(stepOrder ? { step_order: stepOrder } : {}),
+        ...(canonicalPromptId ? { canonical_prompt_id: canonicalPromptId } : {}),
+      } as any
+
+      map[key] = enriched
+      if (resp.prompt_id) map[resp.prompt_id] = enriched
+      if (promptKey) map[promptKey] = enriched
+      if (canonicalPromptId) map[canonicalPromptId] = enriched
+      if (stepOrder) {
+        map[`p${stepOrder}`] = enriched
+        map[`me_p${stepOrder}`] = enriched
+      }
+    }
+    return map
+  }, [responsesMap, prompts])
 
   // Carregar metadados da experiência, prompts e respostas salvas
   useEffect(() => {
@@ -251,7 +295,21 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
         const map: Record<string, ExperienceResponseRecord> = {}
         for (const resp of existingResponses) {
-          map[resp.prompt_id] = resp
+          const matchedPrompt = promptList.find((p) => p.id === resp.prompt_id)
+          const promptKey =
+            (matchedPrompt?.schema_config as any)?.prompt_key ||
+            (resp as any).prompt_key ||
+            (resp.structured_value as any)?.metadata?.prompt_key
+          const enrichedResp: ExperienceResponseRecord = {
+            ...resp,
+            ...(promptKey ? { prompt_key: promptKey } : {}),
+            ...(matchedPrompt?.step_order ? { step_order: matchedPrompt.step_order } : {}),
+            canonical_prompt_id: resp.prompt_id,
+          } as any
+          map[resp.prompt_id] = enrichedResp
+          if (promptKey) {
+            map[promptKey] = enrichedResp
+          }
         }
         setResponsesMap(map)
 
@@ -426,10 +484,19 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         indicator_to_confirm:
           pKey === 'movimentos_sob_pressao' ? 'mental_movements_under_pressure' : null,
         absent_information: valToSave === null || valToSave === undefined,
+        prompt_key: pKey,
+        canonical_prompt_id: currentPrompt.id,
+        step_order: currentPrompt.step_order,
       }
 
       if (typeof structToSave === 'object' && structToSave !== null) {
         structToSave.metadata = responseMetadata
+        if (!structToSave.prompt_key && pKey) {
+          structToSave.prompt_key = pKey
+        }
+        if (!structToSave.canonical_prompt_id) {
+          structToSave.canonical_prompt_id = currentPrompt.id
+        }
       }
 
       // Tratar texto livre privado em telas com privacy_split:
@@ -459,9 +526,24 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         changeReason: responsesMap[currentPrompt.id]
           ? 'Atualização pelo interagente durante a experiência'
           : 'Primeiro registro de resposta',
+        promptKey: pKey,
+        canonicalPromptId: currentPrompt.id,
+        stepOrder: currentPrompt.step_order,
       })
 
-      setResponsesMap((prev) => ({ ...prev, [currentPrompt.id]: saved }))
+      // Enriquecer registro local com chaves canônicas
+      const enrichedSaved: ExperienceResponseRecord = {
+        ...saved,
+        ...(pKey ? { prompt_key: pKey } : {}),
+        ...(currentPrompt.step_order ? { step_order: currentPrompt.step_order } : {}),
+        canonical_prompt_id: currentPrompt.id,
+      } as any
+
+      setResponsesMap((prev) => ({
+        ...prev,
+        [currentPrompt.id]: enrichedSaved,
+        ...(pKey ? { [pKey]: enrichedSaved } : {}),
+      }))
       setLastSavedTime(
         new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       )
@@ -545,6 +627,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       const pSchema = (currentPrompt.schema_config || {}) as any
       const targetAccessClass = pSchema.access_destination || 'shared_care'
 
+      const pKey = pSchema.prompt_key
       const saved = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
@@ -556,13 +639,37 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           is_legitimate_skip: true,
           skip_reason: reason,
           collection_origin: 'newly_collected',
+          prompt_key: pKey,
+          canonical_prompt_id: currentPrompt.id,
+          metadata: {
+            prompt_key: pKey,
+            canonical_prompt_id: currentPrompt.id,
+            step_order: currentPrompt.step_order,
+            absent_information: false,
+            is_legitimate_skip: true,
+            skip_reason: reason,
+          },
         },
         freeText: reason === 'nao_sei' ? 'Não sei' : 'Prefiro não responder',
         accessClass: targetAccessClass,
         changeReason: 'Declaração legítima de resposta não punitiva (' + reason + ')',
+        promptKey: pKey,
+        canonicalPromptId: currentPrompt.id,
+        stepOrder: currentPrompt.step_order,
       })
 
-      setResponsesMap((prev) => ({ ...prev, [currentPrompt.id]: saved }))
+      const enrichedSaved: ExperienceResponseRecord = {
+        ...saved,
+        ...(pKey ? { prompt_key: pKey } : {}),
+        ...(currentPrompt.step_order ? { step_order: currentPrompt.step_order } : {}),
+        canonical_prompt_id: currentPrompt.id,
+      } as any
+
+      setResponsesMap((prev) => ({
+        ...prev,
+        [currentPrompt.id]: enrichedSaved,
+        ...(pKey ? { [pKey]: enrichedSaved } : {}),
+      }))
       handleNextStep()
     } catch (err) {
       console.error('Falha ao registrar recusa legítima:', err)
@@ -891,7 +998,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
               <MindEmotionsReport
                 isOpen={showMindEmotionsReport}
                 onClose={() => setShowMindEmotionsReport(false)}
-                responses={responsesMap}
+                responses={normalizedResponsesForReport}
                 treatmentVariant={treatmentVariant}
               />
             )}

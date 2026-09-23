@@ -23,7 +23,7 @@ export interface MindEmotionsReportProps {
   isOpen?: boolean
   open?: boolean
   onClose: () => void
-  responses: Record<string, any>
+  responses: Record<string, any> | any[]
   treatmentVariant?: 'feminino' | 'masculino' | 'neutro' | 'outro'
   className?: string
   isProfessionalView?: boolean
@@ -169,18 +169,105 @@ export function evaluateFieldState(val: any): {
 }
 
 /**
- * Extract question response trying different standard keys
+ * Universal question response resolver.
+ * 1. Direct key lookup if responses is an object and has possibleKeys.
+ * 2. If not found or if responses is an array/map, iterates all entries/records
+ *    and matches against possibleKeys checking:
+ *    - key in responses (direct map key)
+ *    - r.prompt_id
+ *    - r.id
+ *    - r.prompt_key
+ *    - r.step_order (converted to e.g. "p" + step_order)
+ *    - r.expand?.prompt_id?.schema_config?.prompt_key
+ *    - r.expand?.prompt_id?.id
+ *    - r.metadata?.prompt_key
+ *    - r.schema_config?.prompt_key
  */
 export function extractQuestionResponse(
-  responses: Record<string, any>,
+  responses: Record<string, any> | any[] | undefined | null,
   possibleKeys: string[],
 ): any {
   if (!responses) return undefined
-  for (const k of possibleKeys) {
-    if (responses[k] !== undefined && responses[k] !== null) {
-      return responses[k]
+
+  const normalizedTargetKeys = new Set(possibleKeys.map((k) => String(k).trim().toLowerCase()))
+
+  // 1. Direct object key match if responses is a Record
+  if (typeof responses === 'object' && !Array.isArray(responses)) {
+    for (const k of possibleKeys) {
+      if (responses[k] !== undefined && responses[k] !== null) {
+        return responses[k]
+      }
+    }
+    // Also check case-insensitive match on object keys
+    const entries = Object.entries(responses)
+    for (const [key, val] of entries) {
+      if (val !== undefined && val !== null && normalizedTargetKeys.has(key.trim().toLowerCase())) {
+        return val
+      }
     }
   }
+
+  // 2. Iterate list of record values
+  const records = Array.isArray(responses) ? responses : Object.values(responses)
+
+  for (const r of records) {
+    if (!r || typeof r !== 'object') continue
+
+    // Collect all candidate keys associated with this record
+    const candidateKeys: string[] = []
+
+    if (r.prompt_id) candidateKeys.push(String(r.prompt_id))
+    if (r.id) candidateKeys.push(String(r.id))
+    if (r.prompt_key) candidateKeys.push(String(r.prompt_key))
+    if (r.key) candidateKeys.push(String(r.key))
+    if (r.step_order !== undefined && r.step_order !== null) {
+      candidateKeys.push(`p${r.step_order}`)
+      candidateKeys.push(`me_p${r.step_order}`)
+    }
+    if (r.prompt_order !== undefined && r.prompt_order !== null) {
+      candidateKeys.push(`p${r.prompt_order}`)
+      candidateKeys.push(`me_p${r.prompt_order}`)
+    }
+
+    // Expand properties
+    const expandPrompt = r.expand?.prompt_id
+    if (expandPrompt) {
+      if (expandPrompt.id) candidateKeys.push(String(expandPrompt.id))
+      if (expandPrompt.schema_config?.prompt_key) {
+        candidateKeys.push(String(expandPrompt.schema_config.prompt_key))
+      }
+      if (expandPrompt.schema_config?.concept_key) {
+        candidateKeys.push(String(expandPrompt.schema_config.concept_key))
+      }
+      if (expandPrompt.step_order !== undefined) {
+        candidateKeys.push(`p${expandPrompt.step_order}`)
+        candidateKeys.push(`me_p${expandPrompt.step_order}`)
+      }
+    }
+
+    // Direct schema_config if present on r
+    if (r.schema_config?.prompt_key) candidateKeys.push(String(r.schema_config.prompt_key))
+    if (r.schema_config?.concept_key) candidateKeys.push(String(r.schema_config.concept_key))
+
+    // Metadata properties
+    if (r.metadata?.prompt_key) candidateKeys.push(String(r.metadata.prompt_key))
+    if (r.metadata?.canonical_prompt_id) candidateKeys.push(String(r.metadata.canonical_prompt_id))
+    if (r.metadata?.concept_key) candidateKeys.push(String(r.metadata.concept_key))
+
+    // Structured value metadata
+    if (r.structured_value && typeof r.structured_value === 'object') {
+      const sMeta = r.structured_value.metadata
+      if (sMeta?.prompt_key) candidateKeys.push(String(sMeta.prompt_key))
+      if (sMeta?.canonical_prompt_id) candidateKeys.push(String(sMeta.canonical_prompt_id))
+    }
+
+    for (const cand of candidateKeys) {
+      if (normalizedTargetKeys.has(cand.trim().toLowerCase())) {
+        return r
+      }
+    }
+  }
+
   return undefined
 }
 
@@ -202,11 +289,36 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
   }
 
   // --- 1. EMOÇÕES ---
+  // P1: Funcionamento emocional geral
+  const p1Raw =
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm1-p1-funcionamento-emocional'] || responses['mundo_emocional_geral']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm1-p1-funcionamento-emocional',
+      'mundo_emocional_geral',
+      'me_p1',
+      'p1',
+      'q1',
+      'funcionamento_emocional',
+      'pergunta_1',
+    ])
+  const p1State = evaluateFieldState(p1Raw)
+
   // P2: Emoções mais presentes
   const p2Raw =
-    responses['p-07c-pm1-p2-emocoes-presentes'] ||
-    responses['emocoes_recorrentes'] ||
-    extractQuestionResponse(responses, ['me_p2', 'p2', 'q2', 'emotions', 'pergunta_2'])
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm1-p2-emocoes-presentes'] || responses['emocoes_recorrentes']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm1-p2-emocoes-presentes',
+      'emocoes_recorrentes',
+      'me_p2',
+      'p2',
+      'q2',
+      'emotions',
+      'pergunta_2',
+    ])
   const p2State = evaluateFieldState(p2Raw)
 
   let selectedEmotionsList: string[] = []
@@ -276,24 +388,52 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
 
   // P3: Resposta livre sobre emoções (compreensao_despertar_emocoes)
   const p3Raw =
-    responses['p-07c-pm1-p3-por-que-se-sente-assim'] ||
-    responses['compreensao_despertar_emocoes'] ||
-    extractQuestionResponse(responses, ['me_p3', 'p3', 'q3', 'emotions_free', 'pergunta_3'])
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm1-p3-por-que-se-sente-assim'] ||
+        responses['compreensao_despertar_emocoes']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm1-p3-por-que-se-sente-assim',
+      'compreensao_despertar_emocoes',
+      'me_p3',
+      'p3',
+      'q3',
+      'emotions_free',
+      'pergunta_3',
+    ])
   const p3State = evaluateFieldState(p3Raw)
 
   // P9: Situações de ativação (situacoes_ativacao_movimentos)
   const p9Raw =
-    responses['p-07c-pm3-p9-situacoes-ativacao'] ||
-    responses['situacoes_ativacao_movimentos'] ||
-    extractQuestionResponse(responses, ['me_p9', 'p9', 'q9', 'activation_contexts', 'pergunta_9'])
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm3-p9-situacoes-ativacao'] || responses['situacoes_ativacao_movimentos']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm3-p9-situacoes-ativacao',
+      'situacoes_ativacao_movimentos',
+      'me_p9',
+      'p9',
+      'q9',
+      'activation_contexts',
+      'pergunta_9',
+    ])
   const p9State = evaluateFieldState(p9Raw)
 
   // --- 2. PENSAMENTOS ---
   // P4: Pensamento associado livre (pensamento_associado)
   const p4Raw =
-    responses['p-07c-pm2-p4-pensamentos-associados'] ||
-    responses['pensamento_associado'] ||
-    extractQuestionResponse(responses, ['me_p4', 'p4', 'q4', 'thoughts_free', 'pergunta_4'])
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm2-p4-pensamentos-associados'] || responses['pensamento_associado']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm2-p4-pensamentos-associados',
+      'pensamento_associado',
+      'me_p4',
+      'p4',
+      'q4',
+      'thoughts_free',
+      'pergunta_4',
+    ])
   const p4State = evaluateFieldState(p4Raw)
 
   // Pensamentos estruturados/opções selecionadas opcionais se existirem
@@ -306,16 +446,28 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
 
   // P6: Diálogo interno (self_dialogue_erro)
   const p6Raw =
-    responses['p-07c-pm2-p6-dialogo-interno'] ||
-    responses['self_dialogue_erro'] ||
-    extractQuestionResponse(responses, ['me_p6', 'p6', 'q6', 'internal_dialogue', 'pergunta_6'])
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm2-p6-dialogo-interno'] || responses['self_dialogue_erro']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm2-p6-dialogo-interno',
+      'self_dialogue_erro',
+      'me_p6',
+      'p6',
+      'q6',
+      'internal_dialogue',
+      'pergunta_6',
+    ])
   const p6State = evaluateFieldState(p6Raw)
 
   // --- 3. COMPORTAMENTOS (Pergunta 5: comportamento_associado) ---
   const p5Raw =
-    responses['p-07c-pm2-p5-comportamento-associado'] ||
-    responses['comportamento_associado'] ||
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm2-p5-comportamento-associado'] || responses['comportamento_associado']
+      : undefined) ||
     extractQuestionResponse(responses, [
+      'p-07c-pm2-p5-comportamento-associado',
+      'comportamento_associado',
       'me_p5',
       'p5',
       'q5',
@@ -328,9 +480,12 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
 
   // Alívio imediato (perguntado no campo opcional da P12 - recursos_recuperar_espaco)
   const p12PromptRaw =
-    responses['p-07c-pm5-p12-recursos-espaco-interno'] ||
-    responses['recursos_recuperar_espaco'] ||
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm5-p12-recursos-espaco-interno'] || responses['recursos_recuperar_espaco']
+      : undefined) ||
     extractQuestionResponse(responses, [
+      'p-07c-pm5-p12-recursos-espaco-interno',
+      'recursos_recuperar_espaco',
       'me_p12',
       'p12',
       'q12',
@@ -358,17 +513,39 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
 
   // --- EXTRAÇÃO DAS RESPOSTAS DE P7A, P7B E P8 PARA O GRÁFICO E PADRÕES INTERFERENTES ---
   const p7aResp =
-    responses['p-07c-pm3-p7a-movimentos-1-5'] ||
-    responses['movimentos_automaticos_frequencia_p1'] ||
-    extractQuestionResponse(responses, ['p7a', 'me_p7a', 'q7a', 'pergunta_7a'])
-  const p7bResp =
-    responses['p-07c-pm3-p7b-movimentos-6-10'] ||
-    responses['movimentos_automaticos_frequencia_p2'] ||
-    extractQuestionResponse(responses, ['p7b', 'me_p7b', 'q7b', 'pergunta_7b'])
-  const p8Raw =
-    responses['p-07c-pm3-p8-interferencia-movimentos'] ||
-    responses['movimentos_interferencia_atual'] ||
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm3-p7a-movimentos-1-5'] ||
+        responses['movimentos_automaticos_frequencia_p1']
+      : undefined) ||
     extractQuestionResponse(responses, [
+      'p-07c-pm3-p7a-movimentos-1-5',
+      'movimentos_automaticos_frequencia_p1',
+      'p7a',
+      'me_p7a',
+      'q7a',
+      'pergunta_7a',
+    ])
+  const p7bResp =
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm3-p7b-movimentos-6-10'] ||
+        responses['movimentos_automaticos_frequencia_p2']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm3-p7b-movimentos-6-10',
+      'movimentos_automaticos_frequencia_p2',
+      'p7b',
+      'me_p7b',
+      'q7b',
+      'pergunta_7b',
+    ])
+  const p8Raw =
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm3-p8-interferencia-movimentos'] ||
+        responses['movimentos_interferencia_atual']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm3-p8-interferencia-movimentos',
+      'movimentos_interferencia_atual',
       'me_p8',
       'p8',
       'q8',
@@ -485,21 +662,42 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
 
   // --- 5. TRÊS BLOCOS DE ESTADO (P10, P11, P12) ---
   const p10Raw =
-    responses['p-07c-pm4-p10-seguranca-bem-estar'] ||
-    responses['dois_retratos_espaco'] ||
-    extractQuestionResponse(responses, ['me_p10', 'p10', 'q10', 'safety_wellbeing', 'pergunta_10'])
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm4-p10-seguranca-bem-estar'] || responses['dois_retratos_espaco']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm4-p10-seguranca-bem-estar',
+      'dois_retratos_espaco',
+      'me_p10',
+      'p10',
+      'q10',
+      'safety_wellbeing',
+      'pergunta_10',
+    ])
   const p10State = evaluateFieldState(p10Raw)
 
   const p11Raw =
-    responses['p-07c-pm4-p11-sobrecarga'] ||
-    responses['dois_retratos_sobrecarga'] ||
-    extractQuestionResponse(responses, ['me_p11', 'p11', 'q11', 'overload_state', 'pergunta_11'])
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm4-p11-sobrecarga'] || responses['dois_retratos_sobrecarga']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm4-p11-sobrecarga',
+      'dois_retratos_sobrecarga',
+      'me_p11',
+      'p11',
+      'q11',
+      'overload_state',
+      'pergunta_11',
+    ])
   const p11State = evaluateFieldState(p11Raw)
 
   const p12Raw =
-    responses['p-07c-pm5-p12-recursos-espaco-interno'] ||
-    responses['recursos_recuperar_espaco'] ||
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm5-p12-recursos-espaco-interno'] || responses['recursos_recuperar_espaco']
+      : undefined) ||
     extractQuestionResponse(responses, [
+      'p-07c-pm5-p12-recursos-espaco-interno',
+      'recursos_recuperar_espaco',
       'me_p12',
       'p12',
       'q12',
@@ -510,9 +708,18 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
 
   // --- 6. PERGUNTA 13 (Livre / Opcional) ---
   const p13Raw =
-    responses['p-07c-pm5-p13-campo-final-opcional'] ||
-    responses['campo_final_opcional'] ||
-    extractQuestionResponse(responses, ['me_p13', 'p13', 'q13', 'additional_notes', 'pergunta_13'])
+    (typeof responses === 'object' && !Array.isArray(responses)
+      ? responses['p-07c-pm5-p13-campo-final-opcional'] || responses['campo_final_opcional']
+      : undefined) ||
+    extractQuestionResponse(responses, [
+      'p-07c-pm5-p13-campo-final-opcional',
+      'campo_final_opcional',
+      'me_p13',
+      'p13',
+      'q13',
+      'additional_notes',
+      'pergunta_13',
+    ])
   const p13State = evaluateFieldState(p13Raw)
   const hasP13Content =
     !p13State.isEmpty &&
@@ -612,6 +819,14 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
             <h2 className="text-xl sm:text-2xl font-serif font-semibold text-foreground">
               Emoções mais presentes
             </h2>
+          </div>
+
+          {/* Pergunta 1: Funcionamento emocional geral */}
+          <div className="space-y-2 bg-muted/20 p-4 sm:p-5 rounded-xl border">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Como você descreveu seu funcionamento emocional
+            </h3>
+            {renderStateText(p1State, p1Raw)}
           </div>
 
           {/* Emoções selecionadas */}
