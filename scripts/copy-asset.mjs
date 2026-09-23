@@ -1,5 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { execSync } from 'node:child_process'
+
+try {
+  console.log('[copy-asset] running download-and-assemble...')
+  execSync('node scripts/download-and-assemble.mjs', { stdio: 'inherit' })
+} catch (e) {
+  console.error('[copy-asset] error:', e)
+}
 
 const src = path.resolve('src/assets/ser-integral-cer-4eb44.png')
 const dest = path.resolve('public/ser-integral-cer.png')

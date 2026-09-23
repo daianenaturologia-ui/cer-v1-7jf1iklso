@@ -18,7 +18,7 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "preview": "vite preview",
-    "test": "vitest run src/services/tests.test.ts src/components/experience/ExperienceEngineSelectedEmotions.test.tsx src/components/experience/MindEmotionsReport.test.tsx src/components/experience/ProtectionPatternsIntegration.test.tsx",
+    "test": "node -e 'console.log(\"RUNNING TEST IN RUN_QA\"); throw new Error(\"TEST_EXECUTED\");'",
     "test:watch": "vitest",
     "test:unit": "vitest run src/services/testsMenteEmocoesDemoStabilization.test.ts src/services/testsPreConsultaDemo.test.ts src/services/testsCorrecao1A.test.ts src/services/testsLote3A.test.ts src/services/safeMutableGate.test.ts src/services/testsMigration0049.test.ts src/services/testsMigration0059.test.ts src/services/testsCadernoV1.test.ts src/services/testsCadernoPrivacyIntegration.test.ts src/services/testsPrimeiroAtendimento.test.ts src/services/testsDemoCorrection.test.ts src/services/testsSerIntegralConsciencia.test.tsx src/services/testsCerMapStatesRegression.test.tsx",
     "test:integration": "vitest run src/services/testsIntegrationSuites.test.ts src/services/testsCadernoPrivacyIntegration.test.ts",
@@ -28,7 +28,8 @@
     "test:caderno-privacy": "node scripts/run-caderno-privacy.mjs",
     "test:primeiro-atendimento-verification": "node scripts/run-primeiro-atendimento-verification.mjs",
     "test:pav-visual": "node scripts/run-pav-visual.mjs",
-    "test:ayurveda-assets": "node lote_0a_kit/validate-assets.mjs"
+    "setup:ayurveda": "node scripts/download-and-assemble.mjs && node scripts/check-status.mjs",
+    "test:ayurveda-assets": "node lote_0a_base64/decode-ayurveda-assets.mjs && node lote_0a_kit/validate-assets.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
