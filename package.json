@@ -30,7 +30,8 @@
     "test:pav-visual": "node scripts/run-pav-visual.mjs",
     "setup:ayurveda": "node scripts/download-and-assemble.mjs && node scripts/check-status.mjs",
     "test:ayurveda-assets": "node lote_0a_base64/decode-ayurveda-assets.mjs && node lote_0a_kit/validate-assets.mjs"
-  },  "dependencies": {
+  },
+  "dependencies": {
     "@hookform/resolvers": "^5.4.0",
     "@radix-ui/react-accordion": "^1.2.14",
     "@radix-ui/react-alert-dialog": "^1.1.17",
