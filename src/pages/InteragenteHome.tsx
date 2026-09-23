@@ -128,6 +128,7 @@ export const InteragenteHome: React.FC = () => {
   const [intakeSentSuccessModal, setIntakeSentSuccessModal] = useState(false)
   const [hasSentIntakeOnce, setHasSentIntakeOnce] = useState(false)
   const [lastSentIntakeMessage, setLastSentIntakeMessage] = useState<any | null>(null)
+  const [sentIntakeHistory, setSentIntakeHistory] = useState<any[]>([])
   const [isWritingNewIntake, setIsWritingNewIntake] = useState(false)
   // ETAPA 4: Plano apresentado e Retorno Operacional
   const [presentedCarePlans, setPresentedCarePlans] = useState<CerCarePlanPresentationRecord[]>([])
@@ -184,8 +185,10 @@ export const InteragenteHome: React.FC = () => {
               (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime(),
             )
             setLastSentIntakeMessage(sorted[0])
+            setSentIntakeHistory(sorted)
           } else {
             setLastSentIntakeMessage(null)
+            setSentIntakeHistory([])
           }
 
           // Se tiver rascunho salvo mas não aprovado, carregar rascunho se campos locais estiverem vazios
@@ -198,12 +201,20 @@ export const InteragenteHome: React.FC = () => {
               // Parse do rascunho estruturado se houver
               const text = latestDraft.message_text
               const bringsMatch = text.match(/O que a traz:\n([\s\S]*?)(?=\n\nO que já a ajuda:|$)/)
-              const helpsMatch = text.match(/O que já a ajuda:\n([\s\S]*?)(?=\n\nO que deseja cuidar:|$)/)
+              const helpsMatch = text.match(
+                /O que já a ajuda:\n([\s\S]*?)(?=\n\nO que deseja cuidar:|$)/,
+              )
               const caresMatch = text.match(/O que deseja cuidar:\n([\s\S]*?)$/)
               if (bringsMatch || helpsMatch || caresMatch) {
-                setInitialIntakeWhatBrings((prev) => prev || (bringsMatch ? bringsMatch[1].trim() : ''))
-                setInitialIntakeWhatHelps((prev) => prev || (helpsMatch ? helpsMatch[1].trim() : ''))
-                setInitialIntakeWhatCares((prev) => prev || (caresMatch ? caresMatch[1].trim() : ''))
+                setInitialIntakeWhatBrings(
+                  (prev) => prev || (bringsMatch ? bringsMatch[1].trim() : ''),
+                )
+                setInitialIntakeWhatHelps(
+                  (prev) => prev || (helpsMatch ? helpsMatch[1].trim() : ''),
+                )
+                setInitialIntakeWhatCares(
+                  (prev) => prev || (caresMatch ? caresMatch[1].trim() : ''),
+                )
               } else {
                 setInitialIntakeWhatBrings((prev) => prev || text)
               }
@@ -495,8 +506,9 @@ export const InteragenteHome: React.FC = () => {
       })
       setHasSentIntakeOnce(true)
       setLastSentIntakeMessage(createdMsg)
+      setSentIntakeHistory((prev) => [createdMsg, ...prev.filter((m) => m.id !== createdMsg.id)])
       setIsWritingNewIntake(false)
-      // Limpeza dos rascunhos SOMENTE após sucesso comprovado da persistência
+      // Limpeza dos rascunhos SOMENTE após sucesso comprovado da persistência da criação
       setInitialIntakeWhatBrings('')
       setInitialIntakeWhatHelps('')
       setInitialIntakeWhatCares('')
@@ -1051,10 +1063,13 @@ export const InteragenteHome: React.FC = () => {
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-2 font-semibold text-sm text-emerald-900 dark:text-emerald-200">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span className="font-serif text-sm">Relato enviado para {PROFESSIONAL_DISPLAY_NAME}</span>
+                          <span className="font-serif text-sm">
+                            Enviado para {PROFESSIONAL_DISPLAY_NAME}
+                          </span>
                         </div>
                         <Badge
                           variant="outline"
+                          data-testid="badge-enviado-para-daiane"
                           className="text-[10px] font-mono uppercase bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border-emerald-300"
                         >
                           Enviado para {PROFESSIONAL_DISPLAY_NAME}
@@ -1068,10 +1083,42 @@ export const InteragenteHome: React.FC = () => {
                             : 'Recente'}
                         </span>
                       </div>
-                      <div className="p-3.5 rounded-lg bg-card/80 border border-emerald-200/60 dark:border-emerald-800/40 text-foreground text-xs whitespace-pre-line leading-relaxed font-sans shadow-sm">
+                      <div
+                        data-testid="bloco-enviado-para-daiane"
+                        className="p-3.5 rounded-lg bg-card/80 border border-emerald-200/60 dark:border-emerald-800/40 text-foreground text-xs whitespace-pre-line leading-relaxed font-sans shadow-sm select-text"
+                      >
                         {lastSentIntakeMessage.message_text}
                       </div>
                     </div>
+
+                    {/* Histórico de envios anteriores */}
+                    {sentIntakeHistory.length > 1 && (
+                      <div className="space-y-2 pt-2">
+                        <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground font-semibold">
+                          Envios anteriores ({sentIntakeHistory.length - 1})
+                        </span>
+                        <div className="space-y-2">
+                          {sentIntakeHistory.slice(1).map((msg) => (
+                            <div
+                              key={msg.id}
+                              className="p-3 rounded-lg bg-muted/40 border border-border/60 text-xs space-y-2"
+                            >
+                              <div className="text-[10px] text-muted-foreground flex items-center gap-2 font-mono">
+                                <CalendarIcon className="w-3 h-3 text-muted-foreground" />
+                                <span>
+                                  {msg.created
+                                    ? `${new Date(msg.created).toLocaleDateString('pt-BR')} às ${new Date(msg.created).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                                    : 'Anterior'}
+                                </span>
+                              </div>
+                              <div className="p-2.5 rounded bg-card/60 text-foreground text-xs whitespace-pre-line leading-relaxed">
+                                {msg.message_text}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between gap-2 pt-1">
                       <Button
