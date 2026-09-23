@@ -17,6 +17,8 @@ import {
   FileText,
   BookOpen,
   X,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-react'
 
 export interface MindEmotionsReportProps {
@@ -27,6 +29,8 @@ export interface MindEmotionsReportProps {
   treatmentVariant?: 'feminino' | 'masculino' | 'neutro' | 'outro'
   className?: string
   isProfessionalView?: boolean
+  hasIncompatibleDemoData?: boolean
+  onRetakeExperience?: () => void
 }
 
 // Fallback message constants
@@ -279,6 +283,8 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
   treatmentVariant = 'neutro',
   className = '',
   isProfessionalView = false,
+  hasIncompatibleDemoData = false,
+  onRetakeExperience,
 }) => {
   const isVisible = isOpen !== undefined ? isOpen : open !== undefined ? open : true
   const [expandedPatterns, setExpandedPatterns] = useState<Record<string, boolean>>({})
@@ -797,6 +803,36 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
               comportamentos e seus padrões de proteção.
             </p>
           </div>
+
+          {/* Banner de Demonstração Atualizada / Respostas Antigas Incompatíveis */}
+          {hasIncompatibleDemoData && (
+            <div
+              data-testid="banner-demo-incompativel"
+              className="p-4 sm:p-5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-950 dark:text-amber-200 text-sm sm:text-base leading-relaxed space-y-3"
+            >
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-2 flex-1">
+                  <p className="font-medium text-foreground">
+                    Esta demonstração foi atualizada. Para construir seu retrato com segurança,
+                    responda novamente à experiência Mente & Emoções.
+                  </p>
+                  {onRetakeExperience && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={onRetakeExperience}
+                      className="border-amber-600/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/10 font-medium text-xs h-8 gap-1.5"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Refazer Mente & Emoções
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="p-4 sm:p-5 rounded-xl bg-primary/5 border border-primary/15 text-sm sm:text-base text-foreground/90 leading-relaxed">
             <p className="font-medium text-primary mb-1 flex items-center gap-2">

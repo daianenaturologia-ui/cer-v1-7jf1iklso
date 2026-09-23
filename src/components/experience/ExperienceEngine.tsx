@@ -41,6 +41,7 @@ import {
   ChevronRight,
   Save,
   AlertTriangle,
+  AlertCircle,
   Lock,
 } from 'lucide-react'
 import {
@@ -99,6 +100,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const [experience, setExperience] = useState<CerExperienceRecord | null>(null)
   const [showPatternsChart, setShowPatternsChart] = useState(false)
   const [showMindEmotionsReport, setShowMindEmotionsReport] = useState(false)
+  const [hasIncompatibleMenteDemo, setHasIncompatibleMenteDemo] = useState(false)
+  const [menteEmocoesNeedsRedo, setMenteEmocoesNeedsRedo] = useState(false)
   const [moments, setMoments] = useState<CerExperienceMomentRecord[]>([])
   const [prompts, setPrompts] = useState<CerPromptRecord[]>([])
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
@@ -312,6 +315,20 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           }
         }
         setResponsesMap(map)
+
+        // Verificar se há registros incompatíveis da demo arquivados ou ativos
+        const isMenteExp = canonicalId === 'exp-mente-emocoes-07c'
+        if (isMenteExp) {
+          const { demoAdapter } = await import('@/services/demoAdapter')
+          if (demoAdapter.isEnabled()) {
+            if (demoAdapter.isMenteEmocoesRedoNeeded()) {
+              setMenteEmocoesNeedsRedo(true)
+            }
+            if (demoAdapter.hasIncompatibleMenteEmocoesDemo()) {
+              setHasIncompatibleMenteDemo(true)
+            }
+          }
+        }
 
         // Retomada inteligente de progresso via OrchestrationResolver:
         const orchResult = resolveExperienceOrchestration({
@@ -796,6 +813,44 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           )}
         </div>
 
+        {/* Banner de Demonstração Atualizada / Mente & Emoções requer refazer */}
+        {menteEmocoesNeedsRedo && (
+          <div
+            data-testid="banner-demo-mente-emocoes-redo"
+            className="p-4 sm:p-5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-950 dark:text-amber-200 text-sm leading-relaxed space-y-3"
+          >
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-2 flex-1 text-left">
+                <p className="font-medium text-foreground">
+                  Esta demonstração foi atualizada. Para construir seu retrato com segurança,
+                  responda novamente à experiência Mente & Emoções.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const { demoAdapter } = await import('@/services/demoAdapter')
+                    if (demoAdapter.isEnabled()) {
+                      demoAdapter.resetMenteEmocoes(enrollmentId)
+                    }
+                    setMenteEmocoesNeedsRedo(false)
+                    setHasIncompatibleMenteDemo(false)
+                    setResponsesMap({})
+                    setCurrentStepIndex(0)
+                    setEngineStage('moments')
+                  }}
+                  className="border-amber-600/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/10 font-medium text-xs h-8 gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Refazer Mente & Emoções
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {experience.opening_text && (
           <div className="p-4 rounded-xl bg-muted/30 border border-border/60 text-xs sm:text-sm text-foreground/90 leading-relaxed font-serif italic text-center">
             “{experience.opening_text}”
@@ -1000,6 +1055,17 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
                 onClose={() => setShowMindEmotionsReport(false)}
                 responses={normalizedResponsesForReport}
                 treatmentVariant={treatmentVariant}
+                hasIncompatibleDemoData={hasIncompatibleMenteDemo}
+                onRetakeExperience={async () => {
+                  const { demoAdapter } = await import('@/services/demoAdapter')
+                  if (demoAdapter.isEnabled()) {
+                    demoAdapter.resetMenteEmocoesExperience(enrollmentId)
+                  }
+                  setShowMindEmotionsReport(false)
+                  setResponsesMap({})
+                  setCurrentStepIndex(0)
+                  setEngineStage('opening')
+                }}
               />
             )}
           </div>

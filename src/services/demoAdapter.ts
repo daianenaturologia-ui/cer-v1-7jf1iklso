@@ -135,6 +135,15 @@ interface DemoStateStore {
   presentations: CerCarePlanPresentationRecord[]
   acceptances: CerOperationalAcceptanceRecord[]
   experienceResponses: ExperienceResponseRecord[]
+  retiredExperienceResponses?: (ExperienceResponseRecord & {
+    retired_reason?: string
+    retired_at?: string
+  })[]
+  menteEmocoesNeedsRedo?: boolean
+  menteEmocoesMigrationMeta?: {
+    migrated_at: string
+    retired_count: number
+  }
   enrollmentExperienceProgress?: Record<
     string,
     {
@@ -146,11 +155,14 @@ interface DemoStateStore {
       last_interaction_at: string
     }
   >
+  incompatibleLegacyResponses?: ExperienceResponseRecord[]
 }
 
 const STORAGE_KEY = 'cer_demo_mode_state_v3'
 const LEGACY_STORAGE_KEY_V1 = 'cer_demo_mode_state_v1'
 const LEGACY_STORAGE_KEY_V2 = 'cer_demo_mode_state_v2'
+export const DEMO_ARCHIVED_INCOMPATIBLE_KEY = 'cer_demo_incompatible_archive_v1'
+export const MENTE_EMOCOES_EXPERIENCE_ID = 'exp-mente-emocoes-07c'
 
 function getInitialState(): DemoStateStore {
   return {
@@ -164,7 +176,10 @@ function getInitialState(): DemoStateStore {
     acceptances: [],
     maps: [],
     experienceResponses: [],
+    retiredExperienceResponses: [],
+    menteEmocoesNeedsRedo: false,
     enrollmentExperienceProgress: {},
+    incompatibleLegacyResponses: [],
   }
 }
 
@@ -186,12 +201,100 @@ class DemoAdapter {
 
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
-        return JSON.parse(raw)
+        const parsed: DemoStateStore = JSON.parse(raw)
+        const migrated = this.migrateIncompatibleMenteEmocoes(parsed)
+        return migrated
       }
     } catch (e) {
       console.warn('Falha ao restaurar estado de demonstração:', e)
     }
     return getInitialState()
+  }
+
+  /**
+   * Migração versionada e idempotente:
+   * Para cada registro em `experienceResponses` cujo `experience_id` seja `exp-mente-emocoes-07c`
+   * E que não possua `prompt_key` E não possua `canonical_prompt_id`, move de `experienceResponses`
+   * para `retiredExperienceResponses`, anotando motivo técnico:
+   * `retired_reason: 'missing_canonical_identification'`.
+   * Define `menteEmocoesNeedsRedo = true` quando pelo menos um registro for retirado.
+   * Totalmente idempotente.
+   * NÃO toca em messages, sessions, notes, plans, priorities, presentations, acceptances, maps,
+   * marianaPersonOverride ou enrollmentExperienceProgress de outras experiências.
+   */
+  public migrateIncompatibleMenteEmocoes(store: DemoStateStore): DemoStateStore {
+    if (!Array.isArray(store.experienceResponses)) {
+      store.experienceResponses = []
+      return store
+    }
+
+    if (!Array.isArray(store.retiredExperienceResponses)) {
+      store.retiredExperienceResponses = []
+    }
+
+    const activeResponses: ExperienceResponseRecord[] = []
+    const toRetire: (ExperienceResponseRecord & {
+      retired_reason?: string
+      retired_at?: string
+    })[] = []
+
+    for (const r of store.experienceResponses) {
+      const isMente = r.experience_id === MENTE_EMOCOES_EXPERIENCE_ID
+      const rAny = r as any
+      const sMeta =
+        r.structured_value && typeof r.structured_value === 'object'
+          ? (r.structured_value as Record<string, any>).metadata
+          : undefined
+      const hasPromptKey = Boolean(rAny.prompt_key || sMeta?.prompt_key)
+      const hasCanonicalPromptId = Boolean(rAny.canonical_prompt_id || sMeta?.canonical_prompt_id)
+
+      if (isMente && !hasPromptKey && !hasCanonicalPromptId) {
+        toRetire.push({
+          ...r,
+          retired_reason: 'missing_canonical_identification',
+          retired_at: new Date().toISOString(),
+        })
+      } else {
+        activeResponses.push(r)
+      }
+    }
+
+    if (toRetire.length > 0) {
+      store.experienceResponses = activeResponses
+      store.retiredExperienceResponses = [...(store.retiredExperienceResponses || []), ...toRetire]
+      store.menteEmocoesNeedsRedo = true
+      store.menteEmocoesMigrationMeta = {
+        migrated_at: new Date().toISOString(),
+        retired_count: (store.menteEmocoesMigrationMeta?.retired_count || 0) + toRetire.length,
+      }
+
+      // Salva também no arquivo técnico separado DEMO_ARCHIVED_INCOMPATIBLE_KEY
+      try {
+        let existingArchived: ExperienceResponseRecord[] = []
+        const rawArchived = localStorage.getItem(DEMO_ARCHIVED_INCOMPATIBLE_KEY)
+        if (rawArchived) {
+          existingArchived = JSON.parse(rawArchived)
+        }
+        const combined = [...existingArchived]
+        for (const inc of toRetire) {
+          if (!combined.some((x) => x.id === inc.id)) {
+            combined.push(inc)
+          }
+        }
+        localStorage.setItem(DEMO_ARCHIVED_INCOMPATIBLE_KEY, JSON.stringify(combined))
+      } catch (err) {
+        console.warn('Erro ao arquivar registros incompatíveis:', err)
+      }
+
+      // Persistir o estado migrado no localStorage de forma limpa e idempotente
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+      } catch {
+        /* ignore */
+      }
+    }
+
+    return store
   }
 
   private saveState(): void {
@@ -234,6 +337,7 @@ class DemoAdapter {
     }
     this.isDemoEnabled = true
     this.state.activePersona = persona
+    this.migrateIncompatibleMenteEmocoes(this.state)
     this.saveState()
   }
 
@@ -243,6 +347,7 @@ class DemoAdapter {
       localStorage.removeItem(STORAGE_KEY)
       localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
       localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
+      localStorage.removeItem(DEMO_ARCHIVED_INCOMPATIBLE_KEY)
       localStorage.removeItem('cer_demo_mode_active')
     } catch {
       /* ignore */
@@ -260,6 +365,111 @@ class DemoAdapter {
     }
     this.state = getInitialState()
     this.saveState()
+  }
+
+  /**
+   * Verifica se há registros legados incompatíveis arquivados ou detectados para Mente & Emoções.
+   */
+  public hasIncompatibleMenteEmocoesDemo(): boolean {
+    if (
+      this.state.incompatibleLegacyResponses &&
+      this.state.incompatibleLegacyResponses.length > 0
+    ) {
+      return true
+    }
+    try {
+      const archived = localStorage.getItem(DEMO_ARCHIVED_INCOMPATIBLE_KEY)
+      if (archived) {
+        const parsed = JSON.parse(archived)
+        return Array.isArray(parsed) && parsed.length > 0
+      }
+    } catch {
+      /* ignore */
+    }
+    return false
+  }
+
+  /**
+   * Reinicia SOMENTE as experienceResponses de exp-mente-emocoes-07c (ativas e arquivadas dessa experiência)
+   * e a entrada correspondente de enrollmentExperienceProgress (chave `${DEMO_ENROLLMENT_ID}:exp-mente-emocoes-07c`),
+   * limpa menteEmocoesNeedsRedo, e mantém TODO o resto intacto (messages, sessions, notes, plans, priorities,
+   * presentations, acceptances, maps, marianaPersonOverride, outras experiências).
+   */
+  public resetMenteEmocoes(enrollmentId: string = DEMO_ENROLLMENT_ID): void {
+    this.state.experienceResponses = this.state.experienceResponses.filter((r) => {
+      const isMente =
+        r.enrollment_id === enrollmentId &&
+        (r.experience_id === MENTE_EMOCOES_EXPERIENCE_ID ||
+          r.experience_id === 'mente_emocoes' ||
+          r.experience_id === 'mente_emocoes_cer')
+      return !isMente
+    })
+
+    if (Array.isArray(this.state.retiredExperienceResponses)) {
+      this.state.retiredExperienceResponses = this.state.retiredExperienceResponses.filter((r) => {
+        const isMente =
+          r.enrollment_id === enrollmentId &&
+          (r.experience_id === MENTE_EMOCOES_EXPERIENCE_ID ||
+            r.experience_id === 'mente_emocoes' ||
+            r.experience_id === 'mente_emocoes_cer')
+        return !isMente
+      })
+    }
+
+    if (Array.isArray(this.state.incompatibleLegacyResponses)) {
+      this.state.incompatibleLegacyResponses = this.state.incompatibleLegacyResponses.filter(
+        (r) => {
+          const isMente =
+            r.enrollment_id === enrollmentId &&
+            (r.experience_id === MENTE_EMOCOES_EXPERIENCE_ID ||
+              r.experience_id === 'mente_emocoes' ||
+              r.experience_id === 'mente_emocoes_cer')
+          return !isMente
+        },
+      )
+    }
+
+    if (this.state.enrollmentExperienceProgress) {
+      delete this.state.enrollmentExperienceProgress[
+        `${enrollmentId}:${MENTE_EMOCOES_EXPERIENCE_ID}`
+      ]
+      delete this.state.enrollmentExperienceProgress[`${enrollmentId}:mente_emocoes`]
+      delete this.state.enrollmentExperienceProgress[`${enrollmentId}:mente_emocoes_cer`]
+    }
+
+    this.state.menteEmocoesNeedsRedo = false
+
+    // Limpar arquivo técnico específico desta experiência se existir
+    try {
+      localStorage.removeItem(DEMO_ARCHIVED_INCOMPATIBLE_KEY)
+    } catch {
+      /* ignore */
+    }
+
+    this.saveState()
+  }
+
+  /**
+   * Alias retrocompatível para resetMenteEmocoes
+   */
+  public resetMenteEmocoesExperience(enrollmentId: string = DEMO_ENROLLMENT_ID): void {
+    this.resetMenteEmocoes(enrollmentId)
+  }
+
+  /**
+   * Retorna se a experiência Mente & Emoções requer ser refeita devido a registros antigos incompatíveis.
+   */
+  public isMenteEmocoesRedoNeeded(): boolean {
+    return Boolean(this.state.menteEmocoesNeedsRedo)
+  }
+
+  /**
+   * Retorna os registros retirados/arquivados da experiência Mente & Emoções.
+   */
+  public getRetiredExperienceResponses(): (ExperienceResponseRecord & {
+    retired_reason?: string
+  })[] {
+    return this.state.retiredExperienceResponses || []
   }
 
   public getActivePersona(): 'mariana' | 'daiane' {
