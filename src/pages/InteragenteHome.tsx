@@ -159,20 +159,8 @@ export const InteragenteHome: React.FC = () => {
       setEngineEnabled(isFlagActive)
       setCadernoEnabled(isCadernoActive)
 
-      if (activeEnr?.id && isFlagActive) {
-        const [exps, kiList, myRecogs, presList, mapData] = await Promise.all([
-          enrollmentExperienceService.listByEnrollment(activeEnr.id),
-          cerKnowledgeItemService.listByEnrollment(activeEnr.id),
-          cerParticipantRecognitionService.listByEnrollment(activeEnr.id),
-          cerKnowledgePresentationService.listPresentedByEnrollment(activeEnr.id),
-          cerMapService.getCurrentPublishedMap(activeEnr.id),
-        ])
-        setAvailableExperiences(exps)
-        setKnowledgeItems(kiList)
-        setPresentations(presList)
-        setCurrentMap(mapData)
-
-        // Verificar se já enviou pré-consulta pelo histórico de recados
+      if (activeEnr?.id) {
+        // Verificar se já enviou pré-consulta pelo histórico de recados (independente de feature flag)
         try {
           const { cerJournalService } = await import('@/services/cerJournalService')
           const myMsgs = await cerJournalService.listParticipantMessages(activeEnr.id)
@@ -223,6 +211,20 @@ export const InteragenteHome: React.FC = () => {
         } catch {
           /* ignore */
         }
+      }
+
+      if (activeEnr?.id && isFlagActive) {
+        const [exps, kiList, myRecogs, presList, mapData] = await Promise.all([
+          enrollmentExperienceService.listByEnrollment(activeEnr.id),
+          cerKnowledgeItemService.listByEnrollment(activeEnr.id),
+          cerParticipantRecognitionService.listByEnrollment(activeEnr.id),
+          cerKnowledgePresentationService.listPresentedByEnrollment(activeEnr.id),
+          cerMapService.getCurrentPublishedMap(activeEnr.id),
+        ])
+        setAvailableExperiences(exps)
+        setKnowledgeItems(kiList)
+        setPresentations(presList)
+        setCurrentMap(mapData)
 
         // ETAPA 4: Carregar planos apresentados à participante (status = presented)
         try {
