@@ -512,30 +512,11 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       // Build 07A: Usar SEMPRE a configuração versionada access_destination do prompt (default seguro: shared_care)
       const pSchema = (currentPrompt.schema_config || {}) as any
       const targetAccessClass = pSchema.access_destination || 'shared_care'
-
-      // Anexar proveniência (collection_origin e naming_origin) se for objeto estruturado ou envolver
-      let structToSave: any = valToSave
-      if (typeof structToSave === 'object' && structToSave !== null) {
-        if (!structToSave.collection_origin) {
-          structToSave.collection_origin = 'newly_collected'
-        }
-        if (pSchema.open_first?.enabled) {
-          structToSave.naming_origin = currentNamingOrigin
-        }
-      } else if (typeof structToSave === 'string' || typeof structToSave === 'number') {
-        structToSave = {
-          value: structToSave,
-          collection_origin: 'newly_collected',
-          ...(pSchema.open_first?.enabled ? { naming_origin: currentNamingOrigin } : {}),
-        }
-      }
-
-      // Metadata enriquecida por resposta (sem score, sem diagnóstico)
       const pKey = pSchema.prompt_key
       const temporality = pSchema.temporality || 'recurring'
       const isFreeSpeech =
         currentPrompt.component_type === 'FreeReflection' || Boolean(currentDraftText)
-      const isStructured = Boolean(valToSave && typeof valToSave === 'object')
+      const isStructured = Boolean(valToSave !== null && valToSave !== undefined)
 
       const responseMetadata = {
         participant_free_speech: isFreeSpeech,
@@ -557,14 +538,68 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         step_order: currentPrompt.step_order,
       }
 
-      if (typeof structToSave === 'object' && structToSave !== null) {
-        structToSave.metadata = responseMetadata
-        if (!structToSave.prompt_key && pKey) {
-          structToSave.prompt_key = pKey
+      // Envelopar SEMPRE em objeto plano (NUNCA anexar propriedades diretamente a instâncias de Array,
+      // pois perdem-se em JSON.stringify).
+      let structToSave: any
+      if (Array.isArray(valToSave)) {
+        // Para múltipla escolha ou coleções (MultiSelectCards, Ordering, BodyMap, etc.)
+        structToSave = {
+          selectedOptionIds: valToSave,
+          value: valToSave,
+          collection_origin: 'newly_collected',
+          ...(pSchema.open_first?.enabled ? { naming_origin: currentNamingOrigin } : {}),
+          prompt_key: pKey,
+          canonical_prompt_id: currentPrompt.id,
+          metadata: responseMetadata,
         }
-        if (!structToSave.canonical_prompt_id) {
-          structToSave.canonical_prompt_id = currentPrompt.id
+      } else if (valToSave !== null && typeof valToSave === 'object') {
+        const rawObj = valToSave as Record<string, any>
+        // Verificar se é formato de escala ou mapa de ratings
+        const isRatingsMap =
+          pKey === 'movimentos_automaticos_frequencia_p1' ||
+          pKey === 'movimentos_automaticos_frequencia_p2' ||
+          'ratings' in rawObj
+
+        if (isRatingsMap && !('ratings' in rawObj)) {
+          structToSave = {
+            ratings: { ...rawObj },
+            collection_origin: rawObj.collection_origin || 'newly_collected',
+            ...(pSchema.open_first?.enabled
+              ? { naming_origin: rawObj.naming_origin || currentNamingOrigin }
+              : {}),
+            prompt_key: pKey,
+            canonical_prompt_id: currentPrompt.id,
+            metadata: responseMetadata,
+          }
+        } else {
+          structToSave = {
+            ...rawObj,
+            collection_origin: rawObj.collection_origin || 'newly_collected',
+            ...(pSchema.open_first?.enabled
+              ? { naming_origin: rawObj.naming_origin || currentNamingOrigin }
+              : {}),
+            prompt_key: pKey || rawObj.prompt_key,
+            canonical_prompt_id: currentPrompt.id || rawObj.canonical_prompt_id,
+            metadata: responseMetadata,
+          }
         }
+      } else if (
+        typeof valToSave === 'string' ||
+        typeof valToSave === 'number' ||
+        typeof valToSave === 'boolean'
+      ) {
+        // Escolha única ou valor escalar
+        structToSave = {
+          value: valToSave,
+          choice: typeof valToSave === 'string' ? valToSave : undefined,
+          collection_origin: 'newly_collected',
+          ...(pSchema.open_first?.enabled ? { naming_origin: currentNamingOrigin } : {}),
+          prompt_key: pKey,
+          canonical_prompt_id: currentPrompt.id,
+          metadata: responseMetadata,
+        }
+      } else {
+        structToSave = valToSave
       }
 
       // Tratar texto livre privado em telas com privacy_split:
@@ -1095,11 +1130,21 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     const consolidatedP7Responses: Record<string, string> = {}
     const extractP7Values = (resp: ExperienceResponseRecord | undefined) => {
       if (!resp) return
-      const sVal = resp.structured_value as any
+      let sVal = resp.structured_value as any
       if (!sVal) return
+      if (sVal && typeof sVal === 'object' && sVal.ratings && typeof sVal.ratings === 'object') {
+        sVal = sVal.ratings
+      }
       if (typeof sVal === 'object' && !Array.isArray(sVal)) {
         for (const [k, v] of Object.entries(sVal)) {
-          if (k === 'metadata' || k === 'collection_origin' || k === 'naming_origin') continue
+          if (
+            k === 'metadata' ||
+            k === 'collection_origin' ||
+            k === 'naming_origin' ||
+            k === 'prompt_key' ||
+            k === 'canonical_prompt_id'
+          )
+            continue
           if (typeof v === 'string') {
             consolidatedP7Responses[k] = v
           } else if (v && typeof v === 'object' && (v as any).value) {

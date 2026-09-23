@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
+import { BUILD_07C_MENTE_PROMPTS } from '../../services/build07cPrompts'
 import { ProtectionPatternsChart } from './ProtectionPatternsChart'
-import { patternLabel } from '../../services/cerProtectionPatterns'
+import { patternLabel, CER_PROTECTION_PATTERNS } from '../../services/cerProtectionPatterns'
 import { getCerProtectionPatternContent } from '../../services/cerProtectionPatternContent'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
@@ -91,6 +92,9 @@ export const EMOTIONS_LABELS_MAP: Record<string, string> = {
   raiva: 'Raiva',
   medo: 'Medo',
   ansiedade: 'Ansiedade',
+  ansiedade_apreensao: 'Ansiedade ou apreensão',
+  calma: 'Calma',
+  apatia_desanimo: 'Apatia ou desânimo',
   culpa: 'Culpa',
   vergonha: 'Vergonha',
   frustracao: 'Frustração',
@@ -104,81 +108,537 @@ export const EMOTIONS_LABELS_MAP: Record<string, string> = {
   apatia: 'Apatia / Desânimo',
 }
 
-/**
- * Helper to check explicit refusal vs absent data
- */
-export function evaluateFieldState(val: any): {
+export type StructuredAnswerKind = 'real' | 'nao_sei' | 'recusa' | 'ausente'
+
+export interface ResolvedStructuredAnswer {
+  kind: StructuredAnswerKind
   isRefusal: boolean
+  isUnknown: boolean
   isEmpty: boolean
+  labels: string[]
+  freeText?: string
+  ratings?: Record<string, string>
   text?: string
-  data?: any
-} {
-  if (val === undefined || val === null) {
-    return { isRefusal: false, isEmpty: true }
+}
+
+/**
+ * Consulta opções do catálogo canônico BUILD_07C_MENTE_PROMPTS por prompt_key ou canonical_prompt_id
+ * (NUNCA por id autogerado de banco)
+ */
+function getCanonicalPromptOptions(
+  promptKey?: string,
+  canonicalPromptId?: string,
+): { id: string; title?: string; label?: string }[] {
+  const prompt = BUILD_07C_MENTE_PROMPTS.find(
+    (p) =>
+      (promptKey && (p.schema_config as any)?.prompt_key === promptKey) ||
+      (canonicalPromptId && p.id === canonicalPromptId),
+  )
+  const schema = (prompt?.schema_config as any) || {}
+  const opts = schema.options || schema.option_set?.items || schema.items || []
+  return Array.isArray(opts) ? opts : []
+}
+
+/**
+ * Resolvedor de ID de opção para label humano legível
+ */
+function resolveOptionLabel(id: string, promptKey?: string, canonicalPromptId?: string): string {
+  if (!id) return ''
+  const trimmed = String(id).trim()
+
+  // Se já for uma frase ou texto longo (não um id como cartao_1 ou snake_case curto), retornar direto
+  if (trimmed.includes(' ') && !trimmed.startsWith('cartao_')) {
+    return trimmed
   }
 
-  if (typeof val === 'object') {
-    if (
-      val.refusal === true ||
-      val.refused === true ||
-      val.optOut === true ||
-      val.preferNotToAnswer === true
-    ) {
-      return { isRefusal: true, isEmpty: false }
+  // 1. Checar se é um cartão de proteção cartao_N_*
+  if (CER_PROTECTION_PATTERNS[trimmed]) {
+    const pat = CER_PROTECTION_PATTERNS[trimmed]
+    return pat.baseName || patternLabel(pat.id, 'neutro')
+  }
+
+  // 2. Mapeamento de emoções
+  if (EMOTIONS_LABELS_MAP[trimmed.toLowerCase()]) {
+    return EMOTIONS_LABELS_MAP[trimmed.toLowerCase()]
+  }
+
+  // 3. Catálogo canônico
+  const options = getCanonicalPromptOptions(promptKey, canonicalPromptId)
+  const matched = options.find(
+    (o) => o.id === trimmed || o.id?.toLowerCase() === trimmed.toLowerCase(),
+  )
+  if (matched) {
+    return (matched.title || matched.label || trimmed).trim()
+  }
+
+  // 4. Formatação de fallback amigável
+  return trimmed
+}
+
+/**
+ * Resolvedor único e central de respostas estruturadas para Mente & Emoções.
+ * Distingue 4 estados:
+ * - 'real': resposta preenchida (com labels ou texto)
+ * - 'nao_sei': "Não sei identificar"
+ * - 'recusa': "Prefiro não responder"
+ * - 'ausente': dado não respondido / vazio
+ */
+export function resolveStructuredAnswer(
+  val: any,
+  promptKey?: string,
+  canonicalPromptId?: string,
+): ResolvedStructuredAnswer {
+  if (val === undefined || val === null) {
+    return {
+      kind: 'ausente',
+      isRefusal: false,
+      isUnknown: false,
+      isEmpty: true,
+      labels: [],
     }
-    if (val.value === '__REFUSED__' || val.value === 'prefer_not_to_answer') {
-      return { isRefusal: true, isEmpty: false }
-    }
-    if (Array.isArray(val)) {
-      if (val.length === 0) return { isRefusal: false, isEmpty: true }
-      if (val.includes('__REFUSED__') || val.includes('prefer_not_to_answer')) {
-        return { isRefusal: true, isEmpty: false }
-      }
-      return { isRefusal: false, isEmpty: false, data: val }
-    }
-    if (typeof val.text === 'string') {
-      const trimmed = val.text.trim()
-      if (!trimmed) return { isRefusal: false, isEmpty: true }
-      return { isRefusal: false, isEmpty: false, text: trimmed, data: val }
-    }
-    if (typeof val.value === 'string') {
-      const trimmed = val.value.trim()
-      if (!trimmed) return { isRefusal: false, isEmpty: true }
-      return { isRefusal: false, isEmpty: false, text: trimmed, data: val }
-    }
-    if (typeof val.free_text === 'string') {
-      const trimmed = val.free_text.trim()
-      if (!trimmed) return { isRefusal: false, isEmpty: true }
-      return { isRefusal: false, isEmpty: false, text: trimmed, data: val }
+  }
+
+  // Desempacotar registros de resposta de banco ({ structured_value, free_text, ... })
+  let target = val
+  let inheritedFreeText: string | undefined = undefined
+  let effectivePromptKey = promptKey || val?.prompt_key || val?.metadata?.prompt_key
+  let effectiveCanonicalId =
+    canonicalPromptId || val?.canonical_prompt_id || val?.metadata?.canonical_prompt_id
+
+  if (typeof val === 'object' && val !== null) {
+    if (typeof val.free_text === 'string' && val.free_text.trim()) {
+      inheritedFreeText = val.free_text.trim()
     }
     if (val.structured_value !== undefined && val.structured_value !== null) {
-      const sState = evaluateFieldState(val.structured_value)
-      if (!sState.isEmpty) return sState
+      target = val.structured_value
+      if (typeof target === 'object' && target !== null) {
+        if (!inheritedFreeText && typeof target.free_text === 'string' && target.free_text.trim()) {
+          inheritedFreeText = target.free_text.trim()
+        }
+        if (!effectivePromptKey)
+          effectivePromptKey = target.prompt_key || target.metadata?.prompt_key
+        if (!effectiveCanonicalId)
+          effectiveCanonicalId = target.canonical_prompt_id || target.metadata?.canonical_prompt_id
+      }
     }
   }
 
-  if (typeof val === 'string') {
-    const trimmed = val.trim()
-    if (!trimmed) return { isRefusal: false, isEmpty: true }
+  // 1. Checar legítima recusa ou não sei em flags canônicas
+  if (typeof target === 'object' && target !== null) {
+    const meta = target.metadata || {}
+    const isSkip = target.is_legitimate_skip === true || meta.is_legitimate_skip === true
+    const skipReason = target.skip_reason || meta.skip_reason
+    if (isSkip || skipReason) {
+      if (skipReason === 'nao_sei' || skipReason === 'ainda_nao_sei') {
+        return {
+          kind: 'nao_sei',
+          isRefusal: false,
+          isUnknown: true,
+          isEmpty: false,
+          labels: ['Não sei identificar'],
+          text: 'Não sei identificar',
+        }
+      }
+      return {
+        kind: 'recusa',
+        isRefusal: true,
+        isUnknown: false,
+        isEmpty: false,
+        labels: ['Prefiro não responder'],
+        text: MSG_RECUSA,
+      }
+    }
+
     if (
-      trimmed.toLowerCase() === 'prefiro não responder' ||
+      target.refusal === true ||
+      target.refused === true ||
+      target.optOut === true ||
+      target.preferNotToAnswer === true
+    ) {
+      return {
+        kind: 'recusa',
+        isRefusal: true,
+        isUnknown: false,
+        isEmpty: false,
+        labels: ['Prefiro não responder'],
+        text: MSG_RECUSA,
+      }
+    }
+  }
+
+  // 2. Se for string pura
+  if (typeof target === 'string') {
+    const trimmed = target.trim()
+    if (!trimmed) {
+      return { kind: 'ausente', isRefusal: false, isUnknown: false, isEmpty: true, labels: [] }
+    }
+    const lower = trimmed.toLowerCase()
+    if (
+      lower === 'prefiro não responder' ||
+      lower === 'prefiro_nao_responder' ||
       trimmed === '__REFUSED__' ||
       trimmed === 'prefer_not_to_answer'
     ) {
-      return { isRefusal: true, isEmpty: false }
+      return {
+        kind: 'recusa',
+        isRefusal: true,
+        isUnknown: false,
+        isEmpty: false,
+        labels: ['Prefiro não responder'],
+        text: MSG_RECUSA,
+      }
     }
-    return { isRefusal: false, isEmpty: false, text: trimmed }
+    if (
+      lower === 'não sei dizer' ||
+      lower === 'não sei' ||
+      lower === 'nao sei' ||
+      lower === 'ainda_nao_sei' ||
+      lower === 'ainda não sei dizer.' ||
+      lower === 'ainda não consigo identificar.' ||
+      lower === 'ainda_nao_identifico' ||
+      lower === 'ainda_nao_percebo'
+    ) {
+      return {
+        kind: 'nao_sei',
+        isRefusal: false,
+        isUnknown: true,
+        isEmpty: false,
+        labels: ['Não sei identificar'],
+        text: 'Não sei identificar',
+      }
+    }
+    const resolved = resolveOptionLabel(trimmed, effectivePromptKey, effectiveCanonicalId)
+    return {
+      kind: 'real',
+      isRefusal: false,
+      isUnknown: false,
+      isEmpty: false,
+      labels: [resolved],
+      text: resolved,
+    }
   }
 
-  if (Array.isArray(val)) {
-    if (val.length === 0) return { isRefusal: false, isEmpty: true }
-    if (val.includes('__REFUSED__') || val.includes('prefer_not_to_answer')) {
-      return { isRefusal: true, isEmpty: false }
+  // 3. Se for Array direto
+  if (Array.isArray(target)) {
+    if (target.length === 0 && !inheritedFreeText) {
+      return { kind: 'ausente', isRefusal: false, isUnknown: false, isEmpty: true, labels: [] }
     }
-    return { isRefusal: false, isEmpty: false, data: val }
+    const labels: string[] = []
+    let hasRefusal = false
+    let hasUnknown = false
+
+    for (const item of target) {
+      if (item === '__REFUSED__' || item === 'prefiro_nao_responder') {
+        hasRefusal = true
+        continue
+      }
+      if (
+        item === 'ainda_nao_sei' ||
+        item === 'ainda_nao_identifico' ||
+        item === 'ainda_nao_percebo'
+      ) {
+        hasUnknown = true
+        continue
+      }
+      const rawId = typeof item === 'string' ? item : item?.id || item?.value || item?.choice
+      if (rawId) {
+        labels.push(resolveOptionLabel(rawId, effectivePromptKey, effectiveCanonicalId))
+      }
+    }
+
+    if (hasRefusal && labels.length === 0 && !inheritedFreeText) {
+      return {
+        kind: 'recusa',
+        isRefusal: true,
+        isUnknown: false,
+        isEmpty: false,
+        labels: [],
+        text: MSG_RECUSA,
+      }
+    }
+    if (hasUnknown && labels.length === 0 && !inheritedFreeText) {
+      return {
+        kind: 'nao_sei',
+        isRefusal: false,
+        isUnknown: true,
+        isEmpty: false,
+        labels: ['Não sei identificar'],
+        text: 'Não sei identificar',
+      }
+    }
+    if (labels.length === 0 && !inheritedFreeText) {
+      return { kind: 'ausente', isRefusal: false, isUnknown: false, isEmpty: true, labels: [] }
+    }
+
+    return {
+      kind: 'real',
+      isRefusal: false,
+      isUnknown: false,
+      isEmpty: false,
+      labels,
+      freeText: inheritedFreeText,
+      text: labels.join(', ') || inheritedFreeText,
+    }
   }
 
-  return { isRefusal: false, isEmpty: false, data: val }
+  // 4. Se for Objeto estruturado
+  if (typeof target === 'object' && target !== null) {
+    // Desempacotar coleções envelopadas: { selectedOptionIds: [...] }, { choice: ... }, { value: ... }, { ratings: {...} }
+    let rawItems: any[] = []
+    let singleVal: any = undefined
+    let ratingsMap: Record<string, string> | undefined = undefined
+
+    if (Array.isArray(target.selectedOptionIds)) {
+      rawItems = target.selectedOptionIds
+    } else if (Array.isArray(target.selected)) {
+      rawItems = target.selected
+    } else if (Array.isArray(target.options)) {
+      rawItems = target.options
+    } else if (Array.isArray(target.value)) {
+      rawItems = target.value
+    } else if (Array.isArray(target.choice)) {
+      rawItems = target.choice
+    } else if (target.ratings && typeof target.ratings === 'object') {
+      ratingsMap = target.ratings
+    } else if (target.choice !== undefined) {
+      singleVal = target.choice
+    } else if (target.value !== undefined && typeof target.value !== 'object') {
+      singleVal = target.value
+    } else if (target.selectedOptionId !== undefined) {
+      singleVal = target.selectedOptionId
+    }
+
+    const freeTextFromTarget =
+      target.free_text ||
+      target.custom_text ||
+      target.otherText ||
+      target.outra ||
+      target.other ||
+      target.outra_emocao_text ||
+      inheritedFreeText
+
+    // Se temos ratings (ex.: P7a/P7b mapa de cartões)
+    if (ratingsMap) {
+      return {
+        kind: 'real',
+        isRefusal: false,
+        isUnknown: false,
+        isEmpty: false,
+        labels: Object.keys(ratingsMap).map((k) =>
+          resolveOptionLabel(k, effectivePromptKey, effectiveCanonicalId),
+        ),
+        ratings: ratingsMap,
+        freeText: freeTextFromTarget,
+      }
+    }
+
+    // Se temos itens de múltipla escolha
+    if (rawItems.length > 0) {
+      const labels: string[] = []
+      let hasRefusal = false
+      let hasUnknown = false
+
+      for (const item of rawItems) {
+        if (item === '__REFUSED__' || item === 'prefiro_nao_responder') {
+          hasRefusal = true
+          continue
+        }
+        if (
+          item === 'ainda_nao_sei' ||
+          item === 'ainda_nao_identifico' ||
+          item === 'ainda_nao_percebo'
+        ) {
+          hasUnknown = true
+          continue
+        }
+        const rawId = typeof item === 'string' ? item : item?.id || item?.value || item?.choice
+        if (rawId) {
+          labels.push(resolveOptionLabel(rawId, effectivePromptKey, effectiveCanonicalId))
+        }
+      }
+
+      if (hasRefusal && labels.length === 0 && !freeTextFromTarget) {
+        return {
+          kind: 'recusa',
+          isRefusal: true,
+          isUnknown: false,
+          isEmpty: false,
+          labels: [],
+          text: MSG_RECUSA,
+        }
+      }
+      if (hasUnknown && labels.length === 0 && !freeTextFromTarget) {
+        return {
+          kind: 'nao_sei',
+          isRefusal: false,
+          isUnknown: true,
+          isEmpty: false,
+          labels: ['Não sei identificar'],
+          text: 'Não sei identificar',
+        }
+      }
+
+      return {
+        kind: 'real',
+        isRefusal: false,
+        isUnknown: false,
+        isEmpty: false,
+        labels,
+        freeText: freeTextFromTarget,
+        text: labels.join(', ') || freeTextFromTarget,
+      }
+    }
+
+    // Se temos escolha única
+    if (singleVal !== undefined && singleVal !== null) {
+      const strVal = String(singleVal).trim()
+      const lower = strVal.toLowerCase()
+      if (
+        lower === 'prefiro não responder' ||
+        lower === 'prefiro_nao_responder' ||
+        strVal === '__REFUSED__' ||
+        strVal === 'prefer_not_to_answer'
+      ) {
+        return {
+          kind: 'recusa',
+          isRefusal: true,
+          isUnknown: false,
+          isEmpty: false,
+          labels: [],
+          text: MSG_RECUSA,
+        }
+      }
+      if (
+        lower === 'não sei dizer' ||
+        lower === 'não sei' ||
+        lower === 'nao sei' ||
+        lower === 'ainda_nao_sei' ||
+        lower === 'ainda_nao_identifico' ||
+        lower === 'ainda_nao_percebo'
+      ) {
+        return {
+          kind: 'nao_sei',
+          isRefusal: false,
+          isUnknown: true,
+          isEmpty: false,
+          labels: ['Não sei identificar'],
+          text: 'Não sei identificar',
+        }
+      }
+      const label = resolveOptionLabel(strVal, effectivePromptKey, effectiveCanonicalId)
+      return {
+        kind: 'real',
+        isRefusal: false,
+        isUnknown: false,
+        isEmpty: false,
+        labels: [label],
+        freeText: freeTextFromTarget,
+        text: label,
+      }
+    }
+
+    // Se temos texto livre
+    if (freeTextFromTarget && String(freeTextFromTarget).trim()) {
+      const trimmed = String(freeTextFromTarget).trim()
+      return {
+        kind: 'real',
+        isRefusal: false,
+        isUnknown: false,
+        isEmpty: false,
+        labels: [trimmed],
+        freeText: trimmed,
+        text: trimmed,
+      }
+    }
+
+    // Se o objeto for um dicionário de pares chave/valor (ex: { cartao_1_fazer_certo: 'Frequentemente' })
+    const nonMetaKeys = Object.keys(target).filter(
+      (k) =>
+        k !== 'metadata' &&
+        k !== 'collection_origin' &&
+        k !== 'naming_origin' &&
+        k !== 'prompt_key' &&
+        k !== 'canonical_prompt_id' &&
+        k !== 'step_order',
+    )
+    if (nonMetaKeys.length > 0) {
+      const isScaleDict = nonMetaKeys.some((k) => typeof target[k] === 'string')
+      if (isScaleDict) {
+        const dict: Record<string, string> = {}
+        for (const k of nonMetaKeys) {
+          if (typeof target[k] === 'string') dict[k] = target[k]
+        }
+        return {
+          kind: 'real',
+          isRefusal: false,
+          isUnknown: false,
+          isEmpty: false,
+          labels: nonMetaKeys.map((k) =>
+            resolveOptionLabel(k, effectivePromptKey, effectiveCanonicalId),
+          ),
+          ratings: dict,
+          freeText: freeTextFromTarget,
+        }
+      }
+    }
+  }
+
+  return {
+    kind: 'ausente',
+    isRefusal: false,
+    isUnknown: false,
+    isEmpty: true,
+    labels: [],
+  }
+}
+
+/**
+ * Helper to check explicit refusal vs absent data (mantido para compatibilidade e estendido com resolveStructuredAnswer)
+ */
+export function evaluateFieldState(
+  val: any,
+  promptKey?: string,
+  canonicalPromptId?: string,
+): {
+  isRefusal: boolean
+  isEmpty: boolean
+  isUnknown?: boolean
+  text?: string
+  data?: any
+  labels?: string[]
+} {
+  const resolved = resolveStructuredAnswer(val, promptKey, canonicalPromptId)
+
+  if (resolved.kind === 'recusa') {
+    return { isRefusal: true, isEmpty: false, isUnknown: false, text: MSG_RECUSA, labels: [] }
+  }
+  if (resolved.kind === 'nao_sei') {
+    return {
+      isRefusal: false,
+      isEmpty: false,
+      isUnknown: true,
+      text: 'Não sei identificar',
+      labels: ['Não sei identificar'],
+    }
+  }
+  if (resolved.kind === 'ausente') {
+    return { isRefusal: false, isEmpty: true, isUnknown: false, labels: [] }
+  }
+
+  // Real:
+  const text =
+    resolved.text ||
+    resolved.freeText ||
+    (resolved.labels.length > 0 ? resolved.labels.join(', ') : undefined)
+
+  return {
+    isRefusal: false,
+    isEmpty: false,
+    isUnknown: false,
+    text,
+    data: resolved.labels.length > 0 ? resolved.labels : resolved.freeText || val,
+    labels: resolved.labels,
+  }
 }
 
 /**
@@ -327,7 +787,12 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'funcionamento_emocional',
       'pergunta_1',
     ])
-  const p1State = evaluateFieldState(p1Raw)
+  const p1State = evaluateFieldState(
+    p1Raw,
+    'mundo_emocional_geral',
+    'p-07c-pm1-p1-funcionamento-emocional',
+  )
+
   // P2: Emoções mais presentes
   const p2Raw =
     (typeof responses === 'object' && !Array.isArray(responses)
@@ -342,46 +807,63 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'emotions',
       'pergunta_2',
     ])
-  const p2State = evaluateFieldState(p2Raw)
+  const p2Resolved = resolveStructuredAnswer(
+    p2Raw,
+    'emocoes_recorrentes',
+    'p-07c-pm1-p2-emocoes-presentes',
+  )
+  const p2State = evaluateFieldState(p2Raw, 'emocoes_recorrentes', 'p-07c-pm1-p2-emocoes-presentes')
 
   let selectedEmotionsList: string[] = []
   let otherEmotionText: string | null = null
 
   if (!p2State.isEmpty && !p2State.isRefusal) {
-    const rawData = p2State.data || p2Raw
-    const sVal = rawData?.structured_value !== undefined ? rawData.structured_value : rawData
+    const rawData = p2Raw?.structured_value !== undefined ? p2Raw.structured_value : p2Raw
     let items: any[] = []
-    if (Array.isArray(sVal)) {
-      items = sVal
-    } else if (sVal && typeof sVal === 'object') {
-      if (Array.isArray(sVal.selected)) items = sVal.selected
-      else if (Array.isArray(sVal.options)) items = sVal.options
-      else if (Array.isArray(sVal.value)) items = sVal.value
-      else if (Array.isArray(sVal.choice)) items = sVal.choice
-      else if (Array.isArray(sVal.selectedOptionIds)) items = sVal.selectedOptionIds
+    if (Array.isArray(rawData)) {
+      items = rawData
+    } else if (rawData && typeof rawData === 'object') {
+      if (Array.isArray(rawData.selectedOptionIds)) items = rawData.selectedOptionIds
+      else if (Array.isArray(rawData.selected)) items = rawData.selected
+      else if (Array.isArray(rawData.options)) items = rawData.options
+      else if (Array.isArray(rawData.value)) items = rawData.value
+      else if (Array.isArray(rawData.choice)) items = rawData.choice
       if (
-        sVal.otherText ||
-        sVal.outra ||
-        sVal.other ||
-        sVal.custom_text ||
-        sVal.outra_emocao_text
+        rawData.otherText ||
+        rawData.outra ||
+        rawData.other ||
+        rawData.custom_text ||
+        rawData.outra_emocao_text
       ) {
         otherEmotionText = String(
-          sVal.otherText || sVal.outra || sVal.other || sVal.custom_text || sVal.outra_emocao_text,
+          rawData.otherText ||
+            rawData.outra ||
+            rawData.other ||
+            rawData.custom_text ||
+            rawData.outra_emocao_text,
         ).trim()
       }
-    } else if (typeof sVal === 'string') {
-      items = [sVal]
+    } else if (typeof rawData === 'string') {
+      items = [rawData]
     }
 
-    if (rawData?.free_text && !otherEmotionText) {
-      otherEmotionText = rawData.free_text.trim()
+    if (p2Raw?.free_text && !otherEmotionText) {
+      otherEmotionText = p2Raw.free_text.trim()
+    }
+    if (p2Resolved.freeText && !otherEmotionText) {
+      otherEmotionText = p2Resolved.freeText
     }
 
     selectedEmotionsList = items
       .map((item) => {
         if (typeof item === 'string') {
           if (item === 'prefiro_nao_responder' || item === '__REFUSED__') return null
+          if (
+            item === 'ainda_nao_sei' ||
+            item === 'ainda_nao_identifico' ||
+            item === 'ainda_nao_percebo'
+          )
+            return null
           if (item.startsWith('outra:') || item.startsWith('outro:')) {
             const splitted = item.substring(item.indexOf(':') + 1).trim()
             if (splitted) otherEmotionText = splitted
@@ -390,23 +872,35 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
           if (item === 'outra' || item === 'outro' || item === 'outra_emocao') {
             return null
           }
-          return EMOTIONS_LABELS_MAP[item] || item
+          return resolveOptionLabel(item, 'emocoes_recorrentes', 'p-07c-pm1-p2-emocoes-presentes')
         }
         if (item && typeof item === 'object') {
-          const id = item.id || item.value || item.label
+          const id = item.id || item.value || item.label || item.choice
           if (id === 'prefiro_nao_responder' || id === '__REFUSED__') return null
-          const label = item.label || item.title || EMOTIONS_LABELS_MAP[id] || id
+          if (id === 'ainda_nao_sei' || id === 'ainda_nao_identifico' || id === 'ainda_nao_percebo')
+            return null
           if (id === 'outra' || id === 'outro' || id === 'outra_emocao') {
-            if (item.text || item.customText || item.custom_text) {
-              otherEmotionText = item.text || item.customText || item.custom_text
+            if (item.text || item.customText || item.custom_text || item.free_text) {
+              otherEmotionText = item.text || item.customText || item.custom_text || item.free_text
             }
             return null
           }
-          return label
+          return (
+            item.title ||
+            item.label ||
+            resolveOptionLabel(id, 'emocoes_recorrentes', 'p-07c-pm1-p2-emocoes-presentes')
+          )
         }
         return null
       })
       .filter((x): x is string => Boolean(x))
+
+    // Fallback: usar labels do resolvedor se não vazios e lista local vazia
+    if (selectedEmotionsList.length === 0 && p2Resolved.labels.length > 0) {
+      selectedEmotionsList = p2Resolved.labels.filter(
+        (l) => l !== 'Não sei identificar' && l !== 'Prefiro não responder',
+      )
+    }
   }
 
   // P3: Resposta livre sobre emoções (compreensao_despertar_emocoes)
@@ -424,7 +918,11 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'emotions_free',
       'pergunta_3',
     ])
-  const p3State = evaluateFieldState(p3Raw)
+  const p3State = evaluateFieldState(
+    p3Raw,
+    'compreensao_despertar_emocoes',
+    'p-07c-pm1-p3-por-que-se-sente-assim',
+  )
 
   // P9: Situações de ativação (situacoes_ativacao_movimentos)
   const p9Raw =
@@ -440,7 +938,11 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'activation_contexts',
       'pergunta_9',
     ])
-  const p9State = evaluateFieldState(p9Raw)
+  const p9State = evaluateFieldState(
+    p9Raw,
+    'situacoes_ativacao_movimentos',
+    'p-07c-pm3-p9-situacoes-ativacao',
+  )
 
   // --- 2. PENSAMENTOS ---
   // P4: Pensamento associado livre (pensamento_associado)
@@ -457,7 +959,11 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'thoughts_free',
       'pergunta_4',
     ])
-  const p4State = evaluateFieldState(p4Raw)
+  const p4State = evaluateFieldState(
+    p4Raw,
+    'pensamento_associado',
+    'p-07c-pm2-p4-pensamentos-associados',
+  )
 
   // Pensamentos estruturados/opções selecionadas opcionais se existirem
   const pPensamentosEstruturadosRaw = extractQuestionResponse(responses, [
@@ -481,7 +987,7 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'internal_dialogue',
       'pergunta_6',
     ])
-  const p6State = evaluateFieldState(p6Raw)
+  const p6State = evaluateFieldState(p6Raw, 'self_dialogue_erro', 'p-07c-pm2-p6-dialogo-interno')
 
   // --- 3. COMPORTAMENTOS (Pergunta 5: comportamento_associado) ---
   const p5Raw =
@@ -499,7 +1005,11 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'me_behaviors',
       'pergunta_5',
     ])
-  const p5State = evaluateFieldState(p5Raw)
+  const p5State = evaluateFieldState(
+    p5Raw,
+    'comportamento_associado',
+    'p-07c-pm2-p5-comportamento-associado',
+  )
 
   // Alívio imediato (perguntado no campo opcional da P12 - recursos_recuperar_espaco)
   const p12PromptRaw =
@@ -580,28 +1090,65 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'pergunta_8',
     ])
 
+  // Normalização de reconciliação de chaves dos 10 padrões (cartao_1_fazer_certo -> insistente, etc.)
+  const mapProtectionKey = (k: string): string => {
+    if (!k) return k
+    // Se o k já for id de cartão conhecido
+    if (CER_PROTECTION_PATTERNS[k]) {
+      return CER_PROTECTION_PATTERNS[k].canonicalKey || CER_PROTECTION_PATTERNS[k].id
+    }
+    // Se for canonicalKey ou id de padrão
+    for (const pat of Object.values(CER_PROTECTION_PATTERNS)) {
+      if (pat.id === k || pat.canonicalKey === k) return pat.canonicalKey || pat.id
+    }
+    return k
+  }
+
   const consolidatedP7Responses: Record<string, string> = {}
   const extractP7Values = (resp: any) => {
     if (!resp) return
-    const sVal = resp.structured_value !== undefined ? resp.structured_value : resp
+    let sVal = resp.structured_value !== undefined ? resp.structured_value : resp
     if (!sVal) return
+
+    // Desempacotar { ratings: { ... } } se presente
+    if (sVal && typeof sVal === 'object' && sVal.ratings && typeof sVal.ratings === 'object') {
+      sVal = sVal.ratings
+    }
+
     if (typeof sVal === 'object' && !Array.isArray(sVal)) {
       for (const [k, v] of Object.entries(sVal)) {
-        if (k === 'metadata' || k === 'collection_origin' || k === 'naming_origin') continue
+        if (
+          k === 'metadata' ||
+          k === 'collection_origin' ||
+          k === 'naming_origin' ||
+          k === 'prompt_key' ||
+          k === 'canonical_prompt_id' ||
+          k === 'step_order'
+        ) {
+          continue
+        }
+        const canonKey = mapProtectionKey(k)
         if (typeof v === 'string') {
           consolidatedP7Responses[k] = v
+          consolidatedP7Responses[canonKey] = v
         } else if (v && typeof v === 'object' && (v as any).value) {
-          consolidatedP7Responses[k] = String((v as any).value)
+          const valStr = String((v as any).value)
+          consolidatedP7Responses[k] = valStr
+          consolidatedP7Responses[canonKey] = valStr
         }
       }
     } else if (Array.isArray(sVal)) {
       for (const item of sVal) {
         if (typeof item === 'string') {
           consolidatedP7Responses[item] = 'Frequentemente'
+          consolidatedP7Responses[mapProtectionKey(item)] = 'Frequentemente'
         } else if (item && typeof item === 'object') {
           const key = item.id || item.pattern_id || item.card_id
           const val = item.intensity || item.value || item.choice || 'Frequentemente'
-          if (key) consolidatedP7Responses[key] = String(val)
+          if (key) {
+            consolidatedP7Responses[key] = String(val)
+            consolidatedP7Responses[mapProtectionKey(key)] = String(val)
+          }
         }
       }
     }
@@ -700,7 +1247,11 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'safety_wellbeing',
       'pergunta_10',
     ])
-  const p10State = evaluateFieldState(p10Raw)
+  const p10State = evaluateFieldState(
+    p10Raw,
+    'dois_retratos_espaco',
+    'p-07c-pm4-p10-seguranca-bem-estar',
+  )
 
   const p11Raw =
     (typeof responses === 'object' && !Array.isArray(responses)
@@ -715,7 +1266,11 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'overload_state',
       'pergunta_11',
     ])
-  const p11State = evaluateFieldState(p11Raw)
+  const p11State = evaluateFieldState(
+    p11Raw,
+    'dois_retratos_sobrecarga',
+    'p-07c-pm4-p11-sobrecarga',
+  )
 
   const p12Raw =
     (typeof responses === 'object' && !Array.isArray(responses)
@@ -730,7 +1285,11 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'recovery_resources',
       'pergunta_12',
     ])
-  const p12State = evaluateFieldState(p12Raw)
+  const p12State = evaluateFieldState(
+    p12Raw,
+    'recursos_recuperar_espaco',
+    'p-07c-pm5-p12-recursos-espaco-interno',
+  )
 
   // --- 6. PERGUNTA 13 (Livre / Opcional) ---
   const p13Raw =
@@ -756,7 +1315,11 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'closing_reflection',
       'pergunta_13',
     ])
-  const p13State = evaluateFieldState(p13Raw)
+  const p13State = evaluateFieldState(
+    p13Raw,
+    'campo_final_opcional',
+    'p-07c-pm5-p13-campo-final-opcional',
+  )
   const hasP13Content =
     !p13State.isEmpty &&
     (p13State.isRefusal ||
@@ -772,12 +1335,24 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
     if (state.isRefusal) {
       return <p className="text-sm italic text-muted-foreground">{MSG_RECUSA}</p>
     }
+    if (state.isUnknown) {
+      return <p className="text-sm italic text-muted-foreground">Não sei identificar</p>
+    }
     if (state.isEmpty) {
       return <p className="text-sm italic text-muted-foreground">{MSG_INDISPONIVEL}</p>
     }
     if (state.text) {
       return (
         <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{state.text}</p>
+      )
+    }
+    if (Array.isArray(state.labels) && state.labels.length > 0) {
+      return (
+        <ul className="list-disc list-inside space-y-1 text-sm text-foreground">
+          {state.labels.map((item, idx) => (
+            <li key={idx}>{item}</li>
+          ))}
+        </ul>
       )
     }
     if (Array.isArray(state.data)) {
@@ -1035,6 +1610,7 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
             p7Responses={consolidatedP7Responses}
             p8InterferingIds={consolidatedP8InterferingIds}
             treatmentVariant={treatmentVariant}
+            isProfessionalView={isProfessionalView}
           />
         </section>
 

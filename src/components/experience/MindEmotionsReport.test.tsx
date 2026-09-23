@@ -641,4 +641,139 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
     // 11. Zero chamadas ao PocketBase
     expect(pbSpy).not.toHaveBeenCalled()
   })
+
+  it('16. [NOVO v0.0.122] Resoluções estruturadas completas: P2 com ≥3 emoções + "outra emoção", P5/P6/P9/P10/P12 estruturados, P7a/P7b e P8 com 3 interferentes', () => {
+    const fullStructuredResponses: Record<string, any> = {
+      // P1: livre
+      'p-07c-pm1-p1-funcionamento-emocional': {
+        prompt_key: 'mundo_emocional_geral',
+        free_text: 'Dia a dia calmo mas com picos de preocupação',
+      },
+      // P2: ≥3 emoções marcadas + "outra emoção"
+      'p-07c-pm1-p2-emocoes-presentes': {
+        prompt_key: 'emocoes_recorrentes',
+        structured_value: {
+          selectedOptionIds: ['ansiedade', 'inseguranca', 'sobrecarga'],
+          outra_emocao_text: 'Aperto no peito matinal',
+        },
+      },
+      // P3: livre
+      'p-07c-pm1-p3-por-que-se-sente-assim': {
+        prompt_key: 'compreensao_despertar_emocoes',
+        free_text: 'Pressão constante no trabalho',
+      },
+      // P5: Comportamentos estruturados (comportamento_associado)
+      'p-07c-pm2-p5-comportamento-associado': {
+        prompt_key: 'comportamento_associado',
+        structured_value: {
+          selectedOptionIds: ['me_b_afastar_pessoas', 'me_b_acelerar_resolver'],
+        },
+      },
+      // P6: Diálogo interno estruturado (self_dialogue_erro)
+      'p-07c-pm2-p6-dialogo-interno': {
+        prompt_key: 'self_dialogue_erro',
+        structured_value: {
+          choice: 'me_d_eu_deveria_ter_previsto',
+        },
+      },
+      // P7a / P7b com ratings envelopados
+      'p-07c-pm3-p7a-movimentos-1-5': {
+        prompt_key: 'movimentos_automaticos_frequencia_p1',
+        structured_value: {
+          ratings: {
+            cartao_1_fazer_certo: 'Frequentemente',
+            cartao_2_cuidar_pessoas: 'Em algumas situações',
+          },
+        },
+      },
+      'p-07c-pm3-p7b-movimentos-6-10': {
+        prompt_key: 'movimentos_automaticos_frequencia_p2',
+        structured_value: {
+          ratings: {
+            cartao_6_antecipar_riscos: 'Com força sob pressão',
+            cartao_9_evitar_desconfortos: 'Quase nunca',
+          },
+        },
+      },
+      // P8: 3 interferentes
+      'p-07c-pm3-p8-interferencia-movimentos': {
+        prompt_key: 'movimentos_interferencia_atual',
+        structured_value: {
+          selectedOptionIds: [
+            'cartao_1_fazer_certo',
+            'cartao_6_antecipar_riscos',
+            'cartao_10_cobrar_e_criticar',
+          ],
+        },
+      },
+      // P9: Situações de ativação estruturadas (situacoes_ativacao_movimentos)
+      'p-07c-pm3-p9-situacoes-ativacao': {
+        prompt_key: 'situacoes_ativacao_movimentos',
+        structured_value: {
+          selectedOptionIds: ['me_sit_prazos_apertados', 'me_sit_conflito_direto'],
+        },
+      },
+      // P10: Segurança / bem-estar estruturado (dois_retratos_espaco)
+      'p-07c-pm4-p10-seguranca-bem-estar': {
+        prompt_key: 'dois_retratos_espaco',
+        structured_value: {
+          selectedOptionIds: ['me_seg_pausa_silencio', 'me_seg_natureza_ar_livre'],
+        },
+      },
+      // P11: Sobrecarga estruturada (dois_retratos_sobrecarga)
+      'p-07c-pm4-p11-sobrecarga': {
+        prompt_key: 'dois_retratos_sobrecarga',
+        structured_value: {
+          selectedOptionIds: ['me_sob_tensao_muscular', 'me_sob_mente_acelerada'],
+        },
+      },
+      // P12: Recursos estruturados (recursos_recuperar_espaco)
+      'p-07c-pm5-p12-recursos-espaco-interno': {
+        prompt_key: 'recursos_recuperar_espaco',
+        structured_value: {
+          selectedOptionIds: ['respirar_fundo_pausa', 'caminhar_ao_ar_livre'],
+        },
+      },
+    }
+
+    render(
+      <MindEmotionsReport isOpen={true} onClose={() => {}} responses={fullStructuredResponses} />,
+    )
+
+    // P2: Emoções resolvidas para labels humanos e outra emoção
+    expect(screen.getByText('Ansiedade')).toBeTruthy()
+    expect(screen.getByText('Insegurança')).toBeTruthy()
+    expect(screen.getByText('Sobrecarga')).toBeTruthy()
+    expect(screen.getByText(/Aperto no peito matinal/i)).toBeTruthy()
+
+    // P5, P6, P9, P10, P11, P12 traduzidos sem "Informação ainda não disponível" nessas seções
+    expect(screen.getByText(/Afastar-se das pessoas|me_b_afastar_pessoas/i)).toBeTruthy()
+    expect(
+      screen.getByText(/Eu deveria ter previsto isso|me_d_eu_deveria_ter_previsto/i),
+    ).toBeTruthy()
+    expect(screen.getByText(/Prazos muito apertados|me_sit_prazos_apertados/i)).toBeTruthy()
+    expect(screen.getByText(/Pausas em silêncio|me_seg_pausa_silencio/i)).toBeTruthy()
+    expect(screen.getByText(/Tensão muscular acumulada|me_sob_tensao_muscular/i)).toBeTruthy()
+    expect(screen.getByText(/Respirar fundo|respirar_fundo_pausa/i)).toBeTruthy()
+
+    // P8: 3 interferentes presentes
+    expect(screen.getByTestId('pattern-card-cartao_1_fazer_certo')).toBeTruthy()
+    expect(screen.getByTestId('pattern-card-cartao_6_antecipar_riscos')).toBeTruthy()
+    expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toBeTruthy()
+
+    // O bloco técnico de rastreabilidade NÃO aparece na visão padrão da interagente
+    expect(screen.queryByTestId('protection-patterns-technical-trace')).toBeNull()
+  })
+
+  it('17. [NOVO v0.0.122] Visão profissional (isProfessionalView=true) exibe o bloco técnico de rastreabilidade', () => {
+    render(
+      <MindEmotionsReport
+        isOpen={true}
+        onClose={() => {}}
+        responses={{}}
+        isProfessionalView={true}
+      />,
+    )
+    expect(screen.getByTestId('protection-patterns-technical-trace')).toBeTruthy()
+  })
 })

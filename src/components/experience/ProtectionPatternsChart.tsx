@@ -44,6 +44,11 @@ export interface ProtectionPatternsChartProps {
    * Subtítulo customizado opcional.
    */
   description?: string
+  /**
+   * Flag para exibição de bloco técnico de rastreabilidade (visão profissional/diagnóstico interno).
+   * Oculto por padrão na visão da interagente.
+   */
+  isProfessionalView?: boolean
 }
 
 interface IntensityConfig {
@@ -119,6 +124,7 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
   onClose,
   title = DEFAULT_TITLE,
   description = DEFAULT_DESCRIPTION,
+  isProfessionalView = false,
 }) => {
   // 10 padrões canônicos únicos (chaves canônicas)
   const canonicalKeys = [
@@ -355,56 +361,55 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
           })}
         </div>
 
-        {/* Alternativa Textual Acessível abaixo do gráfico */}
-        <div
-          className="mt-6 pt-4 border-t border-stone-200 dark:border-stone-800"
-          aria-label="Alternativa textual acessível aos dados do gráfico"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <HelpCircle className="w-4 h-4 text-stone-500 dark:text-stone-400" aria-hidden="true" />
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">
-              Resumo descritivo dos seus padrões (Alternativa Acessível)
-            </h3>
-          </div>
-          <div className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed bg-stone-50 dark:bg-stone-850 p-3.5 rounded-md border border-stone-200/70 dark:border-stone-800">
-            <p className="mb-2">
-              A seguir, a listagem textual dos 10 padrões de proteção avaliados e a intensidade
-              percebida por você:
-            </p>
-            <ul className="list-disc pl-5 space-y-1">
-              {patternData.map((item) => (
-                <li key={`accessible-${item.definition.id}`}>
-                  <strong className="text-stone-800 dark:text-stone-200">{item.label}</strong>:
-                  categoria declarada como{' '}
-                  <span className="italic">
-                    {item.intensity === 'Informação ainda não disponível'
-                      ? 'Informação ainda não disponível'
-                      : item.config.isUnknown
-                        ? 'Não sei identificar'
-                        : item.intensity}
-                  </span>
-                  .
-                  {item.isInterfering && (
-                    <span className="text-amber-800 dark:text-amber-300 font-medium">
-                      {' '}
-                      (Identificado por você na Pergunta 8 como padrão que mais interfere na sua
-                      vida atual
+        {/* Bloco técnico de rastreabilidade (visível somente na visão profissional/diagnóstico interno) */}
+        {isProfessionalView && (
+          <div
+            className="mt-6 pt-4 border-t border-stone-200 dark:border-stone-800"
+            aria-label="Rastreabilidade técnica dos dados do gráfico (visão profissional)"
+            data-testid="protection-patterns-technical-trace"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <HelpCircle
+                className="w-4 h-4 text-stone-500 dark:text-stone-400"
+                aria-hidden="true"
+              />
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">
+                Rastreabilidade técnica dos padrões (Diagnóstico Interno)
+              </h3>
+            </div>
+            <div className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed bg-stone-50 dark:bg-stone-850 p-3.5 rounded-md border border-stone-200/70 dark:border-stone-800">
+              <p className="mb-2">
+                Listagem técnica dos 10 padrões de proteção avaliados e a intensidade registrada:
+              </p>
+              <ul className="list-disc pl-5 space-y-1 font-mono text-[11px]">
+                {patternData.map((item) => (
+                  <li key={`trace-${item.definition.id}`}>
+                    <strong className="text-stone-800 dark:text-stone-200">{item.label}</strong> (
+                    {item.definition.canonicalKey} / {item.definition.id}): categoria declarada como{' '}
+                    <span className="italic">
                       {item.intensity === 'Informação ainda não disponível'
-                        ? ', embora sua presença/frequência ainda não tenha sido registrada'
-                        : ''}
-                      ).
+                        ? 'Informação ainda não disponível'
+                        : item.config.isUnknown
+                          ? 'Não sei identificar'
+                          : item.intensity}
                     </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-[11px] text-stone-500 dark:text-stone-400 border-t border-stone-200/60 dark:border-stone-700/60 pt-2">
-              Observação ética: Esses dados refletem exclusivamente a sua autoavaliação percebida e
-              não representam diagnóstico, nota de desempenho, classificação psicológica nem escala
-              quantitativa.
-            </p>
+                    {item.isInterfering && (
+                      <span className="text-amber-800 dark:text-amber-300 font-medium">
+                        {' '}
+                        [P8: mais interferente]
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-[11px] text-stone-500 dark:text-stone-400 border-t border-stone-200/60 dark:border-stone-700/60 pt-2 font-sans">
+                Observação ética: Esses dados refletem exclusivamente a autoavaliação percebida e
+                não representam diagnóstico, nota de desempenho, classificação psicológica nem
+                escala quantitativa.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   )
