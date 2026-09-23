@@ -194,6 +194,119 @@ class DemoAdapter {
     this.isDemoEnabled = localStorage.getItem('cer_demo_mode_active') === 'true'
   }
 
+  /**
+   * Higienização idempotente de ocorrências legadas visíveis de `$Daiane` -> `Daiane` e `$Daia` -> `Daia`.
+   * Restrita a textos visíveis, sem alterar IDs, chaves técnicas ou respostas da interagente,
+   * sem apagar o estado, e sem mudar textos que já estejam corretos.
+   */
+  public sanitizeLegacyDaianeText(text: string | null | undefined): string {
+    if (!text || typeof text !== 'string') return ''
+    if (!text.includes('$Daiane') && !text.includes('$Daia')) return text
+    return text.replaceAll('$Daiane', 'Daiane').replaceAll('$Daia', 'Daia')
+  }
+
+  public sanitizeVisibleDemoStore(store: DemoStateStore): DemoStateStore {
+    if (!store) return store
+
+    // Higienizar mensagens (textos visíveis: message_text, summary_text)
+    if (Array.isArray(store.messages)) {
+      for (const m of store.messages) {
+        if (m.message_text) m.message_text = this.sanitizeLegacyDaianeText(m.message_text)
+        if (m.summary_text) m.summary_text = this.sanitizeLegacyDaianeText(m.summary_text)
+      }
+    }
+
+    // Higienizar sessões (title, summary, notes)
+    if (Array.isArray(store.sessions)) {
+      for (const s of store.sessions) {
+        if (s.title) s.title = this.sanitizeLegacyDaianeText(s.title)
+        if (s.summary) s.summary = this.sanitizeLegacyDaianeText(s.summary)
+        if (s.notes) s.notes = this.sanitizeLegacyDaianeText(s.notes)
+      }
+    }
+
+    // Higienizar anotações de sessão (text, synthesis_text)
+    if (Array.isArray(store.notes)) {
+      for (const n of store.notes) {
+        if (n.text) n.text = this.sanitizeLegacyDaianeText(n.text)
+        if (n.synthesis_text) n.synthesis_text = this.sanitizeLegacyDaianeText(n.synthesis_text)
+      }
+    }
+
+    // Higienizar planos de cuidado (title, goal, notes)
+    if (Array.isArray(store.plans)) {
+      for (const p of store.plans) {
+        if (p.title) p.title = this.sanitizeLegacyDaianeText(p.title)
+        if (p.goal) p.goal = this.sanitizeLegacyDaianeText(p.goal)
+        if (p.notes) p.notes = this.sanitizeLegacyDaianeText(p.notes)
+      }
+    }
+
+    // Higienizar prioridades de plano de cuidado (label, description)
+    if (Array.isArray(store.priorities)) {
+      for (const pr of store.priorities) {
+        if (pr.label) pr.label = this.sanitizeLegacyDaianeText(pr.label)
+        if (pr.description) pr.description = this.sanitizeLegacyDaianeText(pr.description)
+      }
+    }
+
+    // Higienizar apresentações (presentation_notes, participant_view_content)
+    if (Array.isArray(store.presentations)) {
+      for (const pres of store.presentations) {
+        if (pres.presentation_notes)
+          pres.presentation_notes = this.sanitizeLegacyDaianeText(pres.presentation_notes)
+        if (pres.participant_view_content)
+          pres.participant_view_content = this.sanitizeLegacyDaianeText(
+            pres.participant_view_content,
+          )
+      }
+    }
+
+    // Higienizar acceptances (participant_notes)
+    if (Array.isArray(store.acceptances)) {
+      for (const acc of store.acceptances) {
+        if (acc.participant_notes)
+          acc.participant_notes = this.sanitizeLegacyDaianeText(acc.participant_notes)
+      }
+    }
+
+    // Higienizar mapas (title, notes) e seus itens (title, description, notes)
+    if (Array.isArray(store.maps)) {
+      for (const map of store.maps) {
+        if (map.title) map.title = this.sanitizeLegacyDaianeText(map.title)
+        if (map.notes) map.notes = this.sanitizeLegacyDaianeText(map.notes)
+        if (Array.isArray(map.items)) {
+          for (const item of map.items) {
+            if (item.title) item.title = this.sanitizeLegacyDaianeText(item.title)
+            if (item.description) item.description = this.sanitizeLegacyDaianeText(item.description)
+            if (item.notes) item.notes = this.sanitizeLegacyDaianeText(item.notes)
+          }
+        }
+      }
+    }
+
+    // Higienizar marianaPersonOverride se houver campos de nome com prefixo incorreto
+    if (store.marianaPersonOverride) {
+      if (store.marianaPersonOverride.full_name) {
+        store.marianaPersonOverride.full_name = this.sanitizeLegacyDaianeText(
+          store.marianaPersonOverride.full_name,
+        )
+      }
+      if (store.marianaPersonOverride.preferred_name) {
+        store.marianaPersonOverride.preferred_name = this.sanitizeLegacyDaianeText(
+          store.marianaPersonOverride.preferred_name,
+        )
+      }
+      if (store.marianaPersonOverride.notes) {
+        store.marianaPersonOverride.notes = this.sanitizeLegacyDaianeText(
+          store.marianaPersonOverride.notes,
+        )
+      }
+    }
+
+    return store
+  }
+
   private loadState(): DemoStateStore {
     try {
       // Remoção explícita dos caches legados para evitar contaminação por sementes antigas
@@ -203,7 +316,8 @@ class DemoAdapter {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
         const parsed: DemoStateStore = JSON.parse(raw)
-        const migrated = this.migrateIncompatibleMenteEmocoes(parsed)
+        const sanitized = this.sanitizeVisibleDemoStore(parsed)
+        const migrated = this.migrateIncompatibleMenteEmocoes(sanitized)
         return migrated
       }
     } catch (e) {

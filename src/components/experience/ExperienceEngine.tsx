@@ -86,6 +86,16 @@ export function formatSelectedEmotionsPhrase(selectedLabels: string[]): string {
   return `Você selecionou: ${initial} e ${last}.`
 }
 
+export function formatSelectedEmotionsNatural(selectedLabels: string[]): string {
+  const filtered = selectedLabels.map((s) => s.trim()).filter(Boolean)
+  if (filtered.length === 0) return ''
+  if (filtered.length === 1) return filtered[0]
+  if (filtered.length === 2) return `${filtered[0]} e ${filtered[1]}`
+  const last = filtered[filtered.length - 1]
+  const initial = filtered.slice(0, -1).join(', ')
+  return `${initial} e ${last}`
+}
+
 type EngineStage = 'opening' | 'moments' | 'closing'
 
 export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
@@ -131,6 +141,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [engineStage, setEngineStage] = useState<EngineStage>('opening')
+  const [isReviewOnly, setIsReviewOnly] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null)
@@ -499,7 +510,13 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     }
   }
 
+  const handleReturnToClosingFromReview = () => {
+    setIsReviewOnly(false)
+    setEngineStage('closing')
+  }
+
   const saveCurrentStepResponse = async () => {
+    if (isReviewOnly) return
     const currentPrompt = prompts[currentStepIndex]
     if (!currentPrompt) return
 
@@ -688,6 +705,33 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   }
 
   const handleNextStep = async () => {
+    if (isReviewOnly) {
+      if (isLastStep) {
+        handleReturnToClosingFromReview()
+      } else {
+        // Na revisão somente-leitura, navegar linearmente pelos prompts elegíveis ou disponíveis
+        const currentPrompt = prompts[currentStepIndex]
+        const orch = resolveExperienceOrchestration({
+          prompts,
+          responses: Object.values(responsesMap),
+          currentStepOrder: (currentPrompt.step_order || 0) + 1,
+        })
+        if (orch.nextPrompt) {
+          const nextIdx = prompts.findIndex((p) => p.id === orch.nextPrompt!.id)
+          if (nextIdx >= 0) {
+            setCurrentStepIndex(nextIdx)
+            return
+          }
+        }
+        if (currentStepIndex + 1 < prompts.length) {
+          setCurrentStepIndex(currentStepIndex + 1)
+        } else {
+          handleReturnToClosingFromReview()
+        }
+      }
+      return
+    }
+
     await saveCurrentStepResponse()
 
     // Recalcular orquestração com as respostas atualizadas
@@ -748,6 +792,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   }
 
   const handleLegitimateSkip = async (reason: 'nao_sei' | 'prefiro_nao_responder') => {
+    if (isReviewOnly) return
     const currentPrompt = prompts[currentStepIndex]
     if (!currentPrompt) return
 
@@ -810,10 +855,18 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const handlePreviousStep = () => {
     if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1)
+      return
+    }
+    if (isReviewOnly) {
+      handleReturnToClosingFromReview()
     }
   }
 
   const handleCompleteExperience = async () => {
+    if (isReviewOnly) {
+      handleReturnToClosingFromReview()
+      return
+    }
     // Validar se perguntas obrigatórias sem resposta impedem o status completed
     // Se for Mente & Emoções, verificar a cobertura canônica
     if (isMenteEmocoes) {
@@ -1336,6 +1389,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           <Button
             variant="outline"
             onClick={() => {
+              setIsReviewOnly(true)
               setCurrentStepIndex(0)
               setEngineStage('moments')
             }}
@@ -1462,6 +1516,11 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
   const emocoesTexto =
     !isPrefiroNaoResponderP2 && selectedEmotionLabels.length > 0
+      ? formatSelectedEmotionsNatural(selectedEmotionLabels)
+      : ''
+
+  const emocoesTextoVirgulas =
+    !isPrefiroNaoResponderP2 && selectedEmotionLabels.length > 0
       ? selectedEmotionLabels.join(', ')
       : ''
 
@@ -1523,7 +1582,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       renderedPromptConfig = {
         ...renderedPromptConfig,
         dynamic_text_template: interpolateEmotionsMarker(schema.dynamic_text_template),
-        interpolatedEmotions: emocoesTexto || 'suas emoções',
+        interpolatedEmotions: emocoesTexto || emocoesTextoVirgulas || 'suas emoções',
         selectedEmotionsPhrase,
       }
     }
@@ -1816,7 +1875,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       case 'SimpleScale':
         return (
           <SimpleScale
-            config={schema as any}
+            config={renderedPromptConfig as any}
             value={typeof currentDraftValue === 'number' ? (currentDraftValue as number) : null}
             onChange={(val) => setCurrentDraftValue(val)}
           />
@@ -1824,7 +1883,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       case 'Ordering':
         return (
           <Ordering
-            config={schema as any}
+            config={renderedPromptConfig as any}
             value={currentDraftValue as string[]}
             onChange={(val) => {
               setOrderingInteracted(true)
@@ -1835,7 +1894,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       case 'BodyMap':
         return (
           <BodyMap
-            config={schema as any}
+            config={renderedPromptConfig as any}
             value={currentDraftValue as string[]}
             onChange={(val) => setCurrentDraftValue(val)}
           />
@@ -1843,7 +1902,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       case 'RelationalOrbitMap':
         return (
           <RelationalOrbitMap
-            config={schema as any}
+            config={renderedPromptConfig as any}
             value={Array.isArray(currentDraftValue) ? (currentDraftValue as any) : []}
             onChange={(val) => setCurrentDraftValue(val as any)}
           />
@@ -1851,7 +1910,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       case 'ScenarioChoice':
         return (
           <ScenarioChoice
-            config={schema as any}
+            config={renderedPromptConfig as any}
             value={currentDraftValue as string}
             onChange={(val) => setCurrentDraftValue(val)}
           />
@@ -1859,7 +1918,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       case 'Timeline':
         return (
           <Timeline
-            config={schema as any}
+            config={renderedPromptConfig as any}
             value={currentDraftValue as any}
             onChange={(val) => setCurrentDraftValue(val)}
           />
@@ -1875,18 +1934,58 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-6">
+      {/* Banner de Revisão Somente-Leitura */}
+      {isReviewOnly && (
+        <div
+          data-testid="banner-revisao-somente-leitura"
+          className="p-3.5 rounded-xl bg-primary/10 border border-primary/25 text-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+        >
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+            <div className="space-y-0.5">
+              <span className="font-semibold block text-primary">Revisão das suas respostas</span>
+              <span className="text-muted-foreground text-[11px] block">
+                Modo de consulta somente-leitura. Suas respostas registradas estão preservadas sem
+                alteração.
+              </span>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleReturnToClosingFromReview}
+            className="h-8 text-xs px-3 self-start sm:self-auto border-primary/30 text-primary hover:bg-primary/10 shrink-0"
+          >
+            Voltar ao encerramento
+          </Button>
+        </div>
+      )}
+
       {/* Topo: Progresso Humanizado Sem Gamificação */}
       <div className="flex items-center justify-between border-b border-border/50 pb-4">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="text-xs text-muted-foreground hover:text-foreground h-8 px-2 gap-1"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Pausar e Salvar</span>
-          </Button>
+          {isReviewOnly ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReturnToClosingFromReview}
+              className="text-xs text-muted-foreground hover:text-foreground h-8 px-2 gap-1"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Voltar ao encerramento</span>
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="text-xs text-muted-foreground hover:text-foreground h-8 px-2 gap-1"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Pausar e Salvar</span>
+            </Button>
+          )}
           <span
             className="text-xs text-muted-foreground font-mono"
             aria-live="polite"
@@ -1899,7 +1998,11 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         </div>
 
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-          {saving ? (
+          {isReviewOnly ? (
+            <span className="hidden sm:inline text-primary font-medium">
+              Revisão somente-leitura
+            </span>
+          ) : saving ? (
             <span className="flex items-center gap-1 text-primary">
               <Save className="w-3 h-3 animate-spin" />
               <span>Salvando...</span>
@@ -2040,40 +2143,61 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       </div>
 
       {/* Renderização do Componente de Interação */}
-      <div className="py-2">{renderDynamicComponent()}</div>
+      <div className={`py-2 ${isReviewOnly ? 'pointer-events-none select-text opacity-95' : ''}`}>
+        {renderDynamicComponent()}
+      </div>
 
       {/* Barra de Ações de Navegação */}
       <div className="flex items-center justify-between pt-6 border-t border-border/50 gap-3">
         <Button
           variant="outline"
           size="sm"
-          disabled={isFirstStep || saving}
+          disabled={!isReviewOnly && isFirstStep}
           onClick={handlePreviousStep}
           className="text-xs gap-1.5 h-9"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Voltar</span>
+          <span>{isReviewOnly && isFirstStep ? 'Voltar ao encerramento' : 'Voltar'}</span>
         </Button>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={saving}
-            onClick={saveCurrentStepResponse}
-            className="text-xs h-9 px-3 text-muted-foreground hover:text-foreground hidden sm:flex items-center gap-1"
-          >
-            <Save className="w-3.5 h-3.5" />
-            <span>Salvar rascunho</span>
-          </Button>
+          {isReviewOnly ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReturnToClosingFromReview}
+              className="text-xs h-9 px-3 text-muted-foreground hover:text-foreground"
+            >
+              Voltar ao encerramento
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={saving}
+              onClick={saveCurrentStepResponse}
+              className="text-xs h-9 px-3 text-muted-foreground hover:text-foreground hidden sm:flex items-center gap-1"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>Salvar rascunho</span>
+            </Button>
+          )}
 
           <Button
             size="sm"
-            disabled={saving}
+            disabled={!isReviewOnly && saving}
             onClick={handleNextStep}
             className="text-xs gap-1.5 h-9 px-4"
           >
-            <span>{isLastStep ? 'Concluir momento' : 'Avançar'}</span>
+            <span>
+              {isReviewOnly
+                ? isLastStep
+                  ? 'Voltar ao encerramento'
+                  : 'Próxima pergunta'
+                : isLastStep
+                  ? 'Concluir momento'
+                  : 'Avançar'}
+            </span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Button>
         </div>
