@@ -1,0 +1,178 @@
+{
+  "decodeResults": [
+    {
+      "file": "ayv-feminino-leve.png",
+      "status": "PASS",
+      "detail": "já existia e é idêntico",
+      "hash": "71437dc59de47c72f744d48a17a48f49ffee4170f6a493df1ca7fe35c6650764"
+    },
+    {
+      "file": "ayv-feminino-intermediario.png",
+      "status": "PASS",
+      "detail": "já existia e é idêntico",
+      "hash": "110965b4e0e11f69a8307ef8248198f749f5c17a005d67875b9b81188aa6f4b0"
+    },
+    {
+      "file": "ayv-feminino-amplo.png",
+      "status": "PASS",
+      "detail": "já existia e é idêntico",
+      "hash": "8d03f68fbe207bdb3952dc96a1fc0cdaa60543ed9248a9e4feb82e530c0f11a9"
+    },
+    {
+      "file": "ayv-masculino-leve.png",
+      "status": "PASS",
+      "detail": "já existia e é idêntico",
+      "hash": "a8f2c5f243e650d366c194949af33193fdcf7e7e7adf738c5c97f1e1807061a3"
+    },
+    {
+      "file": "ayv-masculino-intermediario.png",
+      "status": "PASS",
+      "detail": "já existia e é idêntico",
+      "hash": "473387ed22b0003c7e60f965df0f7fcc935ac7cd73dc67e9d3dcdf82cbb139c6"
+    },
+    {
+      "file": "ayv-masculino-amplo.png",
+      "status": "PASS",
+      "detail": "já existia e é idêntico",
+      "hash": "2603ea666e8e0148d057eb481a9c12f2bd7ef64586482ff50b03f810253773ea"
+    }
+  ],
+  "kitAssets": [
+    {
+      "file": "ayv-feminino-leve.png",
+      "size": 1333174,
+      "sha256": "71437dc59de47c72f744d48a17a48f49ffee4170f6a493df1ca7fe35c6650764",
+      "expectedHash": "71437dc59de47c72f744d48a17a48f49ffee4170f6a493df1ca7fe35c6650764",
+      "hashMatch": true
+    },
+    {
+      "file": "ayv-feminino-intermediario.png",
+      "size": 1416881,
+      "sha256": "110965b4e0e11f69a8307ef8248198f749f5c17a005d67875b9b81188aa6f4b0",
+      "expectedHash": "110965b4e0e11f69a8307ef8248198f749f5c17a005d67875b9b81188aa6f4b0",
+      "hashMatch": true
+    },
+    {
+      "file": "ayv-feminino-amplo.png",
+      "size": 1526053,
+      "sha256": "8d03f68fbe207bdb3952dc96a1fc0cdaa60543ed9248a9e4feb82e530c0f11a9",
+      "expectedHash": "8d03f68fbe207bdb3952dc96a1fc0cdaa60543ed9248a9e4feb82e530c0f11a9",
+      "hashMatch": true
+    },
+    {
+      "file": "ayv-masculino-leve.png",
+      "size": 1354608,
+      "sha256": "a8f2c5f243e650d366c194949af33193fdcf7e7e7adf738c5c97f1e1807061a3",
+      "expectedHash": "a8f2c5f243e650d366c194949af33193fdcf7e7e7adf738c5c97f1e1807061a3",
+      "hashMatch": true
+    },
+    {
+      "file": "ayv-masculino-intermediario.png",
+      "size": 1433011,
+      "sha256": "473387ed22b0003c7e60f965df0f7fcc935ac7cd73dc67e9d3dcdf82cbb139c6",
+      "expectedHash": "473387ed22b0003c7e60f965df0f7fcc935ac7cd73dc67e9d3dcdf82cbb139c6",
+      "hashMatch": true
+    },
+    {
+      "file": "ayv-masculino-amplo.png",
+      "size": 1509344,
+      "sha256": "2603ea666e8e0148d057eb481a9c12f2bd7ef64586482ff50b03f810253773ea",
+      "expectedHash": "2603ea666e8e0148d057eb481a9c12f2bd7ef64586482ff50b03f810253773ea",
+      "hashMatch": true
+    }
+  ],
+  "validationResults": [
+    {
+      "id": "female_light_narrow",
+      "file": "assets/ayv-feminino-leve.png",
+      "status": "PASS",
+      "detail": "1024x1536, RGBA",
+      "hash": "71437dc59de47c72f744d48a17a48f49ffee4170f6a493df1ca7fe35c6650764"
+    },
+    {
+      "id": "female_intermediate",
+      "file": "assets/ayv-feminino-intermediario.png",
+      "status": "PASS",
+      "detail": "1024x1536, RGBA",
+      "hash": "110965b4e0e11f69a8307ef8248198f749f5c17a005d67875b9b81188aa6f4b0"
+    },
+    {
+      "id": "female_broad_solid",
+      "file": "assets/ayv-feminino-amplo.png",
+      "status": "PASS",
+      "detail": "1024x1536, RGBA",
+      "hash": "8d03f68fbe207bdb3952dc96a1fc0cdaa60543ed9248a9e4feb82e530c0f11a9"
+    },
+    {
+      "id": "male_light_narrow",
+      "file": "assets/ayv-masculino-leve.png",
+      "status": "PASS",
+      "detail": "1024x1536, RGBA",
+      "hash": "a8f2c5f243e650d366c194949af33193fdcf7e7e7adf738c5c97f1e1807061a3"
+    },
+    {
+      "id": "male_intermediate",
+      "file": "assets/ayv-masculino-intermediario.png",
+      "status": "PASS",
+      "detail": "1024x1536, RGBA",
+      "hash": "473387ed22b0003c7e60f965df0f7fcc935ac7cd73dc67e9d3dcdf82cbb139c6"
+    },
+    {
+      "id": "male_broad_solid",
+      "file": "assets/ayv-masculino-amplo.png",
+      "status": "PASS",
+      "detail": "1024x1536, RGBA",
+      "hash": "2603ea666e8e0148d057eb481a9c12f2bd7ef64586482ff50b03f810253773ea"
+    }
+  ],
+  "publicAssets": [
+    {
+      "file": "ayv-feminino-leve.png",
+      "size": 1333174,
+      "sha256": "71437dc59de47c72f744d48a17a48f49ffee4170f6a493df1ca7fe35c6650764",
+      "expectedHash": "71437dc59de47c72f744d48a17a48f49ffee4170f6a493df1ca7fe35c6650764",
+      "hashMatch": true,
+      "matchesKit": true
+    },
+    {
+      "file": "ayv-feminino-intermediario.png",
+      "size": 1416881,
+      "sha256": "110965b4e0e11f69a8307ef8248198f749f5c17a005d67875b9b81188aa6f4b0",
+      "expectedHash": "110965b4e0e11f69a8307ef8248198f749f5c17a005d67875b9b81188aa6f4b0",
+      "hashMatch": true,
+      "matchesKit": true
+    },
+    {
+      "file": "ayv-feminino-amplo.png",
+      "size": 1526053,
+      "sha256": "8d03f68fbe207bdb3952dc96a1fc0cdaa60543ed9248a9e4feb82e530c0f11a9",
+      "expectedHash": "8d03f68fbe207bdb3952dc96a1fc0cdaa60543ed9248a9e4feb82e530c0f11a9",
+      "hashMatch": true,
+      "matchesKit": true
+    },
+    {
+      "file": "ayv-masculino-leve.png",
+      "size": 1354608,
+      "sha256": "a8f2c5f243e650d366c194949af33193fdcf7e7e7adf738c5c97f1e1807061a3",
+      "expectedHash": "a8f2c5f243e650d366c194949af33193fdcf7e7e7adf738c5c97f1e1807061a3",
+      "hashMatch": true,
+      "matchesKit": true
+    },
+    {
+      "file": "ayv-masculino-intermediario.png",
+      "size": 1433011,
+      "sha256": "473387ed22b0003c7e60f965df0f7fcc935ac7cd73dc67e9d3dcdf82cbb139c6",
+      "expectedHash": "473387ed22b0003c7e60f965df0f7fcc935ac7cd73dc67e9d3dcdf82cbb139c6",
+      "hashMatch": true,
+      "matchesKit": true
+    },
+    {
+      "file": "ayv-masculino-amplo.png",
+      "size": 1509344,
+      "sha256": "2603ea666e8e0148d057eb481a9c12f2bd7ef64586482ff50b03f810253773ea",
+      "expectedHash": "2603ea666e8e0148d057eb481a9c12f2bd7ef64586482ff50b03f810253773ea",
+      "hashMatch": true,
+      "matchesKit": true
+    }
+  ]
+}
