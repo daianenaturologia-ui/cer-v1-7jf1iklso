@@ -127,6 +127,8 @@ export const InteragenteHome: React.FC = () => {
   const [intakeSubmittedMessage, setIntakeSubmittedMessage] = useState<string | null>(null)
   const [intakeSentSuccessModal, setIntakeSentSuccessModal] = useState(false)
   const [hasSentIntakeOnce, setHasSentIntakeOnce] = useState(false)
+  const [lastSentIntakeMessage, setLastSentIntakeMessage] = useState<any | null>(null)
+  const [isWritingNewIntake, setIsWritingNewIntake] = useState(false)
   // ETAPA 4: Plano apresentado e Retorno Operacional
   const [presentedCarePlans, setPresentedCarePlans] = useState<CerCarePlanPresentationRecord[]>([])
   const [selectedPlanResponses, setSelectedPlanResponses] = useState<
@@ -173,8 +175,40 @@ export const InteragenteHome: React.FC = () => {
         try {
           const { cerJournalService } = await import('@/services/cerJournalService')
           const myMsgs = await cerJournalService.listParticipantMessages(activeEnr.id)
-          const hasSent = myMsgs.some((m) => m.status === 'approved')
+          const approvedMsgs = myMsgs.filter((m) => m.status === 'approved')
+          const hasSent = approvedMsgs.length > 0
           setHasSentIntakeOnce(hasSent)
+          if (hasSent) {
+            // Mais recente primeiro (se ordenado decrescente por created ou pegar o último)
+            const sorted = [...approvedMsgs].sort(
+              (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime(),
+            )
+            setLastSentIntakeMessage(sorted[0])
+          } else {
+            setLastSentIntakeMessage(null)
+          }
+
+          // Se tiver rascunho salvo mas não aprovado, carregar rascunho se campos locais estiverem vazios
+          const draftMsgs = myMsgs.filter((m) => m.status === 'draft')
+          if (draftMsgs.length > 0) {
+            const latestDraft = [...draftMsgs].sort(
+              (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime(),
+            )[0]
+            if (latestDraft.message_text) {
+              // Parse do rascunho estruturado se houver
+              const text = latestDraft.message_text
+              const bringsMatch = text.match(/O que a traz:\n([\s\S]*?)(?=\n\nO que já a ajuda:|$)/)
+              const helpsMatch = text.match(/O que já a ajuda:\n([\s\S]*?)(?=\n\nO que deseja cuidar:|$)/)
+              const caresMatch = text.match(/O que deseja cuidar:\n([\s\S]*?)$/)
+              if (bringsMatch || helpsMatch || caresMatch) {
+                setInitialIntakeWhatBrings((prev) => prev || (bringsMatch ? bringsMatch[1].trim() : ''))
+                setInitialIntakeWhatHelps((prev) => prev || (helpsMatch ? helpsMatch[1].trim() : ''))
+                setInitialIntakeWhatCares((prev) => prev || (caresMatch ? caresMatch[1].trim() : ''))
+              } else {
+                setInitialIntakeWhatBrings((prev) => prev || text)
+              }
+            }
+          }
         } catch {
           /* ignore */
         }
@@ -454,12 +488,18 @@ export const InteragenteHome: React.FC = () => {
     }
     try {
       setIntakeSending(true)
-      await cerJournalService.createNextSessionMessage({
+      const createdMsg = await cerJournalService.createNextSessionMessage({
         enrollment_id: enrollment.id,
         message_text: text,
         as_draft: false,
       })
       setHasSentIntakeOnce(true)
+      setLastSentIntakeMessage(createdMsg)
+      setIsWritingNewIntake(false)
+      // Limpeza dos rascunhos SOMENTE após sucesso comprovado da persistência
+      setInitialIntakeWhatBrings('')
+      setInitialIntakeWhatHelps('')
+      setInitialIntakeWhatCares('')
       setIntakeSubmittedMessage(
         `Suas respostas foram enviadas para ${PROFESSIONAL_DISPLAY_NAME}. A partir de agora, você pode conhecer as seis dimensões do seu ser e responder às avaliações no seu ritmo.`,
       )
@@ -958,9 +998,9 @@ export const InteragenteHome: React.FC = () => {
                       Você escolhe quando enviar
                     </span>
                     <span className="text-muted-foreground text-[11px] leading-relaxed block">
-                      Enquanto estiver como rascunho, ${PROFESSIONAL_DISPLAY_NAME} não verá suas
+                      Enquanto estiver como rascunho, {PROFESSIONAL_DISPLAY_NAME} não verá suas
                       respostas. Elas só serão compartilhadas quando você clicar em &ldquo;Enviar
-                      para ${PROFESSIONAL_DISPLAY_NAME}&rdquo;.
+                      para {PROFESSIONAL_DISPLAY_NAME}&rdquo;.
                     </span>
                   </div>
                   <div className="p-3 rounded-lg bg-card border border-border/50 space-y-1">
@@ -968,7 +1008,7 @@ export const InteragenteHome: React.FC = () => {
                       O que acontece depois
                     </span>
                     <span className="text-muted-foreground text-[11px] leading-relaxed block">
-                      ${PROFESSIONAL_DISPLAY_NAME} utilizará suas respostas para preparar o primeiro
+                      {PROFESSIONAL_DISPLAY_NAME} utilizará suas respostas para preparar o primeiro
                       encontro. Depois do envio, você poderá seguir para a área Consciência.
                     </span>
                   </div>
@@ -988,7 +1028,7 @@ export const InteragenteHome: React.FC = () => {
                     <div className="text-xs space-y-1 pt-0.5">
                       <p className="font-bold text-foreground">Antes do nosso primeiro encontro</p>
                       <p className="text-muted-foreground leading-relaxed">
-                        Conte o que você considera importante para que ${PROFESSIONAL_DISPLAY_NAME}{' '}
+                        Conte o que você considera importante para que {PROFESSIONAL_DISPLAY_NAME}{' '}
                         conheça um pouco do seu momento. Não existem respostas certas, e você não
                         precisa contar algo que ainda não sinta segurança para compartilhar. Você
                         pode salvar e continuar depois.
@@ -1005,22 +1045,35 @@ export const InteragenteHome: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent className="p-4 sm:p-5 space-y-4">
-                {intakeSubmittedMessage ? (
-                  <div className="p-5 rounded-xl bg-emerald-500/10 border border-emerald-300 text-emerald-950 dark:text-emerald-100 text-xs space-y-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 font-semibold text-sm text-emerald-900 dark:text-emerald-200">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                        <span className="font-serif text-base">Pré-consulta enviada</span>
+                {lastSentIntakeMessage && !isWritingNewIntake ? (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-300 text-emerald-950 dark:text-emerald-100 text-xs space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 font-semibold text-sm text-emerald-900 dark:text-emerald-200">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span className="font-serif text-sm">Relato enviado para {PROFESSIONAL_DISPLAY_NAME}</span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] font-mono uppercase bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border-emerald-300"
+                        >
+                          Enviado para {PROFESSIONAL_DISPLAY_NAME}
+                        </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed pt-1 whitespace-pre-line font-sans">
-                        Agora você já pode acessar o próximo passo:{' '}
-                        <strong className="text-foreground">Consciência</strong>. Nessa etapa, você
-                        encontrará as seis dimensões do Ser Integral e poderá responder às
-                        avaliações no seu ritmo.
-                      </p>
+                      <div className="text-[11px] text-muted-foreground flex items-center gap-2 font-mono">
+                        <CalendarIcon className="w-3 h-3 text-muted-foreground" />
+                        <span>
+                          {lastSentIntakeMessage.created
+                            ? `${new Date(lastSentIntakeMessage.created).toLocaleDateString('pt-BR')} às ${new Date(lastSentIntakeMessage.created).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                            : 'Recente'}
+                        </span>
+                      </div>
+                      <div className="p-3.5 rounded-lg bg-card/80 border border-emerald-200/60 dark:border-emerald-800/40 text-foreground text-xs whitespace-pre-line leading-relaxed font-sans shadow-sm">
+                        {lastSentIntakeMessage.message_text}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 pt-2 border-t border-emerald-200 dark:border-emerald-800/60">
+                    <div className="flex items-center justify-between gap-2 pt-1">
                       <Button
                         size="sm"
                         onClick={() => setActivePhase('consciencia')}
@@ -1031,11 +1084,14 @@ export const InteragenteHome: React.FC = () => {
                       </Button>
                       <Button
                         size="sm"
-                        variant="ghost"
-                        onClick={() => setIntakeSubmittedMessage(null)}
-                        className="text-xs h-8 text-muted-foreground hover:text-foreground"
+                        variant="outline"
+                        onClick={() => {
+                          setIsWritingNewIntake(true)
+                          setIntakeSubmittedMessage(null)
+                        }}
+                        className="text-xs h-8"
                       >
-                        Escrever outro relato
+                        Enviar novo relato
                       </Button>
                     </div>
                   </div>
@@ -1088,6 +1144,17 @@ export const InteragenteHome: React.FC = () => {
                         Nada é compartilhado sem seu comando explícito.
                       </span>
                       <div className="flex items-center gap-2 self-end sm:self-auto">
+                        {isWritingNewIntake && lastSentIntakeMessage && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsWritingNewIntake(false)}
+                            className="text-xs h-8 text-muted-foreground"
+                          >
+                            Voltar ao relato enviado
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           variant="outline"
