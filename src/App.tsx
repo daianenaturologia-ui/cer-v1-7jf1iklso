@@ -15,6 +15,7 @@ import CycleReviewPage from './pages/CycleReviewPage'
 import MandalaPage from './pages/MandalaPage'
 import { ParticipantWorkspace } from './components/ParticipantWorkspace'
 import { BibliotecaPage } from './pages/BibliotecaPage'
+import { AyurvedaAvatarBancadaPage } from './pages/AyurvedaAvatarBancadaPage'
 
 const App = () => {
   return (
@@ -103,6 +104,14 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <MandalaPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bancada-ayurveda"
+                element={
+                  <ProtectedRoute>
+                    <AyurvedaAvatarBancadaPage />
                   </ProtectedRoute>
                 }
               />

@@ -65,6 +65,16 @@ export default function Layout() {
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => navigate('/bancada-ayurveda')}
+                className="h-7 text-xs gap-1.5 bg-background/90 hover:bg-background border-amber-500/40 text-foreground px-2.5"
+              >
+                <Sparkles className="w-3 h-3 text-amber-700 dark:text-amber-300" />
+                <span>Bancada Ayurveda</span>
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleTogglePersona}
                 className="h-7 text-xs gap-1.5 bg-background/90 hover:bg-background border-amber-500/40 text-foreground px-2.5"
               >
