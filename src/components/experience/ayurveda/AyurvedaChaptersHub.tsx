@@ -9,31 +9,45 @@ import {
   AyurvedaChapterDefinition,
   AyurvedaChapter1Status,
 } from '@/services/ayurvedaChapter1'
+import { AyurvedaChapter2Status } from '@/services/ayurvedaChapter2'
 
 export interface AyurvedaChaptersHubProps {
   onStartChapter1: () => void
+  onStartChapter2?: () => void
   onOpenCustomization?: () => void
   onCorrectChapter1?: () => void
+  onCorrectChapter2?: () => void
   isChapter1Completed?: boolean
   chapter1Status?: AyurvedaChapter1Status
   chapter1Progress?: number
   chapter1StepOrder?: number
   answeredStepsCount?: number
   totalSteps?: number
+  // Props canônicas do Capítulo 2
+  chapter2Status?: AyurvedaChapter2Status
+  chapter2Progress?: number
+  answeredMomentsCountC2?: number
+  totalMomentsC2?: number
   avatarDeferred?: boolean
   onClose?: () => void
 }
 
 export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
   onStartChapter1,
+  onStartChapter2,
   onOpenCustomization,
   onCorrectChapter1,
+  onCorrectChapter2,
   isChapter1Completed,
   chapter1Status,
   chapter1Progress,
   chapter1StepOrder = 1,
   answeredStepsCount,
   totalSteps = 5,
+  chapter2Status = 'not_started',
+  chapter2Progress = 0,
+  answeredMomentsCountC2 = 0,
+  totalMomentsC2 = 5,
   avatarDeferred = false,
   onClose,
 }) => {
@@ -153,12 +167,20 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
       <div className="space-y-3">
         {AYURVEDA_FOUR_CHAPTERS.map((chap: AyurvedaChapterDefinition) => {
           const isChap1 = chap.number === 1
+          const isChap2 = chap.number === 2
+          const isChap1CanonicallyCompleted = effectiveStatus === 'completed'
+          const isChap2Unlocked = isChap2 && isChap1CanonicallyCompleted
+
+          const chap2Title = isChap2 ? 'O ritmo do meu corpo' : chap.shortTitle
+          const chap2Subtitle = isChap2
+            ? 'Fome, digestão, eliminação, sono e energia'
+            : chap.subtitle
 
           return (
             <Card
               key={chap.id}
               className={`transition-all border ${
-                isChap1
+                isChap1 || isChap2Unlocked
                   ? 'border-primary/50 shadow-xs bg-card'
                   : 'border-border/50 bg-muted/20 opacity-80'
               }`}
@@ -170,7 +192,7 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
                       Capítulo {chap.number}
                     </span>
                     <CardTitle className="text-sm font-semibold font-serif text-foreground">
-                      {chap.shortTitle}
+                      {isChap2 ? chap2Title : chap.shortTitle}
                     </CardTitle>
                   </div>
 
@@ -202,15 +224,43 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
                         Não iniciado
                       </Badge>
                     )
+                  ) : isChap2Unlocked ? (
+                    chapter2Status === 'completed' ? (
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] gap-1 text-emerald-700 dark:text-emerald-300"
+                      >
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Concluído
+                      </Badge>
+                    ) : chapter2Status === 'ready_to_complete' ? (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/10"
+                      >
+                        <Clock className="w-3 h-3 text-amber-600" />
+                        Pronto para concluir
+                      </Badge>
+                    ) : chapter2Status === 'in_progress' ? (
+                      <Badge variant="outline" className="text-[10px] gap-1 text-primary">
+                        <Clock className="w-3 h-3" />
+                        Em andamento
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] gap-1 text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        Não iniciado
+                      </Badge>
+                    )
                   ) : (
                     <Badge variant="outline" className="text-[10px] gap-1 text-muted-foreground">
                       <Lock className="w-2.5 h-2.5" />
-                      Em breve
+                      {isChap2 ? 'Bloqueado (aguarda Capítulo 1)' : 'Em breve'}
                     </Badge>
                   )}
                 </div>
                 <CardDescription className="text-xs pt-1 leading-relaxed">
-                  {chap.subtitle}
+                  {isChap2 ? chap2Subtitle : chap.subtitle}
                 </CardDescription>
               </CardHeader>
 
@@ -283,11 +333,84 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
                       )}
                     </div>
                   </div>
+                ) : isChap2Unlocked ? (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
+                    <span className="text-[11px] text-muted-foreground">
+                      {chapter2Status === 'completed' && 'Você já respondeu ao Capítulo 2.'}
+                      {chapter2Status === 'ready_to_complete' &&
+                        'Suas respostas estão preenchidas. Revise e confirme a conclusão deste capítulo.'}
+                      {chapter2Status === 'in_progress' &&
+                        `${answeredMomentsCountC2} de ${totalMomentsC2} momentos respondidos (${chapter2Progress}%).`}
+                      {chapter2Status === 'not_started' &&
+                        'Capítulo liberado. Observe o ritmo da sua fome, digestão, sono e energia.'}
+                    </span>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      {chapter2Status === 'completed' ? (
+                        <>
+                          {onCorrectChapter2 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={onCorrectChapter2}
+                              className="text-xs h-8 px-3 text-muted-foreground hover:text-foreground"
+                            >
+                              Corrigir minhas respostas
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={onStartChapter2}
+                            className="text-xs h-8 px-4 gap-1.5"
+                          >
+                            <span>Rever Capítulo 2</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Button>
+                        </>
+                      ) : chapter2Status === 'ready_to_complete' ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={onStartChapter2}
+                          className="text-xs h-8 px-4 gap-1.5 bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-600 dark:hover:bg-amber-700"
+                        >
+                          <span>Revisar e concluir</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      ) : chapter2Status === 'in_progress' ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={onStartChapter2}
+                          className="text-xs h-8 px-4 gap-1.5"
+                        >
+                          <span>Retomar Capítulo 2</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={onStartChapter2}
+                          className="text-xs h-8 px-4 gap-1.5"
+                        >
+                          <span>Começar Capítulo 2</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <div className="pt-1">
                     <span className="text-[11px] text-muted-foreground italic flex items-center gap-1.5">
                       <Lock className="w-3 h-3 shrink-0" />
-                      <span>{chap.statusLabel}</span>
+                      <span>
+                        {isChap2
+                          ? 'Conclua o Capítulo 1 para liberar este capítulo.'
+                          : chap.statusLabel}
+                      </span>
                     </span>
                   </div>
                 )}

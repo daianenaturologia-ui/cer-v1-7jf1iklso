@@ -11,7 +11,13 @@ import {
   deriveChapter1Status,
   AyurvedaChapter1Status,
 } from '@/services/ayurvedaChapter1'
+import {
+  deriveChapter2Status,
+  AyurvedaChapter2Status,
+  Chapter2TreatmentVariant,
+} from '@/services/ayurvedaChapter2'
 import { AvatarPresentation } from '@/services/avatarCompositor'
+import { AyurvedaChapter2Flow } from './AyurvedaChapter2Flow'
 import { AyurvedaChaptersHub } from './AyurvedaChaptersHub'
 import { AyurvedaPostAvatarTransition } from './AyurvedaPostAvatarTransition'
 import { AyurvedaChapter1Opening } from './AyurvedaChapter1Opening'
@@ -46,6 +52,7 @@ type Chapter1Stage =
   | 'step4'
   | 'step5'
   | 'closing'
+  | 'chapter2_flow'
 
 export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   enrollmentId,
@@ -178,6 +185,20 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   const answeredStepsCount = derived.answeredStepsCount
   const totalSteps = derived.totalSteps
   const firstUnansweredStep = derived.firstUnansweredStep
+
+  // Derivação canônica explícita do Capítulo 2
+  const derivedC2 = deriveChapter2Status(rawResponses)
+  const chapter2Status: AyurvedaChapter2Status = derivedC2.status
+  const chapter2Progress = derivedC2.progress
+  const answeredMomentsCountC2 = derivedC2.answeredMomentsCount
+  const totalMomentsC2 = derivedC2.totalMoments
+
+  const treatmentVariant: Chapter2TreatmentVariant =
+    userPresentation === 'feminine'
+      ? 'feminino'
+      : userPresentation === 'masculine'
+        ? 'masculino'
+        : 'neutro'
 
   // Retomada inteligente: prioriza a primeira etapa não respondida calculada canonicamente
   const currentStepNum = firstUnansweredStep || enrollmentExp?.current_step_order || 1
@@ -709,16 +730,44 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
               setStage('opening')
             }
           }}
+          onStartChapter2={() => {
+            setStage('chapter2_flow')
+          }}
           onOpenCustomization={onOpenAvatarCustomization}
           onCorrectChapter1={handleStartCorrection}
+          onCorrectChapter2={() => {
+            setStage('chapter2_flow')
+          }}
           isChapter1Completed={isCompleted}
           chapter1Status={chapter1Status}
           chapter1Progress={chapter1Progress}
           chapter1StepOrder={currentStepNum}
           answeredStepsCount={answeredStepsCount}
           totalSteps={totalSteps}
+          chapter2Status={chapter2Status}
+          chapter2Progress={chapter2Progress}
+          answeredMomentsCountC2={answeredMomentsCountC2}
+          totalMomentsC2={totalMomentsC2}
           avatarDeferred={avatarDeferred}
           onClose={onClose}
+        />
+      )}
+
+      {/* Fluxo do Capítulo 2 */}
+      {stage === 'chapter2_flow' && (
+        <AyurvedaChapter2Flow
+          enrollmentId={enrollmentId}
+          experienceId={experienceId}
+          respondentUserId={respondentUserId}
+          treatmentVariant={treatmentVariant}
+          onBackToHub={() => {
+            loadResponses()
+            setStage('hub')
+          }}
+          onCompleted={() => {
+            loadResponses()
+            onCompleted?.()
+          }}
         />
       )}
 
