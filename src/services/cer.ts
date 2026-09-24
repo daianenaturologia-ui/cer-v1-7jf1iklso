@@ -57,7 +57,7 @@ export const personService = {
   async getById(id: string): Promise<PersonRecord> {
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {
-      return demoAdapter.getPersonById(id)
+      return demoAdapter.getPersonById(id) || demoAdapter.getCurrentPerson()
     }
     return await pb.collection('persons').getOne<PersonRecord>(id)
   },

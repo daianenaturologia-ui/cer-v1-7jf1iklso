@@ -151,6 +151,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const [isReviewOnly, setIsReviewOnly] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [reloadAttempt, setReloadAttempt] = useState(0)
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null)
   const [closingReflection, setClosingReflection] = useState('')
 
@@ -209,10 +211,53 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   // Carregar metadados da experiência, prompts e respostas salvas
   useEffect(() => {
     let isMounted = true
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
 
     const loadEngineData = async () => {
       setLoading(true)
-      try {
+      setLoadError(null)
+
+      // Timeout de guarda (8s) para que o loading nunca fique indefinido
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error('TIMEOUT_LOADING_EXPERIENCE'))
+        }, 8000)
+      })
+
+      const executeLoading = async () => {
+        const canonicalId = resolveExperienceId(experienceId)
+        const isCorpoExp = canonicalId === 'exp-corpo-fisiologia-07b'
+
+        // 1. Em modo demo ou para Corpo & Fisiologia, avatar é resolvido localmente primeiro
+        const { demoAdapter } = await import('@/services/demoAdapter')
+        const isDemo = demoAdapter.isEnabled()
+
+        let pRecord: any = null
+        if (isCorpoExp) {
+          try {
+            if (isDemo) {
+              pRecord =
+                (personId ? demoAdapter.getPersonById(personId) : null) ||
+                demoAdapter.getCurrentPerson()
+            } else if (personId) {
+              pRecord = await personService.getById(personId)
+            }
+            if (pRecord && isMounted) {
+              setPersonAvatarData(pRecord)
+              if (
+                !pRecord.avatar_customization_status ||
+                (pRecord.avatar_customization_status !== 'completed' &&
+                  pRecord.avatar_customization_status !== 'deferred')
+              ) {
+                setIsAvatarCustomizing(true)
+              }
+            }
+          } catch (pErr) {
+            console.error('Erro ao verificar status de personalização estética do avatar:', pErr)
+          }
+        }
+
+        // 2. Carregar catálogo, momentos, prompts, enrollmentExp e respostas com isolamento de falha
         const results = await Promise.allSettled([
           experienceCatalogService.getExperienceById(experienceId),
           experienceCatalogService.listMomentsByExperience(experienceId),
@@ -234,11 +279,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         const existingResponses: ExperienceResponseRecord[] =
           results[4].status === 'fulfilled' ? results[4].value : []
 
-        // Resiliência obrigatória: se experience continuar null após o carregamento
-        // mas existir no catálogo local (ou se momentos/prompts falharem),
-        // deriva deterministicamente do catálogo local para qualquer dimensão canônica
-        const canonicalId = resolveExperienceId(experienceId)
-
+        // Resiliência obrigatória: deriva deterministicamente do catálogo local se nulo
         if (!exp) {
           if (canonicalId === 'exp-corpo-fisiologia-07b') {
             const mod = await import('@/services/build07bPrompts')
@@ -314,39 +355,15 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           }
         }
 
+        // Se mesmo com os fallbacks a experiência principal necessária for nula, lançar falha necessária
+        if (!exp) {
+          throw new Error('EXPERIENCE_RECORD_UNAVAILABLE')
+        }
+
         setExperience(exp)
         setMoments(momentList)
         setPrompts(promptList)
         setEnrollmentExp(enrExp)
-
-        // CER V1 — Lote 0B2: Personalização estética na entrada de Corpo & Fisiologia
-        const isCorpoExp = canonicalId === 'exp-corpo-fisiologia-07b'
-        if (isCorpoExp) {
-          try {
-            let pRecord = null
-            if (personId) {
-              pRecord = await personService.getById(personId)
-            } else {
-              const { demoAdapter } = await import('@/services/demoAdapter')
-              if (demoAdapter.isEnabled()) {
-                pRecord = demoAdapter.getCurrentPerson()
-              }
-            }
-            if (pRecord) {
-              setPersonAvatarData(pRecord)
-              // Se status ainda não é completed nem deferred, aciona personalização antes das perguntas
-              if (
-                !pRecord.avatar_customization_status ||
-                (pRecord.avatar_customization_status !== 'completed' &&
-                  pRecord.avatar_customization_status !== 'deferred')
-              ) {
-                setIsAvatarCustomizing(true)
-              }
-            }
-          } catch (pErr) {
-            console.error('Erro ao verificar status de personalização estética do avatar:', pErr)
-          }
-        }
 
         const map: Record<string, ExperienceResponseRecord> = {}
         for (const resp of existingResponses) {
@@ -393,11 +410,19 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           }
         }
 
+        // Para o fluxo canônico de Corpo & Fisiologia (Capítulo 1), o hub e catálogo do Capítulo 1
+        // têm ciclo próprio e não são governados pela orquestração dos 15 momentos legados.
+        // O progresso legado permanece preservado em enrExp/existingResponses.
+        if (isCorpoExp) {
+          // Desacoplado: Capítulo 1 tem prioridade limpa
+          setOrchestrationFailed(false)
+          return
+        }
+
         // Verificar se há registros incompatíveis da demo arquivados ou ativos
         const isMenteExp = canonicalId === 'exp-mente-emocoes-07c'
         if (isMenteExp) {
-          const { demoAdapter } = await import('@/services/demoAdapter')
-          if (demoAdapter.isEnabled()) {
+          if (isDemo) {
             if (demoAdapter.isMenteEmocoesRedoNeeded()) {
               setMenteEmocoesNeedsRedo(true)
             }
@@ -407,7 +432,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           }
         }
 
-        // Retomada inteligente de progresso via OrchestrationResolver:
+        // Retomada inteligente de progresso via OrchestrationResolver (experiências regulares):
         const orchResult = resolveExperienceOrchestration({
           prompts: promptList,
           responses: existingResponses,
@@ -417,7 +442,6 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         if (orchResult.status === 'ORCHESTRATION_UNAVAILABLE') {
           setOrchestrationFailed(true)
           setOrchestrationFailMessage(orchResult.displayMessage || FAILSAFE_MICROCOPY)
-          // Auditoria técnica mínima do erro runtime
           auditRuntimeInvalid({
             actorUserId: respondentUserId,
             enrollmentId,
@@ -426,19 +450,14 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           })
         } else {
           setOrchestrationFailed(false)
-          // Regra de Integridade Canônica:
-          // Se o status for completed mas faltarem respostas canônicas obrigatórias (ex.: dados incompatíveis arquivados),
-          // deve falhar fechado: exigir nova resposta, não mostrar retrato como completo, oferecer refazer.
           let isSafelyCompleted = enrExp?.progress_status === 'completed'
           if (isSafelyCompleted && isMenteExp) {
-            const { demoAdapter } = await import('@/services/demoAdapter')
-            if (demoAdapter.isEnabled()) {
+            if (isDemo) {
               const coverage = demoAdapter.checkMenteEmocoesCoverage(enrollmentId)
               if (!coverage.isCoverageComplete) {
                 isSafelyCompleted = false
                 setMenteEmocoesNeedsRedo(true)
                 setHasIncompatibleMenteDemo(true)
-                // Corrige o progresso para falhar fechado
                 await enrollmentExperienceService.updateProgress(enrExp!.id, {
                   progressStatus: 'in_progress',
                   enrollmentId,
@@ -453,10 +472,20 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             setCurrentStepIndex(orchResult.currentStepIndex)
           }
         }
+      }
+
+      try {
+        await Promise.race([executeLoading(), timeoutPromise])
       } catch (err) {
         console.error('Erro ao carregar dados do Experience Engine:', err)
+        if (isMounted) {
+          setLoadError('Não foi possível preparar esta experiência agora.')
+        }
       } finally {
-        if (isMounted) setLoading(false)
+        if (timeoutId) clearTimeout(timeoutId)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
@@ -464,8 +493,9 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
     return () => {
       isMounted = false
+      if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [experienceId, enrollmentId, respondentUserId, personId])
+  }, [experienceId, enrollmentId, respondentUserId, personId, reloadAttempt])
 
   // Atualizar rascunho sempre que o prompt atual mudar
   useEffect(() => {
@@ -944,8 +974,43 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   if (loading) {
     return (
       <div className="py-20 flex flex-col items-center justify-center space-y-3">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        <div
+          data-testid="loading-spinner"
+          className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin"
+        />
         <p className="text-xs text-muted-foreground">Preparando sua experiência...</p>
+      </div>
+    )
+  }
+
+  // Rede de proteção: falha necessária com botão de nova tentativa real
+  if (loadError) {
+    return (
+      <div className="max-w-md mx-auto py-16 px-4 text-center space-y-5">
+        <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-2">
+          <AlertCircle className="w-6 h-6 stroke-[2]" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground">{loadError}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Seus dados e respostas anteriores estão preservados com segurança.
+          </p>
+        </div>
+        <div className="pt-2 flex items-center justify-center gap-3">
+          <Button
+            type="button"
+            onClick={() => setReloadAttempt((prev) => prev + 1)}
+            className="text-xs h-9 px-6 gap-2"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Tentar novamente</span>
+          </Button>
+          {onClose && (
+            <Button variant="outline" size="sm" onClick={onClose} className="text-xs h-9 px-4">
+              Voltar
+            </Button>
+          )}
+        </div>
       </div>
     )
   }
@@ -1068,25 +1133,37 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   if (isCorpoFisiologiaCanonical && experience) {
     return (
       <div className="py-4">
-        {/* Lazy import do fluxo canônico do Capítulo 1 */}
-        {React.createElement(
-          React.lazy(() => import('./ayurveda/AyurvedaChapter1Flow')),
-          {
-            enrollmentId,
-            experienceId: 'exp-corpo-fisiologia-07b',
-            respondentUserId,
-            userPresentation: personAvatarData?.avatar_presentation || 'feminine',
-            avatarDeferred: personAvatarData?.avatar_customization_status === 'deferred',
-            initialShowPostAvatarTransition: justConfirmedAvatar,
-            onClose,
-            onCompleted: () => {
-              onCompleted?.()
+        {/* Lazy import do fluxo canônico do Capítulo 1 com React.Suspense explícito */}
+        <React.Suspense
+          fallback={
+            <div className="py-20 flex flex-col items-center justify-center space-y-3">
+              <div
+                data-testid="chapter1-loading-spinner"
+                className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin"
+              />
+              <p className="text-xs text-muted-foreground">Preparando sua experiência...</p>
+            </div>
+          }
+        >
+          {React.createElement(
+            React.lazy(() => import('./ayurveda/AyurvedaChapter1Flow')),
+            {
+              enrollmentId,
+              experienceId: 'exp-corpo-fisiologia-07b',
+              respondentUserId,
+              userPresentation: personAvatarData?.avatar_presentation || 'feminine',
+              avatarDeferred: personAvatarData?.avatar_customization_status === 'deferred',
+              initialShowPostAvatarTransition: justConfirmedAvatar,
+              onClose,
+              onCompleted: () => {
+                onCompleted?.()
+              },
+              onOpenAvatarCustomization: () => {
+                setIsAvatarCustomizing(true)
+              },
             },
-            onOpenAvatarCustomization: () => {
-              setIsAvatarCustomizing(true)
-            },
-          },
-        )}
+          )}
+        </React.Suspense>
       </div>
     )
   }
