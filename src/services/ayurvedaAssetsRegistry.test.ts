@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { AYURVEDA_LOTE_0A_MANIFEST } from './ayurvedaAssetsRegistry'
@@ -40,6 +41,18 @@ describe('Lote 0A — Decodificação e Validação dos 6 Assets Oficiais', () =
     expect(validationResults).toHaveLength(6)
     for (const res of validationResults) {
       expect(res.status).toBe('PASS')
+    }
+  })
+
+  it('confirma que as cópias públicas em public/assets/ayurveda/ possuem SHA-256 idêntico aos originais', () => {
+    const publicDir = path.resolve('public/assets/ayurveda')
+    for (const asset of AYURVEDA_LOTE_0A_MANIFEST.approved_files) {
+      const fileName = path.basename(asset.file)
+      const publicFilePath = path.join(publicDir, fileName)
+      expect(fs.existsSync(publicFilePath)).toBe(true)
+      const bytes = fs.readFileSync(publicFilePath)
+      const hash = createHash('sha256').update(bytes).digest('hex')
+      expect(hash).toBe(asset.sha256)
     }
   })
 })
