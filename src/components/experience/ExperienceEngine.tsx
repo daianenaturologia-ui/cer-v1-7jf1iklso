@@ -114,6 +114,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const [experience, setExperience] = useState<CerExperienceRecord | null>(null)
   const [isAvatarCustomizing, setIsAvatarCustomizing] = useState(false)
   const [personAvatarData, setPersonAvatarData] = useState<any>(null)
+  const [justConfirmedAvatar, setJustConfirmedAvatar] = useState(false)
   const [showPatternsChart, setShowPatternsChart] = useState(false)
   const [showMindEmotionsReport, setShowMindEmotionsReport] = useState(false)
   const [hasIncompatibleMenteDemo, setHasIncompatibleMenteDemo] = useState(false)
@@ -1018,6 +1019,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           avatar_customization_status: 'completed',
         })
         setPersonAvatarData(updated)
+        setJustConfirmedAvatar(true)
       } catch (err) {
         console.error('Erro ao persistir escolhas do avatar:', err)
       } finally {
@@ -1051,6 +1053,40 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           onDefer={handleAvatarDefer}
           onCancel={() => setIsAvatarCustomizing(false)}
         />
+      </div>
+    )
+  }
+
+  // -------------------------------------------------------------
+  // CER V1 — LOTE A: NOVA AVALIAÇÃO AYURVEDA + CAPÍTULO 1
+  // (CORPO & FISIOLOGIA CANÔNICA)
+  // -------------------------------------------------------------
+  const isCorpoFisiologiaCanonical =
+    experience?.id === 'exp-corpo-fisiologia-07b' ||
+    resolveExperienceId(experienceId) === 'exp-corpo-fisiologia-07b'
+
+  if (isCorpoFisiologiaCanonical && experience) {
+    return (
+      <div className="py-4">
+        {/* Lazy import do fluxo canônico do Capítulo 1 */}
+        {React.createElement(
+          React.lazy(() => import('./ayurveda/AyurvedaChapter1Flow')),
+          {
+            enrollmentId,
+            experienceId: 'exp-corpo-fisiologia-07b',
+            respondentUserId,
+            userPresentation: personAvatarData?.avatar_presentation || 'feminine',
+            avatarDeferred: personAvatarData?.avatar_customization_status === 'deferred',
+            initialShowPostAvatarTransition: justConfirmedAvatar,
+            onClose,
+            onCompleted: () => {
+              onCompleted?.()
+            },
+            onOpenAvatarCustomization: () => {
+              setIsAvatarCustomizing(true)
+            },
+          },
+        )}
       </div>
     )
   }

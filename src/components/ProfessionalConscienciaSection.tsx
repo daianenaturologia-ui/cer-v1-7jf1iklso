@@ -519,7 +519,20 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
 
                 {isExpanded && (
                   <CardContent className="p-4 space-y-4 text-xs">
-                    {responses.length === 0 ? (
+                    {dim.id === 'corpo_fisiologia' ? (
+                      <div className="space-y-4">
+                        {/* Visão Especializada do Capítulo 1 de Corpo & Fisiologia */}
+                        {React.createElement(
+                          React.lazy(
+                            () => import('./experience/ayurveda/ProfessionalAyurvedaChapter1View'),
+                          ),
+                          {
+                            responses,
+                            participantName,
+                          },
+                        )}
+                      </div>
+                    ) : responses.length === 0 ? (
                       <div className="py-6 text-center text-muted-foreground italic">
                         Nenhuma resposta registrada ainda nesta dimensão por {participantName}.
                       </div>
