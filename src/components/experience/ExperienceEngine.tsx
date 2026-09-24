@@ -2354,49 +2354,66 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       </div>
 
       {/* Barra de Ações de Navegação */}
-      <div className="flex items-center justify-between pt-6 border-t border-border/50 gap-3">
+      <div className="flex flex-wrap items-center justify-between pt-6 border-t border-border/50 gap-2 sm:gap-3">
         <Button
           variant="outline"
           size="sm"
           disabled={!isReviewOnly && isFirstStep}
           onClick={handlePreviousStep}
-          className="text-xs gap-1.5 h-9"
+          className="text-xs gap-1.5 h-9 shrink-0 whitespace-normal text-left"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
           <span>{isReviewOnly && isFirstStep ? 'Início' : 'Voltar'}</span>
         </Button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!isReviewOnly && (
             <Button
               variant="ghost"
               size="sm"
               disabled={saving}
               onClick={saveCurrentStepResponse}
-              className="text-xs h-9 px-3 text-muted-foreground hover:text-foreground hidden sm:flex items-center gap-1"
+              className="text-xs h-9 px-2.5 sm:px-3 text-muted-foreground hover:text-foreground hidden sm:flex items-center gap-1 whitespace-normal shrink-0"
             >
-              <Save className="w-3.5 h-3.5" />
+              <Save className="w-3.5 h-3.5 shrink-0" />
               <span>Salvar rascunho</span>
             </Button>
           )}
 
-          <Button
-            size="sm"
-            disabled={!isReviewOnly && saving}
-            onClick={handleNextStep}
-            className="text-xs gap-1.5 h-9 px-4"
-          >
-            <span>
-              {isReviewOnly
-                ? isLastStep
-                  ? 'Voltar ao encerramento'
-                  : 'Próxima pergunta'
-                : isLastStep
-                  ? 'Concluir momento'
-                  : 'Avançar'}
-            </span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Button>
+          {isReviewOnly ? (
+            // No modo de revisão, o comando canônico único "Voltar ao encerramento" já está no topo (banner).
+            // A barra inferior navega entre as perguntas e, na última etapa, exibe "Voltar ao início" ou botão neutro sem duplicar "Voltar ao encerramento".
+            !isLastStep ? (
+              <Button
+                size="sm"
+                onClick={handleNextStep}
+                className="text-xs gap-1.5 h-9 px-3 sm:px-4 whitespace-normal text-left shrink-0"
+              >
+                <span>Próxima pergunta</span>
+                <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleReturnToClosingFromReview}
+                className="text-xs gap-1.5 h-9 px-3 sm:px-4 whitespace-normal text-left shrink-0"
+              >
+                <span>Concluir revisão</span>
+                <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+              </Button>
+            )
+          ) : (
+            <Button
+              size="sm"
+              disabled={saving}
+              onClick={handleNextStep}
+              className="text-xs gap-1.5 h-9 px-3 sm:px-4 whitespace-normal text-left shrink-0"
+            >
+              <span>{isLastStep ? 'Concluir momento' : 'Avançar'}</span>
+              <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

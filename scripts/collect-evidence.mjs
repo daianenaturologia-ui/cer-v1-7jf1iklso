@@ -50,7 +50,8 @@ try {
 }
 
 try {
-  const { cropAllAtlases } = await import('./crop-atlases.mjs')
+  const { cropClinicalBoards, cropAllAtlases } = await import('./crop-atlases.mjs')
+  report.clinicalCropResults = cropClinicalBoards()
   report.maskCropResults = cropAllAtlases()
 } catch (e) {
   console.error('Crop atlases error in collect-evidence:', e)

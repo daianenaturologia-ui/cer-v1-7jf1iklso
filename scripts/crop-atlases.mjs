@@ -61,8 +61,8 @@ function decodePng(buf) {
       filter = chunkData.readUInt8(11)
       interlace = chunkData.readUInt8(12)
       if (
-        bitDepth !== 8 ||
-        colorType !== 6 ||
+        (colorType !== 6 && colorType !== 2) ||
+        (bitDepth !== 8 && bitDepth !== 16) ||
         compression !== 0 ||
         filter !== 0 ||
         interlace !== 0
@@ -81,12 +81,15 @@ function decodePng(buf) {
   const compressedData = Buffer.concat(idatChunks)
   const decompressed = zlib.inflateSync(compressedData)
 
-  const bytesPerPixel = 4 // RGBA
+  const channels = colorType === 6 ? 4 : 3
+  const bytesPerChannel = bitDepth === 16 ? 2 : 1
+  const bytesPerPixel = channels * bytesPerChannel
   const stride = width * bytesPerPixel
-  const rawRgba = Buffer.alloc(width * height * bytesPerPixel)
+  const rawRgba = Buffer.alloc(width * height * 4)
 
   let srcOffset = 0
-  let dstOffset = 0
+  let prevScanline = null
+  const currentScanline = Buffer.alloc(stride)
 
   for (let y = 0; y < height; y++) {
     const filterType = decompressed.readUInt8(srcOffset)
@@ -95,11 +98,9 @@ function decodePng(buf) {
     const scanline = decompressed.slice(srcOffset, srcOffset + stride)
     srcOffset += stride
 
-    const prevScanline = y > 0 ? rawRgba.slice((y - 1) * stride, y * stride) : null
-
     for (let x = 0; x < stride; x++) {
       const bppIndex = x - bytesPerPixel
-      const a = bppIndex >= 0 ? rawRgba[dstOffset + bppIndex] : 0
+      const a = bppIndex >= 0 ? currentScanline[bppIndex] : 0
       const b = prevScanline ? prevScanline[x] : 0
       const c = prevScanline && bppIndex >= 0 ? prevScanline[bppIndex] : 0
       const rawByte = scanline[x]
@@ -124,9 +125,53 @@ function decodePng(buf) {
         default:
           throw new Error(`Unknown filter type ${filterType}`)
       }
-      rawRgba[dstOffset + x] = reconstructed
+      currentScanline[x] = reconstructed
     }
-    dstOffset += stride
+
+    // Converter a scanline reconstruída para RGBA 8-bit por canal
+    const rowDstOffset = y * width * 4
+    if (colorType === 6 && bitDepth === 8) {
+      currentScanline.copy(rawRgba, rowDstOffset, 0, stride)
+    } else if (colorType === 2 && bitDepth === 16) {
+      for (let p = 0; p < width; p++) {
+        const sIdx = p * 6
+        const dIdx = rowDstOffset + p * 4
+        const r16 = (currentScanline[sIdx] << 8) | currentScanline[sIdx + 1]
+        const g16 = (currentScanline[sIdx + 2] << 8) | currentScanline[sIdx + 3]
+        const b16 = (currentScanline[sIdx + 4] << 8) | currentScanline[sIdx + 5]
+        rawRgba[dIdx] = Math.round(r16 / 257)
+        rawRgba[dIdx + 1] = Math.round(g16 / 257)
+        rawRgba[dIdx + 2] = Math.round(b16 / 257)
+        rawRgba[dIdx + 3] = 255
+      }
+    } else if (colorType === 2 && bitDepth === 8) {
+      for (let p = 0; p < width; p++) {
+        const sIdx = p * 3
+        const dIdx = rowDstOffset + p * 4
+        rawRgba[dIdx] = currentScanline[sIdx]
+        rawRgba[dIdx + 1] = currentScanline[sIdx + 1]
+        rawRgba[dIdx + 2] = currentScanline[sIdx + 2]
+        rawRgba[dIdx + 3] = 255
+      }
+    } else if (colorType === 6 && bitDepth === 16) {
+      for (let p = 0; p < width; p++) {
+        const sIdx = p * 8
+        const dIdx = rowDstOffset + p * 4
+        const r16 = (currentScanline[sIdx] << 8) | currentScanline[sIdx + 1]
+        const g16 = (currentScanline[sIdx + 2] << 8) | currentScanline[sIdx + 3]
+        const b16 = (currentScanline[sIdx + 4] << 8) | currentScanline[sIdx + 5]
+        const a16 = (currentScanline[sIdx + 6] << 8) | currentScanline[sIdx + 7]
+        rawRgba[dIdx] = Math.round(r16 / 257)
+        rawRgba[dIdx + 1] = Math.round(g16 / 257)
+        rawRgba[dIdx + 2] = Math.round(b16 / 257)
+        rawRgba[dIdx + 3] = Math.round(a16 / 257)
+      }
+    }
+
+    if (!prevScanline) {
+      prevScanline = Buffer.alloc(stride)
+    }
+    currentScanline.copy(prevScanline)
   }
 
   return { width, height, rawRgba }
@@ -252,20 +297,32 @@ export const AYV_CLINICAL_CARDS_CROPS = {
 }
 
 export function cropClinicalBoards() {
+  const pelePngPath = path.resolve('src/assets/cer-ayv-prancha-pele.png')
+  const cabeloPngPath = path.resolve('src/assets/cer-ayv-prancha-cabelo.png')
   const peleTxtPath = path.resolve('src/assets/cer-ayv-prancha-pele.base64-39794.txt')
   const cabeloTxtPath = path.resolve('src/assets/cer-ayv-prancha-cabelo.base64-27c06.txt')
 
-  if (!fs.existsSync(peleTxtPath) || !fs.existsSync(cabeloTxtPath)) {
-    console.warn('[crop-atlases] Pranchas base64 não encontradas, pulando cropClinicalBoards')
+  let peleBuf = null
+  let cabeloBuf = null
+
+  if (fs.existsSync(pelePngPath) && fs.existsSync(cabeloPngPath)) {
+    peleBuf = fs.readFileSync(pelePngPath)
+    cabeloBuf = fs.readFileSync(cabeloPngPath)
+  } else if (fs.existsSync(peleTxtPath) && fs.existsSync(cabeloTxtPath)) {
+    const peleBase64 = fs.readFileSync(peleTxtPath, 'utf8').replace(/\s+/g, '')
+    peleBuf = Buffer.from(peleBase64, 'base64')
+    const cabeloBase64 = fs.readFileSync(cabeloTxtPath, 'utf8').replace(/\s+/g, '')
+    cabeloBuf = Buffer.from(cabeloBase64, 'base64')
+    // Salvar as pranchas em PNG para persistência definitiva no repositório
+    fs.writeFileSync(pelePngPath, peleBuf)
+    fs.writeFileSync(cabeloPngPath, cabeloBuf)
+    console.log('[crop-atlases] Pranchas PNG salvas em src/assets/ a partir do base64')
+  } else {
+    console.warn('[crop-atlases] Pranchas não encontradas, pulando cropClinicalBoards')
     return []
   }
 
-  const peleBase64 = fs.readFileSync(peleTxtPath, 'utf8').replace(/\s+/g, '')
-  const peleBuf = Buffer.from(peleBase64, 'base64')
   const peleDecoded = decodePng(peleBuf)
-
-  const cabeloBase64 = fs.readFileSync(cabeloTxtPath, 'utf8').replace(/\s+/g, '')
-  const cabeloBuf = Buffer.from(cabeloBase64, 'base64')
   const cabeloDecoded = decodePng(cabeloBuf)
 
   const cellW = 356

@@ -176,6 +176,116 @@
     }
   ],
   "atlasVerification": "Skin: {\n  width: 3072,\n  height: 3072,\n  bitDepth: 8,\n  colorType: 6,\n  hasAlpha: true,\n  size: 105959\n}\nHair: {\n  width: 3072,\n  height: 3072,\n  bitDepth: 8,\n  colorType: 6,\n  hasAlpha: true,\n  size: 56348\n}",
+  "clinicalCropResults": [
+    {
+      "id": "dry_rough",
+      "category": "skin",
+      "fileName": "ayv-skin-dry_rough.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 253858,
+      "sha256": "b39fbea53f3557804bfdeb9242c4091ae5fe2344be98e607f77e83bde6ca3972"
+    },
+    {
+      "id": "thin_reactive",
+      "category": "skin",
+      "fileName": "ayv-skin-thin_reactive.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 246456,
+      "sha256": "457affb9a605871a89da46323438cd6c264bf05f0bc3e672a4fb59e4639cad6f"
+    },
+    {
+      "id": "warm_sensitive",
+      "category": "skin",
+      "fileName": "ayv-skin-warm_sensitive.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 261499,
+      "sha256": "5b035ed8a67c8b39fa0bba73d4614a0b65664d1a705cd6a8ebd6b80fa2beccde"
+    },
+    {
+      "id": "balanced",
+      "category": "skin",
+      "fileName": "ayv-skin-balanced.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 220822,
+      "sha256": "2d22fae3defebfebb4a773b898e1e0e0ec4b75e9b351e4aa74268a0655e66d54"
+    },
+    {
+      "id": "soft_oily",
+      "category": "skin",
+      "fileName": "ayv-skin-soft_oily.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 232030,
+      "sha256": "8d701453ef391d3d4d34dc8d872dd35e6fbe3c2fbf5320e03bee98249920614e"
+    },
+    {
+      "id": "varies_region",
+      "category": "skin",
+      "fileName": "ayv-skin-varies_region.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 243533,
+      "sha256": "f94b18bd7fec22948d447ba41e671868c57609eca72c35279ee13df25379c7f0"
+    },
+    {
+      "id": "fine_delicate",
+      "category": "hair",
+      "fileName": "ayv-hair-fine_delicate.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 269757,
+      "sha256": "bfbb2cd7817162f6dad55858d459341966f17da281643778c75342cc0f705116"
+    },
+    {
+      "id": "dry_tangled",
+      "category": "hair",
+      "fileName": "ayv-hair-dry_tangled.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 275026,
+      "sha256": "2bfcd7007a27adff8622d6e4b56bcc46f8b39ddd261c3d310b6c232dbac07c80"
+    },
+    {
+      "id": "balanced",
+      "category": "hair",
+      "fileName": "ayv-hair-balanced.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 268440,
+      "sha256": "6bddf832f34a9f555c0011fd084d961cbd4c6032329b1a4d691018f53f21f842"
+    },
+    {
+      "id": "thick_dense",
+      "category": "hair",
+      "fileName": "ayv-hair-thick_dense.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 251001,
+      "sha256": "ea5178ec848bd3cd9240816a4d54e1aa73fd17edef7f04e05b0e95ad4c4ef27d"
+    },
+    {
+      "id": "oily_roots",
+      "category": "hair",
+      "fileName": "ayv-hair-oily_roots.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 241149,
+      "sha256": "9502c5f72b6a052293f0cc40731f2e9a0e393aa72ea947683974c8bf5147988f"
+    },
+    {
+      "id": "mixed_varies",
+      "category": "hair",
+      "fileName": "ayv-hair-mixed_varies.png",
+      "width": 356,
+      "height": 356,
+      "bytes": 271960,
+      "sha256": "b43129f435601f88913aef02a3edb5bafa65135e4b8ebb30b2a09bb977031f96"
+    }
+  ],
   "maskCropResults": [
     {
       "fileName": "ayv-feminino-leve-skin-mask.png",

@@ -746,7 +746,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             onSave={handleSaveStep1}
             disabled={isReviewOnly}
           />
-          <div className="max-w-2xl mx-auto flex items-center justify-between pt-4 border-t border-border/40">
+          <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             {isReviewOnly ? (
               <div />
             ) : (
@@ -755,9 +755,9 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setStage('opening')}
-                className="text-xs h-9 gap-1.5"
+                className="text-xs h-9 gap-1.5 whitespace-normal shrink-0"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
+                <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
                 <span>Abertura</span>
               </Button>
             )}
@@ -765,10 +765,10 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
               type="button"
               size="sm"
               onClick={() => advanceStep('step2', 2)}
-              className="text-xs h-9 px-4 gap-1.5"
+              className="text-xs h-9 px-3 sm:px-4 gap-1.5 whitespace-normal shrink-0"
             >
               <span>Avançar para Pele</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </Button>
           </div>
         </div>
@@ -782,25 +782,25 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             onSave={handleSaveStep2}
             disabled={isReviewOnly}
           />
-          <div className="max-w-2xl mx-auto flex items-center justify-between pt-4 border-t border-border/40">
+          <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setStage('step1')}
-              className="text-xs h-9 gap-1.5"
+              className="text-xs h-9 gap-1.5 whitespace-normal shrink-0"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
               <span>Estrutura</span>
             </Button>
             <Button
               type="button"
               size="sm"
               onClick={() => advanceStep('step3', 3)}
-              className="text-xs h-9 px-4 gap-1.5"
+              className="text-xs h-9 px-3 sm:px-4 gap-1.5 whitespace-normal shrink-0"
             >
               <span>Avançar para Cabelo</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </Button>
           </div>
         </div>
@@ -814,25 +814,25 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             onSave={handleSaveStep3}
             disabled={isReviewOnly}
           />
-          <div className="max-w-2xl mx-auto flex items-center justify-between pt-4 border-t border-border/40">
+          <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setStage('step2')}
-              className="text-xs h-9 gap-1.5"
+              className="text-xs h-9 gap-1.5 whitespace-normal shrink-0"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
               <span>Pele</span>
             </Button>
             <Button
               type="button"
               size="sm"
               onClick={() => advanceStep('step4', 4)}
-              className="text-xs h-9 px-4 gap-1.5"
+              className="text-xs h-9 px-3 sm:px-4 gap-1.5 whitespace-normal shrink-0"
             >
               <span>Avançar para Temperatura</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </Button>
           </div>
         </div>
@@ -846,25 +846,25 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             onSave={handleSaveStep4}
             disabled={isReviewOnly}
           />
-          <div className="max-w-2xl mx-auto flex items-center justify-between pt-4 border-t border-border/40">
+          <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setStage('step3')}
-              className="text-xs h-9 gap-1.5"
+              className="text-xs h-9 gap-1.5 whitespace-normal shrink-0"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
               <span>Cabelo</span>
             </Button>
             <Button
               type="button"
               size="sm"
               onClick={() => advanceStep('step5', 5)}
-              className="text-xs h-9 px-4 gap-1.5"
+              className="text-xs h-9 px-3 sm:px-4 gap-1.5 whitespace-normal shrink-0"
             >
               <span>Avançar para Hábitos</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </Button>
           </div>
         </div>
@@ -880,25 +880,25 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             onSave={handleSaveStep5}
             disabled={isReviewOnly}
           />
-          <div className="max-w-2xl mx-auto flex items-center justify-between pt-4 border-t border-border/40">
+          <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setStage('step4')}
-              className="text-xs h-9 gap-1.5"
+              className="text-xs h-9 gap-1.5 whitespace-normal shrink-0"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
               <span>Temperatura</span>
             </Button>
             <Button
               type="button"
               size="sm"
               onClick={() => setStage('closing')}
-              className="text-xs h-9 px-4 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="text-xs h-9 px-3 sm:px-4 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 whitespace-normal shrink-0"
             >
               <span>Ir para Encerramento</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </Button>
           </div>
         </div>
