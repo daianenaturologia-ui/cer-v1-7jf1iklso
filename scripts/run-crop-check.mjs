@@ -1,4 +1,4 @@
-import { cropClinicalBoards, cropAllAtlases } from './scripts/crop-atlases.mjs'
+import { cropClinicalBoards, cropAllAtlases } from './crop-atlases.mjs'
 
 console.log('--- Executando recorte das pranchas clínicas ---')
 const clinicalResults = cropClinicalBoards()

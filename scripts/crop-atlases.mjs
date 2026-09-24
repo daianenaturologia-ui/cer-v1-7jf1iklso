@@ -299,8 +299,6 @@ export const AYV_CLINICAL_CARDS_CROPS = {
 export function cropClinicalBoards() {
   const pelePngPath = path.resolve('src/assets/cer-ayv-prancha-pele.png')
   const cabeloPngPath = path.resolve('src/assets/cer-ayv-prancha-cabelo.png')
-  const peleTxtPath = path.resolve('src/assets/cer-ayv-prancha-pele.base64-39794.txt')
-  const cabeloTxtPath = path.resolve('src/assets/cer-ayv-prancha-cabelo.base64-27c06.txt')
 
   let peleBuf = null
   let cabeloBuf = null
@@ -308,15 +306,6 @@ export function cropClinicalBoards() {
   if (fs.existsSync(pelePngPath) && fs.existsSync(cabeloPngPath)) {
     peleBuf = fs.readFileSync(pelePngPath)
     cabeloBuf = fs.readFileSync(cabeloPngPath)
-  } else if (fs.existsSync(peleTxtPath) && fs.existsSync(cabeloTxtPath)) {
-    const peleBase64 = fs.readFileSync(peleTxtPath, 'utf8').replace(/\s+/g, '')
-    peleBuf = Buffer.from(peleBase64, 'base64')
-    const cabeloBase64 = fs.readFileSync(cabeloTxtPath, 'utf8').replace(/\s+/g, '')
-    cabeloBuf = Buffer.from(cabeloBase64, 'base64')
-    // Salvar as pranchas em PNG para persistência definitiva no repositório
-    fs.writeFileSync(pelePngPath, peleBuf)
-    fs.writeFileSync(cabeloPngPath, cabeloBuf)
-    console.log('[crop-atlases] Pranchas PNG salvas em src/assets/ a partir do base64')
   } else {
     console.warn('[crop-atlases] Pranchas não encontradas, pulando cropClinicalBoards')
     return []
