@@ -63,6 +63,11 @@ import {
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
 import { ExperienceEngine } from '@/components/experience'
 import { ParticipantMapDisplay } from '@/components/ParticipantMapDisplay'
+import { AvatarRepresentationCard } from '@/components/experience/AvatarRepresentationCard'
+import {
+  AvatarCustomizationFlow,
+  AvatarCustomizationResult,
+} from '@/components/experience/AvatarCustomizationFlow'
 import { cerMapService } from '@/services/cerMapService'
 import { cerPracticeAssignmentService } from '@/services/cerPracticeAssignmentService'
 import { cerPlannerService } from '@/services/cerPlannerService'
@@ -109,6 +114,7 @@ export const InteragenteHome: React.FC = () => {
   const [plannerItems, setPlannerItems] = useState<CerPlannerItemRecord[]>([])
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [activeReviewInvite, setActiveReviewInvite] = useState<{ cycleId: string } | null>(null)
+  const [showAvatarEditModal, setShowAvatarEditModal] = useState(false)
 
   // Preferências de nome e tratamento (Item 2)
   const [preferredNameInput, setPreferredNameInput] = useState('')
@@ -1396,6 +1402,14 @@ export const InteragenteHome: React.FC = () => {
                       “O ser humano não funciona em partes.”
                     </p>
                   </div>
+
+                  {/* CER V1 — Lote 0B2: Minha Representação no Perfil */}
+                  <div className="md:col-span-3 pt-1">
+                    <AvatarRepresentationCard
+                      person={person}
+                      onEdit={() => setShowAvatarEditModal(true)}
+                    />
+                  </div>
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -2197,6 +2211,47 @@ export const InteragenteHome: React.FC = () => {
           </div>
         )}
 
+        {/* Modal / Edição Posterior de Representação pelo Perfil */}
+        {showAvatarEditModal && (
+          <Dialog open={showAvatarEditModal} onOpenChange={setShowAvatarEditModal}>
+            <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-4 sm:p-6">
+              <AvatarCustomizationFlow
+                isEditing
+                initialConfig={{
+                  presentation: person?.avatar_presentation,
+                  skinTone: person?.avatar_skin_tone,
+                  hairColor: person?.avatar_hair_color,
+                }}
+                onConfirm={async (result: AvatarCustomizationResult) => {
+                  try {
+                    const targetId = person?.id || 'demo-person-mariana'
+                    await personService.updateAvatarCustomization(targetId, {
+                      avatar_presentation: result.presentation,
+                      avatar_skin_tone: result.skinTone,
+                      avatar_hair_color: result.hairColor,
+                      avatar_customization_status: 'completed',
+                    })
+                    toast({
+                      title: 'Representação atualizada',
+                      description: 'Sua figura foi personalizada com sucesso.',
+                    })
+                    setShowAvatarEditModal(false)
+                    await loadData()
+                  } catch (e) {
+                    toast({
+                      title: 'Erro ao atualizar representação',
+                      description: e instanceof Error ? e.message : 'Tente novamente.',
+                      variant: 'destructive',
+                    })
+                  }
+                }}
+                onDefer={() => setShowAvatarEditModal(false)}
+                onCancel={() => setShowAvatarEditModal(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+
         {/* Modal / Visão em Tela Cheia do Experience Engine */}
         {activeExperienceId && enrollment && user?.id && (
           <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-y-auto p-4 sm:p-6 flex flex-col justify-start">
@@ -2204,6 +2259,7 @@ export const InteragenteHome: React.FC = () => {
               experienceId={activeExperienceId}
               enrollmentId={enrollment.id}
               respondentUserId={user.id}
+              personId={person?.id}
               treatmentVariant={
                 person?.treatment_preference === 'feminino' ||
                 person?.treatment_preference === 'masculino' ||

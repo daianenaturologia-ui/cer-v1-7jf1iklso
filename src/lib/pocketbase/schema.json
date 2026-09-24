@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T10:53:21.544Z",
+  "generatedAt": "2026-09-24T12:14:53.072Z",
   "collections": [
     {
       "name": "users",
@@ -208,6 +208,53 @@
         {
           "name": "treatment_preference_custom",
           "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar_presentation",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["feminine", "masculine"]
+        },
+        {
+          "name": "avatar_skin_tone",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["skin_01", "skin_02", "skin_03", "skin_04", "skin_05", "skin_06"]
+        },
+        {
+          "name": "avatar_hair_color",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "hair_black",
+            "hair_dark_brown",
+            "hair_light_brown",
+            "hair_blonde",
+            "hair_red",
+            "hair_gray_white"
+          ]
+        },
+        {
+          "name": "avatar_customization_status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["completed", "deferred"]
+        },
+        {
+          "name": "avatar_version",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar_updated_at",
+          "type": "date",
           "required": false,
           "system": false
         }

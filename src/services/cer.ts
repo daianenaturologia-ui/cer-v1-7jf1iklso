@@ -89,6 +89,30 @@ export const personService = {
     return await pb.collection('persons').update<PersonRecord>(id, data)
   },
 
+  async updateAvatarCustomization(
+    id: string,
+    data: {
+      avatar_presentation?: PersonRecord['avatar_presentation']
+      avatar_skin_tone?: PersonRecord['avatar_skin_tone']
+      avatar_hair_color?: PersonRecord['avatar_hair_color']
+      avatar_customization_status: PersonRecord['avatar_customization_status']
+    },
+  ): Promise<PersonRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.updatePerson(id, {
+        ...data,
+        avatar_version: 1,
+        avatar_updated_at: new Date().toISOString(),
+      })
+    }
+    return await pb.collection('persons').update<PersonRecord>(id, {
+      ...data,
+      avatar_version: 1,
+      avatar_updated_at: new Date().toISOString(),
+    })
+  },
+
   async list(page = 1, perPage = 50): Promise<{ items: PersonRecord[]; totalItems: number }> {
     return await pb.collection('persons').getList<PersonRecord>(page, perPage, {
       sort: 'full_name',

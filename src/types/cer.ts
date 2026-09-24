@@ -308,6 +308,8 @@ export const TREATMENT_PREFERENCE_DESCRIPTIONS: Record<TreatmentPreference, stri
   outro: 'campo livre',
 }
 
+export type AvatarCustomizationStatus = 'completed' | 'deferred'
+
 export interface PersonRecord {
   id: string
   full_name: string
@@ -318,6 +320,18 @@ export interface PersonRecord {
   phone?: string
   notes?: string
   timezone?: string // IANA, ex: 'America/Sao_Paulo'
+  avatar_presentation?: 'feminine' | 'masculine'
+  avatar_skin_tone?: 'skin_01' | 'skin_02' | 'skin_03' | 'skin_04' | 'skin_05' | 'skin_06'
+  avatar_hair_color?:
+    | 'hair_black'
+    | 'hair_dark_brown'
+    | 'hair_light_brown'
+    | 'hair_blonde'
+    | 'hair_red'
+    | 'hair_gray_white'
+  avatar_customization_status?: AvatarCustomizationStatus
+  avatar_version?: number
+  avatar_updated_at?: string
   created: string
   updated: string
 }

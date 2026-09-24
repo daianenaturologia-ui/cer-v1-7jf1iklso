@@ -52,11 +52,14 @@ import {
   getPromptOrchestration,
 } from '@/services/orchestrationResolver'
 import { contextReuseService } from '@/services/contextReuseService'
+import { personService } from '@/services/cer'
+import { AvatarCustomizationFlow, AvatarCustomizationResult } from './AvatarCustomizationFlow'
 
 export interface ExperienceEngineProps {
   experienceId: string
   enrollmentId: string
   respondentUserId: string
+  personId?: string
   initialResponses?: ExperienceResponseRecord[]
   treatmentVariant?: 'feminino' | 'masculino' | 'neutro' | 'outro'
   onClose?: () => void
@@ -104,10 +107,13 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   respondentUserId,
   initialResponses,
   treatmentVariant = 'neutro',
+  personId,
   onClose,
   onCompleted,
 }) => {
   const [experience, setExperience] = useState<CerExperienceRecord | null>(null)
+  const [isAvatarCustomizing, setIsAvatarCustomizing] = useState(false)
+  const [personAvatarData, setPersonAvatarData] = useState<any>(null)
   const [showPatternsChart, setShowPatternsChart] = useState(false)
   const [showMindEmotionsReport, setShowMindEmotionsReport] = useState(false)
   const [hasIncompatibleMenteDemo, setHasIncompatibleMenteDemo] = useState(false)
@@ -312,6 +318,35 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         setPrompts(promptList)
         setEnrollmentExp(enrExp)
 
+        // CER V1 — Lote 0B2: Personalização estética na entrada de Corpo & Fisiologia
+        const isCorpoExp = canonicalId === 'exp-corpo-fisiologia-07b'
+        if (isCorpoExp) {
+          try {
+            let pRecord = null
+            if (personId) {
+              pRecord = await personService.getById(personId)
+            } else {
+              const { demoAdapter } = await import('@/services/demoAdapter')
+              if (demoAdapter.isEnabled()) {
+                pRecord = demoAdapter.getCurrentPerson()
+              }
+            }
+            if (pRecord) {
+              setPersonAvatarData(pRecord)
+              // Se status ainda não é completed nem deferred, aciona personalização antes das perguntas
+              if (
+                !pRecord.avatar_customization_status ||
+                (pRecord.avatar_customization_status !== 'completed' &&
+                  pRecord.avatar_customization_status !== 'deferred')
+              ) {
+                setIsAvatarCustomizing(true)
+              }
+            }
+          } catch (pErr) {
+            console.error('Erro ao verificar status de personalização estética do avatar:', pErr)
+          }
+        }
+
         const map: Record<string, ExperienceResponseRecord> = {}
         for (const resp of existingResponses) {
           const matchedPrompt = promptList.find((p) => p.id === resp.prompt_id)
@@ -429,7 +464,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     return () => {
       isMounted = false
     }
-  }, [experienceId, enrollmentId, respondentUserId])
+  }, [experienceId, enrollmentId, respondentUserId, personId])
 
   // Atualizar rascunho sempre que o prompt atual mudar
   useEffect(() => {
@@ -970,6 +1005,57 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   }
 
   // -------------------------------------------------------------
+  // CER V1 — LOTE 0B2: PERSONALIZAÇÃO ESTÉTICA DA INTERAGENTE
+  // -------------------------------------------------------------
+  if (isAvatarCustomizing && experience) {
+    const handleAvatarConfirm = async (result: AvatarCustomizationResult) => {
+      try {
+        const targetId = personId || personAvatarData?.id || 'demo-person-mariana'
+        const updated = await personService.updateAvatarCustomization(targetId, {
+          avatar_presentation: result.presentation,
+          avatar_skin_tone: result.skinTone,
+          avatar_hair_color: result.hairColor,
+          avatar_customization_status: 'completed',
+        })
+        setPersonAvatarData(updated)
+      } catch (err) {
+        console.error('Erro ao persistir escolhas do avatar:', err)
+      } finally {
+        setIsAvatarCustomizing(false)
+      }
+    }
+
+    const handleAvatarDefer = async () => {
+      try {
+        const targetId = personId || personAvatarData?.id || 'demo-person-mariana'
+        const updated = await personService.updateAvatarCustomization(targetId, {
+          avatar_customization_status: 'deferred',
+        })
+        setPersonAvatarData(updated)
+      } catch (err) {
+        console.error('Erro ao registrar postergação da personalização do avatar:', err)
+      } finally {
+        setIsAvatarCustomizing(false)
+      }
+    }
+
+    return (
+      <div className="py-6">
+        <AvatarCustomizationFlow
+          initialConfig={{
+            presentation: personAvatarData?.avatar_presentation,
+            skinTone: personAvatarData?.avatar_skin_tone,
+            hairColor: personAvatarData?.avatar_hair_color,
+          }}
+          onConfirm={handleAvatarConfirm}
+          onDefer={handleAvatarDefer}
+          onCancel={() => setIsAvatarCustomizing(false)}
+        />
+      </div>
+    )
+  }
+
+  // -------------------------------------------------------------
   // FASE 1: ABERTURA CURTA E ACOLHEDORA
   // -------------------------------------------------------------
   if (engineStage === 'opening') {
@@ -1069,6 +1155,23 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
                 Você já iniciou esta experiência (Momento {enrollmentExp?.current_step_order}).
               </span>
             </div>
+          </div>
+        )}
+
+        {/* Convite discreto para quem escolheu postergar ou deseja personalizar representação */}
+        {(experience.id === 'exp-corpo-fisiologia-07b' ||
+          resolveExperienceId(experienceId) === 'exp-corpo-fisiologia-07b') && (
+          <div className="flex justify-center pt-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsAvatarCustomizing(true)}
+              className="text-xs text-primary/80 hover:text-primary gap-1.5 h-8 font-normal"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Personalizar minha representação</span>
+            </Button>
           </div>
         )}
 
