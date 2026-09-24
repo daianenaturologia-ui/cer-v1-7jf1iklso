@@ -11,7 +11,12 @@
  * 5. IDs canônicos versionados NOVOS (prefixo `ayv_c1_`), preservando o questionário legado intacto.
  */
 
-import { CerExperienceMomentRecord, CerExperienceRecord, CerPromptRecord } from '@/types/cer'
+import {
+  CerExperienceMomentRecord,
+  CerExperienceRecord,
+  CerPromptRecord,
+  ExperienceResponseRecord,
+} from '@/types/cer'
 
 export const AYURVEDA_EXPERIENCE_VERSION = '2.0.0'
 export const AYURVEDA_CORPO_EXPERIENCE_ID = 'exp-corpo-fisiologia-07b'
@@ -110,6 +115,12 @@ export const AYV_C1_PROMPTS = {
     key: 'ayv_c1_transpiracao_habitual',
     step_order: 5,
     title: 'Transpiração habitual',
+  },
+  CHAPTER_COMPLETION: {
+    id: 'ayv_c1_chapter1_completion',
+    key: 'ayv_c1_chapter1_completion',
+    step_order: 5,
+    title: 'Conclusão canônica do Capítulo 1',
   },
 } as const
 
@@ -398,4 +409,142 @@ export function categorizeChapter1Responses(state: AyurvedaChapter1State): {
   pushItem('Transpiração habitual', state.sweat_choice, AYV_TELA5_SWEAT_OPTIONS)
 
   return { longerTerm, contextVariable, pointsToClarify }
+}
+
+export type AyurvedaChapter1Status = 'not_started' | 'in_progress' | 'completed'
+
+/**
+ * Total de 8 prompts de pergunta canônicos do Capítulo 1
+ * (exclui o registro de conclusão CHAPTER_COMPLETION).
+ */
+export const AYV_C1_QUESTION_PROMPT_KEYS = [
+  AYV_C1_PROMPTS.P1_STRUCTURE.key,
+  AYV_C1_PROMPTS.P1_DURATION.key,
+  AYV_C1_PROMPTS.P2_SKIN.key,
+  AYV_C1_PROMPTS.P3_HAIR.key,
+  AYV_C1_PROMPTS.P4_TEMPERATURE.key,
+  AYV_C1_PROMPTS.P5_THIRST.key,
+  AYV_C1_PROMPTS.P5_DRINK_TEMP.key,
+  AYV_C1_PROMPTS.P5_SWEAT.key,
+] as const
+
+export const AYV_C1_QUESTION_PROMPT_IDS = [
+  AYV_C1_PROMPTS.P1_STRUCTURE.id,
+  AYV_C1_PROMPTS.P1_DURATION.id,
+  AYV_C1_PROMPTS.P2_SKIN.id,
+  AYV_C1_PROMPTS.P3_HAIR.id,
+  AYV_C1_PROMPTS.P4_TEMPERATURE.id,
+  AYV_C1_PROMPTS.P5_THIRST.id,
+  AYV_C1_PROMPTS.P5_DRINK_TEMP.id,
+  AYV_C1_PROMPTS.P5_SWEAT.id,
+] as const
+
+/**
+ * Derivação canônica explícita do status e progresso do Capítulo 1.
+ * NUNCA lê enrollmentExp.progress_status.
+ *
+ * 1. canonicalResponses = registros vinculados estritamente aos prompts ayv_c1_*
+ *    (NÃO conta IDs não canônicos, legados p-07b-*, avatar, demo flags ou seeds).
+ * 2. hasCompletionRecord = registro canônico explícito com completed: true e completed_at real.
+ * 3. Status:
+ *    - 0 respostas canônicas -> 'not_started' (0% de progresso);
+ *    - respostas canônicas presentes sem registro de conclusão -> 'in_progress';
+ *    - hasCompletionRecord && canonicalResponses.length > 0 (com pelo menos uma pergunta real respondida) -> 'completed' (100%).
+ * 4. Progresso parcial: percentual = blocos canônicos respondidos / 8. 0% se not_started.
+ */
+export function deriveChapter1Status(
+  responses: Array<ExperienceResponseRecord | Record<string, any>> = [],
+): {
+  status: AyurvedaChapter1Status
+  progress: number
+  answeredCount: number
+  totalQuestions: number
+  hasCompletionRecord: boolean
+  canonicalResponses: Array<ExperienceResponseRecord | Record<string, any>>
+} {
+  const totalQuestions = AYV_C1_QUESTION_PROMPT_KEYS.length
+
+  // Filtrar apenas respostas canônicas do Capítulo 1 (prefixo ayv_c1_)
+  const canonicalResponses = (responses || []).filter((r) => {
+    if (!r) return false
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+
+    const matchesId = typeof promptId === 'string' && promptId.startsWith('ayv_c1_')
+    const matchesKey = typeof promptKey === 'string' && promptKey.startsWith('ayv_c1_')
+    return matchesId || matchesKey
+  })
+
+  // Verificar se há registro canônico explícito de conclusão
+  const hasCompletionRecord = canonicalResponses.some((r) => {
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+
+    const isCompletionPrompt =
+      promptId === AYV_C1_PROMPTS.CHAPTER_COMPLETION.id ||
+      promptKey === AYV_C1_PROMPTS.CHAPTER_COMPLETION.key
+
+    if (!isCompletionPrompt) return false
+
+    const isCompletedVal =
+      sVal?.completed === true || sVal?.value?.completed === true || sVal?.status === 'completed'
+
+    const completedAt =
+      sVal?.completed_at || sVal?.value?.completed_at || (r as any).updated || (r as any).created
+
+    const hasValidDate = typeof completedAt === 'string' && completedAt.trim().length > 0
+
+    return Boolean(isCompletedVal && hasValidDate)
+  })
+
+  // Contabilizar perguntas canônicas respondidas (distintas entre os 8 blocos de perguntas)
+  const answeredPromptSet = new Set<string>()
+
+  for (const r of canonicalResponses) {
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+
+    for (let i = 0; i < totalQuestions; i++) {
+      const qKey = AYV_C1_QUESTION_PROMPT_KEYS[i]
+      const qId = AYV_C1_QUESTION_PROMPT_IDS[i]
+      if (promptKey === qKey || promptId === qId) {
+        answeredPromptSet.add(qKey)
+      }
+    }
+  }
+
+  const answeredCount = answeredPromptSet.size
+
+  let status: AyurvedaChapter1Status = 'not_started'
+  let progress = 0
+
+  if (canonicalResponses.length === 0) {
+    status = 'not_started'
+    progress = 0
+  } else if (hasCompletionRecord && answeredCount > 0) {
+    status = 'completed'
+    progress = 100
+  } else {
+    status = 'in_progress'
+    progress = Math.round((answeredCount / totalQuestions) * 100)
+    // Garantir que 0% só ocorra em not_started se houver respostas canônicas
+    if (progress === 0 && canonicalResponses.length > 0) {
+      progress = Math.round((1 / totalQuestions) * 100) // ~13%
+    }
+  }
+
+  return {
+    status,
+    progress,
+    answeredCount,
+    totalQuestions,
+    hasCompletionRecord,
+    canonicalResponses,
+  }
 }

@@ -7,12 +7,16 @@ import {
   AYURVEDA_FOUR_CHAPTERS,
   AYV_TEXTS,
   AyurvedaChapterDefinition,
+  AyurvedaChapter1Status,
 } from '@/services/ayurvedaChapter1'
 
 export interface AyurvedaChaptersHubProps {
   onStartChapter1: () => void
   onOpenCustomization?: () => void
+  onCorrectChapter1?: () => void
   isChapter1Completed?: boolean
+  chapter1Status?: AyurvedaChapter1Status
+  chapter1Progress?: number
   chapter1StepOrder?: number
   avatarDeferred?: boolean
   onClose?: () => void
@@ -21,11 +25,28 @@ export interface AyurvedaChaptersHubProps {
 export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
   onStartChapter1,
   onOpenCustomization,
-  isChapter1Completed = false,
+  onCorrectChapter1,
+  isChapter1Completed,
+  chapter1Status,
+  chapter1Progress,
   chapter1StepOrder = 1,
   avatarDeferred = false,
   onClose,
 }) => {
+  // Resolução canônica de status: prioriza chapter1Status explícito;
+  // retrocompatibilidade com isChapter1Completed booleano se chapter1Status não for passado.
+  const effectiveStatus: AyurvedaChapter1Status =
+    chapter1Status || (isChapter1Completed ? 'completed' : 'not_started')
+
+  const effectiveProgress: number =
+    typeof chapter1Progress === 'number'
+      ? Math.max(0, Math.min(100, chapter1Progress))
+      : effectiveStatus === 'completed'
+        ? 100
+        : effectiveStatus === 'in_progress'
+          ? Math.min(100, Math.max(15, (chapter1StepOrder / 5) * 100))
+          : 0
+
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-6">
       <div className="flex items-center justify-between">
@@ -85,16 +106,17 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
         <div className="flex items-center justify-between text-xs">
           <span className="font-medium text-foreground">Progresso do Capítulo 1</span>
           <span className="text-muted-foreground font-mono">
-            {isChapter1Completed ? 'Concluído' : `Momento ${chapter1StepOrder} de 5`}
+            {effectiveStatus === 'completed' && 'Concluído'}
+            {effectiveStatus === 'in_progress' &&
+              `Em andamento (${effectiveProgress}% • Etapa ${chapter1StepOrder} de 5)`}
+            {effectiveStatus === 'not_started' && 'Não iniciado (0%)'}
           </span>
         </div>
         <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
           <div
             className="h-full bg-primary transition-all duration-300"
             style={{
-              width: isChapter1Completed
-                ? '100%'
-                : `${Math.min(100, Math.max(15, (chapter1StepOrder / 5) * 100))}%`,
+              width: `${effectiveProgress}%`,
             }}
           />
         </div>
@@ -129,7 +151,7 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
                   </div>
 
                   {isChap1 ? (
-                    isChapter1Completed ? (
+                    effectiveStatus === 'completed' ? (
                       <Badge
                         variant="secondary"
                         className="text-[10px] gap-1 text-emerald-700 dark:text-emerald-300"
@@ -137,10 +159,15 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                         Concluído
                       </Badge>
-                    ) : (
+                    ) : effectiveStatus === 'in_progress' ? (
                       <Badge variant="outline" className="text-[10px] gap-1 text-primary">
                         <Clock className="w-3 h-3" />
-                        Ativo agora
+                        Em andamento
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] gap-1 text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        Não iniciado
                       </Badge>
                     )
                   ) : (
@@ -157,27 +184,60 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
 
               <CardContent className="p-4 pt-2">
                 {isChap1 ? (
-                  <div className="flex items-center justify-between gap-2 pt-1">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
                     <span className="text-[11px] text-muted-foreground">
-                      {isChapter1Completed
-                        ? 'Você já respondeu ao Capítulo 1.'
-                        : 'Duração aproximada: 3 a 4 minutos.'}
+                      {effectiveStatus === 'completed' && 'Você já respondeu ao Capítulo 1.'}
+                      {effectiveStatus === 'in_progress' &&
+                        `Capítulo em andamento (${effectiveProgress}% concluído).`}
+                      {effectiveStatus === 'not_started' && 'Você ainda não iniciou este capítulo.'}
                     </span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={onStartChapter1}
-                      className="text-xs h-8 px-4 gap-1.5"
-                    >
-                      <span>
-                        {isChapter1Completed
-                          ? 'Rever Capítulo 1'
-                          : chapter1StepOrder > 1
-                            ? 'Retomar Capítulo 1'
-                            : 'Iniciar Capítulo 1'}
-                      </span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Button>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      {effectiveStatus === 'completed' ? (
+                        <>
+                          {onCorrectChapter1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={onCorrectChapter1}
+                              className="text-xs h-8 px-3 text-muted-foreground hover:text-foreground"
+                            >
+                              Corrigir minhas respostas
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={onStartChapter1}
+                            className="text-xs h-8 px-4 gap-1.5"
+                          >
+                            <span>Rever Capítulo 1</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Button>
+                        </>
+                      ) : effectiveStatus === 'in_progress' ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={onStartChapter1}
+                          className="text-xs h-8 px-4 gap-1.5"
+                        >
+                          <span>Retomar Capítulo 1</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={onStartChapter1}
+                          className="text-xs h-8 px-4 gap-1.5"
+                        >
+                          <span>Começar Capítulo 1</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="pt-1">

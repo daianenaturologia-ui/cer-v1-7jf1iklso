@@ -8,6 +8,8 @@ import {
   AYV_TEXTS,
   AyurvedaCanonicalResponseMetadata,
   AYURVEDA_EXPERIENCE_VERSION,
+  deriveChapter1Status,
+  AyurvedaChapter1Status,
 } from '@/services/ayurvedaChapter1'
 import { AvatarPresentation } from '@/services/avatarCompositor'
 import { AyurvedaChaptersHub } from './AyurvedaChaptersHub'
@@ -66,114 +68,114 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
 
   // Estado das respostas do Capítulo 1
   const [chapterState, setChapterState] = useState<AyurvedaChapter1State>({})
+  const [rawResponses, setRawResponses] = useState<ExperienceResponseRecord[]>([])
 
   // Carregar respostas existentes com IDs canônicos AYV_C1
-  useEffect(() => {
-    let isMounted = true
-    const loadResponses = async () => {
-      setLoading(true)
-      try {
-        const enrList = await enrollmentExperienceService.listByEnrollment(enrollmentId)
-        const currentEnrExp = enrList.find(
-          (e) =>
-            e.experience_id === experienceId ||
-            (e as any).expand?.experience_id?.id === experienceId,
-        )
-        if (currentEnrExp && isMounted) {
-          setEnrollmentExp(currentEnrExp)
-        }
-
-        const responses = await experienceResponseService.listResponsesByExperience(
-          enrollmentId,
-          experienceId,
-        )
-
-        const loadedState: AyurvedaChapter1State = {}
-
-        for (const r of responses) {
-          const sVal = r.structured_value as any
-          const pKey =
-            (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
-
-          if (
-            r.prompt_id === AYV_C1_PROMPTS.P1_STRUCTURE.id ||
-            pKey === AYV_C1_PROMPTS.P1_STRUCTURE.key
-          ) {
-            loadedState.structure_choice = sVal?.value || sVal?.choice || sVal?.structure_choice
-            loadedState.secondary_structure_choice =
-              sVal?.secondary_choice || sVal?.secondaryStructureChoice
-          } else if (
-            r.prompt_id === AYV_C1_PROMPTS.P1_DURATION.id ||
-            pKey === AYV_C1_PROMPTS.P1_DURATION.key
-          ) {
-            loadedState.structure_duration = sVal?.value || sVal?.choice || sVal?.durationChoice
-          } else if (
-            r.prompt_id === AYV_C1_PROMPTS.P2_SKIN.id ||
-            pKey === AYV_C1_PROMPTS.P2_SKIN.key
-          ) {
-            loadedState.skin_choices = Array.isArray(sVal?.selectedOptionIds)
-              ? sVal.selectedOptionIds
-              : Array.isArray(sVal?.value)
-                ? sVal.value
-                : Array.isArray(sVal)
-                  ? sVal
-                  : sVal?.choice
-                    ? [sVal.choice]
-                    : []
-          } else if (
-            r.prompt_id === AYV_C1_PROMPTS.P3_HAIR.id ||
-            pKey === AYV_C1_PROMPTS.P3_HAIR.key
-          ) {
-            loadedState.hair_choices = Array.isArray(sVal?.selectedOptionIds)
-              ? sVal.selectedOptionIds
-              : Array.isArray(sVal?.value)
-                ? sVal.value
-                : Array.isArray(sVal)
-                  ? sVal
-                  : sVal?.choice
-                    ? [sVal.choice]
-                    : []
-          } else if (
-            r.prompt_id === AYV_C1_PROMPTS.P4_TEMPERATURE.id ||
-            pKey === AYV_C1_PROMPTS.P4_TEMPERATURE.key
-          ) {
-            loadedState.temperature_choice = sVal?.value || sVal?.choice
-          } else if (
-            r.prompt_id === AYV_C1_PROMPTS.P5_THIRST.id ||
-            pKey === AYV_C1_PROMPTS.P5_THIRST.key
-          ) {
-            loadedState.thirst_choice = sVal?.value || sVal?.choice
-          } else if (
-            r.prompt_id === AYV_C1_PROMPTS.P5_DRINK_TEMP.id ||
-            pKey === AYV_C1_PROMPTS.P5_DRINK_TEMP.key
-          ) {
-            loadedState.drink_temperature_choice = sVal?.value || sVal?.choice
-          } else if (
-            r.prompt_id === AYV_C1_PROMPTS.P5_SWEAT.id ||
-            pKey === AYV_C1_PROMPTS.P5_SWEAT.key
-          ) {
-            loadedState.sweat_choice = sVal?.value || sVal?.choice
-          }
-        }
-
-        if (isMounted) {
-          setChapterState(loadedState)
-        }
-      } catch (err) {
-        console.error('Erro ao carregar respostas do Capítulo 1:', err)
-      } finally {
-        if (isMounted) setLoading(false)
+  const loadResponses = async () => {
+    setLoading(true)
+    try {
+      const enrList = await enrollmentExperienceService.listByEnrollment(enrollmentId)
+      const currentEnrExp = enrList.find(
+        (e) =>
+          e.experience_id === experienceId || (e as any).expand?.experience_id?.id === experienceId,
+      )
+      if (currentEnrExp) {
+        setEnrollmentExp(currentEnrExp)
       }
-    }
 
+      const responses = await experienceResponseService.listResponsesByExperience(
+        enrollmentId,
+        experienceId,
+      )
+      setRawResponses(responses)
+
+      const loadedState: AyurvedaChapter1State = {}
+
+      for (const r of responses) {
+        const sVal = r.structured_value as any
+        const pKey =
+          (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+
+        if (
+          r.prompt_id === AYV_C1_PROMPTS.P1_STRUCTURE.id ||
+          pKey === AYV_C1_PROMPTS.P1_STRUCTURE.key
+        ) {
+          loadedState.structure_choice = sVal?.value || sVal?.choice || sVal?.structure_choice
+          loadedState.secondary_structure_choice =
+            sVal?.secondary_choice || sVal?.secondaryStructureChoice
+        } else if (
+          r.prompt_id === AYV_C1_PROMPTS.P1_DURATION.id ||
+          pKey === AYV_C1_PROMPTS.P1_DURATION.key
+        ) {
+          loadedState.structure_duration = sVal?.value || sVal?.choice || sVal?.durationChoice
+        } else if (
+          r.prompt_id === AYV_C1_PROMPTS.P2_SKIN.id ||
+          pKey === AYV_C1_PROMPTS.P2_SKIN.key
+        ) {
+          loadedState.skin_choices = Array.isArray(sVal?.selectedOptionIds)
+            ? sVal.selectedOptionIds
+            : Array.isArray(sVal?.value)
+              ? sVal.value
+              : Array.isArray(sVal)
+                ? sVal
+                : sVal?.choice
+                  ? [sVal.choice]
+                  : []
+        } else if (
+          r.prompt_id === AYV_C1_PROMPTS.P3_HAIR.id ||
+          pKey === AYV_C1_PROMPTS.P3_HAIR.key
+        ) {
+          loadedState.hair_choices = Array.isArray(sVal?.selectedOptionIds)
+            ? sVal.selectedOptionIds
+            : Array.isArray(sVal?.value)
+              ? sVal.value
+              : Array.isArray(sVal)
+                ? sVal
+                : sVal?.choice
+                  ? [sVal.choice]
+                  : []
+        } else if (
+          r.prompt_id === AYV_C1_PROMPTS.P4_TEMPERATURE.id ||
+          pKey === AYV_C1_PROMPTS.P4_TEMPERATURE.key
+        ) {
+          loadedState.temperature_choice = sVal?.value || sVal?.choice
+        } else if (
+          r.prompt_id === AYV_C1_PROMPTS.P5_THIRST.id ||
+          pKey === AYV_C1_PROMPTS.P5_THIRST.key
+        ) {
+          loadedState.thirst_choice = sVal?.value || sVal?.choice
+        } else if (
+          r.prompt_id === AYV_C1_PROMPTS.P5_DRINK_TEMP.id ||
+          pKey === AYV_C1_PROMPTS.P5_DRINK_TEMP.key
+        ) {
+          loadedState.drink_temperature_choice = sVal?.value || sVal?.choice
+        } else if (
+          r.prompt_id === AYV_C1_PROMPTS.P5_SWEAT.id ||
+          pKey === AYV_C1_PROMPTS.P5_SWEAT.key
+        ) {
+          loadedState.sweat_choice = sVal?.value || sVal?.choice
+        }
+      }
+
+      setChapterState(loadedState)
+    } catch (err) {
+      console.error('Erro ao carregar respostas do Capítulo 1:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     loadResponses()
-
-    return () => {
-      isMounted = false
-    }
   }, [enrollmentId, experienceId])
 
-  const isCompleted = enrollmentExp?.progress_status === 'completed'
+  // Derivação canônica explícita do Capítulo 1 — NUNCA usa enrollmentExp.progress_status
+  const derived = deriveChapter1Status(rawResponses)
+  const isCompleted = derived.status === 'completed'
+  const chapter1Status: AyurvedaChapter1Status = derived.status
+  const chapter1Progress = derived.progress
+
+  // Retomada usa current_step_order salvo de enrollmentExp (ou 1 como default)
   const currentStepNum = enrollmentExp?.current_step_order || 1
 
   // Salvar Tela 1
@@ -577,6 +579,54 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   const handleCompleteChapter1 = async () => {
     setSaving(true)
     try {
+      const nowIso = new Date().toISOString()
+
+      // 1. Gravar registro canônico explícito de conclusão do Capítulo 1
+      const completionResp = await experienceResponseService.saveResponse({
+        enrollmentId,
+        experienceId,
+        promptId: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+        respondentUserId,
+        responseType: 'ChapterCompletion' as any,
+        promptVersion: 1,
+        promptKey: AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
+        canonicalPromptId: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+        stepOrder: 5,
+        accessClass: 'shared_care',
+        changeReason: 'Conclusão canônica do Capítulo 1 de Ayurveda',
+        structuredValue: {
+          completed: true,
+          completed_at: nowIso,
+          chapter_id: 'capitulo-1-estrutura-caracteristicas',
+          experience_version: AYURVEDA_EXPERIENCE_VERSION,
+          step_order: 5,
+          metadata: {
+            prompt_key: AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
+            canonical_prompt_id: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+            completed: true,
+            completed_at: nowIso,
+            chapter_id: 'capitulo-1-estrutura-caracteristicas',
+            experience_version: AYURVEDA_EXPERIENCE_VERSION,
+          },
+        },
+      })
+
+      // Atualiza lista local de respostas com a de conclusão canônica
+      setRawResponses((prev) => {
+        const existingIdx = prev.findIndex(
+          (r) =>
+            r.prompt_id === AYV_C1_PROMPTS.CHAPTER_COMPLETION.id ||
+            (r as any).prompt_key === AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
+        )
+        if (existingIdx >= 0) {
+          const updated = [...prev]
+          updated[existingIdx] = completionResp
+          return updated
+        }
+        return [...prev, completionResp]
+      })
+
+      // 2. Preserva atualização de progresso de etapa no enrollmentExp
       if (enrollmentExp) {
         const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
           progressStatus: 'completed',
@@ -634,9 +684,29 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 1. Hub dos 4 Capítulos */}
       {stage === 'hub' && (
         <AyurvedaChaptersHub
-          onStartChapter1={() => setStage('opening')}
+          onStartChapter1={() => {
+            if (isCompleted) {
+              // Modo somente-leitura direto com banner e comando único "Voltar ao encerramento"
+              handleReviewResponses()
+            } else if (chapter1Status === 'in_progress' && currentStepNum > 1) {
+              // Retoma etapa salva
+              const stageMap: Record<number, Chapter1Stage> = {
+                1: 'step1',
+                2: 'step2',
+                3: 'step3',
+                4: 'step4',
+                5: 'step5',
+              }
+              setStage(stageMap[currentStepNum] || 'step1')
+            } else {
+              setStage('opening')
+            }
+          }}
           onOpenCustomization={onOpenAvatarCustomization}
+          onCorrectChapter1={handleStartCorrection}
           isChapter1Completed={isCompleted}
+          chapter1Status={chapter1Status}
+          chapter1Progress={chapter1Progress}
           chapter1StepOrder={currentStepNum}
           avatarDeferred={avatarDeferred}
           onClose={onClose}

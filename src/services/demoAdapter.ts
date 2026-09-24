@@ -298,6 +298,84 @@ class DemoAdapter {
     return store
   }
 
+  /**
+   * Limpeza idempotente e não-destrutiva do falso status de conclusão do Capítulo 1 no demo.
+   * Se existir registro genérico `completed` para Corpo & Fisiologia no demo sem respostas canônicas
+   * `ayv_c1_*` nem registro canônico de conclusão, reverte progress_status para `not_started`
+   * (ou `in_progress` se houver stepOrder > 1).
+   *
+   * PRESERVAÇÕES RÍGIDAS:
+   * - Preserva avatar (status, apresentação, tom de pele, cabelo, etc.)
+   * - Preserva pré-consulta
+   * - Preserva Mente & Emoções e Regulação de Respostas
+   * - Preserva respostas antigas/legadas (p-07b-*)
+   * - Preserva progresso legado dos 15 momentos
+   * - Preserva demais dimensões, mensagens, sessões, anotações, planos, aceitações e mapas
+   * - NÃO apaga conclusão canônica verdadeira
+   * - Idempotente: rodar duas vezes seguidas resulta no mesmo estado.
+   */
+  public sanitizeFalseAyurvedaChapter1Completion(store: DemoStateStore): DemoStateStore {
+    if (!store || !store.enrollmentExperienceProgress) return store
+
+    const corpoKeys = [
+      `${DEMO_ENROLLMENT_ID}:exp-corpo-fisiologia-07b`,
+      `${DEMO_ENROLLMENT_ID}:corpo_fisiologia`,
+      `${DEMO_ENROLLMENT_ID}:corpo_fisiologia_cer`,
+    ]
+
+    // Respostas canônicas ayv_c1_* ativas neste enrollment
+    const allResponses = Array.isArray(store.experienceResponses) ? store.experienceResponses : []
+    const canonicalAyvResponses = allResponses.filter((r) => {
+      if (!r || r.enrollment_id !== DEMO_ENROLLMENT_ID) return false
+      const pId = (r as any).prompt_id || (r as any).canonical_prompt_id
+      const sVal = (r as any).structured_value
+      const pKey = (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+      return (
+        (typeof pId === 'string' && pId.startsWith('ayv_c1_')) ||
+        (typeof pKey === 'string' && pKey.startsWith('ayv_c1_'))
+      )
+    })
+
+    const hasTrueCanonicalCompletion = canonicalAyvResponses.some((r) => {
+      const pId = (r as any).prompt_id || (r as any).canonical_prompt_id
+      const sVal = (r as any).structured_value
+      const pKey = (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+      const isCompletionPrompt =
+        pId === 'ayv_c1_chapter1_completion' || pKey === 'ayv_c1_chapter1_completion'
+      const isCompletedVal =
+        sVal?.completed === true || sVal?.value?.completed === true || sVal?.status === 'completed'
+      const completedAt =
+        sVal?.completed_at || sVal?.value?.completed_at || (r as any).updated || (r as any).created
+      return Boolean(isCompletionPrompt && isCompletedVal && completedAt)
+    })
+
+    // Se possui conclusão canônica verdadeira comprovada, não há falso estado
+    if (hasTrueCanonicalCompletion && canonicalAyvResponses.length > 1) {
+      return store
+    }
+
+    // Se NÃO possui respostas canônicas ayv_c1_* (ou zero conclusão canônica),
+    // qualquer status 'completed' do Capítulo 1 é falso e decorrente de seed/legado
+    for (const key of corpoKeys) {
+      const prog = store.enrollmentExperienceProgress[key]
+      if (prog && (prog.progress_status === 'completed' || prog.release_status === 'completed')) {
+        // Se há respostas canônicas parciais sem conclusão canônica -> in_progress
+        // Se zero respostas canônicas ayv_c1_* -> not_started
+        if (canonicalAyvResponses.length > 0) {
+          prog.progress_status = 'in_progress'
+          prog.release_status = 'in_progress'
+        } else {
+          prog.progress_status = 'not_started'
+          prog.release_status = 'available'
+          prog.current_step_order = 1
+        }
+        delete prog.completed_at
+      }
+    }
+
+    return store
+  }
+
   private loadState(): DemoStateStore {
     try {
       // Remoção explícita dos caches legados para evitar contaminação por sementes antigas
@@ -308,8 +386,9 @@ class DemoAdapter {
       if (raw) {
         const parsed: DemoStateStore = JSON.parse(raw)
         const sanitized = this.sanitizeVisibleDemoStore(parsed)
-        const migrated = this.migrateIncompatibleMenteEmocoes(sanitized)
-        return migrated
+        const migratedMente = this.migrateIncompatibleMenteEmocoes(sanitized)
+        const sanitizedAyv = this.sanitizeFalseAyurvedaChapter1Completion(migratedMente)
+        return sanitizedAyv
       }
     } catch (e) {
       console.warn('Falha ao restaurar estado de demonstração:', e)
@@ -550,6 +629,7 @@ class DemoAdapter {
     this.isDemoEnabled = true
     this.state.activePersona = persona
     this.migrateIncompatibleMenteEmocoes(this.state)
+    this.sanitizeFalseAyurvedaChapter1Completion(this.state)
     this.saveState()
   }
 

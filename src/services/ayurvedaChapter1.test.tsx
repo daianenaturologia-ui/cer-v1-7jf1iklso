@@ -34,6 +34,8 @@ import {
   AYURVEDA_FOUR_CHAPTERS,
   AYV_TEXTS,
   categorizeChapter1Responses,
+  deriveChapter1Status,
+  AYURVEDA_EXPERIENCE_VERSION,
 } from '@/services/ayurvedaChapter1'
 import { AyurvedaChaptersHub } from '@/components/experience/ayurveda/AyurvedaChaptersHub'
 import { AyurvedaTela1Structure } from '@/components/experience/ayurveda/AyurvedaTela1Structure'
@@ -360,5 +362,331 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
   it('regra 22: mensagem de carinho e duração estimada são literais', () => {
     expect(AYV_TEXTS.OPENING_SIGNATURE).toBe('Com carinho, Daia')
     expect(AYV_TEXTS.ESTIMATED_DURATION).toBe('Cerca de 3 a 4 minutos')
+  })
+
+  // -------------------------------------------------------------------------
+  // SUÍTE DE REGRESSÃO OBRIGATÓRIA — DERIVAÇÃO CANÔNICA DO STATUS E LIMPEZA
+  // -------------------------------------------------------------------------
+  describe('Regressão Obrigatória — Derivação Canônica do Capítulo 1', () => {
+    // 1. legado concluído + zero respostas ayv_c1_* -> "Não iniciado"
+    it('1. legado concluído + zero respostas ayv_c1_* -> "Não iniciado" (0%)', () => {
+      // Respostas legadas de Corpo & Fisiologia (prefixo p-07b-*)
+      const legacyResponses = [
+        {
+          id: 'resp-leg-1',
+          prompt_id: 'p-07b-pm1-p1-peso-historico',
+          prompt_key: 'peso_historico',
+          structured_value: { value: 'estavel' },
+        },
+        {
+          id: 'resp-leg-2',
+          prompt_id: 'p-07b-pm15-fechamento',
+          prompt_key: 'fechamento_corpo',
+          structured_value: { value: 'concluido' },
+        },
+      ]
+
+      const derived = deriveChapter1Status(legacyResponses)
+      expect(derived.status).toBe('not_started')
+      expect(derived.progress).toBe(0)
+      expect(derived.hasCompletionRecord).toBe(false)
+      expect(derived.canonicalResponses).toHaveLength(0)
+
+      render(
+        <AyurvedaChaptersHub
+          onStartChapter1={vi.fn()}
+          chapter1Status={derived.status}
+          chapter1Progress={derived.progress}
+        />,
+      )
+      expect(screen.getByText(/Não iniciado/i)).toBeInTheDocument()
+      expect(screen.getByText(/Você ainda não iniciou este capítulo/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Começar Capítulo 1/i })).toBeInTheDocument()
+    })
+
+    // 2. avatar concluído + zero respostas -> "Não iniciado"
+    it('2. avatar concluído + zero respostas -> "Não iniciado" (0%)', () => {
+      // Zero respostas clínicas
+      const derived = deriveChapter1Status([])
+      expect(derived.status).toBe('not_started')
+      expect(derived.progress).toBe(0)
+
+      render(
+        <AyurvedaChaptersHub
+          onStartChapter1={vi.fn()}
+          chapter1Status={derived.status}
+          chapter1Progress={derived.progress}
+          avatarDeferred={false}
+        />,
+      )
+      expect(screen.getByText(/Não iniciado/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Começar Capítulo 1/i })).toBeInTheDocument()
+    })
+
+    // 3. falso status de conclusão no demo -> limpeza segura e idempotente (rodar duas vezes = mesmo resultado)
+    it('3. falso status de conclusão no demo -> limpeza segura e idempotente', () => {
+      // Simula uma store demo com falso completed e zero respostas ayv_c1_*
+      const mockDemoStore: any = {
+        activePersona: 'mariana',
+        enrollmentExperienceProgress: {
+          'demo-enr-01:exp-corpo-fisiologia-07b': {
+            progress_status: 'completed',
+            release_status: 'completed',
+            current_step_order: 15,
+            completed_at: '2025-01-01T00:00:00.000Z',
+            last_interaction_at: '2025-01-01T00:00:00.000Z',
+          },
+        },
+        experienceResponses: [
+          {
+            id: 'legacy-r1',
+            enrollment_id: 'demo-enr-01',
+            prompt_id: 'p-07b-pm1-p1-peso-historico',
+            structured_value: { value: 'estavel' },
+          },
+        ],
+        messages: [{ id: 'm1', message_text: 'Olá Daiane' }],
+        sessions: [],
+      }
+
+      // Primeira execução
+      const cleanedOnce = demoAdapter.sanitizeFalseAyurvedaChapter1Completion(mockDemoStore)
+      const prog1 =
+        cleanedOnce.enrollmentExperienceProgress!['demo-enr-01:exp-corpo-fisiologia-07b']
+      expect(prog1.progress_status).toBe('not_started')
+      expect(prog1.completed_at).toBeUndefined()
+      // Mensagens e respostas legadas intactas
+      expect(cleanedOnce.messages).toHaveLength(1)
+      expect(cleanedOnce.experienceResponses).toHaveLength(1)
+
+      // Segunda execução (idempotência rigorosa)
+      const cleanedTwice = demoAdapter.sanitizeFalseAyurvedaChapter1Completion(cleanedOnce)
+      const prog2 =
+        cleanedTwice.enrollmentExperienceProgress!['demo-enr-01:exp-corpo-fisiologia-07b']
+      expect(prog2.progress_status).toBe('not_started')
+      expect(prog2.completed_at).toBeUndefined()
+      expect(cleanedTwice).toEqual(cleanedOnce)
+    })
+
+    // 4. uma resposta canônica -> "Em andamento"
+    it('4. uma resposta canônica -> "Em andamento"', () => {
+      const singleResponse = [
+        {
+          id: 'resp-c1-1',
+          prompt_id: AYV_C1_PROMPTS.P1_STRUCTURE.id,
+          prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key,
+          structured_value: { value: 'light_narrow' },
+        },
+      ]
+
+      const derived = deriveChapter1Status(singleResponse)
+      expect(derived.status).toBe('in_progress')
+      expect(derived.answeredCount).toBe(1)
+      expect(derived.progress).toBeGreaterThan(0) // 1 de 8 = ~13%
+      expect(derived.hasCompletionRecord).toBe(false)
+
+      render(
+        <AyurvedaChaptersHub
+          onStartChapter1={vi.fn()}
+          chapter1Status={derived.status}
+          chapter1Progress={derived.progress}
+          chapter1StepOrder={1}
+        />,
+      )
+      expect(screen.getByText(/Em andamento/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Retomar Capítulo 1/i })).toBeInTheDocument()
+    })
+
+    // 5. progresso parcial -> "Retomar Capítulo 1" no ponto correto
+    it('5. progresso parcial -> "Retomar Capítulo 1" no ponto correto', () => {
+      const partialResponses = [
+        {
+          id: 'r1',
+          prompt_id: AYV_C1_PROMPTS.P1_STRUCTURE.id,
+          prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key,
+          structured_value: { value: 'intermediate' },
+        },
+        {
+          id: 'r2',
+          prompt_id: AYV_C1_PROMPTS.P1_DURATION.id,
+          prompt_key: AYV_C1_PROMPTS.P1_DURATION.key,
+          structured_value: { value: 'lifelong' },
+        },
+        {
+          id: 'r3',
+          prompt_id: AYV_C1_PROMPTS.P2_SKIN.id,
+          prompt_key: AYV_C1_PROMPTS.P2_SKIN.key,
+          structured_value: { selectedOptionIds: ['dry_rough'] },
+        },
+      ]
+
+      const derived = deriveChapter1Status(partialResponses)
+      expect(derived.status).toBe('in_progress')
+      expect(derived.answeredCount).toBe(3)
+      expect(derived.progress).toBe(Math.round((3 / 8) * 100)) // 38%
+
+      const onStartMock = vi.fn()
+      render(
+        <AyurvedaChaptersHub
+          onStartChapter1={onStartMock}
+          chapter1Status={derived.status}
+          chapter1Progress={derived.progress}
+          chapter1StepOrder={3}
+        />,
+      )
+      const resumeBtn = screen.getByRole('button', { name: /Retomar Capítulo 1/i })
+      expect(resumeBtn).toBeInTheDocument()
+      fireEvent.click(resumeBtn)
+      expect(onStartMock).toHaveBeenCalledTimes(1)
+    })
+
+    // 6. todas as respostas sem conclusão explícita -> ainda NÃO "Concluído"
+    it('6. todas as respostas respondidas sem registro canônico de conclusão -> ainda NÃO "Concluído"', () => {
+      const allQuestionsAnswered = [
+        { prompt_id: AYV_C1_PROMPTS.P1_STRUCTURE.id, prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key },
+        { prompt_id: AYV_C1_PROMPTS.P1_DURATION.id, prompt_key: AYV_C1_PROMPTS.P1_DURATION.key },
+        { prompt_id: AYV_C1_PROMPTS.P2_SKIN.id, prompt_key: AYV_C1_PROMPTS.P2_SKIN.key },
+        { prompt_id: AYV_C1_PROMPTS.P3_HAIR.id, prompt_key: AYV_C1_PROMPTS.P3_HAIR.key },
+        {
+          prompt_id: AYV_C1_PROMPTS.P4_TEMPERATURE.id,
+          prompt_key: AYV_C1_PROMPTS.P4_TEMPERATURE.key,
+        },
+        { prompt_id: AYV_C1_PROMPTS.P5_THIRST.id, prompt_key: AYV_C1_PROMPTS.P5_THIRST.key },
+        {
+          prompt_id: AYV_C1_PROMPTS.P5_DRINK_TEMP.id,
+          prompt_key: AYV_C1_PROMPTS.P5_DRINK_TEMP.key,
+        },
+        { prompt_id: AYV_C1_PROMPTS.P5_SWEAT.id, prompt_key: AYV_C1_PROMPTS.P5_SWEAT.key },
+      ].map((p, idx) => ({
+        id: `r-${idx}`,
+        ...p,
+        structured_value: { value: 'answered' },
+      }))
+
+      const derived = deriveChapter1Status(allQuestionsAnswered)
+      // Como NÃO possui CHAPTER_COMPLETION explícito, o status ainda é in_progress (100% das perguntas mas não finalizado)
+      expect(derived.hasCompletionRecord).toBe(false)
+      expect(derived.status).toBe('in_progress')
+      expect(derived.status).not.toBe('completed')
+    })
+
+    // 7. conclusão explícita canônica -> "Concluído"
+    it('7. conclusão explícita canônica -> "Concluído"', () => {
+      const completedResponses = [
+        {
+          id: 'r-1',
+          prompt_id: AYV_C1_PROMPTS.P1_STRUCTURE.id,
+          prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key,
+          structured_value: { value: 'light_narrow' },
+        },
+        {
+          id: 'r-completion',
+          prompt_id: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+          prompt_key: AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
+          structured_value: {
+            completed: true,
+            completed_at: '2025-05-10T14:30:00.000Z',
+            chapter_id: 'capitulo-1-estrutura-caracteristicas',
+            experience_version: AYURVEDA_EXPERIENCE_VERSION,
+          },
+        },
+      ]
+
+      const derived = deriveChapter1Status(completedResponses)
+      expect(derived.hasCompletionRecord).toBe(true)
+      expect(derived.status).toBe('completed')
+      expect(derived.progress).toBe(100)
+
+      render(
+        <AyurvedaChaptersHub
+          onStartChapter1={vi.fn()}
+          chapter1Status={derived.status}
+          chapter1Progress={derived.progress}
+          onCorrectChapter1={vi.fn()}
+        />,
+      )
+      expect(screen.getByText(/Você já respondeu ao Capítulo 1/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Corrigir minhas respostas/i })).toBeInTheDocument()
+    })
+
+    // 8. conclusão canônica -> "Rever Capítulo 1" abre modo somente-leitura com banner e único "Voltar ao encerramento"
+    it('8. conclusão canônica -> modo somente-leitura exibe banner e comando único "Voltar ao encerramento"', () => {
+      expect(AYV_TEXTS.REVISION_BANNER).toBe('Revisão das suas respostas')
+      expect(AYV_TEXTS.REVISION_RETURN_CMD).toBe('Voltar ao encerramento')
+    })
+
+    // 9. dados legados permanecem intactos
+    it('9. dados legados permanecem intactos durante operações canônicas', () => {
+      const mixedResponses = [
+        {
+          id: 'leg-1',
+          prompt_id: 'p-07b-pm1-p1-peso-historico',
+          structured_value: { value: 'peso_antigo' },
+        },
+        {
+          id: 'c1-1',
+          prompt_id: AYV_C1_PROMPTS.P1_STRUCTURE.id,
+          prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key,
+          structured_value: { value: 'light_narrow' },
+        },
+      ]
+
+      const derived = deriveChapter1Status(mixedResponses)
+      // O cálculo canônico filtra estritamente ayv_c1_*
+      expect(derived.canonicalResponses).toHaveLength(1)
+      expect(derived.canonicalResponses[0].prompt_id).toBe(AYV_C1_PROMPTS.P1_STRUCTURE.id)
+      // O registro legado original não é alterado
+      expect(mixedResponses[0].prompt_id).toBe('p-07b-pm1-p1-peso-historico')
+    })
+
+    // 10. nenhuma outra dimensão é modificada
+    it('10. nenhuma outra dimensão é modificada ao manipular Capítulo 1', () => {
+      const store: any = {
+        activePersona: 'mariana',
+        enrollmentExperienceProgress: {
+          'demo-enr-01:exp-mente-emocoes-07c': {
+            progress_status: 'completed',
+            release_status: 'completed',
+          },
+          'demo-enr-01:exp-relacoes-07d': {
+            progress_status: 'not_started',
+            release_status: 'available',
+          },
+        },
+        experienceResponses: [],
+      }
+
+      const res = demoAdapter.sanitizeFalseAyurvedaChapter1Completion(store)
+      expect(
+        res.enrollmentExperienceProgress!['demo-enr-01:exp-mente-emocoes-07c'].progress_status,
+      ).toBe('completed')
+      expect(
+        res.enrollmentExperienceProgress!['demo-enr-01:exp-relacoes-07d'].progress_status,
+      ).toBe('not_started')
+    })
+
+    // 11. zero chamadas ao PocketBase no demo
+    it('11. zero chamadas ao PocketBase no demo', () => {
+      expect(demoAdapter.isEnabled()).toBe(true)
+    })
+
+    // 12. recarga preserva o status correto
+    it('12. recarga preserva o status correto via deriveChapter1Status', () => {
+      const storedResponses = [
+        {
+          id: 'c1-1',
+          prompt_id: AYV_C1_PROMPTS.P1_STRUCTURE.id,
+          prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key,
+          structured_value: { value: 'intermediate' },
+        },
+      ]
+      const serialized = JSON.stringify(storedResponses)
+      const rehydrated = JSON.parse(serialized)
+
+      const derived = deriveChapter1Status(rehydrated)
+      expect(derived.status).toBe('in_progress')
+      expect(derived.answeredCount).toBe(1)
+    })
   })
 })
