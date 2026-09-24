@@ -34,6 +34,157 @@ export interface AyurvedaFigureAssetManifest {
   prohibitions: string[]
 }
 
+/**
+ * Manifest visual do Microlote Visual Final do Capítulo 1 (Pele e Cabelo)
+ * 12 cards clínicos recortados deterministicamente em grade 3x2 (356x356) a partir das pranchas canônicas.
+ */
+export interface AyurvedaClinicalCardAsset {
+  id: string
+  optionId: string
+  category: 'skin' | 'hair'
+  file: string
+  width: number
+  height: number
+  format: 'png'
+  description: string
+}
+
+export const AYURVEDA_CLINICAL_CARDS_MANIFEST: AyurvedaClinicalCardAsset[] = [
+  // 6 cards de pele (3 colunas x 2 linhas de 356x356)
+  {
+    id: 'ayv_card_skin_dry_rough',
+    optionId: 'dry_rough',
+    category: 'skin',
+    file: '/assets/ayurveda/ayv-skin-dry_rough.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Pele seca, áspera ou repuxando com facilidade',
+  },
+  {
+    id: 'ayv_card_skin_thin_reactive',
+    optionId: 'thin_reactive',
+    category: 'skin',
+    file: '/assets/ayurveda/ayv-skin-thin_reactive.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Pele fina ou delicada, reage facilmente ao ambiente',
+  },
+  {
+    id: 'ayv_card_skin_warm_sensitive',
+    optionId: 'warm_sensitive',
+    category: 'skin',
+    file: '/assets/ayurveda/ayv-skin-warm_sensitive.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Pele quente, sensível ou avermelha com facilidade',
+  },
+  {
+    id: 'ayv_card_skin_balanced',
+    optionId: 'balanced',
+    category: 'skin',
+    file: '/assets/ayurveda/ayv-skin-balanced.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Pele equilibrada em textura e hidratação',
+  },
+  {
+    id: 'ayv_card_skin_soft_oily',
+    optionId: 'soft_oily',
+    category: 'skin',
+    file: '/assets/ayurveda/ayv-skin-soft_oily.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Pele macia, úmida ou naturalmente oleosa',
+  },
+  {
+    id: 'ayv_card_skin_varies_region',
+    optionId: 'varies_region',
+    category: 'skin',
+    file: '/assets/ayurveda/ayv-skin-varies_region.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Pele com comportamento variado conforme região ou estação',
+  },
+
+  // 6 cards de cabelo (3 colunas x 2 linhas de 356x356)
+  {
+    id: 'ayv_card_hair_fine_delicate',
+    optionId: 'fine_delicate',
+    category: 'hair',
+    file: '/assets/ayurveda/ayv-hair-fine_delicate.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Fios finos ou delicados',
+  },
+  {
+    id: 'ayv_card_hair_dry_tangled',
+    optionId: 'dry_tangled',
+    category: 'hair',
+    file: '/assets/ayurveda/ayv-hair-dry_tangled.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Fios tendem a ressecar, embaraçar ou quebrar com facilidade',
+  },
+  {
+    id: 'ayv_card_hair_balanced',
+    optionId: 'balanced',
+    category: 'hair',
+    file: '/assets/ayurveda/ayv-hair-balanced.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Fios intermediários, comportamento relativamente equilibrado',
+  },
+  {
+    id: 'ayv_card_hair_thick_dense',
+    optionId: 'thick_dense',
+    category: 'hair',
+    file: '/assets/ayurveda/ayv-hair-thick_dense.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Fios grossos, densos ou pesados',
+  },
+  {
+    id: 'ayv_card_hair_oily_roots',
+    optionId: 'oily_roots',
+    category: 'hair',
+    file: '/assets/ayurveda/ayv-hair-oily_roots.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Raiz naturalmente oleosa ou cabelo que pesa com facilidade',
+  },
+  {
+    id: 'ayv_card_hair_mixed_varies',
+    optionId: 'mixed_varies',
+    category: 'hair',
+    file: '/assets/ayurveda/ayv-hair-mixed_varies.png',
+    width: 356,
+    height: 356,
+    format: 'png',
+    description: 'Fios misturam características ou variam bastante',
+  },
+]
+
+export function getAyurvedaClinicalCardImage(
+  category: 'skin' | 'hair',
+  optionId: string,
+): string | undefined {
+  const card = AYURVEDA_CLINICAL_CARDS_MANIFEST.find(
+    (c) => c.category === category && c.optionId === optionId,
+  )
+  return card?.file
+}
+
 export const AYURVEDA_LOTE_0A_MANIFEST: AyurvedaFigureAssetManifest = {
   manifest_version: '1.0.0',
   project: 'CER Ayurveda',

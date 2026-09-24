@@ -747,16 +747,20 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             disabled={isReviewOnly}
           />
           <div className="max-w-2xl mx-auto flex items-center justify-between pt-4 border-t border-border/40">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => (isReviewOnly ? setStage('closing') : setStage('opening'))}
-              className="text-xs h-9 gap-1.5"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>{isReviewOnly ? 'Voltar ao encerramento' : 'Abertura'}</span>
-            </Button>
+            {isReviewOnly ? (
+              <div />
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setStage('opening')}
+                className="text-xs h-9 gap-1.5"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Abertura</span>
+              </Button>
+            )}
             <Button
               type="button"
               size="sm"

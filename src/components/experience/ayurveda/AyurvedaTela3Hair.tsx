@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle2, Info } from 'lucide-react'
 import { AYV_TELA3_HAIR_OPTIONS } from '@/services/ayurvedaChapter1'
+import { getAyurvedaClinicalCardImage } from '@/services/ayurvedaAssetsRegistry'
 
 export interface AyurvedaTela3HairProps {
   hairChoices?: string[]
@@ -76,6 +77,8 @@ export const AyurvedaTela3Hair: React.FC<AyurvedaTela3HairProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
         {AYV_TELA3_HAIR_OPTIONS.map((opt) => {
           const isSelected = selected.includes(opt.id)
+          const cardImg = getAyurvedaClinicalCardImage('hair', opt.id)
+
           return (
             <button
               key={opt.id}
@@ -87,30 +90,42 @@ export const AyurvedaTela3Hair: React.FC<AyurvedaTela3HairProps> = ({
                 if (disabled) return
                 handleToggle(opt.id)
               }}
-              className={`p-3.5 rounded-xl border text-left text-xs transition-all flex items-start justify-between gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`p-3 rounded-xl border text-left text-xs transition-all flex flex-col justify-between gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 disabled ? 'cursor-default select-text opacity-100' : 'cursor-pointer'
               } ${
                 isSelected
                   ? 'border-primary ring-2 ring-primary/30 bg-primary/5 font-medium text-foreground shadow-xs'
                   : disabled
-                    ? 'border-border/60 text-muted-foreground bg-card'
+                    ? 'border-border/60 text-muted-foreground bg-card opacity-100'
                     : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
               }`}
             >
-              <div className="space-y-0.5">
-                <span className="block text-foreground leading-relaxed">{opt.label}</span>
-                {opt.exclusive && (
-                  <span className="text-[10px] text-muted-foreground italic block">
-                    (Opção exclusiva)
-                  </span>
-                )}
-              </div>
-              <div className="shrink-0 mt-0.5">
-                {isSelected ? (
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                ) : (
-                  <div className="w-4 h-4 rounded-full border border-border/80" />
-                )}
+              {cardImg && (
+                <div className="w-full aspect-square max-h-44 rounded-lg overflow-hidden bg-muted/20 flex items-center justify-center shrink-0 border border-border/40">
+                  <img
+                    src={cardImg}
+                    alt={opt.label}
+                    loading="lazy"
+                    className="w-full h-full object-cover opacity-100"
+                  />
+                </div>
+              )}
+              <div className="flex items-start justify-between gap-2 w-full flex-1">
+                <div className="space-y-0.5">
+                  <span className="block text-foreground leading-relaxed">{opt.label}</span>
+                  {opt.exclusive && (
+                    <span className="text-[10px] text-muted-foreground italic block">
+                      (Opção exclusiva)
+                    </span>
+                  )}
+                </div>
+                <div className="shrink-0 mt-0.5">
+                  {isSelected ? (
+                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border border-border/80 shrink-0" />
+                  )}
+                </div>
               </div>
             </button>
           )

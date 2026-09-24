@@ -2181,17 +2181,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       {/* Topo: Progresso Humanizado Sem Gamificação */}
       <div className="flex items-center justify-between border-b border-border/50 pb-4">
         <div className="flex items-center gap-3">
-          {isReviewOnly ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleReturnToClosingFromReview}
-              className="text-xs text-muted-foreground hover:text-foreground h-8 px-2 gap-1"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Voltar ao encerramento</span>
-            </Button>
-          ) : (
+          {!isReviewOnly && (
             <Button
               variant="ghost"
               size="sm"
@@ -2373,20 +2363,11 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           className="text-xs gap-1.5 h-9"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>{isReviewOnly && isFirstStep ? 'Voltar ao encerramento' : 'Voltar'}</span>
+          <span>{isReviewOnly && isFirstStep ? 'Início' : 'Voltar'}</span>
         </Button>
 
         <div className="flex items-center gap-2">
-          {isReviewOnly ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReturnToClosingFromReview}
-              className="text-xs h-9 px-3 text-muted-foreground hover:text-foreground"
-            >
-              Voltar ao encerramento
-            </Button>
-          ) : (
+          {!isReviewOnly && (
             <Button
               variant="ghost"
               size="sm"

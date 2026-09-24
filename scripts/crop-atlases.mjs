@@ -232,7 +232,111 @@ const CROPS = [
   { nameSuffix: 'masculino-amplo', x: 2048, y: 1536, w: 1024, h: 1536 },
 ]
 
+export const AYV_CLINICAL_CARDS_CROPS = {
+  skin: [
+    { id: 'dry_rough', fileName: 'ayv-skin-dry_rough.png', col: 0, row: 0 },
+    { id: 'thin_reactive', fileName: 'ayv-skin-thin_reactive.png', col: 1, row: 0 },
+    { id: 'warm_sensitive', fileName: 'ayv-skin-warm_sensitive.png', col: 2, row: 0 },
+    { id: 'balanced', fileName: 'ayv-skin-balanced.png', col: 0, row: 1 },
+    { id: 'soft_oily', fileName: 'ayv-skin-soft_oily.png', col: 1, row: 1 },
+    { id: 'varies_region', fileName: 'ayv-skin-varies_region.png', col: 2, row: 1 },
+  ],
+  hair: [
+    { id: 'fine_delicate', fileName: 'ayv-hair-fine_delicate.png', col: 0, row: 0 },
+    { id: 'dry_tangled', fileName: 'ayv-hair-dry_tangled.png', col: 1, row: 0 },
+    { id: 'balanced', fileName: 'ayv-hair-balanced.png', col: 2, row: 0 },
+    { id: 'thick_dense', fileName: 'ayv-hair-thick_dense.png', col: 0, row: 1 },
+    { id: 'oily_roots', fileName: 'ayv-hair-oily_roots.png', col: 1, row: 1 },
+    { id: 'mixed_varies', fileName: 'ayv-hair-mixed_varies.png', col: 2, row: 1 },
+  ],
+}
+
+export function cropClinicalBoards() {
+  const peleTxtPath = path.resolve('src/assets/cer-ayv-prancha-pele.base64-39794.txt')
+  const cabeloTxtPath = path.resolve('src/assets/cer-ayv-prancha-cabelo.base64-27c06.txt')
+
+  if (!fs.existsSync(peleTxtPath) || !fs.existsSync(cabeloTxtPath)) {
+    console.warn('[crop-atlases] Pranchas base64 não encontradas, pulando cropClinicalBoards')
+    return []
+  }
+
+  const peleBase64 = fs.readFileSync(peleTxtPath, 'utf8').replace(/\s+/g, '')
+  const peleBuf = Buffer.from(peleBase64, 'base64')
+  const peleDecoded = decodePng(peleBuf)
+
+  const cabeloBase64 = fs.readFileSync(cabeloTxtPath, 'utf8').replace(/\s+/g, '')
+  const cabeloBuf = Buffer.from(cabeloBase64, 'base64')
+  const cabeloDecoded = decodePng(cabeloBuf)
+
+  const cellW = 356
+  const cellH = 356
+
+  const targetDir = path.resolve('public/assets/ayurveda')
+  fs.mkdirSync(targetDir, { recursive: true })
+
+  const results = []
+
+  // Recorte 3x2 pele (6 cards)
+  for (const item of AYV_CLINICAL_CARDS_CROPS.skin) {
+    const cropX = item.col * cellW
+    const cropY = item.row * cellH
+    const croppedBuffer = cropRgba(
+      peleDecoded.rawRgba,
+      peleDecoded.width,
+      cropX,
+      cropY,
+      cellW,
+      cellH,
+    )
+    const pngBuffer = encodePng(cellW, cellH, croppedBuffer)
+    const outPath = path.join(targetDir, item.fileName)
+    fs.writeFileSync(outPath, pngBuffer)
+    const sha256 = crypto.createHash('sha256').update(pngBuffer).digest('hex')
+    results.push({
+      id: item.id,
+      category: 'skin',
+      fileName: item.fileName,
+      width: cellW,
+      height: cellH,
+      bytes: pngBuffer.length,
+      sha256,
+    })
+    console.log(`[crop-atlases] Wrote clinical skin card ${item.fileName} (${cellW}x${cellH})`)
+  }
+
+  // Recorte 3x2 cabelo (6 cards)
+  for (const item of AYV_CLINICAL_CARDS_CROPS.hair) {
+    const cropX = item.col * cellW
+    const cropY = item.row * cellH
+    const croppedBuffer = cropRgba(
+      cabeloDecoded.rawRgba,
+      cabeloDecoded.width,
+      cropX,
+      cropY,
+      cellW,
+      cellH,
+    )
+    const pngBuffer = encodePng(cellW, cellH, croppedBuffer)
+    const outPath = path.join(targetDir, item.fileName)
+    fs.writeFileSync(outPath, pngBuffer)
+    const sha256 = crypto.createHash('sha256').update(pngBuffer).digest('hex')
+    results.push({
+      id: item.id,
+      category: 'hair',
+      fileName: item.fileName,
+      width: cellW,
+      height: cellH,
+      bytes: pngBuffer.length,
+      sha256,
+    })
+    console.log(`[crop-atlases] Wrote clinical hair card ${item.fileName} (${cellW}x${cellH})`)
+  }
+
+  return results
+}
+
 export function cropAllAtlases() {
+  cropClinicalBoards()
   const skinAtlasPath = path.resolve('src/assets/ayv-avatar-skin-masks-atlas-v1-c44fc.png')
   const hairAtlasPath = path.resolve('src/assets/ayv-avatar-hair-masks-atlas-v1-94361.png')
 
