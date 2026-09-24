@@ -8,14 +8,13 @@ import { validateAssets } from '../../lote_0a_kit/validate-assets.mjs'
 
 describe('Lote 0A — Decodificação e Validação dos 6 Assets Oficiais', () => {
   it('Etapa 0: Decodifica e valida os hashes e dimensões exatas de PRANCHA-PELE e PRANCHA-CABELO', () => {
-    const peleTxtPath = path.resolve('src/assets/cer-ayv-prancha-pele.base64-39794.txt')
-    const cabeloTxtPath = path.resolve('src/assets/cer-ayv-prancha-cabelo.base64-27c06.txt')
+    const pelePngPath = path.resolve('src/assets/cer-ayv-prancha-pele.png')
+    const cabeloPngPath = path.resolve('src/assets/cer-ayv-prancha-cabelo.png')
 
-    expect(fs.existsSync(peleTxtPath)).toBe(true)
-    expect(fs.existsSync(cabeloTxtPath)).toBe(true)
+    expect(fs.existsSync(pelePngPath)).toBe(true)
+    expect(fs.existsSync(cabeloPngPath)).toBe(true)
 
-    const peleBase64 = fs.readFileSync(peleTxtPath, 'utf8').replace(/\s+/g, '')
-    const peleBytes = Buffer.from(peleBase64, 'base64')
+    const peleBytes = fs.readFileSync(pelePngPath)
     const peleHash = createHash('sha256').update(peleBytes).digest('hex')
     const peleW = peleBytes.readUInt32BE(16)
     const peleH = peleBytes.readUInt32BE(20)
@@ -24,8 +23,7 @@ describe('Lote 0A — Decodificação e Validação dos 6 Assets Oficiais', () =
     expect(peleW).toBe(1068)
     expect(peleH).toBe(712)
 
-    const cabeloBase64 = fs.readFileSync(cabeloTxtPath, 'utf8').replace(/\s+/g, '')
-    const cabeloBytes = Buffer.from(cabeloBase64, 'base64')
+    const cabeloBytes = fs.readFileSync(cabeloPngPath)
     const cabeloHash = createHash('sha256').update(cabeloBytes).digest('hex')
     const cabeloW = cabeloBytes.readUInt32BE(16)
     const cabeloH = cabeloBytes.readUInt32BE(20)
