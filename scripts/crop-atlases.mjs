@@ -60,8 +60,16 @@ function decodePng(buf) {
       compression = chunkData.readUInt8(10)
       filter = chunkData.readUInt8(11)
       interlace = chunkData.readUInt8(12)
-      if (bitDepth !== 8 || colorType !== 6 || compression !== 0 || filter !== 0 || interlace !== 0) {
-        throw new Error(`Unsupported PNG: bitDepth=${bitDepth}, colorType=${colorType}, interlace=${interlace}`)
+      if (
+        bitDepth !== 8 ||
+        colorType !== 6 ||
+        compression !== 0 ||
+        filter !== 0 ||
+        interlace !== 0
+      ) {
+        throw new Error(
+          `Unsupported PNG: bitDepth=${bitDepth}, colorType=${colorType}, interlace=${interlace}`,
+        )
       }
     } else if (type === 'IDAT') {
       idatChunks.push(chunkData)
@@ -155,16 +163,10 @@ function encodePng(width, height, rawRgba) {
   ihdrData.writeUInt8(0, 11) // filter
   ihdrData.writeUInt8(0, 12) // interlace
 
-  const ihdrChunk = Buffer.concat([
-    Buffer.from('IHDR', 'ascii'),
-    ihdrData
-  ])
+  const ihdrChunk = Buffer.concat([Buffer.from('IHDR', 'ascii'), ihdrData])
   const ihdrCrc = crc32(ihdrChunk)
 
-  const idatChunk = Buffer.concat([
-    Buffer.from('IDAT', 'ascii'),
-    compressed
-  ])
+  const idatChunk = Buffer.concat([Buffer.from('IDAT', 'ascii'), compressed])
   const idatCrc = crc32(idatChunk)
 
   const iendChunk = Buffer.from('IEND', 'ascii')
@@ -257,8 +259,15 @@ export function cropAllAtlases() {
   // 1. Process skin masks
   for (const crop of CROPS) {
     const fileName = `ayv-${crop.nameSuffix}-skin-mask.png`
-    const croppedBuffer = cropRgba(skinDecoded.rawRgba, skinDecoded.width, crop.x, crop.y, crop.w, crop.h)
-    
+    const croppedBuffer = cropRgba(
+      skinDecoded.rawRgba,
+      skinDecoded.width,
+      crop.x,
+      crop.y,
+      crop.w,
+      crop.h,
+    )
+
     // Check if not empty (at least some non-zero alpha)
     let nonZeroAlpha = 0
     for (let i = 3; i < croppedBuffer.length; i += 4) {
@@ -277,16 +286,25 @@ export function cropAllAtlases() {
       height: crop.h,
       bytes: pngBuffer.length,
       nonZeroAlphaPixels: nonZeroAlpha,
-      sha256
+      sha256,
     })
-    console.log(`[crop-atlases] Wrote ${fileName}: ${crop.w}x${crop.h}, ${pngBuffer.length} bytes, ${nonZeroAlpha} non-zero alpha pixels`)
+    console.log(
+      `[crop-atlases] Wrote ${fileName}: ${crop.w}x${crop.h}, ${pngBuffer.length} bytes, ${nonZeroAlpha} non-zero alpha pixels`,
+    )
   }
 
   // 2. Process hair masks
   for (const crop of CROPS) {
     const fileName = `ayv-${crop.nameSuffix}-hair-mask.png`
-    const croppedBuffer = cropRgba(hairDecoded.rawRgba, hairDecoded.width, crop.x, crop.y, crop.w, crop.h)
-    
+    const croppedBuffer = cropRgba(
+      hairDecoded.rawRgba,
+      hairDecoded.width,
+      crop.x,
+      crop.y,
+      crop.w,
+      crop.h,
+    )
+
     let nonZeroAlpha = 0
     for (let i = 3; i < croppedBuffer.length; i += 4) {
       if (croppedBuffer[i] > 0) nonZeroAlpha++
@@ -304,9 +322,11 @@ export function cropAllAtlases() {
       height: crop.h,
       bytes: pngBuffer.length,
       nonZeroAlphaPixels: nonZeroAlpha,
-      sha256
+      sha256,
     })
-    console.log(`[crop-atlases] Wrote ${fileName}: ${crop.w}x${crop.h}, ${pngBuffer.length} bytes, ${nonZeroAlpha} non-zero alpha pixels`)
+    console.log(
+      `[crop-atlases] Wrote ${fileName}: ${crop.w}x${crop.h}, ${pngBuffer.length} bytes, ${nonZeroAlpha} non-zero alpha pixels`,
+    )
   }
 
   return results

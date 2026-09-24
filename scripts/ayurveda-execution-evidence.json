@@ -175,5 +175,115 @@
       "matchesKit": true
     }
   ],
-  "atlasVerification": "Skin: {\n  width: 3072,\n  height: 3072,\n  bitDepth: 8,\n  colorType: 6,\n  hasAlpha: true,\n  size: 105959\n}\nHair: {\n  width: 3072,\n  height: 3072,\n  bitDepth: 8,\n  colorType: 6,\n  hasAlpha: true,\n  size: 56348\n}"
+  "atlasVerification": "Skin: {\n  width: 3072,\n  height: 3072,\n  bitDepth: 8,\n  colorType: 6,\n  hasAlpha: true,\n  size: 105959\n}\nHair: {\n  width: 3072,\n  height: 3072,\n  bitDepth: 8,\n  colorType: 6,\n  hasAlpha: true,\n  size: 56348\n}",
+  "maskCropResults": [
+    {
+      "fileName": "ayv-feminino-leve-skin-mask.png",
+      "type": "skin",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 18009,
+      "nonZeroAlphaPixels": 58303,
+      "sha256": "a6686507a5e1142874ab386482b95cda303f1863c931a5ec9ca4a02f4e418d6d"
+    },
+    {
+      "fileName": "ayv-feminino-intermediario-skin-mask.png",
+      "type": "skin",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 20654,
+      "nonZeroAlphaPixels": 65858,
+      "sha256": "b654839ca6928f6d6386ab0dd4ec89bc52b491d1dfb61b0b9c53182212c5f3f1"
+    },
+    {
+      "fileName": "ayv-feminino-amplo-skin-mask.png",
+      "type": "skin",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 19453,
+      "nonZeroAlphaPixels": 77310,
+      "sha256": "b411ab1ca29249fe50a5ed5a19f41883f3657b5c58a638b9016043bab31dad7d"
+    },
+    {
+      "fileName": "ayv-masculino-leve-skin-mask.png",
+      "type": "skin",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 12317,
+      "nonZeroAlphaPixels": 62695,
+      "sha256": "fb7eed266cc8346ea43b4478a292703fdf46510c731f1aee2c4cba6f8349f1c0"
+    },
+    {
+      "fileName": "ayv-masculino-intermediario-skin-mask.png",
+      "type": "skin",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 17273,
+      "nonZeroAlphaPixels": 69562,
+      "sha256": "c8bcc658d22e06a9e98923e0f22388edaf03524e5126575b8a8df8bd41c5666b"
+    },
+    {
+      "fileName": "ayv-masculino-amplo-skin-mask.png",
+      "type": "skin",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 11027,
+      "nonZeroAlphaPixels": 70369,
+      "sha256": "1b8592b0d8e16cdfecbf630d7c39cfd6ce06d9a14e20d7d1581a2e8323dc51fc"
+    },
+    {
+      "fileName": "ayv-feminino-leve-hair-mask.png",
+      "type": "hair",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 9974,
+      "nonZeroAlphaPixels": 22190,
+      "sha256": "c5ec5790c7769362ba72a794221fb312c89cb17517ae47e0394fb24ff1f8fe1b"
+    },
+    {
+      "fileName": "ayv-feminino-intermediario-hair-mask.png",
+      "type": "hair",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 9782,
+      "nonZeroAlphaPixels": 22710,
+      "sha256": "869bc161f7a9b918443fa7a14f0ce5b4731c4c20a796a995b9690246c461d3c4"
+    },
+    {
+      "fileName": "ayv-feminino-amplo-hair-mask.png",
+      "type": "hair",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 9984,
+      "nonZeroAlphaPixels": 24592,
+      "sha256": "5face0e9a679695633951d5d6fd13f1e4ccc11455d89d93d06e3796ea1b8908c"
+    },
+    {
+      "fileName": "ayv-masculino-leve-hair-mask.png",
+      "type": "hair",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 7749,
+      "nonZeroAlphaPixels": 10940,
+      "sha256": "76c6946ac2d5fb0bf81f3b77a579d67559b9d66b4ff6d9e924ad844451933482"
+    },
+    {
+      "fileName": "ayv-masculino-intermediario-hair-mask.png",
+      "type": "hair",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 7859,
+      "nonZeroAlphaPixels": 11415,
+      "sha256": "dba71e06d7aa6d7eaf45524ec10d6595111f0254e6f2da4aeb7eea94f6971a22"
+    },
+    {
+      "fileName": "ayv-masculino-amplo-hair-mask.png",
+      "type": "hair",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 7759,
+      "nonZeroAlphaPixels": 11451,
+      "sha256": "ff5874795d28c465f67847411bfb4545d46787bf82bf470cd54141fb550623cd"
+    }
+  ]
 }
