@@ -80,13 +80,21 @@ export const AyurvedaTela5Habits: React.FC<AyurvedaTela5HabitsProps> = ({
               <button
                 key={opt.id}
                 type="button"
-                disabled={disabled}
+                aria-disabled={disabled ? 'true' : undefined}
                 aria-pressed={isSelected}
-                onClick={() => handleSelectThirst(opt.id)}
-                className={`p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                tabIndex={disabled ? -1 : 0}
+                onClick={() => {
+                  if (disabled) return
+                  handleSelectThirst(opt.id)
+                }}
+                className={`p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  disabled ? 'cursor-default select-text opacity-100' : 'cursor-pointer'
+                } ${
                   isSelected
                     ? 'border-primary ring-2 ring-primary/30 bg-primary/5 font-medium text-foreground'
-                    : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
+                    : disabled
+                      ? 'border-border/60 text-muted-foreground bg-card'
+                      : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
                 }`}
               >
                 <span>{opt.label}</span>
@@ -114,13 +122,21 @@ export const AyurvedaTela5Habits: React.FC<AyurvedaTela5HabitsProps> = ({
               <button
                 key={opt.id}
                 type="button"
-                disabled={disabled}
+                aria-disabled={disabled ? 'true' : undefined}
                 aria-pressed={isSelected}
-                onClick={() => handleSelectDrinkTemp(opt.id)}
-                className={`p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                tabIndex={disabled ? -1 : 0}
+                onClick={() => {
+                  if (disabled) return
+                  handleSelectDrinkTemp(opt.id)
+                }}
+                className={`p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  disabled ? 'cursor-default select-text opacity-100' : 'cursor-pointer'
+                } ${
                   isSelected
                     ? 'border-primary ring-2 ring-primary/30 bg-primary/5 font-medium text-foreground'
-                    : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
+                    : disabled
+                      ? 'border-border/60 text-muted-foreground bg-card'
+                      : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
                 }`}
               >
                 <span>{opt.label}</span>
@@ -148,13 +164,21 @@ export const AyurvedaTela5Habits: React.FC<AyurvedaTela5HabitsProps> = ({
               <button
                 key={opt.id}
                 type="button"
-                disabled={disabled}
+                aria-disabled={disabled ? 'true' : undefined}
                 aria-pressed={isSelected}
-                onClick={() => handleSelectSweat(opt.id)}
-                className={`p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                tabIndex={disabled ? -1 : 0}
+                onClick={() => {
+                  if (disabled) return
+                  handleSelectSweat(opt.id)
+                }}
+                className={`p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  disabled ? 'cursor-default select-text opacity-100' : 'cursor-pointer'
+                } ${
                   isSelected
                     ? 'border-primary ring-2 ring-primary/30 bg-primary/5 font-medium text-foreground'
-                    : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
+                    : disabled
+                      ? 'border-border/60 text-muted-foreground bg-card'
+                      : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
                 }`}
               >
                 <span>{opt.label}</span>

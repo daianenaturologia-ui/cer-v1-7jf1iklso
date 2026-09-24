@@ -43,13 +43,21 @@ export const AyurvedaTela4Temperature: React.FC<AyurvedaTela4TemperatureProps> =
             <button
               key={opt.id}
               type="button"
-              disabled={disabled}
+              aria-disabled={disabled ? 'true' : undefined}
               aria-pressed={isSelected}
-              onClick={() => handleSelect(opt.id)}
-              className={`w-full p-4 rounded-xl border text-left text-xs sm:text-sm transition-all flex items-center justify-between gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              tabIndex={disabled ? -1 : 0}
+              onClick={() => {
+                if (disabled) return
+                handleSelect(opt.id)
+              }}
+              className={`w-full p-4 rounded-xl border text-left text-xs sm:text-sm transition-all flex items-center justify-between gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                disabled ? 'cursor-default select-text opacity-100' : 'cursor-pointer'
+              } ${
                 isSelected
                   ? 'border-primary ring-2 ring-primary/30 bg-primary/5 font-medium text-foreground shadow-xs'
-                  : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
+                  : disabled
+                    ? 'border-border/60 text-muted-foreground bg-card'
+                    : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
               }`}
             >
               <span className="leading-relaxed text-foreground">{opt.label}</span>

@@ -411,7 +411,32 @@ export function categorizeChapter1Responses(state: AyurvedaChapter1State): {
   return { longerTerm, contextVariable, pointsToClarify }
 }
 
-export type AyurvedaChapter1Status = 'not_started' | 'in_progress' | 'completed'
+export type AyurvedaChapter1Status =
+  | 'not_started'
+  | 'in_progress'
+  | 'ready_to_complete'
+  | 'completed'
+
+/**
+ * Total de 5 etapas clínicas (telas 1 a 5) do Capítulo 1.
+ */
+export const AYV_C1_TOTAL_STEPS = 5
+
+/**
+ * Mapeamento canônico das 5 etapas clínicas do Capítulo 1 para seus prompts obrigatórios.
+ * Tela 1: P1_STRUCTURE (+ opcionalmente P1_DURATION)
+ * Tela 2: P2_SKIN
+ * Tela 3: P3_HAIR
+ * Tela 4: P4_TEMPERATURE
+ * Tela 5: P5_THIRST, P5_DRINK_TEMP, P5_SWEAT
+ */
+export const AYV_C1_STEP_PROMPT_KEYS: Record<number, string[]> = {
+  1: [AYV_C1_PROMPTS.P1_STRUCTURE.key],
+  2: [AYV_C1_PROMPTS.P2_SKIN.key],
+  3: [AYV_C1_PROMPTS.P3_HAIR.key],
+  4: [AYV_C1_PROMPTS.P4_TEMPERATURE.key],
+  5: [AYV_C1_PROMPTS.P5_THIRST.key, AYV_C1_PROMPTS.P5_DRINK_TEMP.key, AYV_C1_PROMPTS.P5_SWEAT.key],
+}
 
 /**
  * Total de 8 prompts de pergunta canônicos do Capítulo 1
@@ -459,10 +484,14 @@ export function deriveChapter1Status(
   progress: number
   answeredCount: number
   totalQuestions: number
+  answeredStepsCount: number
+  totalSteps: number
+  firstUnansweredStep: number
   hasCompletionRecord: boolean
   canonicalResponses: Array<ExperienceResponseRecord | Record<string, any>>
 } {
   const totalQuestions = AYV_C1_QUESTION_PROMPT_KEYS.length
+  const totalSteps = AYV_C1_TOTAL_STEPS
 
   // Filtrar apenas respostas canônicas do Capítulo 1 (prefixo ayv_c1_)
   const canonicalResponses = (responses || []).filter((r) => {
@@ -514,28 +543,79 @@ export function deriveChapter1Status(
       const qKey = AYV_C1_QUESTION_PROMPT_KEYS[i]
       const qId = AYV_C1_QUESTION_PROMPT_IDS[i]
       if (promptKey === qKey || promptId === qId) {
-        answeredPromptSet.add(qKey)
+        // Checar se possui valor real respondido (não vazio)
+        const hasValue =
+          sVal !== undefined &&
+          sVal !== null &&
+          (typeof sVal === 'string'
+            ? sVal.trim().length > 0
+            : Array.isArray(sVal)
+              ? sVal.length > 0
+              : Array.isArray(sVal?.selectedOptionIds)
+                ? sVal.selectedOptionIds.length > 0
+                : sVal?.value !== undefined || sVal?.choice !== undefined)
+
+        const rawVal = (r as any).value || (r as any).response_value
+        if (hasValue || rawVal !== undefined) {
+          answeredPromptSet.add(qKey)
+        }
       }
     }
   }
 
   const answeredCount = answeredPromptSet.size
 
+  // Avaliar quais das 5 etapas clínicas estão integralmente respondidas
+  const answeredSteps = new Set<number>()
+  for (let s = 1; s <= totalSteps; s++) {
+    const requiredKeys = AYV_C1_STEP_PROMPT_KEYS[s] || []
+    // Uma etapa é considerada respondida se todos os seus prompts requeridos estiverem no answeredPromptSet
+    // Para Tela 5, pelo menos um dos blocos (ou preferencialmente os respondidos)
+    // Se todos requiredKeys estiverem no answeredPromptSet
+    const allRequiredAnswered = requiredKeys.every((k) => answeredPromptSet.has(k))
+    if (allRequiredAnswered) {
+      answeredSteps.add(s)
+    }
+  }
+
+  const answeredStepsCount = answeredSteps.size
+
+  // Identificar a primeira tela clínica ainda pendente (1 a 5)
+  let firstUnansweredStep = 1
+  for (let s = 1; s <= totalSteps; s++) {
+    if (!answeredSteps.has(s)) {
+      firstUnansweredStep = s
+      break
+    }
+  }
+  if (answeredStepsCount === totalSteps) {
+    firstUnansweredStep = 5
+  }
+
+  // 4 ESTADOS CLAROS:
+  // 1. not_started: 0 telas/perguntas respondidas
+  // 2. completed: hasCompletionRecord === true && pelo menos 1 pergunta real respondida
+  // 3. ready_to_complete: todas as 5 telas respondidas (answeredStepsCount === 5), MAS sem completion record
+  // 4. in_progress: 1 a 4 telas respondidas (ou perguntas parciais) sem completion record
   let status: AyurvedaChapter1Status = 'not_started'
   let progress = 0
 
-  if (canonicalResponses.length === 0) {
+  if (canonicalResponses.length === 0 || answeredCount === 0) {
     status = 'not_started'
     progress = 0
   } else if (hasCompletionRecord && answeredCount > 0) {
     status = 'completed'
     progress = 100
+  } else if (answeredStepsCount === totalSteps) {
+    status = 'ready_to_complete'
+    // Progresso em pronto para concluir não usa 100%
+    progress = Math.min(95, Math.round((answeredStepsCount / totalSteps) * 100))
   } else {
     status = 'in_progress'
-    progress = Math.round((answeredCount / totalQuestions) * 100)
-    // Garantir que 0% só ocorra em not_started se houver respostas canônicas
-    if (progress === 0 && canonicalResponses.length > 0) {
-      progress = Math.round((1 / totalQuestions) * 100) // ~13%
+    // Progresso baseado nas etapas concluídas (de 1 a 4 sobre 5 etapas = 20%, 40%, 60%, 80%)
+    progress = Math.round((answeredStepsCount / totalSteps) * 100)
+    if (progress === 0 && answeredCount > 0) {
+      progress = 15 // pequeno avanço inicial indicando início
     }
   }
 
@@ -544,6 +624,9 @@ export function deriveChapter1Status(
     progress,
     answeredCount,
     totalQuestions,
+    answeredStepsCount,
+    totalSteps,
+    firstUnansweredStep,
     hasCompletionRecord,
     canonicalResponses,
   }

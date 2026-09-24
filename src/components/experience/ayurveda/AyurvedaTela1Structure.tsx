@@ -23,48 +23,56 @@ export interface AyurvedaTela1StructureProps {
 }
 
 // Mapeamento dos 6 PNGs oficiais do Lote 0A
+// As descrições humanas para acessibilidade (aria-label e alt) preservam a clareza de apresentação:
+// "Figura feminina — estrutura leve ou estreita" e "Figura masculina — estrutura leve ou estreita"
 const FIGURES_MAP = {
   female_light_narrow: {
     id: 'light_narrow',
     presentation: 'feminine',
     file: '/assets/ayurveda/ayv-feminino-leve.png',
-    alt: 'Representação feminina com estrutura leve ou estreita',
+    alt: 'Figura feminina — estrutura leve ou estreita',
     label: 'Estrutura leve ou estreita',
+    accessibleLabel: 'Figura feminina — estrutura leve ou estreita',
   },
   female_intermediate: {
     id: 'intermediate',
     presentation: 'feminine',
     file: '/assets/ayurveda/ayv-feminino-intermediario.png',
-    alt: 'Representação feminina com estrutura intermediária',
+    alt: 'Figura feminina — estrutura intermediária',
     label: 'Estrutura intermediária',
+    accessibleLabel: 'Figura feminina — estrutura intermediária',
   },
   female_broad_solid: {
     id: 'broad_solid',
     presentation: 'feminine',
     file: '/assets/ayurveda/ayv-feminino-amplo.png',
-    alt: 'Representação feminina com estrutura ampla ou sólida',
+    alt: 'Figura feminina — estrutura ampla ou sólida',
     label: 'Estrutura ampla ou sólida',
+    accessibleLabel: 'Figura feminina — estrutura ampla ou sólida',
   },
   male_light_narrow: {
     id: 'light_narrow',
     presentation: 'masculine',
     file: '/assets/ayurveda/ayv-masculino-leve.png',
-    alt: 'Representação masculina com estrutura leve ou estreita',
+    alt: 'Figura masculina — estrutura leve ou estreita',
     label: 'Estrutura leve ou estreita',
+    accessibleLabel: 'Figura masculina — estrutura leve ou estreita',
   },
   male_intermediate: {
     id: 'intermediate',
     presentation: 'masculine',
     file: '/assets/ayurveda/ayv-masculino-intermediario.png',
-    alt: 'Representação masculina com estrutura intermediária',
+    alt: 'Figura masculina — estrutura intermediária',
     label: 'Estrutura intermediária',
+    accessibleLabel: 'Figura masculina — estrutura intermediária',
   },
   male_broad_solid: {
     id: 'broad_solid',
     presentation: 'masculine',
     file: '/assets/ayurveda/ayv-masculino-amplo.png',
-    alt: 'Representação masculina com estrutura ampla ou sólida',
+    alt: 'Figura masculina — estrutura ampla ou sólida',
     label: 'Estrutura ampla ou sólida',
+    accessibleLabel: 'Figura masculina — estrutura ampla ou sólida',
   },
 }
 
@@ -187,9 +195,12 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
               <button
                 key={`${fig.id}-${fig.presentation}-${idx}`}
                 type="button"
-                disabled={disabled}
+                aria-disabled={disabled ? 'true' : undefined}
+                aria-label={fig.accessibleLabel}
                 aria-pressed={isSelected}
+                tabIndex={disabled ? -1 : 0}
                 onClick={() => {
+                  if (disabled) return
                   if (selectedStructure === 'two_figures') {
                     handleTwoFiguresToggle(fig.id)
                     const updated = twoSelectedStructures.includes(fig.id)
@@ -203,30 +214,31 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
                     triggerSave(fig.id, undefined, selectedDuration)
                   }
                 }}
-                className={`relative flex flex-col items-center p-3 rounded-xl border text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`relative flex flex-col items-center p-3 rounded-xl border text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  disabled ? 'cursor-default select-text opacity-100' : 'cursor-pointer'
+                } ${
                   isSelected
                     ? 'border-primary ring-2 ring-primary/40 bg-primary/5 shadow-xs'
-                    : 'border-border/70 hover:border-border hover:bg-muted/30 bg-card'
+                    : disabled
+                      ? 'border-border/70 bg-card'
+                      : 'border-border/70 hover:border-border hover:bg-muted/30 bg-card'
                 }`}
               >
                 <div className="relative w-full aspect-2/3 max-h-56 overflow-hidden rounded-lg bg-muted/20 flex items-center justify-center mb-2">
                   <img
                     src={fig.file}
                     alt={fig.alt}
-                    className="w-full h-full object-contain pointer-events-none"
+                    className="w-full h-full object-contain pointer-events-none opacity-100"
                     loading="lazy"
                   />
                   {isSelected && (
-                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-sm">
+                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-sm z-10">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                     </div>
                   )}
                 </div>
                 <span className="text-xs font-medium text-foreground text-center line-clamp-2">
                   {fig.label}
-                </span>
-                <span className="text-[10px] text-muted-foreground mt-0.5">
-                  {fig.presentation === 'masculine' ? 'Apresentação B' : 'Apresentação A'}
                 </span>
               </button>
             )
@@ -262,9 +274,11 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
               <button
                 key={opt.id}
                 type="button"
-                disabled={disabled}
+                aria-disabled={disabled ? 'true' : undefined}
                 aria-pressed={isSelected}
+                tabIndex={disabled ? -1 : 0}
                 onClick={() => {
+                  if (disabled) return
                   handleStructureClick(opt.id)
                   triggerSave(
                     opt.id,
@@ -272,10 +286,14 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
                     selectedDuration,
                   )
                 }}
-                className={`p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  disabled ? 'cursor-default select-text opacity-100' : 'cursor-pointer'
+                } ${
                   isSelected
                     ? 'border-primary ring-2 ring-primary/30 bg-primary/5 font-medium text-foreground'
-                    : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
+                    : disabled
+                      ? 'border-border/60 text-muted-foreground bg-card'
+                      : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
                 }`}
               >
                 <span>{opt.label}</span>
@@ -316,16 +334,22 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
               <button
                 key={opt.id}
                 type="button"
-                disabled={disabled}
+                aria-disabled={disabled ? 'true' : undefined}
                 aria-pressed={isSelected}
+                tabIndex={disabled ? -1 : 0}
                 onClick={() => {
+                  if (disabled) return
                   handleDurationClick(opt.id)
                   triggerSave(selectedStructure, selectedSecondary, opt.id)
                 }}
-                className={`p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  disabled ? 'cursor-default select-text opacity-100' : 'cursor-pointer'
+                } ${
                   isSelected
                     ? 'border-primary ring-2 ring-primary/30 bg-primary/5 font-medium text-foreground'
-                    : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
+                    : disabled
+                      ? 'border-border/60 text-muted-foreground bg-card'
+                      : 'border-border/60 hover:border-border hover:bg-muted/20 text-muted-foreground bg-card'
                 }`}
               >
                 <span>{opt.label}</span>

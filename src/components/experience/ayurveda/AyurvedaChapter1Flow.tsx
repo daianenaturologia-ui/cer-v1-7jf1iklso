@@ -172,11 +172,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   // Derivação canônica explícita do Capítulo 1 — NUNCA usa enrollmentExp.progress_status
   const derived = deriveChapter1Status(rawResponses)
   const isCompleted = derived.status === 'completed'
+  const isReadyToComplete = derived.status === 'ready_to_complete'
   const chapter1Status: AyurvedaChapter1Status = derived.status
   const chapter1Progress = derived.progress
+  const answeredStepsCount = derived.answeredStepsCount
+  const totalSteps = derived.totalSteps
+  const firstUnansweredStep = derived.firstUnansweredStep
 
-  // Retomada usa current_step_order salvo de enrollmentExp (ou 1 como default)
-  const currentStepNum = enrollmentExp?.current_step_order || 1
+  // Retomada inteligente: prioriza a primeira etapa não respondida calculada canonicamente
+  const currentStepNum = firstUnansweredStep || enrollmentExp?.current_step_order || 1
 
   // Salvar Tela 1
   const handleSaveStep1 = async (data: {
@@ -688,8 +692,11 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             if (isCompleted) {
               // Modo somente-leitura direto com banner e comando único "Voltar ao encerramento"
               handleReviewResponses()
-            } else if (chapter1Status === 'in_progress' && currentStepNum > 1) {
-              // Retoma etapa salva
+            } else if (isReadyToComplete) {
+              // Pronto para concluir: vai diretamente para o encerramento para revisão e conclusão explícita
+              setStage('closing')
+            } else if (chapter1Status === 'in_progress') {
+              // Retoma exatamente na primeira tela não respondida sem perder nada
               const stageMap: Record<number, Chapter1Stage> = {
                 1: 'step1',
                 2: 'step2',
@@ -697,7 +704,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
                 4: 'step4',
                 5: 'step5',
               }
-              setStage(stageMap[currentStepNum] || 'step1')
+              setStage(stageMap[firstUnansweredStep] || 'step1')
             } else {
               setStage('opening')
             }
@@ -708,6 +715,8 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           chapter1Status={chapter1Status}
           chapter1Progress={chapter1Progress}
           chapter1StepOrder={currentStepNum}
+          answeredStepsCount={answeredStepsCount}
+          totalSteps={totalSteps}
           avatarDeferred={avatarDeferred}
           onClose={onClose}
         />

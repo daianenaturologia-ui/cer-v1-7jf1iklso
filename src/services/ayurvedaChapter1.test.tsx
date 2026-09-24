@@ -95,10 +95,10 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
     expect(pressedButtons).toHaveLength(0)
   })
 
-  // (4) Seleção das figuras não depende de sexo/gênero/pronome
-  it('regra 4: pessoa pode visualizar outras figuras corporais sem restrição de gênero', () => {
+  // (4) Seleção das figuras não depende de sexo/gênero/pronome e NÃO exibe rótulos técnicos visíveis
+  it('regra 4: pessoa pode visualizar outras figuras corporais sem restrição de gênero; rótulos técnicos Apresentação A/B não aparecem no DOM visível', () => {
     const saveMock = vi.fn()
-    render(
+    const { container } = render(
       <AyurvedaTela1Structure
         userPresentation="feminine"
         structureChoice={undefined}
@@ -109,8 +109,16 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
     expect(toggleBtn).toBeInTheDocument()
     fireEvent.click(toggleBtn)
     expect(screen.getByText(/Ocultar outras figuras/i)).toBeInTheDocument()
-    // Agora aparecem figuras com Apresentação B
-    expect(screen.getAllByText(/Apresentação B/i).length).toBeGreaterThan(0)
+
+    // O texto visível NUNCA contém "Apresentação A" ou "Apresentação B"
+    expect(screen.queryByText(/Apresentação A/i)).toBeNull()
+    expect(screen.queryByText(/Apresentação B/i)).toBeNull()
+
+    // Mas os aria-label ou alt acessíveis identificam com clareza humana
+    const accessibleButtons = screen.getAllByRole('button', {
+      name: /Figura (feminina|masculina) — estrutura/i,
+    })
+    expect(accessibleButtons.length).toBe(6)
   })
 
   // (5) Seleção de duas estruturas funciona somente na opção correspondente
@@ -468,8 +476,8 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
       expect(cleanedTwice).toEqual(cleanedOnce)
     })
 
-    // 4. uma resposta canônica -> "Em andamento"
-    it('4. uma resposta canônica -> "Em andamento"', () => {
+    // 4. uma resposta canônica -> "Em andamento" com contagem real de etapas
+    it('4. uma resposta canônica -> "Em andamento" com contagem real de etapas', () => {
       const singleResponse = [
         {
           id: 'resp-c1-1',
@@ -481,8 +489,9 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
 
       const derived = deriveChapter1Status(singleResponse)
       expect(derived.status).toBe('in_progress')
-      expect(derived.answeredCount).toBe(1)
-      expect(derived.progress).toBeGreaterThan(0) // 1 de 8 = ~13%
+      expect(derived.answeredStepsCount).toBe(1)
+      expect(derived.totalSteps).toBe(5)
+      expect(derived.firstUnansweredStep).toBe(2)
       expect(derived.hasCompletionRecord).toBe(false)
 
       render(
@@ -490,14 +499,16 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
           onStartChapter1={vi.fn()}
           chapter1Status={derived.status}
           chapter1Progress={derived.progress}
-          chapter1StepOrder={1}
+          answeredStepsCount={derived.answeredStepsCount}
+          totalSteps={derived.totalSteps}
         />,
       )
       expect(screen.getByText(/Em andamento/i)).toBeInTheDocument()
+      expect(screen.getByText(/1 de 5 etapas respondidas/i)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Retomar Capítulo 1/i })).toBeInTheDocument()
     })
 
-    // 5. progresso parcial -> "Retomar Capítulo 1" no ponto correto
+    // 5. progresso parcial -> "Retomar Capítulo 1" no ponto correto (primeira tela não respondida)
     it('5. progresso parcial -> "Retomar Capítulo 1" no ponto correto', () => {
       const partialResponses = [
         {
@@ -522,8 +533,8 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
 
       const derived = deriveChapter1Status(partialResponses)
       expect(derived.status).toBe('in_progress')
-      expect(derived.answeredCount).toBe(3)
-      expect(derived.progress).toBe(Math.round((3 / 8) * 100)) // 38%
+      expect(derived.answeredStepsCount).toBe(2)
+      expect(derived.firstUnansweredStep).toBe(3) // Etapa 3 (cabelo) é a primeira pendente
 
       const onStartMock = vi.fn()
       render(
@@ -531,17 +542,19 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
           onStartChapter1={onStartMock}
           chapter1Status={derived.status}
           chapter1Progress={derived.progress}
-          chapter1StepOrder={3}
+          answeredStepsCount={derived.answeredStepsCount}
+          totalSteps={derived.totalSteps}
         />,
       )
+      expect(screen.getByText(/2 de 5 etapas respondidas/i)).toBeInTheDocument()
       const resumeBtn = screen.getByRole('button', { name: /Retomar Capítulo 1/i })
       expect(resumeBtn).toBeInTheDocument()
       fireEvent.click(resumeBtn)
       expect(onStartMock).toHaveBeenCalledTimes(1)
     })
 
-    // 6. todas as respostas sem conclusão explícita -> ainda NÃO "Concluído"
-    it('6. todas as respostas respondidas sem registro canônico de conclusão -> ainda NÃO "Concluído"', () => {
+    // 6. todas as cinco telas clínicas respondidas sem conclusão explícita -> "Pronto para concluir" (NÃO Concluído, NÃO 100%)
+    it('6. cinco telas clínicas respondidas sem registro canônico de conclusão -> "Pronto para concluir"', () => {
       const allQuestionsAnswered = [
         { prompt_id: AYV_C1_PROMPTS.P1_STRUCTURE.id, prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key },
         { prompt_id: AYV_C1_PROMPTS.P1_DURATION.id, prompt_key: AYV_C1_PROMPTS.P1_DURATION.key },
@@ -564,10 +577,35 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
       }))
 
       const derived = deriveChapter1Status(allQuestionsAnswered)
-      // Como NÃO possui CHAPTER_COMPLETION explícito, o status ainda é in_progress (100% das perguntas mas não finalizado)
+      // Como NÃO possui CHAPTER_COMPLETION explícito, o status é ready_to_complete
       expect(derived.hasCompletionRecord).toBe(false)
-      expect(derived.status).toBe('in_progress')
+      expect(derived.status).toBe('ready_to_complete')
       expect(derived.status).not.toBe('completed')
+      expect(derived.answeredStepsCount).toBe(5)
+      expect(derived.progress).toBeLessThan(100) // NÃO exibe 100%
+
+      const { queryByText, getByRole, getByText } = render(
+        <AyurvedaChaptersHub
+          onStartChapter1={vi.fn()}
+          chapter1Status={derived.status}
+          chapter1Progress={derived.progress}
+          answeredStepsCount={derived.answeredStepsCount}
+          totalSteps={derived.totalSteps}
+        />,
+      )
+
+      expect(getByText(/Pronto para concluir/i)).toBeInTheDocument()
+      expect(
+        getByText(
+          /Suas respostas estão preenchidas\. Revise e confirme a conclusão deste capítulo\./i,
+        ),
+      ).toBeInTheDocument()
+      expect(getByText(/5 de 5 etapas respondidas/i)).toBeInTheDocument()
+      expect(getByRole('button', { name: /Revisar e concluir/i })).toBeInTheDocument()
+
+      // NÃO exibe "100% concluído" nem badge Concluído
+      expect(queryByText(/100% concluído/i)).toBeNull()
+      expect(queryByText(/Concluído \(100%\)/i)).toBeNull()
     })
 
     // 7. conclusão explícita canônica -> "Concluído"
@@ -614,6 +652,43 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
     it('8. conclusão canônica -> modo somente-leitura exibe banner e comando único "Voltar ao encerramento"', () => {
       expect(AYV_TEXTS.REVISION_BANNER).toBe('Revisão das suas respostas')
       expect(AYV_TEXTS.REVISION_RETURN_CMD).toBe('Voltar ao encerramento')
+    })
+
+    // 8b. modo somente-leitura: legibilidade integral, sem filtros/opacidades de apagamento e seleção preservada
+    it('8b. modo de revisão bloqueia mutação, preserva opacidade integral (100%) e mantém seleção visível', () => {
+      const saveMock = vi.fn()
+      render(
+        <AyurvedaTela1Structure
+          userPresentation="feminine"
+          structureChoice="intermediate"
+          durationChoice="lifelong"
+          onSave={saveMock}
+          disabled={true}
+        />,
+      )
+
+      // 1. Tentar clicar na opção leve (outra opção) não dispara save
+      const lightBtn = screen.getByRole('button', {
+        name: /Figura feminina — estrutura leve ou estreita/i,
+      })
+      fireEvent.click(lightBtn)
+      expect(saveMock).not.toHaveBeenCalled()
+
+      // 2. A opção selecionada (intermediate) está marcada com aria-pressed="true"
+      const selectedBtn = screen.getByRole('button', {
+        name: /Figura feminina — estrutura intermediária/i,
+      })
+      expect(selectedBtn.getAttribute('aria-pressed')).toBe('true')
+      expect(selectedBtn.getAttribute('aria-disabled')).toBe('true')
+
+      // 3. O botão e a imagem possuem classe de opacidade total (opacity-100) e não possuem opacity-50
+      expect(selectedBtn.className).toContain('opacity-100')
+      expect(selectedBtn.className).not.toContain('opacity-50')
+
+      const img = selectedBtn.querySelector('img')
+      expect(img).not.toBeNull()
+      expect(img?.className).toContain('opacity-100')
+      expect(img?.className).not.toContain('opacity-50')
     })
 
     // 9. dados legados permanecem intactos
