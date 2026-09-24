@@ -174,5 +174,6 @@
       "hashMatch": true,
       "matchesKit": true
     }
-  ]
+  ],
+  "atlasVerification": "Skin: {\n  width: 3072,\n  height: 3072,\n  bitDepth: 8,\n  colorType: 6,\n  hasAlpha: true,\n  size: 105959\n}\nHair: {\n  width: 3072,\n  height: 3072,\n  bitDepth: 8,\n  colorType: 6,\n  hasAlpha: true,\n  size: 56348\n}"
 }

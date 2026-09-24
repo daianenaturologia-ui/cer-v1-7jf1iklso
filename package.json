@@ -8,8 +8,8 @@
   "scripts": {
     "start": "vite dev",
     "dev": "vite",
-    "copy:asset": "node scripts/copy-asset.mjs && node scripts/collect-evidence.mjs",
-    "prebuild": "node scripts/copy-asset.mjs && node scripts/collect-evidence.mjs",
+    "copy:asset": "node scripts/copy-asset.mjs && node scripts/crop-atlases.mjs && node scripts/collect-evidence.mjs",
+    "prebuild": "node scripts/copy-asset.mjs && node scripts/crop-atlases.mjs && node scripts/collect-evidence.mjs",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "typecheck": "tsc --noEmit",

@@ -3,6 +3,7 @@ import { validateAssets } from '../lote_0a_kit/validate-assets.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
+import { execSync } from 'node:child_process'
 
 const manifest = JSON.parse(fs.readFileSync('lote_0a_kit/asset-manifest.json', 'utf8'))
 const decodeRes = await decodeAll()
@@ -39,6 +40,20 @@ for (const f of manifest.approved_files) {
     hashMatch: pubHash === f.sha256,
     matchesKit: pubBuf.equals(kitBuf),
   })
+}
+
+try {
+  const out = execSync('node scripts/check-atlases.mjs', { encoding: 'utf8' })
+  report.atlasVerification = out.trim()
+} catch (e) {
+  console.error('Atlas check error:', e)
+}
+
+try {
+  const { cropAllAtlases } = await import('./crop-atlases.mjs')
+  report.maskCropResults = cropAllAtlases()
+} catch (e) {
+  console.error('Crop atlases error in collect-evidence:', e)
 }
 
 fs.writeFileSync(
