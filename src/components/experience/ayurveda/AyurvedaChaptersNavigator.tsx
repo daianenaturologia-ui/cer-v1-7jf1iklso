@@ -359,66 +359,70 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
 
   // RENDERIZAÇÃO CONFORME ESTADO CANÔNICO
 
-  // Renderização de acordo com a união discriminada navState
-  switch (navState.chapterId) {
-    case 'c1':
-      return (
-        <AyurvedaChapter1Flow
-          enrollmentId={enrollmentId}
-          experienceId={experienceId}
-          respondentUserId={respondentUserId}
-          userPresentation={userPresentation}
-          avatarDeferred={avatarDeferred}
-          mode={navState.mode}
-          initialStep={navState.currentStep ?? undefined}
-          onExitToHub={handleExitToHub}
-          onEnterReview={handleReviewChapter1}
-          onStartCorrection={handleCorrectChapter1}
-          onClose={onClose}
-          onCompleted={() => {
-            reloadData()
-            onCompleted?.()
-          }}
-          onOpenAvatarCustomization={onOpenAvatarCustomization}
-        />
-      )
+  // Renderização de acordo com o estado canônico
+  if (navState.chapterId === 'c1') {
+    const currentStep = navState.currentStep
+    const mode = navState.mode
+    return (
+      <AyurvedaChapter1Flow
+        enrollmentId={enrollmentId}
+        experienceId={experienceId}
+        respondentUserId={respondentUserId}
+        userPresentation={userPresentation}
+        avatarDeferred={avatarDeferred}
+        mode={mode}
+        initialStep={currentStep ?? undefined}
+        onExitToHub={handleExitToHub}
+        onEnterReview={handleReviewChapter1}
+        onStartCorrection={handleCorrectChapter1}
+        onClose={onClose}
+        onCompleted={() => {
+          reloadData()
+          onCompleted?.()
+        }}
+        onOpenAvatarCustomization={onOpenAvatarCustomization}
+      />
+    )
+  }
 
-    case 'c2':
-      return (
-        <AyurvedaChapter2Flow
-          enrollmentId={enrollmentId}
-          experienceId={experienceId}
-          respondentUserId={respondentUserId}
-          treatmentVariant={treatmentVariant}
-          mode={navState.mode}
-          revisionNumber={navState.activeRevision ?? undefined}
-          initialStep={navState.currentStep ?? undefined}
-          onBackToHub={handleExitToHub}
-          onEnterReview={handleReviewChapter2}
-          onStartCorrection={handleCorrectionStartedInC2}
-          onCompleted={() => {
-            reloadData()
-            onCompleted?.()
-          }}
-        />
-      )
+  if (navState.chapterId === 'c2') {
+    const currentStep = navState.currentStep
+    const mode = navState.mode
+    const activeRev = navState.activeRevision
+    return (
+      <AyurvedaChapter2Flow
+        enrollmentId={enrollmentId}
+        experienceId={experienceId}
+        respondentUserId={respondentUserId}
+        treatmentVariant={treatmentVariant}
+        mode={mode}
+        revisionNumber={activeRev ?? undefined}
+        initialStep={currentStep ?? undefined}
+        onBackToHub={handleExitToHub}
+        onEnterReview={handleReviewChapter2}
+        onStartCorrection={handleCorrectionStartedInC2}
+        onCompleted={() => {
+          reloadData()
+          onCompleted?.()
+        }}
+      />
+    )
+  }
 
-    case null:
-      if (navState.mode === 'post_avatar_transition') {
-        return (
-          <AyurvedaPostAvatarTransition
-            onStartChapter1={() => {
-              setNavState({
-                chapterId: 'c1',
-                mode: 'intro',
-                currentStep: null,
-                activeRevision: null,
-              })
-            }}
-          />
-        )
-      }
-      break
+  const nullState = navState as { chapterId: null; mode: 'hub' | 'post_avatar_transition' }
+  if (nullState.mode === 'post_avatar_transition') {
+    return (
+      <AyurvedaPostAvatarTransition
+        onStartChapter1={() => {
+          setNavState({
+            chapterId: 'c1',
+            mode: 'intro',
+            currentStep: null,
+            activeRevision: null,
+          })
+        }}
+      />
+    )
   }
 
   // Hub dos Capítulos (renderizado diretamente pelo navegador, fora do C1)
