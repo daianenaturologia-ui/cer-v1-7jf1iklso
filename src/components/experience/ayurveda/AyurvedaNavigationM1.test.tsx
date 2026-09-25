@@ -413,7 +413,26 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
 
   // 3. C2 concluído -> Corrigir -> confirmar -> modo correcting editável, sem banner de somente-leitura
   it('3. C2 concluído -> Corrigir -> confirmar -> modo correcting editável, sem banner de somente-leitura', async () => {
-    await seedC2Completed()
+    // 1. iniciar com Capítulo 2 concluído e navegador em mode: 'review'
+    await seedC2Completed(true) // fixture legada sem revision_number
+
+    // Espionar listResponsesByExperience para atrasar o carregamento antigo caso ocorra
+    // garantindo que se um carregamento assíncrono antigo terminar depois da mudança para correcting,
+    // ele não reverta o estado para somente-leitura
+    let delayedResolve: (() => void) | null = null
+    const origListResponses =
+      experienceResponseService.listResponsesByExperience.bind(experienceResponseService)
+    let delayActive = false
+    vi.spyOn(experienceResponseService, 'listResponsesByExperience').mockImplementation(
+      async (enrollmentId, experienceId) => {
+        if (delayActive) {
+          await new Promise<void>((resolve) => {
+            delayedResolve = resolve
+          })
+        }
+        return origListResponses(enrollmentId, experienceId)
+      },
+    )
 
     render(
       <AyurvedaChaptersNavigator
@@ -427,26 +446,82 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    // Os dois botões de corrigir: C1 e C2
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
-    // Segundo botão é do C2
-    const correctC2Btn = correctBtns[1] || correctBtns[0]
-    fireEvent.click(correctC2Btn)
+    // 1. Entra em Rever Capítulo 2 (modo 'review')
+    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 2/i }))
+    await waitFor(() => {
+      expect(screen.getByTestId('banner-c2-review-mode')).toBeInTheDocument()
+      expect(screen.getByText(/Modo somente-leitura/i)).toBeInTheDocument()
+    })
 
-    // Deve abrir o encerramento ou diálogo de confirmação de C2
+    // 2. "Voltar ao encerramento"
+    fireEvent.click(screen.getByRole('button', { name: /Voltar ao encerramento/i }))
+    await waitFor(() => {
+      expect(screen.getByText(/Capítulo 2 Concluído/i)).toBeInTheDocument()
+    })
+
+    // 3. "Corrigir minhas respostas"
+    fireEvent.click(screen.getByRole('button', { name: /Corrigir minhas respostas/i }))
     await waitFor(() => {
       expect(screen.getByText(/Confirmar e corrigir/i)).toBeInTheDocument()
     })
 
-    // Confirmar correção
+    // Ativa delay no listResponses para forçar término de promessas de loadResponses
+    delayActive = true
+
+    // 4. "Confirmar e corrigir"
     const confirmBtn = screen.getByRole('button', { name: /Confirmar e corrigir/i })
     fireEvent.click(confirmBtn)
 
-    // Deve abrir Momento 1 em modo correcting editável, SEM banner de somente-leitura
+    // Aguarda um pequeno ciclo e libera a resolução do listResponses pendente (forçar carregamento antigo a terminar depois)
+    await new Promise((r) => setTimeout(r, 20))
+    if (delayedResolve) {
+      ;(delayedResolve as () => void)()
+    }
+    delayActive = false
+
+    // 5. aguardar explicitamente todas as promessas de criação, persistência e loadResponses (waitFor)
     await waitFor(() => {
-      expect(screen.queryByTestId('banner-c2-review-mode')).toBeNull()
       expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
     })
+
+    // Aguarda acomodação completa de microtarefas/promessas assíncronas remanescentes
+    await new Promise((r) => setTimeout(r, 50))
+
+    // 7. afirmar que:
+    // - o elemento banner-c2-review-mode não existe;
+    expect(screen.queryByTestId('banner-c2-review-mode')).toBeNull()
+    // - o texto "Modo somente-leitura" não existe;
+    expect(screen.queryByText(/Modo somente-leitura/i)).toBeNull()
+    // - os controles estão habilitados;
+    const buttons = screen.getAllByRole('button')
+    const hungerOption = buttons.find(
+      (btn) =>
+        btn.textContent?.includes('Fome pontual') || btn.textContent?.includes('Fome intensa'),
+    )
+    expect(hungerOption).toBeDefined()
+    expect(hungerOption).not.toBeDisabled()
+
+    // - o navegador permanece em mode: 'correcting';
+    // No encerramento e no hub o título de percurso ou conclusão não está ativo enquanto em correcting
+    expect(screen.queryByText(/Capítulo 2 Concluído/i)).toBeNull()
+
+    // - a revisão ativa é N+1 (2);
+    const all = demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID, 'exp-corpo-fisiologia-07b')
+    const rev2Responses = all.filter(
+      (r) => (r as any).revision_number === 2 || (r.structured_value as any)?.revision_number === 2,
+    )
+    expect(rev2Responses.length).toBeGreaterThanOrEqual(12)
+
+    // - a conclusão da revisão anterior não reabre o modo de revisão
+    const rev2Completion = all.find((r) => {
+      const isCompletion =
+        r.prompt_id?.includes(AYV_C2_PROMPTS.CHAPTER_COMPLETION.id) ||
+        (r as any).prompt_key === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+      const isRev2 =
+        (r as any).revision_number === 2 || (r.structured_value as any)?.revision_number === 2
+      return isCompletion && isRev2
+    })
+    expect(rev2Completion).toBeUndefined()
   })
 
   // 4. C1 concluído -> Corrigir -> modo editável do C1

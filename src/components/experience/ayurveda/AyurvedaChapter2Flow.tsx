@@ -352,7 +352,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
 
   useEffect(() => {
     loadResponses(activeRevision)
-  }, [enrollmentId, experienceId, activeRevision])
+  }, [enrollmentId, experienceId, activeRevision, mode])
 
   const derived = deriveChapter2Status(rawResponses, activeRevision)
   const currentActiveRev = activeRevision ?? derived.activeRevisionNumber
@@ -783,7 +783,13 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       // 3. Persistir imediatamente no storage local que a nova revisão é a ATIVA
       setPersistedActiveChapter2Revision(enrollmentId, nextRevisionNumber)
 
-      // 4. Recarregar o chapterState com as respostas da nova revisão
+      // 4. Notificar callback externo para o navegador sincronizar canonicamente mode: 'correcting'
+      // ANTES dos commits locais e antes de setActiveRevision disparar a recarga assíncrona
+      if (onStartCorrection) {
+        onStartCorrection()
+      }
+
+      // 5. Recarregar o chapterState com as respostas da nova revisão
       const newLoadedState: AyurvedaChapter2State = {}
       for (const r of persistedActiveResponses) {
         const sVal = r.structured_value as any
@@ -867,19 +873,14 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         }
       }
 
-      // 5. Atualizar respostas e estado local da nova revisão
+      // 6. Atualizar respostas e estado local da nova revisão
       setRawResponses((prev) => [...prev, ...persistedActiveResponses])
       setChapterState(newLoadedState)
 
-      // 6. Só então comutar revisão ativa e navegar para o Momento 1 editável
+      // 7. Só então comutar revisão ativa e navegar para o Momento 1 editável
       setActiveRevision(nextRevisionNumber)
       setIsReviewOnly(false)
       setStage('momento1')
-
-      // 7. Notificar callback externo para o navegador sincronizar mode: 'correcting' e activeRevision
-      if (onStartCorrection) {
-        onStartCorrection()
-      }
     } catch (err) {
       console.error('Falha ao abrir correção do Capítulo 2:', err)
       // Rollback seguro em caso de falha: permanece no encerramento anterior

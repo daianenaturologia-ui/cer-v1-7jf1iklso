@@ -360,9 +360,10 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   // RENDERIZAÇÃO CONFORME ESTADO CANÔNICO
 
   // Renderização de acordo com o estado canônico
-  if (navState.chapterId === 'c1') {
+  const activeChapterId = navState.chapterId
+  if (activeChapterId === 'c1') {
     const currentStep = navState.currentStep
-    const mode = navState.mode
+    const c1Mode = navState.mode as AyurvedaNavigationChapterMode
     return (
       <AyurvedaChapter1Flow
         enrollmentId={enrollmentId}
@@ -370,7 +371,7 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
         respondentUserId={respondentUserId}
         userPresentation={userPresentation}
         avatarDeferred={avatarDeferred}
-        mode={mode}
+        mode={c1Mode}
         initialStep={currentStep ?? undefined}
         onExitToHub={handleExitToHub}
         onEnterReview={handleReviewChapter1}
@@ -385,9 +386,9 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     )
   }
 
-  if (navState.chapterId === 'c2') {
+  if (activeChapterId === 'c2') {
     const currentStep = navState.currentStep
-    const mode = navState.mode
+    const c2Mode = navState.mode as AyurvedaNavigationChapterMode
     const activeRev = navState.activeRevision
     return (
       <AyurvedaChapter2Flow
@@ -395,7 +396,7 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
         experienceId={experienceId}
         respondentUserId={respondentUserId}
         treatmentVariant={treatmentVariant}
-        mode={mode}
+        mode={c2Mode}
         revisionNumber={activeRev ?? undefined}
         initialStep={currentStep ?? undefined}
         onBackToHub={handleExitToHub}
