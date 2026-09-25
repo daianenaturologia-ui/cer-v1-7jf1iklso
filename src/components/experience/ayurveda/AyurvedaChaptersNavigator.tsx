@@ -270,50 +270,8 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
 
   // RENDERIZAÇÃO CONFORME ESTADO CANÔNICO
 
-  // 1. Transição Pós-Avatar
-  if (navState.chapterId === null) {
-    if (navState.mode === 'post_avatar_transition') {
-      return (
-        <AyurvedaPostAvatarTransition
-          onStartChapter1={() => {
-            setNavState({
-              chapterId: 'c1',
-              mode: 'intro',
-              currentStep: null,
-              activeRevision: null,
-            })
-          }}
-        />
-      )
-    }
-
-    // Hub dos Capítulos (renderizado diretamente pelo navegador, fora do C1)
-    return (
-      <AyurvedaChaptersHub
-        onStartChapter1={handleStartChapter1FromHub}
-        onStartChapter2={handleStartChapter2FromHub}
-        onOpenCustomization={onOpenAvatarCustomization}
-        onCorrectChapter1={handleCorrectChapter1}
-        onCorrectChapter2={handleCorrectChapter2}
-        isChapter1Completed={isC1Completed}
-        chapter1Status={chapter1Status}
-        chapter1Progress={chapter1Progress}
-        chapter1StepOrder={firstUnansweredStepC1 || 1}
-        answeredStepsCount={answeredStepsCountC1}
-        totalSteps={totalStepsC1}
-        chapter2Status={chapter2Status}
-        chapter2Progress={chapter2Progress}
-        answeredMomentsCountC2={answeredMomentsCountC2}
-        totalMomentsC2={totalMomentsC2}
-        avatarDeferred={avatarDeferred}
-        onClose={onClose}
-      />
-    )
-  }
-
-  // 3. Capítulo 1 subordinado
+  // Renderização de acordo com a união discriminada navState
   if (navState.chapterId === 'c1') {
-    const c1State = navState
     return (
       <AyurvedaChapter1Flow
         enrollmentId={enrollmentId}
@@ -321,8 +279,8 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
         respondentUserId={respondentUserId}
         userPresentation={userPresentation}
         avatarDeferred={avatarDeferred}
-        mode={c1State.mode}
-        initialStep={c1State.currentStep ?? undefined}
+        mode={navState.mode}
+        initialStep={navState.currentStep ?? undefined}
         onExitToHub={handleExitToHub}
         onEnterReview={handleReviewChapter1}
         onStartCorrection={handleCorrectChapter1}
@@ -336,18 +294,16 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     )
   }
 
-  // 4. Capítulo 2 subordinado
   if (navState.chapterId === 'c2') {
-    const c2State = navState
     return (
       <AyurvedaChapter2Flow
         enrollmentId={enrollmentId}
         experienceId={experienceId}
         respondentUserId={respondentUserId}
         treatmentVariant={treatmentVariant}
-        mode={c2State.mode}
-        revisionNumber={c2State.activeRevision ?? undefined}
-        initialStep={c2State.currentStep ?? undefined}
+        mode={navState.mode}
+        revisionNumber={navState.activeRevision ?? undefined}
+        initialStep={navState.currentStep ?? undefined}
         onBackToHub={handleExitToHub}
         onEnterReview={handleReviewChapter2}
         onStartCorrection={handleCorrectChapter2}
@@ -358,6 +314,45 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
       />
     )
   }
+
+  // navState.chapterId === null
+  if (navState.mode === 'post_avatar_transition') {
+    return (
+      <AyurvedaPostAvatarTransition
+        onStartChapter1={() => {
+          setNavState({
+            chapterId: 'c1',
+            mode: 'intro',
+            currentStep: null,
+            activeRevision: null,
+          })
+        }}
+      />
+    )
+  }
+
+  // Hub dos Capítulos (renderizado diretamente pelo navegador, fora do C1)
+  return (
+    <AyurvedaChaptersHub
+      onStartChapter1={handleStartChapter1FromHub}
+      onStartChapter2={handleStartChapter2FromHub}
+      onOpenCustomization={onOpenAvatarCustomization}
+      onCorrectChapter1={handleCorrectChapter1}
+      onCorrectChapter2={handleCorrectChapter2}
+      isChapter1Completed={isC1Completed}
+      chapter1Status={chapter1Status}
+      chapter1Progress={chapter1Progress}
+      chapter1StepOrder={firstUnansweredStepC1 || 1}
+      answeredStepsCount={answeredStepsCountC1}
+      totalSteps={totalStepsC1}
+      chapter2Status={chapter2Status}
+      chapter2Progress={chapter2Progress}
+      answeredMomentsCountC2={answeredMomentsCountC2}
+      totalMomentsC2={totalMomentsC2}
+      avatarDeferred={avatarDeferred}
+      onClose={onClose}
+    />
+  )
 
   return null
 }
