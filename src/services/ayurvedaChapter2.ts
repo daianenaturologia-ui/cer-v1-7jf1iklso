@@ -37,6 +37,8 @@ export interface AyurvedaCanonicalC2ResponseMetadata {
   answered_at: string
   experience_version: string
   notes_for_professional?: string
+  revision_number?: number
+  parent_version_id?: string
 }
 
 export interface AyurvedaChapter2State {
@@ -510,8 +512,181 @@ export type AyurvedaChapter2Status =
  *    - 1 a 11 perguntas respondidas sem completion record -> 'in_progress'.
  * 4. Progresso: percentual baseado nos cinco momentos (de 1 a 5).
  */
+export function getResponseRevisionNumber(
+  r: ExperienceResponseRecord | Record<string, any>,
+): number {
+  if (!r) return 1
+  const sVal = (r as any).structured_value
+  const meta = sVal?.metadata
+  const rev = (r as any).revision_number ?? sVal?.revision_number ?? meta?.revision_number
+  if (typeof rev === 'number' && !Number.isNaN(rev) && rev >= 1) {
+    return rev
+  }
+  return 1
+}
+
+export function getResponseParentVersionId(
+  r: ExperienceResponseRecord | Record<string, any>,
+): string | undefined {
+  if (!r) return undefined
+  const sVal = (r as any).structured_value
+  const meta = sVal?.metadata
+  return (
+    (r as any).parent_version_id || sVal?.parent_version_id || meta?.parent_version_id || undefined
+  )
+}
+
+/**
+ * Cria canonicamente uma nova revisão do Capítulo 2 a partir das respostas atuais:
+ * 1. Preserva o histórico imutável das respostas atuais.
+ * 2. Descobre o maior revision_number existente e incrementa (targetRevision = maxRevision + 1).
+ * 3. Copia todas as 12 respostas anteriores como iniciais para a nova revisão,
+ *    desvinculadas de qualquer conclusão e apontando parent_version_id para o registro original.
+ * 4. Retorna a lista completa atualizada com as novas respostas ativas e o novo número de revisão.
+ */
+export function createChapter2Revision(params: {
+  existingResponses: Array<ExperienceResponseRecord | Record<string, any>>
+  enrollmentId: string
+  experienceId: string
+  respondentUserId: string
+}): {
+  nextRevisionNumber: number
+  newActiveResponses: ExperienceResponseRecord[]
+  allResponses: Array<ExperienceResponseRecord | Record<string, any>>
+} {
+  const { existingResponses, enrollmentId, experienceId, respondentUserId } = params
+
+  // Filtrar apenas respostas canônicas do Capítulo 2
+  const c2Responses = (existingResponses || []).filter((r) => {
+    if (!r) return false
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+    return (
+      (typeof promptId === 'string' && promptId.startsWith('ayv_c2_')) ||
+      (typeof promptKey === 'string' && promptKey.startsWith('ayv_c2_'))
+    )
+  })
+
+  // Descobrir maior revision_number existente no Capítulo 2
+  let maxRevision = 1
+  for (const r of c2Responses) {
+    const rev = getResponseRevisionNumber(r)
+    if (rev > maxRevision) maxRevision = rev
+  }
+  const nextRevisionNumber = maxRevision + 1
+  const nowIso = new Date().toISOString()
+
+  // Buscar a última resposta de cada uma das 12 perguntas (da revisão imediatamente anterior)
+  // para usar como valores iniciais da nova revisão
+  const latestQuestionsMap = new Map<string, ExperienceResponseRecord | Record<string, any>>()
+  for (const r of c2Responses) {
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+
+    // Ignorar conclusão antiga ao copiar perguntas
+    if (
+      promptId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
+      promptKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+    ) {
+      continue
+    }
+
+    for (let i = 0; i < AYV_C2_TOTAL_QUESTIONS; i++) {
+      const qKey = AYV_C2_QUESTION_PROMPT_KEYS[i]
+      const qId = AYV_C2_QUESTION_PROMPT_IDS[i]
+      if (promptKey === qKey || promptId === qId) {
+        const existingStored = latestQuestionsMap.get(qKey)
+        if (!existingStored) {
+          latestQuestionsMap.set(qKey, r)
+        } else {
+          // Se já existe, pega a de maior revisão
+          const prevRev = getResponseRevisionNumber(existingStored)
+          const currRev = getResponseRevisionNumber(r)
+          if (currRev >= prevRev) {
+            latestQuestionsMap.set(qKey, r)
+          }
+        }
+      }
+    }
+  }
+
+  // Criar registros copiados para a nova revisão (sem nenhum completion record para ela)
+  const newActiveResponses: ExperienceResponseRecord[] = []
+  latestQuestionsMap.forEach((parentRecord, qKey) => {
+    const promptId =
+      (parentRecord as any).prompt_id || (parentRecord as any).canonical_prompt_id || qKey
+    const sVal = (parentRecord as any).structured_value || {}
+    const meta = (sVal as any).metadata || {}
+    const parentId = (parentRecord as any).id || `parent-${qKey}`
+
+    const newMeta: AyurvedaCanonicalC2ResponseMetadata = {
+      ...meta,
+      prompt_key: qKey,
+      canonical_prompt_id: promptId,
+      domain: 'ayurveda',
+      chapter_id: AYURVEDA_CHAPTER_2_ID,
+      time_layer: 'habitual_adult',
+      source: 'participant_self_report',
+      answered_at: nowIso,
+      experience_version: AYURVEDA_CHAPTER_2_VERSION,
+      revision_number: nextRevisionNumber,
+      parent_version_id: parentId,
+    }
+
+    const newRecord: ExperienceResponseRecord = {
+      id: `c2-rev${nextRevisionNumber}-${qKey}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      enrollment_id: enrollmentId,
+      experience_id: experienceId,
+      prompt_id: promptId,
+      respondent_user_id: respondentUserId,
+      response_type: (parentRecord as any).response_type || 'MultiSelectCards',
+      access_class: (parentRecord as any).access_class || 'shared_care',
+      structured_value: {
+        ...sVal,
+        revision_number: nextRevisionNumber,
+        parent_version_id: parentId,
+        metadata: newMeta,
+      },
+      free_text: (parentRecord as any).free_text || '',
+      prompt_version: (parentRecord as any).prompt_version || 1,
+      version: nextRevisionNumber,
+      status: 'saved',
+      created: nowIso,
+      updated: nowIso,
+    }
+    ;(newRecord as any).revision_number = nextRevisionNumber
+    ;(newRecord as any).parent_version_id = parentId
+    ;(newRecord as any).prompt_key = qKey
+    ;(newRecord as any).canonical_prompt_id = promptId
+
+    newActiveResponses.push(newRecord)
+  })
+
+  // O histórico completo contém as respostas antigas intactas + as novas respostas
+  const allResponses = [...(existingResponses || []), ...newActiveResponses]
+
+  return {
+    nextRevisionNumber,
+    newActiveResponses,
+    allResponses,
+  }
+}
+
+/**
+ * Derivação canônica explícita do status e progresso do Capítulo 2.
+ * NUNCA lê enrollmentExp.progress_status.
+ *
+ * Se activeRevisionNumber for fornecido, filtra respostas e conclusões pertencentes ESTRITAMENTE
+ * a essa revisão ativa. Se omitido, determina a revisão ativa mais recente existente
+ * nas respostas canônicas do Capítulo 2.
+ */
 export function deriveChapter2Status(
   responses: Array<ExperienceResponseRecord | Record<string, any>> = [],
+  activeRevisionNumber?: number,
 ): {
   status: AyurvedaChapter2Status
   progress: number
@@ -522,12 +697,13 @@ export function deriveChapter2Status(
   firstUnansweredMoment: number
   hasCompletionRecord: boolean
   canonicalResponses: Array<ExperienceResponseRecord | Record<string, any>>
+  activeRevisionNumber: number
 } {
   const totalQuestions = AYV_C2_TOTAL_QUESTIONS
   const totalMoments = AYV_C2_TOTAL_MOMENTS
 
   // Filtrar apenas respostas canônicas do Capítulo 2 (prefixo ayv_c2_)
-  const canonicalResponses = (responses || []).filter((r) => {
+  const allCanonicalResponses = (responses || []).filter((r) => {
     if (!r) return false
     const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
     const sVal = (r as any).structured_value
@@ -539,7 +715,26 @@ export function deriveChapter2Status(
     return matchesId || matchesKey
   })
 
-  // Checar se há registro canônico explícito de conclusão do Capítulo 2
+  // Determinar a revisão ativa:
+  // Se explicitamente informada, usa-a.
+  // Caso contrário, calcula o maior revision_number presente nas respostas canônicas (padrão 1).
+  let effectiveRevision = activeRevisionNumber
+  if (effectiveRevision === undefined) {
+    let maxRev = 1
+    for (const r of allCanonicalResponses) {
+      const rev = getResponseRevisionNumber(r)
+      if (rev > maxRev) maxRev = rev
+    }
+    effectiveRevision = maxRev
+  }
+
+  // Filtrar respostas ESTRITAMENTE pertencentes à revisão ativa
+  const canonicalResponses = allCanonicalResponses.filter((r) => {
+    const rev = getResponseRevisionNumber(r)
+    return rev === effectiveRevision
+  })
+
+  // Checar se há registro canônico explícito de conclusão do Capítulo 2 PARA A REVISÃO ATIVA
   const hasCompletionRecord = canonicalResponses.some((r) => {
     const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
     const sVal = (r as any).structured_value
@@ -655,6 +850,7 @@ export function deriveChapter2Status(
     firstUnansweredMoment,
     hasCompletionRecord,
     canonicalResponses,
+    activeRevisionNumber: effectiveRevision,
   }
 }
 

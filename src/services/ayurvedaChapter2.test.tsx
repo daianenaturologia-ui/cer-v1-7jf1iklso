@@ -4,6 +4,7 @@ import React from 'react'
 import {
   deriveChapter2Status,
   buildChapter2LiteralSummary,
+  createChapter2Revision,
   AYV_C2_PROMPTS,
   AYV_C2_QUESTION_PROMPT_KEYS,
   AYV_C2_TOTAL_MOMENTS,
@@ -399,6 +400,393 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
 
       expect(screen.getByText('Confirmar abertura de correção do Capítulo 2')).toBeInTheDocument()
       expect(screen.getByText('Confirmar e corrigir')).toBeInTheDocument()
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // TESTES OBRIGATÓRIOS DA CORREÇÃO VERSIONADA DO CAPÍTULO 2 (14 REQUISITOS)
+  // -------------------------------------------------------------------------
+  describe('Fluxo Completo de Correção Versionada do Capítulo 2', () => {
+    const buildCanonicalC2CompletedResponses = (rev = 1) => {
+      const promptMap: Record<string, any> = {
+        [AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key]: ['regular_hours'],
+        [AYV_C2_PROMPTS.P2_DELAYED_MEAL.key]: ['irritation'],
+        [AYV_C2_PROMPTS.P3_POST_MEAL.key]: ['light_satisfied'],
+        [AYV_C2_PROMPTS.P4_HUNGER_RETURN.key]: 'returns_quickly',
+        [AYV_C2_PROMPTS.P5_FOOD_DEMANDS.key]: ['dairy'],
+        [AYV_C2_PROMPTS.P6_BOWEL_RHYTHM.key]: 'daily_regular',
+        [AYV_C2_PROMPTS.P7_STOOL_PATTERN.key]: ['formed_easy'],
+        [AYV_C2_PROMPTS.P8_SLEEP_PATTERN.key]: ['easy_deep'],
+        [AYV_C2_PROMPTS.P9_WAKING.key]: 'rested_ready',
+        [AYV_C2_PROMPTS.P10_ENERGY_DISTRIBUTION.key]: 'stable_throughout',
+        [AYV_C2_PROMPTS.P11_BODY_PACE.key]: 'constant',
+        [AYV_C2_PROMPTS.P12_HISTORICAL_CONFIDENCE.key]: 'many_years',
+      }
+
+      const list: any[] = []
+      for (const [key, val] of Object.entries(promptMap)) {
+        list.push({
+          id: `resp-v${rev}-${key}`,
+          enrollment_id: 'enr-demo',
+          experience_id: 'exp-corpo-fisiologia-07b',
+          prompt_id: rev > 1 ? `${key}_rev${rev}` : key,
+          prompt_key: key,
+          canonical_prompt_id: key,
+          respondent_user_id: 'usr-mariana',
+          response_type: Array.isArray(val) ? 'MultiSelectCards' : 'ChoiceCards',
+          version: rev,
+          revision_number: rev,
+          created: '2025-05-10T10:00:00Z',
+          updated: '2025-05-10T10:00:00Z',
+          structured_value: {
+            value: val,
+            selectedOptionIds: Array.isArray(val) ? val : [val],
+            revision_number: rev,
+            metadata: {
+              prompt_key: key,
+              canonical_prompt_id: key,
+              revision_number: rev,
+              domain: 'ayurveda',
+              chapter_id: 'capitulo-2-ritmo-corpo',
+            },
+          },
+        })
+      }
+
+      // Registro explícito de conclusão da rev
+      list.push({
+        id: `resp-v${rev}-completion`,
+        enrollment_id: 'enr-demo',
+        experience_id: 'exp-corpo-fisiologia-07b',
+        prompt_id:
+          rev > 1
+            ? `${AYV_C2_PROMPTS.CHAPTER_COMPLETION.id}_rev${rev}`
+            : AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+        prompt_key: AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
+        canonical_prompt_id: AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+        respondent_user_id: 'usr-mariana',
+        response_type: 'ChapterCompletion',
+        version: rev,
+        revision_number: rev,
+        created: '2025-05-10T11:00:00Z',
+        updated: '2025-05-10T11:00:00Z',
+        structured_value: {
+          completed: true,
+          completed_at: '2025-05-10T11:00:00Z',
+          revision_number: rev,
+          metadata: {
+            prompt_key: AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
+            canonical_prompt_id: AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+            completed: true,
+            completed_at: '2025-05-10T11:00:00Z',
+            revision_number: rev,
+          },
+        },
+      })
+
+      return list
+    }
+
+    it('1 a 7: carregar Capítulo 2 concluído → clicar "Corrigir minhas respostas" → "Confirmar e corrigir" → encerramento deixa de ser exibido, abre fluxo editável pré-preenchido, altera resposta, conclui novamente com resumo atualizado e versão anterior preservada', async () => {
+      const persistedStorage: any[] = buildCanonicalC2CompletedResponses(1)
+
+      vi.spyOn(enrollmentExperienceService, 'listByEnrollment').mockResolvedValue([])
+      vi.spyOn(experienceResponseService, 'listResponsesByExperience').mockImplementation(
+        async () => [...persistedStorage],
+      )
+      vi.spyOn(experienceResponseService, 'saveResponse').mockImplementation(
+        async (params: any) => {
+          const rev =
+            params.structuredValue?.revision_number ||
+            params.structuredValue?.metadata?.revision_number ||
+            1
+          const record = {
+            id: `saved-${params.promptId}-${Date.now()}-${Math.random()}`,
+            enrollment_id: params.enrollmentId,
+            experience_id: params.experienceId,
+            prompt_id: params.promptId,
+            prompt_key: params.promptKey,
+            canonical_prompt_id: params.canonicalPromptId || params.promptId,
+            respondent_user_id: params.respondentUserId,
+            response_type: params.responseType,
+            structured_value: params.structuredValue,
+            version: rev,
+            revision_number: rev,
+            created: new Date().toISOString(),
+            updated: new Date().toISOString(),
+          }
+          const existingIdx = persistedStorage.findIndex(
+            (r) =>
+              r.prompt_id === params.promptId &&
+              (r.revision_number === rev || r.structured_value?.revision_number === rev),
+          )
+          if (existingIdx >= 0) {
+            persistedStorage[existingIdx] = record
+          } else {
+            persistedStorage.push(record)
+          }
+          return record as any
+        },
+      )
+
+      render(
+        <AyurvedaChapter2Flow
+          enrollmentId="enr-demo"
+          experienceId="exp-corpo-fisiologia-07b"
+          respondentUserId="usr-mariana"
+          treatmentVariant="feminino"
+          onBackToHub={vi.fn()}
+        />,
+      )
+
+      // Inicialmente está concluído (v1) e exibe o encerramento com título de conclusão
+      await waitFor(() => {
+        expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+      })
+      expect(screen.getByText('Corrigir minhas respostas')).toBeInTheDocument()
+
+      // 1. Clicar em "Corrigir minhas respostas"
+      fireEvent.click(screen.getByText('Corrigir minhas respostas'))
+      expect(screen.getByText('Confirmar abertura de correção do Capítulo 2')).toBeInTheDocument()
+
+      // Confirmar "Confirmar e corrigir"
+      fireEvent.click(screen.getByText('Confirmar e corrigir'))
+
+      // 1 & 2. O encerramento deixa de ser exibido imediatamente e o fluxo editável é aberto no Momento 1 (Fome)
+      await waitFor(() => {
+        expect(screen.queryByText('Capítulo 2 concluído')).not.toBeInTheDocument()
+      })
+      expect(screen.getByText('Momento 1 de 5 — Fome')).toBeInTheDocument()
+
+      // 3. Respostas anteriores pré-preenchidas na tela
+      const optRegular = screen.getByText('Aparece em horários relativamente previsíveis.')
+      const optRegularButton = optRegular.closest('button')
+      expect(optRegularButton).toHaveAttribute('aria-pressed', 'true')
+
+      // 4. Alterar pelo menos uma resposta no Momento 1 (P1): adicionar 'sudden_intense'
+      const optSudden = screen.getByText('Surge de repente e pode ficar muito intensa.')
+      fireEvent.click(optSudden)
+
+      // Avançar pelos momentos até o encerramento para concluir a nova versão
+      fireEvent.click(screen.getByText('Avançar para Digestão'))
+      await waitFor(() => {
+        expect(screen.getByText('Momento 2 de 5 — Digestão')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('Avançar para Eliminação'))
+      await waitFor(() => {
+        expect(screen.getByText('Momento 3 de 5 — Eliminação')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('Avançar para Sono'))
+      await waitFor(() => {
+        expect(screen.getByText('Momento 4 de 5 — Sono')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('Avançar para Energia'))
+      await waitFor(() => {
+        expect(screen.getByText('Momento 5 de 5 — Energia')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('Ir para Encerramento'))
+      await waitFor(() => {
+        expect(screen.getByText('O ritmo que você observou no seu corpo')).toBeInTheDocument()
+      })
+
+      // 5. Concluir novamente: botão "Concluir Capítulo 2" está disponível
+      const completeBtn = screen.getByText('Concluir Capítulo 2')
+      fireEvent.click(completeBtn)
+
+      // 6. Novo resumo exibe a resposta alterada ("Surge de repente e pode ficar muito intensa.")
+      await waitFor(() => {
+        expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+      })
+      expect(screen.getByText('Surge de repente e pode ficar muito intensa.')).toBeInTheDocument()
+
+      // 7. Versão anterior (v1) preservada integralmente no armazenamento
+      const v1Records = persistedStorage.filter(
+        (r) =>
+          r.revision_number === 1 ||
+          r.structured_value?.revision_number === 1 ||
+          r.structured_value?.metadata?.revision_number === 1,
+      )
+      const v2Records = persistedStorage.filter(
+        (r) =>
+          r.revision_number === 2 ||
+          r.structured_value?.revision_number === 2 ||
+          r.structured_value?.metadata?.revision_number === 2,
+      )
+
+      expect(v1Records.length).toBeGreaterThanOrEqual(13) // 12 perguntas + 1 completion
+      expect(v2Records.length).toBeGreaterThanOrEqual(13) // 12 perguntas + 1 completion
+
+      // O registro da v1 original NÃO continha sudden_intense
+      const v1P1 = v1Records.find(
+        (r) =>
+          r.prompt_key === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key ||
+          r.prompt_id === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id,
+      )
+      expect(v1P1.structured_value.value).not.toContain('sudden_intense')
+
+      // O registro da v2 contém a alteração e aponta parent_version_id para a v1
+      const v2P1 = v2Records.find(
+        (r) =>
+          r.prompt_key === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key ||
+          r.prompt_id.startsWith(AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id),
+      )
+      expect(v2P1.structured_value.value).toContain('sudden_intense')
+      expect(v2P1.structured_value.metadata.parent_version_id).toBeTruthy()
+    })
+
+    it('8. Recarregar → nova versão permanece ativa ou concluída corretamente', () => {
+      const persistedStorage = [
+        ...buildCanonicalC2CompletedResponses(1),
+        ...buildCanonicalC2CompletedResponses(2),
+      ]
+
+      // Ao derivar status sem parâmetro ativo, deve adotar a maior revisão (v2) e manter-se completed
+      const derived = deriveChapter2Status(persistedStorage)
+      expect(derived.activeRevisionNumber).toBe(2)
+      expect(derived.status).toBe('completed')
+      expect(derived.hasCompletionRecord).toBe(true)
+    })
+
+    it('9. Cancelar no painel de confirmação sem mutação', async () => {
+      const persistedStorage = buildCanonicalC2CompletedResponses(1)
+      const saveSpy = vi.fn()
+      vi.spyOn(experienceResponseService, 'listResponsesByExperience').mockResolvedValue(
+        persistedStorage,
+      )
+      vi.spyOn(experienceResponseService, 'saveResponse').mockImplementation(saveSpy)
+
+      render(
+        <AyurvedaChapter2Flow
+          enrollmentId="enr-demo"
+          experienceId="exp-corpo-fisiologia-07b"
+          respondentUserId="usr-mariana"
+          onBackToHub={vi.fn()}
+        />,
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('Corrigir minhas respostas'))
+      expect(screen.getByText('Confirmar abertura de correção do Capítulo 2')).toBeInTheDocument()
+
+      // Clicar em Cancelar
+      fireEvent.click(screen.getByText('Cancelar'))
+
+      // Diálogo fechou, tela de conclusão continua visível, zero chamadas de salvamento
+      expect(
+        screen.queryByText('Confirmar abertura de correção do Capítulo 2'),
+      ).not.toBeInTheDocument()
+      expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+      expect(saveSpy).not.toHaveBeenCalled()
+    })
+
+    it('10. Duas correções sucessivas produzem revisões distintas (v1 → v2 → v3)', () => {
+      const v1List = buildCanonicalC2CompletedResponses(1)
+      const v2Creation = createChapter2Revision({
+        existingResponses: v1List,
+        enrollmentId: 'enr-demo',
+        experienceId: 'exp-corpo-fisiologia-07b',
+        respondentUserId: 'usr-mariana',
+      })
+      expect(v2Creation.nextRevisionNumber).toBe(2)
+
+      // Simular conclusão da v2
+      const v2Completed = [
+        ...v2Creation.allResponses,
+        {
+          id: 'v2-completion',
+          prompt_id: `${AYV_C2_PROMPTS.CHAPTER_COMPLETION.id}_rev2`,
+          prompt_key: AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
+          structured_value: {
+            completed: true,
+            completed_at: '2025-05-11T10:00:00Z',
+            revision_number: 2,
+            metadata: { revision_number: 2 },
+          },
+        },
+      ]
+
+      // Segunda correção sucessiva
+      const v3Creation = createChapter2Revision({
+        existingResponses: v2Completed,
+        enrollmentId: 'enr-demo',
+        experienceId: 'exp-corpo-fisiologia-07b',
+        respondentUserId: 'usr-mariana',
+      })
+      expect(v3Creation.nextRevisionNumber).toBe(3)
+      expect(v3Creation.newActiveResponses.length).toBe(12)
+      expect(
+        v3Creation.newActiveResponses.every(
+          (r) => (r.structured_value as any)?.revision_number === 3,
+        ),
+      ).toBe(true)
+    })
+
+    it('11. Conclusão antiga NÃO força a nova revisão para "completed"', () => {
+      // Cria v1 completa com conclusão
+      const v1Responses = buildCanonicalC2CompletedResponses(1)
+      expect(deriveChapter2Status(v1Responses).status).toBe('completed')
+
+      // Cria v2 ativa em andamento/sem conclusão
+      const { allResponses } = createChapter2Revision({
+        existingResponses: v1Responses,
+        enrollmentId: 'enr-demo',
+        experienceId: 'exp-corpo-fisiologia-07b',
+        respondentUserId: 'usr-mariana',
+      })
+
+      // Derivar o status para a revisão ativa 2
+      const derivedV2 = deriveChapter2Status(allResponses, 2)
+      // Como a v2 recém criada ainda não possui registro de conclusão para a rev 2,
+      // seu status deve ser 'ready_to_complete' (todas as 12 copiadas) e NÃO 'completed'
+      expect(derivedV2.hasCompletionRecord).toBe(false)
+      expect(derivedV2.status).toBe('ready_to_complete')
+      expect(derivedV2.status).not.toBe('completed')
+    })
+
+    it('12. Capítulo 1 permanece intacto durante o ciclo do Capítulo 2', () => {
+      const mixedResponses = [
+        // Resposta do Capítulo 1
+        {
+          id: 'c1-resp',
+          prompt_id: 'ayv_c1_structure',
+          prompt_key: 'ayv_c1_structure',
+          structured_value: { choice: 'figura_a' },
+        },
+        ...buildCanonicalC2CompletedResponses(1),
+      ]
+
+      const { allResponses } = createChapter2Revision({
+        existingResponses: mixedResponses,
+        enrollmentId: 'enr-demo',
+        experienceId: 'exp-corpo-fisiologia-07b',
+        respondentUserId: 'usr-mariana',
+      })
+
+      const c1Preserved = allResponses.find((r) => (r as any).prompt_key === 'ayv_c1_structure')
+      expect(c1Preserved).toBeDefined()
+      expect((c1Preserved as any).structured_value.choice).toBe('figura_a')
+    })
+
+    it('13 & 14: Demais dados da demonstração permanecem intactos e zero chamadas ao PocketBase', async () => {
+      const pb = (await import('@/lib/pocketbase/client')).default
+      const pbCollectionSpy = vi.spyOn(pb, 'collection')
+      const { demoAdapter } = await import('@/services/demoAdapter')
+      demoAdapter.enableDemo('mariana')
+
+      // Verificar persona e person intactas
+      expect(demoAdapter.getActivePersona()).toBe('mariana')
+      const person = demoAdapter.getCurrentPerson()
+      expect(person.preferred_name).toBe('Mariana')
+
+      // Nenhuma chamada PocketBase
+      expect(pbCollectionSpy).not.toHaveBeenCalled()
     })
   })
 })

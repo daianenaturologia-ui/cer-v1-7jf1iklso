@@ -16,6 +16,8 @@ import {
   deriveChapter2Status,
   AyurvedaChapter2Status,
   Chapter2TreatmentVariant,
+  createChapter2Revision,
+  getResponseRevisionNumber,
 } from '@/services/ayurvedaChapter2'
 import { AyurvedaChapter2Opening } from './AyurvedaChapter2Opening'
 import { AyurvedaC2Momento1Hunger } from './AyurvedaC2Momento1Hunger'
@@ -63,9 +65,10 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
 
   const [chapterState, setChapterState] = useState<AyurvedaChapter2State>({})
   const [rawResponses, setRawResponses] = useState<ExperienceResponseRecord[]>([])
+  const [activeRevision, setActiveRevision] = useState<number | undefined>(undefined)
 
   // Carregar respostas existentes com IDs canônicos AYV_C2
-  const loadResponses = async () => {
+  const loadResponses = async (explicitTargetRevision?: number) => {
     setLoading(true)
     try {
       const enrList = await enrollmentExperienceService.listByEnrollment(enrollmentId)
@@ -83,9 +86,17 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       )
       setRawResponses(responses)
 
+      // Identificar revisão ativa a ser carregada
+      const derivedTemp = deriveChapter2Status(responses, explicitTargetRevision)
+      const targetRev = explicitTargetRevision ?? derivedTemp.activeRevisionNumber
+      setActiveRevision(targetRev)
+
+      // Filtrar respostas estritamente pertencentes à revisão ativa
+      const activeResponses = responses.filter((r) => getResponseRevisionNumber(r) === targetRev)
+
       const loadedState: AyurvedaChapter2State = {}
 
-      for (const r of responses) {
+      for (const r of activeResponses) {
         const sVal = r.structured_value as any
         const pKey =
           (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
@@ -170,8 +181,8 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
 
       setChapterState(loadedState)
 
-      // Determinar stage inicial inteligente
-      const derived = deriveChapter2Status(responses)
+      // Determinar stage inicial inteligente baseado na revisão ativa
+      const derived = deriveChapter2Status(responses, targetRev)
       if (initialStage === 'review') {
         setIsReviewOnly(true)
         setStage('momento1')
@@ -199,10 +210,11 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   }
 
   useEffect(() => {
-    loadResponses()
+    loadResponses(activeRevision)
   }, [enrollmentId, experienceId])
 
-  const derived = deriveChapter2Status(rawResponses)
+  const derived = deriveChapter2Status(rawResponses, activeRevision)
+  const currentActiveRev = activeRevision ?? derived.activeRevisionNumber
   const isCompleted = derived.status === 'completed'
   const isReadyToComplete = derived.status === 'ready_to_complete'
   const chapter2Status: AyurvedaChapter2Status = derived.status
@@ -232,6 +244,9 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         ? params.explicitRefusal
         : params.optionIds.includes('refusal')
 
+    const nowIso = new Date().toISOString()
+    const targetRev = currentActiveRev
+
     const meta: AyurvedaCanonicalC2ResponseMetadata = {
       prompt_key: params.promptKey,
       canonical_prompt_id: params.promptId,
@@ -246,15 +261,20 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       explicit_unsure: isUnsure,
       explicit_refusal: isRefusal,
       historical_confidence: isUnsure ? 'low' : 'high',
-      answered_at: new Date().toISOString(),
+      answered_at: nowIso,
       experience_version: AYURVEDA_CHAPTER_2_VERSION,
       notes_for_professional: params.notesForProfessional,
+      revision_number: targetRev,
     }
+
+    // Se estivermos em uma revisão > 1, usamos um promptId específico ou identificador único por revisão
+    // para que no demo e no backend a versão anterior fique 100% imutável
+    const promptIdToPersist = targetRev > 1 ? `${params.promptId}_rev${targetRev}` : params.promptId
 
     const saved = await experienceResponseService.saveResponse({
       enrollmentId,
       experienceId,
-      promptId: params.promptId,
+      promptId: promptIdToPersist,
       respondentUserId,
       responseType: params.responseType,
       promptVersion: 1,
@@ -262,21 +282,35 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       canonicalPromptId: params.promptId,
       stepOrder: params.stepOrder,
       accessClass: 'shared_care',
-      changeReason: 'Resposta do participante ao Capítulo 2',
+      changeReason: `Resposta do participante ao Capítulo 2 (revisão ${targetRev})`,
       structuredValue: {
         value: params.value,
         selectedOptionIds: Array.isArray(params.value) ? params.value : [params.value],
+        revision_number: targetRev,
         metadata: meta,
       },
     })
+    ;(saved as any).revision_number = targetRev
+    ;(saved as any).prompt_key = params.promptKey
+    ;(saved as any).canonical_prompt_id = params.promptId
 
     setRawResponses((prev) => {
-      const idx = prev.findIndex(
-        (r) =>
-          r.prompt_id === params.promptId ||
-          (r as any).prompt_key === params.promptKey ||
-          (r.structured_value as any)?.prompt_key === params.promptKey,
-      )
+      // Atualizar ou inserir na lista de respostas estritamente para a revisão ativa
+      const idx = prev.findIndex((r) => {
+        const rev = getResponseRevisionNumber(r)
+        if (rev !== targetRev) return false
+        const pId = r.prompt_id || (r as any).canonical_prompt_id
+        const pKey =
+          (r as any).prompt_key ||
+          (r.structured_value as any)?.prompt_key ||
+          (r.structured_value as any)?.metadata?.prompt_key
+        return (
+          r.id === saved.id ||
+          pId === promptIdToPersist ||
+          pId === params.promptId ||
+          pKey === params.promptKey
+        )
+      })
       if (idx >= 0) {
         const next = [...prev]
         next[idx] = saved
@@ -468,11 +502,17 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
     setSaving(true)
     try {
       const nowIso = new Date().toISOString()
+      const targetRev = currentActiveRev
+
+      const completionPromptId =
+        targetRev > 1
+          ? `${AYV_C2_PROMPTS.CHAPTER_COMPLETION.id}_rev${targetRev}`
+          : AYV_C2_PROMPTS.CHAPTER_COMPLETION.id
 
       const completionResp = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
-        promptId: AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+        promptId: completionPromptId,
         respondentUserId,
         responseType: 'ChapterCompletion' as any,
         promptVersion: 1,
@@ -480,12 +520,13 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         canonicalPromptId: AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
         stepOrder: 5,
         accessClass: 'shared_care',
-        changeReason: 'Conclusão canônica explícita do Capítulo 2 de Ayurveda',
+        changeReason: `Conclusão canônica explícita do Capítulo 2 de Ayurveda (revisão ${targetRev})`,
         structuredValue: {
           completed: true,
           completed_at: nowIso,
           chapter_id: AYURVEDA_CHAPTER_2_ID,
           experience_version: AYURVEDA_CHAPTER_2_VERSION,
+          revision_number: targetRev,
           step_order: 5,
           metadata: {
             prompt_key: AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
@@ -494,16 +535,30 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             completed_at: nowIso,
             chapter_id: AYURVEDA_CHAPTER_2_ID,
             experience_version: AYURVEDA_CHAPTER_2_VERSION,
+            revision_number: targetRev,
           },
         },
       })
+      ;(completionResp as any).revision_number = targetRev
+      ;(completionResp as any).prompt_key = AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+      ;(completionResp as any).canonical_prompt_id = AYV_C2_PROMPTS.CHAPTER_COMPLETION.id
 
       setRawResponses((prev) => {
-        const existingIdx = prev.findIndex(
-          (r) =>
-            r.prompt_id === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
-            (r as any).prompt_key === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
-        )
+        const existingIdx = prev.findIndex((r) => {
+          const rev = getResponseRevisionNumber(r)
+          if (rev !== targetRev) return false
+          const pId = r.prompt_id || (r as any).canonical_prompt_id
+          const pKey =
+            (r as any).prompt_key ||
+            (r.structured_value as any)?.prompt_key ||
+            (r.structured_value as any)?.metadata?.prompt_key
+          return (
+            r.id === completionResp.id ||
+            pId === completionPromptId ||
+            pId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
+            pKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+          )
+        })
         if (existingIdx >= 0) {
           const updated = [...prev]
           updated[existingIdx] = completionResp
@@ -527,7 +582,39 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   }
 
   // Corrigir minhas respostas com histórico preservado
-  const handleStartCorrection = () => {
+  const handleStartCorrection = async () => {
+    // 1. Preservar integralmente as respostas anteriores (imutáveis)
+    // 2. Criar nova revisão canônica desvinculada de conclusão
+    const { nextRevisionNumber, newActiveResponses } = createChapter2Revision({
+      existingResponses: rawResponses,
+      enrollmentId,
+      experienceId,
+      respondentUserId,
+    })
+
+    // 3. Persistir cada resposta copiada no adapter/backend vinculada à nova revisão
+    for (const item of newActiveResponses) {
+      const sVal = item.structured_value as any
+      const meta = sVal?.metadata || {}
+      await experienceResponseService.saveResponse({
+        enrollmentId,
+        experienceId,
+        promptId: item.prompt_id,
+        respondentUserId,
+        responseType: item.response_type,
+        promptVersion: 1,
+        promptKey: (item as any).prompt_key || meta.prompt_key,
+        canonicalPromptId: (item as any).canonical_prompt_id || meta.canonical_prompt_id,
+        stepOrder: meta.step_order,
+        accessClass: 'shared_care',
+        changeReason: `Cópia inicial da revisão ${nextRevisionNumber} do Capítulo 2`,
+        structuredValue: sVal,
+      })
+    }
+
+    // 4. Atualizar estado local com a nova revisão ativa
+    setActiveRevision(nextRevisionNumber)
+    setRawResponses((prev) => [...prev, ...newActiveResponses])
     setIsReviewOnly(false)
     setStage('momento1')
   }
