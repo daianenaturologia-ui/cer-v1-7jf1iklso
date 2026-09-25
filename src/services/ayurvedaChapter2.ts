@@ -656,12 +656,40 @@ export function getResponseParentVersionId(
 }
 
 /**
+ * Remove qualquer sufixo de revisão anterior `_rev<N>` (mesmo encadeado) para obter o promptId base.
+ */
+export function getChapter2BasePromptId(promptId: string): string {
+  if (!promptId || typeof promptId !== 'string') return ''
+  return promptId.replace(/(_rev\d+)+$/, '')
+}
+
+/**
+ * Gera o ID físico canônico exclusivo para a revisão informada.
+ * Regras:
+ * - Revisão 1 (ou <= 1): preserva o promptId base legado.
+ * - Revisão N > 1: <basePromptId>_rev<N>.
+ * - Sempre limpa eventuais sufixos prévios para evitar acúmulo (..._rev2_rev3).
+ */
+export function getChapter2RevisionPromptId(
+  baseOrPhysicalPromptId: string,
+  revisionNumber: number,
+): string {
+  const base = getChapter2BasePromptId(baseOrPhysicalPromptId)
+  if (revisionNumber > 1) {
+    return `${base}_rev${revisionNumber}`
+  }
+  return base
+}
+
+/**
  * Cria canonicamente uma nova revisão do Capítulo 2 a partir das respostas atuais:
- * 1. Preserva o histórico imutável das respostas atuais.
- * 2. Descobre o maior revision_number existente e incrementa (targetRevision = maxRevision + 1).
- * 3. Copia todas as 12 respostas anteriores como iniciais para a nova revisão,
- *    desvinculadas de qualquer conclusão e apontando parent_version_id para o registro original.
- * 4. Retorna a lista completa atualizada com as novas respostas ativas e o novo número de revisão.
+ * 1. Localiza a última revisão concluída válida (ou mais recente com respostas).
+ * 2. Seleciona somente respostas clínicas reais pertencentes a essa revisão de origem.
+ * 3. Exclui o registro de conclusão da lista de respostas a copiar.
+ * 4. Validação fail-closed: exige ao menos uma resposta clínica válida na origem; caso contrário lança erro explícito.
+ * 5. Toda resposta gerada recebe o prompt_id físico com sufixo canônico `_rev<N>` (via getChapter2RevisionPromptId).
+ * 6. Vínculo parental (`parent_version_id`) apontando estritamente para o registro de origem.
+ * 7. Coerência do `revision_number` na raiz, structured_value e metadata.
  */
 export function createChapter2Revision(params: {
   existingResponses: Array<ExperienceResponseRecord | Record<string, any>>
@@ -688,28 +716,69 @@ export function createChapter2Revision(params: {
     )
   })
 
+  // Descobrir revisões existentes e localizar a última concluída válida ou com respostas reais
+  // Identificar conclusões válidas por revisão
+  const completedRevisions = new Set<number>()
+  for (const r of c2Responses) {
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+    const baseId = getChapter2BasePromptId(promptId || '')
+    const baseKey = getChapter2BasePromptId(promptKey || '')
+
+    if (
+      baseId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
+      baseKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+    ) {
+      const isCompleted =
+        sVal?.completed === true || sVal?.value?.completed === true || sVal?.status === 'completed'
+      if (isCompleted) {
+        completedRevisions.add(getResponseRevisionNumber(r))
+      }
+    }
+  }
+
   // Descobrir maior revision_number existente no Capítulo 2
   let maxRevision = 1
   for (const r of c2Responses) {
     const rev = getResponseRevisionNumber(r)
     if (rev > maxRevision) maxRevision = rev
   }
+
+  // A revisão de origem: se houver revisões concluídas, a maior concluída <= maxRevision;
+  // caso contrário, maxRevision
+  let sourceRevision = 1
+  if (completedRevisions.size > 0) {
+    const sortedCompleted = Array.from(completedRevisions).sort((a, b) => b - a)
+    sourceRevision = sortedCompleted[0]
+  } else {
+    sourceRevision = maxRevision
+  }
+
   const nextRevisionNumber = maxRevision + 1
   const nowIso = new Date().toISOString()
 
-  // Buscar a última resposta de cada uma das 12 perguntas (da revisão imediatamente anterior)
-  // para usar como valores iniciais da nova revisão
+  // Buscar respostas clínicas reais pertencentes ESTRITAMENTE à revisão de origem
+  // Excluir qualquer conclusão
   const latestQuestionsMap = new Map<string, ExperienceResponseRecord | Record<string, any>>()
   for (const r of c2Responses) {
+    const rev = getResponseRevisionNumber(r)
+    if (rev !== sourceRevision) {
+      continue
+    }
+
     const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
     const sVal = (r as any).structured_value
     const promptKey =
       (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+    const baseId = getChapter2BasePromptId(promptId || '')
+    const baseKey = getChapter2BasePromptId(promptKey || '')
 
-    // Ignorar conclusão antiga ao copiar perguntas
+    // Ignorar conclusão
     if (
-      promptId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
-      promptKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+      baseId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
+      baseKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
     ) {
       continue
     }
@@ -717,27 +786,42 @@ export function createChapter2Revision(params: {
     for (let i = 0; i < AYV_C2_TOTAL_QUESTIONS; i++) {
       const qKey = AYV_C2_QUESTION_PROMPT_KEYS[i]
       const qId = AYV_C2_QUESTION_PROMPT_IDS[i]
-      if (promptKey === qKey || promptId === qId) {
-        const existingStored = latestQuestionsMap.get(qKey)
-        if (!existingStored) {
+      if (baseKey === qKey || baseId === qId) {
+        const hasVal =
+          sVal !== undefined &&
+          sVal !== null &&
+          (typeof sVal === 'string'
+            ? sVal.trim().length > 0
+            : Array.isArray(sVal)
+              ? sVal.length > 0
+              : Array.isArray(sVal?.selectedOptionIds)
+                ? sVal.selectedOptionIds.length > 0
+                : Array.isArray(sVal?.value)
+                  ? sVal.value.length > 0
+                  : sVal?.value !== undefined || sVal?.choice !== undefined)
+        const rawVal = (r as any).value || (r as any).response_value
+        if (hasVal || rawVal !== undefined) {
           latestQuestionsMap.set(qKey, r)
-        } else {
-          // Se já existe, pega a de maior revisão
-          const prevRev = getResponseRevisionNumber(existingStored)
-          const currRev = getResponseRevisionNumber(r)
-          if (currRev >= prevRev) {
-            latestQuestionsMap.set(qKey, r)
-          }
         }
       }
     }
   }
 
+  // Validação fail-closed: exigir ao menos uma resposta clínica válida na origem
+  if (latestQuestionsMap.size === 0) {
+    throw new Error(
+      `Não é possível criar a revisão ${nextRevisionNumber}: nenhuma resposta válida encontrada na revisão de origem ${sourceRevision}.`,
+    )
+  }
+
   // Criar registros copiados para a nova revisão (sem nenhum completion record para ela)
   const newActiveResponses: ExperienceResponseRecord[] = []
   latestQuestionsMap.forEach((parentRecord, qKey) => {
-    const promptId =
+    const rawPromptId =
       (parentRecord as any).prompt_id || (parentRecord as any).canonical_prompt_id || qKey
+    const basePromptId = getChapter2BasePromptId(rawPromptId)
+    const physicalPromptId = getChapter2RevisionPromptId(basePromptId, nextRevisionNumber)
+
     const sVal = (parentRecord as any).structured_value || {}
     const meta = (sVal as any).metadata || {}
     const parentId = (parentRecord as any).id || `parent-${qKey}`
@@ -745,7 +829,7 @@ export function createChapter2Revision(params: {
     const newMeta: AyurvedaCanonicalC2ResponseMetadata = {
       ...meta,
       prompt_key: qKey,
-      canonical_prompt_id: promptId,
+      canonical_prompt_id: basePromptId,
       domain: 'ayurveda',
       chapter_id: AYURVEDA_CHAPTER_2_ID,
       time_layer: 'habitual_adult',
@@ -767,7 +851,7 @@ export function createChapter2Revision(params: {
       id: `c2-rev${nextRevisionNumber}-${qKey}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       enrollment_id: enrollmentId,
       experience_id: experienceId,
-      prompt_id: promptId,
+      prompt_id: physicalPromptId,
       respondent_user_id: respondentUserId,
       response_type: (parentRecord as any).response_type || 'MultiSelectCards',
       access_class: (parentRecord as any).access_class || 'shared_care',
@@ -787,7 +871,7 @@ export function createChapter2Revision(params: {
     ;(newRecord as any).revision_number = nextRevisionNumber
     ;(newRecord as any).parent_version_id = parentId
     ;(newRecord as any).prompt_key = qKey
-    ;(newRecord as any).canonical_prompt_id = promptId
+    ;(newRecord as any).canonical_prompt_id = basePromptId
 
     newActiveResponses.push(newRecord)
   })

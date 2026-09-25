@@ -13,6 +13,8 @@ import {
   setPersistedActiveChapter2Revision,
   getPersistedActiveChapter2Revision,
   migrateLegacyChapter2Responses,
+  getChapter2RevisionPromptId,
+  getChapter2BasePromptId,
 } from '@/services/ayurvedaChapter2'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
 import { ExperienceResponseRecord, EnrollmentExperienceRecord } from '@/types/cer'
@@ -244,34 +246,62 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
         respondentUserId,
       })
 
-      // 3. Persistir cópias da nova revisão
+      // 3. Persistir cópias da nova revisão com ID físico canônico exclusivo
+      const persistedCopies: ExperienceResponseRecord[] = []
       for (const item of newActiveResponses) {
         const sVal = (item.structured_value || {}) as any
         const meta = sVal?.metadata || {}
         const pKey = (item as any).prompt_key || meta?.prompt_key || item.prompt_id
-        const pId = (item as any).canonical_prompt_id || meta?.canonical_prompt_id || item.prompt_id
+        const baseCanonicalPromptId = getChapter2BasePromptId(
+          (item as any).canonical_prompt_id || meta?.canonical_prompt_id || item.prompt_id,
+        )
+        const physicalPromptId = getChapter2RevisionPromptId(
+          baseCanonicalPromptId,
+          nextRevisionNumber,
+        )
         const step = (item as any).step_order ?? meta?.step_order ?? 1
+
+        const enrichedStructuredVal = {
+          ...sVal,
+          revision_number: nextRevisionNumber,
+          parent_version_id: (item as any).parent_version_id || sVal?.parent_version_id,
+          metadata: {
+            ...(meta || {}),
+            revision_number: nextRevisionNumber,
+            parent_version_id: (item as any).parent_version_id || sVal?.parent_version_id,
+            canonical_prompt_id: baseCanonicalPromptId,
+            prompt_key: pKey,
+          },
+        }
 
         const saved = await experienceResponseService.saveResponse({
           enrollmentId,
           experienceId,
-          promptId: item.prompt_id,
+          promptId: physicalPromptId,
           respondentUserId,
           responseType: item.response_type || ('MultiSelectCards' as any),
           promptVersion: 1,
           promptKey: pKey,
-          canonicalPromptId: pId,
+          canonicalPromptId: baseCanonicalPromptId,
           stepOrder: step,
           accessClass: 'shared_care',
           changeReason: `Cópia inicial da revisão ${nextRevisionNumber} do Capítulo 2`,
-          structuredValue: sVal,
+          structuredValue: enrichedStructuredVal,
         })
         ;(saved as any).revision_number = nextRevisionNumber
         ;(saved as any).prompt_key = pKey
-        ;(saved as any).canonical_prompt_id = pId
+        ;(saved as any).canonical_prompt_id = baseCanonicalPromptId
+        persistedCopies.push(saved)
       }
 
-      // 4. Persistir a nova revisão ativa no storage ANTES de mudar o estado de navegação
+      // Validação: garantir que todas as cópias foram persistidas
+      if (persistedCopies.length === 0 || persistedCopies.length !== newActiveResponses.length) {
+        throw new Error(
+          `Falha ao persistir cópias da revisão ${nextRevisionNumber}: persistidas ${persistedCopies.length} de ${newActiveResponses.length}`,
+        )
+      }
+
+      // 4. Persistir a nova revisão ativa no storage SOMENTE após sucesso de todas as cópias
       setPersistedActiveChapter2Revision(enrollmentId, nextRevisionNumber)
 
       // 5. Atualizar respostas em cache e transicionar navegação canônica

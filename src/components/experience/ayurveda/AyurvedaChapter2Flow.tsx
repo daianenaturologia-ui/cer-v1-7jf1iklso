@@ -21,6 +21,8 @@ import {
   migrateLegacyChapter2Responses,
   getPersistedActiveChapter2Revision,
   setPersistedActiveChapter2Revision,
+  getChapter2RevisionPromptId,
+  getChapter2BasePromptId,
 } from '@/services/ayurvedaChapter2'
 import { AyurvedaChapter2Opening } from './AyurvedaChapter2Opening'
 import { AyurvedaC2Momento1Hunger } from './AyurvedaC2Momento1Hunger'
@@ -400,9 +402,9 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       revision_number: targetRev,
     }
 
-    // Se estivermos em uma revisão > 1, usamos um promptId específico ou identificador único por revisão
-    // para que no demo e no backend a versão anterior fique 100% imutável
-    const promptIdToPersist = targetRev > 1 ? `${params.promptId}_rev${targetRev}` : params.promptId
+    // Usar o helper canônico getChapter2RevisionPromptId para obter o identificador físico
+    const basePromptId = getChapter2BasePromptId(params.promptId)
+    const promptIdToPersist = getChapter2RevisionPromptId(basePromptId, targetRev)
 
     const saved = await experienceResponseService.saveResponse({
       enrollmentId,
@@ -412,7 +414,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       responseType: params.responseType,
       promptVersion: 1,
       promptKey: params.promptKey,
-      canonicalPromptId: params.promptId,
+      canonicalPromptId: basePromptId,
       stepOrder: params.stepOrder,
       accessClass: 'shared_care',
       changeReason: `Resposta do participante ao Capítulo 2 (revisão ${targetRev})`,
@@ -637,10 +639,10 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       const nowIso = new Date().toISOString()
       const targetRev = currentActiveRev
 
-      const completionPromptId =
-        targetRev > 1
-          ? `${AYV_C2_PROMPTS.CHAPTER_COMPLETION.id}_rev${targetRev}`
-          : AYV_C2_PROMPTS.CHAPTER_COMPLETION.id
+      const completionPromptId = getChapter2RevisionPromptId(
+        AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+        targetRev,
+      )
 
       const completionResp = await experienceResponseService.saveResponse({
         enrollmentId,
@@ -741,35 +743,67 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       })
 
       // 2. Persistir atomicamente e de forma assíncrona todas as respostas copiadas
+      // Cada cópia usa o helper canônico getChapter2RevisionPromptId
       const persistedActiveResponses: ExperienceResponseRecord[] = []
       for (const item of newActiveResponses) {
         const sVal = (item.structured_value || {}) as any
         const meta = sVal?.metadata || {}
         const pKey = (item as any).prompt_key || meta?.prompt_key || item.prompt_id
-        const pId = (item as any).canonical_prompt_id || meta?.canonical_prompt_id || item.prompt_id
+        const baseCanonicalPromptId = getChapter2BasePromptId(
+          (item as any).canonical_prompt_id || meta?.canonical_prompt_id || item.prompt_id,
+        )
+        const physicalPromptId = getChapter2RevisionPromptId(
+          baseCanonicalPromptId,
+          nextRevisionNumber,
+        )
         const step = (item as any).step_order ?? meta?.step_order ?? 1
+
+        const enrichedStructuredVal = {
+          ...sVal,
+          revision_number: nextRevisionNumber,
+          parent_version_id: (item as any).parent_version_id || sVal?.parent_version_id,
+          metadata: {
+            ...(meta || {}),
+            revision_number: nextRevisionNumber,
+            parent_version_id: (item as any).parent_version_id || sVal?.parent_version_id,
+            canonical_prompt_id: baseCanonicalPromptId,
+            prompt_key: pKey,
+            chapter_id: AYURVEDA_CHAPTER_2_ID,
+            experience_version: AYURVEDA_CHAPTER_2_VERSION,
+          },
+        }
 
         const saved = await experienceResponseService.saveResponse({
           enrollmentId,
           experienceId,
-          promptId: item.prompt_id,
+          promptId: physicalPromptId,
           respondentUserId,
           responseType: item.response_type || ('MultiSelectCards' as any),
           promptVersion: 1,
           promptKey: pKey,
-          canonicalPromptId: pId,
+          canonicalPromptId: baseCanonicalPromptId,
           stepOrder: step,
           accessClass: 'shared_care',
           changeReason: `Cópia inicial da revisão ${nextRevisionNumber} do Capítulo 2`,
-          structuredValue: sVal,
+          structuredValue: enrichedStructuredVal,
         })
         ;(saved as any).revision_number = nextRevisionNumber
         ;(saved as any).prompt_key = pKey
-        ;(saved as any).canonical_prompt_id = pId
+        ;(saved as any).canonical_prompt_id = baseCanonicalPromptId
         persistedActiveResponses.push(saved)
       }
 
-      // 3. Persistir imediatamente no storage local que a nova revisão é a ATIVA
+      // 3. Validação pós-persistência: todas as cópias devem ter sido persistidas com sucesso
+      if (
+        persistedActiveResponses.length === 0 ||
+        persistedActiveResponses.length !== newActiveResponses.length
+      ) {
+        throw new Error(
+          `Falha ao persistir cópias da revisão ${nextRevisionNumber}: persistidas ${persistedActiveResponses.length} de ${newActiveResponses.length}`,
+        )
+      }
+
+      // 4. Somente após persistência completa de todas as cópias marcamos como ATIVA no storage local
       setPersistedActiveChapter2Revision(enrollmentId, nextRevisionNumber)
 
       // 4. Notificar callback externo para o navegador sincronizar canonicamente mode: 'correcting'
