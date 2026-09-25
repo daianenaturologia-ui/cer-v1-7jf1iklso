@@ -1133,7 +1133,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   if (isCorpoFisiologiaCanonical && experience) {
     return (
       <div className="py-4">
-        {/* Lazy import do fluxo canônico do Capítulo 1 com React.Suspense explícito */}
+        {/* Lazy import do navegador canônico de Corpo & Fisiologia com React.Suspense explícito */}
         <React.Suspense
           fallback={
             <div className="py-20 flex flex-col items-center justify-center space-y-3">
@@ -1146,7 +1146,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           }
         >
           {React.createElement(
-            React.lazy(() => import('./ayurveda/AyurvedaChapter1Flow')),
+            React.lazy(() => import('./ayurveda/AyurvedaChaptersNavigator')),
             {
               enrollmentId,
               experienceId: 'exp-corpo-fisiologia-07b',

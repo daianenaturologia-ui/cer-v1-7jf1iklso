@@ -40,6 +40,11 @@ export interface AyurvedaChapter2FlowProps {
   onBackToHub: () => void
   onCompleted?: () => void
   initialStage?: 'opening' | 'moments' | 'closing' | 'review'
+  mode?: 'intro' | 'answering' | 'ready_to_complete' | 'completed' | 'review' | 'correcting'
+  revisionNumber?: number
+  initialStep?: number
+  onEnterReview?: () => void
+  onStartCorrection?: () => void
 }
 
 type Chapter2FlowStage =
@@ -59,9 +64,49 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   onBackToHub,
   onCompleted,
   initialStage,
+  mode,
+  revisionNumber,
+  initialStep,
+  onEnterReview,
+  onStartCorrection,
 }) => {
-  const [stage, setStage] = useState<Chapter2FlowStage>('opening')
-  const [isReviewOnly, setIsReviewOnly] = useState(false)
+  const resolveInitialStage = (): Chapter2FlowStage => {
+    if (mode === 'review' || mode === 'correcting') {
+      const stepMap: Record<number, Chapter2FlowStage> = {
+        1: 'momento1',
+        2: 'momento2',
+        3: 'momento3',
+        4: 'momento4',
+        5: 'momento5',
+      }
+      return stepMap[initialStep || 1] || 'momento1'
+    }
+    if (mode === 'ready_to_complete' || mode === 'completed') {
+      return 'closing'
+    }
+    if (mode === 'answering') {
+      const stepMap: Record<number, Chapter2FlowStage> = {
+        1: 'momento1',
+        2: 'momento2',
+        3: 'momento3',
+        4: 'momento4',
+        5: 'momento5',
+      }
+      return stepMap[initialStep || 1] || 'momento1'
+    }
+    if (mode === 'intro') {
+      return 'opening'
+    }
+    if (initialStage === 'review') return 'momento1'
+    if (initialStage === 'closing') return 'closing'
+    if (initialStage === 'moments') return 'momento1'
+    return 'opening'
+  }
+
+  const [stage, setStage] = useState<Chapter2FlowStage>(resolveInitialStage)
+  const [isReviewOnly, setIsReviewOnly] = useState<boolean>(
+    () => mode === 'review' || initialStage === 'review',
+  )
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
@@ -70,8 +115,45 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   const [chapterState, setChapterState] = useState<AyurvedaChapter2State>({})
   const [rawResponses, setRawResponses] = useState<ExperienceResponseRecord[]>([])
   const [activeRevision, setActiveRevision] = useState<number | undefined>(() => {
-    return getPersistedActiveChapter2Revision(enrollmentId) ?? undefined
+    return revisionNumber ?? getPersistedActiveChapter2Revision(enrollmentId) ?? undefined
   })
+
+  // Sincronizar caso o mode externo mude
+  useEffect(() => {
+    if (mode === 'review') {
+      setIsReviewOnly(true)
+      if (stage === 'opening') {
+        setStage('momento1')
+      }
+    } else if (mode === 'correcting') {
+      setIsReviewOnly(false)
+      if (stage === 'opening') {
+        setStage('momento1')
+      }
+    } else if (mode === 'ready_to_complete' || mode === 'completed') {
+      setIsReviewOnly(false)
+      setStage('closing')
+    } else if (mode === 'intro') {
+      setIsReviewOnly(false)
+      setStage('opening')
+    } else if (mode === 'answering' && initialStep) {
+      setIsReviewOnly(false)
+      const stepMap: Record<number, Chapter2FlowStage> = {
+        1: 'momento1',
+        2: 'momento2',
+        3: 'momento3',
+        4: 'momento4',
+        5: 'momento5',
+      }
+      setStage(stepMap[initialStep] || 'momento1')
+    }
+  }, [mode, initialStep])
+
+  useEffect(() => {
+    if (typeof revisionNumber === 'number' && revisionNumber !== activeRevision) {
+      setActiveRevision(revisionNumber)
+    }
+  }, [revisionNumber])
 
   // Carregar respostas existentes com IDs canônicos AYV_C2
   const loadResponses = async (explicitTargetRevision?: number) => {
@@ -198,26 +280,53 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
 
       setChapterState(loadedState)
 
-      // Determinar stage inicial inteligente baseado na revisão ativa
+      // Determinar stage inicial inteligente: respeita prioritariamente o prop mode canônico se fornecido
       const derived = deriveChapter2Status(migratedResponses, targetRev)
-      if (initialStage === 'review') {
-        setIsReviewOnly(true)
-        setStage('momento1')
-      } else if (initialStage === 'closing' || derived.status === 'ready_to_complete') {
-        setStage('closing')
-      } else if (initialStage === 'moments' || derived.status === 'in_progress') {
-        const stageMap: Record<number, Chapter2FlowStage> = {
-          1: 'momento1',
-          2: 'momento2',
-          3: 'momento3',
-          4: 'momento4',
-          5: 'momento5',
+      if (mode) {
+        if (mode === 'review') {
+          setIsReviewOnly(true)
+          setStage('momento1')
+        } else if (mode === 'correcting') {
+          setIsReviewOnly(false)
+          setStage('momento1')
+        } else if (mode === 'ready_to_complete' || mode === 'completed') {
+          setIsReviewOnly(false)
+          setStage('closing')
+        } else if (mode === 'intro') {
+          setIsReviewOnly(false)
+          setStage('opening')
+        } else if (mode === 'answering') {
+          setIsReviewOnly(false)
+          const stageMap: Record<number, Chapter2FlowStage> = {
+            1: 'momento1',
+            2: 'momento2',
+            3: 'momento3',
+            4: 'momento4',
+            5: 'momento5',
+          }
+          setStage(stageMap[initialStep || derived.firstUnansweredMoment] || 'momento1')
         }
-        setStage(stageMap[derived.firstUnansweredMoment] || 'momento1')
-      } else if (derived.status === 'completed') {
-        setStage('closing')
       } else {
-        setStage('opening')
+        // Fallback legado se nenhum mode explícito foi passado
+        if (initialStage === 'review') {
+          setIsReviewOnly(true)
+          setStage('momento1')
+        } else if (initialStage === 'closing' || derived.status === 'ready_to_complete') {
+          setStage('closing')
+        } else if (initialStage === 'moments' || derived.status === 'in_progress') {
+          const stageMap: Record<number, Chapter2FlowStage> = {
+            1: 'momento1',
+            2: 'momento2',
+            3: 'momento3',
+            4: 'momento4',
+            5: 'momento5',
+          }
+          setStage(stageMap[derived.firstUnansweredMoment] || 'momento1')
+        } else if (derived.status === 'completed') {
+          setStage('closing')
+        } else {
+          setStage('opening')
+        }
       }
     } catch (err) {
       console.error('Erro ao carregar respostas do Capítulo 2:', err)
@@ -758,7 +867,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
 
   return (
     <div className="w-full">
-      {/* Banner de Modo Revisão Somente-Leitura */}
+      {/* Banner de Modo Revisão Somente-Leitura com identificação explícita do Capítulo 2 */}
       {isReviewOnly && (
         <div
           data-testid="banner-c2-review-mode"
@@ -766,7 +875,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         >
           <div className="flex items-center gap-2 font-medium text-foreground">
             <Eye className="w-4 h-4 text-primary" />
-            <span>{AYV_C2_TEXTS.REVISION_BANNER}</span>
+            <span>Capítulo 2 — {AYV_C2_TEXTS.REVISION_BANNER}</span>
           </div>
           <Button
             type="button"
@@ -979,8 +1088,18 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
           treatmentVariant={treatmentVariant}
           onSaveAndContinueLater={onBackToHub}
           onCompleteChapter={handleCompleteChapter2}
-          onReviewResponses={handleReviewResponses}
-          onStartCorrection={handleStartCorrection}
+          onReviewResponses={() => {
+            if (onEnterReview) {
+              onEnterReview()
+            }
+            handleReviewResponses()
+          }}
+          onStartCorrection={() => {
+            if (onStartCorrection) {
+              onStartCorrection()
+            }
+            handleStartCorrection()
+          }}
           loading={saving}
           correctionError={correctionError}
           onClearCorrectionError={() => setCorrectionError(null)}

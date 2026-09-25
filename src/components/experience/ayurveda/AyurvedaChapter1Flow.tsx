@@ -37,6 +37,11 @@ export interface AyurvedaChapter1FlowProps {
   userPresentation?: AvatarPresentation
   avatarDeferred?: boolean
   initialShowPostAvatarTransition?: boolean
+  mode?: 'intro' | 'answering' | 'ready_to_complete' | 'completed' | 'review' | 'correcting' | 'hub'
+  initialStep?: number
+  onExitToHub?: () => void
+  onEnterReview?: () => void
+  onStartCorrection?: () => void
   onClose?: () => void
   onCompleted?: () => void
   onOpenAvatarCustomization?: () => void
@@ -61,14 +66,51 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   userPresentation = 'feminine',
   avatarDeferred = false,
   initialShowPostAvatarTransition = false,
+  mode,
+  initialStep,
+  onExitToHub,
+  onEnterReview,
+  onStartCorrection,
   onClose,
   onCompleted,
   onOpenAvatarCustomization,
 }) => {
-  const [stage, setStage] = useState<Chapter1Stage>(() =>
-    initialShowPostAvatarTransition ? 'post_avatar_transition' : 'hub',
-  )
-  const [isReviewOnly, setIsReviewOnly] = useState(false)
+  // Inicialização do estágio subordinada ao prop mode/initialStep
+  const resolveInitialStage = (): Chapter1Stage => {
+    if (mode === 'review' || mode === 'correcting') {
+      const stepMap: Record<number, Chapter1Stage> = {
+        1: 'step1',
+        2: 'step2',
+        3: 'step3',
+        4: 'step4',
+        5: 'step5',
+      }
+      return stepMap[initialStep || 1] || 'step1'
+    }
+    if (mode === 'ready_to_complete' || mode === 'completed') {
+      return 'closing'
+    }
+    if (mode === 'answering') {
+      const stepMap: Record<number, Chapter1Stage> = {
+        1: 'step1',
+        2: 'step2',
+        3: 'step3',
+        4: 'step4',
+        5: 'step5',
+      }
+      return stepMap[initialStep || 1] || 'step1'
+    }
+    if (mode === 'intro') {
+      return 'opening'
+    }
+    if (initialShowPostAvatarTransition) {
+      return 'post_avatar_transition'
+    }
+    return 'hub'
+  }
+
+  const [stage, setStage] = useState<Chapter1Stage>(resolveInitialStage)
+  const [isReviewOnly, setIsReviewOnly] = useState<boolean>(() => mode === 'review')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
@@ -76,6 +118,37 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   // Estado das respostas do Capítulo 1
   const [chapterState, setChapterState] = useState<AyurvedaChapter1State>({})
   const [rawResponses, setRawResponses] = useState<ExperienceResponseRecord[]>([])
+
+  // Sincronizar caso o mode externo mude
+  useEffect(() => {
+    if (mode === 'review') {
+      setIsReviewOnly(true)
+      if (stage === 'hub' || stage === 'opening') {
+        setStage('step1')
+      }
+    } else if (mode === 'correcting') {
+      setIsReviewOnly(false)
+      if (stage === 'hub' || stage === 'opening') {
+        setStage('step1')
+      }
+    } else if (mode === 'ready_to_complete' || mode === 'completed') {
+      setIsReviewOnly(false)
+      setStage('closing')
+    } else if (mode === 'intro') {
+      setIsReviewOnly(false)
+      setStage('opening')
+    } else if (mode === 'answering' && initialStep) {
+      setIsReviewOnly(false)
+      const stepMap: Record<number, Chapter1Stage> = {
+        1: 'step1',
+        2: 'step2',
+        3: 'step3',
+        4: 'step4',
+        5: 'step5',
+      }
+      setStage(stepMap[initialStep] || 'step1')
+    }
+  }, [mode, initialStep])
 
   // Carregar respostas existentes com IDs canônicos AYV_C1
   const loadResponses = async () => {
@@ -681,7 +754,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
 
   return (
     <div className="w-full">
-      {/* Banner de Modo Revisão Somente-Leitura */}
+      {/* Banner de Modo Revisão Somente-Leitura com identificação explícita do Capítulo 1 */}
       {isReviewOnly && (
         <div
           data-testid="banner-review-mode"
@@ -689,7 +762,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         >
           <div className="flex items-center gap-2 font-medium text-foreground">
             <Eye className="w-4 h-4 text-primary" />
-            <span>{AYV_TEXTS.REVISION_BANNER}</span>
+            <span>Capítulo 1 — {AYV_TEXTS.REVISION_BANNER}</span>
           </div>
           <Button
             type="button"
@@ -780,7 +853,13 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {stage === 'opening' && (
         <AyurvedaChapter1Opening
           onStartQuestions={() => advanceStep('step1', 1)}
-          onBackToHub={() => setStage('hub')}
+          onBackToHub={() => {
+            if (onExitToHub) {
+              onExitToHub()
+            } else {
+              setStage('hub')
+            }
+          }}
         />
       )}
 
@@ -958,10 +1037,26 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         <AyurvedaClosing
           state={chapterState}
           isCompleted={isCompleted}
-          onSaveAndContinueLater={() => setStage('hub')}
+          onSaveAndContinueLater={() => {
+            if (onExitToHub) {
+              onExitToHub()
+            } else {
+              setStage('hub')
+            }
+          }}
           onCompleteChapter={handleCompleteChapter1}
-          onReviewResponses={handleReviewResponses}
-          onStartCorrection={handleStartCorrection}
+          onReviewResponses={() => {
+            if (onEnterReview) {
+              onEnterReview()
+            }
+            handleReviewResponses()
+          }}
+          onStartCorrection={() => {
+            if (onStartCorrection) {
+              onStartCorrection()
+            }
+            handleStartCorrection()
+          }}
           loading={saving}
         />
       )}
