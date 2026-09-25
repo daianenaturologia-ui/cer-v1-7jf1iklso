@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "A frontend React Vite TypeScript Shadcn UI template for Skip projects",
   "private": true,
-  "version": "0.0.153",
+  "version": "0.0.154",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
@@ -11,6 +11,7 @@
     "copy:asset": "node scripts/copy-asset.mjs && node scripts/crop-atlases.mjs && node scripts/collect-evidence.mjs",
     "prebuild": "node scripts/copy-asset.mjs && node scripts/crop-atlases.mjs && node scripts/collect-evidence.mjs",
     "build": "vite build",
+    "test:m1": "vitest run src/components/experience/ayurveda/AyurvedaNavigationM1.test.tsx",
     "build:dev": "vite build --mode development",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src",

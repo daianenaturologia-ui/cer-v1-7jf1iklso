@@ -9,6 +9,8 @@ import {
   deriveChapter2Status,
   AyurvedaChapter2Status,
   Chapter2TreatmentVariant,
+  createChapter2Revision,
+  setPersistedActiveChapter2Revision,
   getPersistedActiveChapter2Revision,
   migrateLegacyChapter2Responses,
 } from '@/services/ayurvedaChapter2'
@@ -115,6 +117,19 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     }
   }, [enrollmentId, experienceId])
 
+  const handleCorrectionStartedInC2 = useCallback(() => {
+    const currentPersisted = getPersistedActiveChapter2Revision(enrollmentId)
+    setNavState((prev): AyurvedaNavigationState => {
+      return {
+        chapterId: 'c2',
+        mode: 'correcting',
+        currentStep: 1,
+        activeRevision:
+          currentPersisted ?? (prev.chapterId === 'c2' ? prev.activeRevision : null) ?? 2,
+      }
+    })
+  }, [enrollmentId])
+
   useEffect(() => {
     reloadData()
   }, [reloadData])
@@ -210,125 +225,200 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     })
   }, [])
 
-  // Ações explícitas do Hub para Capítulo 2
-  const handleStartChapter2FromHub = useCallback(() => {
-    if (isC2Completed) {
+  const handleStartCorrectionC2 = useCallback(async () => {
+    try {
+      // 1. Carregar respostas frescas
+      const freshResponses = await experienceResponseService.listResponsesByExperience(
+        enrollmentId,
+        experienceId,
+      )
+      const { migratedResponses } = migrateLegacyChapter2Responses(
+        freshResponses.length > 0 ? freshResponses : rawResponses,
+      )
+
+      // 2. Criar nova revisão canônica
+      const { nextRevisionNumber, newActiveResponses } = createChapter2Revision({
+        existingResponses: migratedResponses,
+        enrollmentId,
+        experienceId,
+        respondentUserId,
+      })
+
+      // 3. Persistir cópias da nova revisão
+      for (const item of newActiveResponses) {
+        const sVal = (item.structured_value || {}) as any
+        const meta = sVal?.metadata || {}
+        const pKey = (item as any).prompt_key || meta?.prompt_key || item.prompt_id
+        const pId = (item as any).canonical_prompt_id || meta?.canonical_prompt_id || item.prompt_id
+        const step = (item as any).step_order ?? meta?.step_order ?? 1
+
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: item.prompt_id,
+          respondentUserId,
+          responseType: item.response_type || ('MultiSelectCards' as any),
+          promptVersion: 1,
+          promptKey: pKey,
+          canonicalPromptId: pId,
+          stepOrder: step,
+          accessClass: 'shared_care',
+          changeReason: `Cópia inicial da revisão ${nextRevisionNumber} do Capítulo 2`,
+          structuredValue: sVal,
+        })
+        ;(saved as any).revision_number = nextRevisionNumber
+        ;(saved as any).prompt_key = pKey
+        ;(saved as any).canonical_prompt_id = pId
+      }
+
+      // 4. Persistir a nova revisão ativa no storage ANTES de mudar o estado de navegação
+      setPersistedActiveChapter2Revision(enrollmentId, nextRevisionNumber)
+
+      // 5. Atualizar respostas em cache e transicionar navegação canônica
+      await reloadData()
+
       setNavState({
         chapterId: 'c2',
-        mode: 'review',
+        mode: 'correcting',
         currentStep: 1,
-        activeRevision: persistedC2Rev ?? derivedC2.activeRevisionNumber ?? 1,
+        activeRevision: nextRevisionNumber,
       })
-    } else if (isC2ReadyToComplete) {
+    } catch (err) {
+      console.error('Erro ao iniciar correção do C2 a partir do hub:', err)
+      // Fallback gracioso: abre o encerramento do C2 para o usuário tentar novamente
       setNavState({
         chapterId: 'c2',
         mode: 'ready_to_complete',
         currentStep: 5,
         activeRevision: persistedC2Rev ?? derivedC2.activeRevisionNumber ?? 1,
       })
+    }
+  }, [
+    enrollmentId,
+    experienceId,
+    respondentUserId,
+    rawResponses,
+    reloadData,
+    persistedC2Rev,
+    derivedC2.activeRevisionNumber,
+  ])
+
+  // Ações explícitas do Hub para Capítulo 2
+  const handleStartChapter2FromHub = useCallback(() => {
+    const currentPersisted = getPersistedActiveChapter2Revision(enrollmentId)
+    const effectiveRev = currentPersisted ?? derivedC2.activeRevisionNumber ?? 1
+    if (isC2Completed) {
+      setNavState({
+        chapterId: 'c2',
+        mode: 'review',
+        currentStep: 1,
+        activeRevision: effectiveRev,
+      })
+    } else if (isC2ReadyToComplete) {
+      setNavState({
+        chapterId: 'c2',
+        mode: 'ready_to_complete',
+        currentStep: 5,
+        activeRevision: effectiveRev,
+      })
     } else if (chapter2Status === 'in_progress') {
       setNavState({
         chapterId: 'c2',
         mode: 'answering',
         currentStep: firstUnansweredMomentC2 || 1,
-        activeRevision: persistedC2Rev ?? derivedC2.activeRevisionNumber ?? 1,
+        activeRevision: effectiveRev,
       })
     } else {
       setNavState({
         chapterId: 'c2',
         mode: 'intro',
         currentStep: null,
-        activeRevision: persistedC2Rev ?? derivedC2.activeRevisionNumber ?? 1,
+        activeRevision: effectiveRev,
       })
     }
   }, [
+    enrollmentId,
     isC2Completed,
     isC2ReadyToComplete,
     chapter2Status,
     firstUnansweredMomentC2,
-    persistedC2Rev,
     derivedC2.activeRevisionNumber,
   ])
 
   const handleReviewChapter2 = useCallback(() => {
+    const currentPersisted = getPersistedActiveChapter2Revision(enrollmentId)
     setNavState({
       chapterId: 'c2',
       mode: 'review',
       currentStep: 1,
-      activeRevision: persistedC2Rev ?? derivedC2.activeRevisionNumber ?? 1,
+      activeRevision: currentPersisted ?? derivedC2.activeRevisionNumber ?? 1,
     })
-  }, [persistedC2Rev, derivedC2.activeRevisionNumber])
+  }, [enrollmentId, derivedC2.activeRevisionNumber])
 
-  const handleCorrectChapter2 = useCallback(() => {
-    setNavState({
-      chapterId: 'c2',
-      mode: 'correcting',
-      currentStep: 1,
-      activeRevision: (persistedC2Rev ?? derivedC2.activeRevisionNumber ?? 1) + 1,
-    })
-  }, [persistedC2Rev, derivedC2.activeRevisionNumber])
+  const handleCorrectChapter2 = handleStartCorrectionC2
 
   // RENDERIZAÇÃO CONFORME ESTADO CANÔNICO
 
   // Renderização de acordo com a união discriminada navState
-  if (navState.chapterId === 'c1') {
-    return (
-      <AyurvedaChapter1Flow
-        enrollmentId={enrollmentId}
-        experienceId={experienceId}
-        respondentUserId={respondentUserId}
-        userPresentation={userPresentation}
-        avatarDeferred={avatarDeferred}
-        mode={navState.mode}
-        initialStep={navState.currentStep ?? undefined}
-        onExitToHub={handleExitToHub}
-        onEnterReview={handleReviewChapter1}
-        onStartCorrection={handleCorrectChapter1}
-        onClose={onClose}
-        onCompleted={() => {
-          reloadData()
-          onCompleted?.()
-        }}
-        onOpenAvatarCustomization={onOpenAvatarCustomization}
-      />
-    )
-  }
+  switch (navState.chapterId) {
+    case 'c1':
+      return (
+        <AyurvedaChapter1Flow
+          enrollmentId={enrollmentId}
+          experienceId={experienceId}
+          respondentUserId={respondentUserId}
+          userPresentation={userPresentation}
+          avatarDeferred={avatarDeferred}
+          mode={navState.mode}
+          initialStep={navState.currentStep ?? undefined}
+          onExitToHub={handleExitToHub}
+          onEnterReview={handleReviewChapter1}
+          onStartCorrection={handleCorrectChapter1}
+          onClose={onClose}
+          onCompleted={() => {
+            reloadData()
+            onCompleted?.()
+          }}
+          onOpenAvatarCustomization={onOpenAvatarCustomization}
+        />
+      )
 
-  if (navState.chapterId === 'c2') {
-    return (
-      <AyurvedaChapter2Flow
-        enrollmentId={enrollmentId}
-        experienceId={experienceId}
-        respondentUserId={respondentUserId}
-        treatmentVariant={treatmentVariant}
-        mode={navState.mode}
-        revisionNumber={navState.activeRevision ?? undefined}
-        initialStep={navState.currentStep ?? undefined}
-        onBackToHub={handleExitToHub}
-        onEnterReview={handleReviewChapter2}
-        onStartCorrection={handleCorrectChapter2}
-        onCompleted={() => {
-          reloadData()
-          onCompleted?.()
-        }}
-      />
-    )
-  }
+    case 'c2':
+      return (
+        <AyurvedaChapter2Flow
+          enrollmentId={enrollmentId}
+          experienceId={experienceId}
+          respondentUserId={respondentUserId}
+          treatmentVariant={treatmentVariant}
+          mode={navState.mode}
+          revisionNumber={navState.activeRevision ?? undefined}
+          initialStep={navState.currentStep ?? undefined}
+          onBackToHub={handleExitToHub}
+          onEnterReview={handleReviewChapter2}
+          onStartCorrection={handleCorrectionStartedInC2}
+          onCompleted={() => {
+            reloadData()
+            onCompleted?.()
+          }}
+        />
+      )
 
-  // navState.chapterId === null
-  if (navState.mode === 'post_avatar_transition') {
-    return (
-      <AyurvedaPostAvatarTransition
-        onStartChapter1={() => {
-          setNavState({
-            chapterId: 'c1',
-            mode: 'intro',
-            currentStep: null,
-            activeRevision: null,
-          })
-        }}
-      />
-    )
+    case null:
+      if (navState.mode === 'post_avatar_transition') {
+        return (
+          <AyurvedaPostAvatarTransition
+            onStartChapter1={() => {
+              setNavState({
+                chapterId: 'c1',
+                mode: 'intro',
+                currentStep: null,
+                activeRevision: null,
+              })
+            }}
+          />
+        )
+      }
+      break
   }
 
   // Hub dos Capítulos (renderizado diretamente pelo navegador, fora do C1)
@@ -353,8 +443,6 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
       onClose={onClose}
     />
   )
-
-  return null
 }
 
 export default AyurvedaChaptersNavigator

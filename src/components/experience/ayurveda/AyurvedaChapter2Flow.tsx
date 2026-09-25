@@ -104,8 +104,8 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   }
 
   const [stage, setStage] = useState<Chapter2FlowStage>(resolveInitialStage)
-  const [isReviewOnly, setIsReviewOnly] = useState<boolean>(
-    () => mode === 'review' || initialStage === 'review',
+  const [isReviewOnly, setIsReviewOnly] = useState<boolean>(() =>
+    mode === 'correcting' ? false : mode === 'review' || initialStage === 'review',
   )
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -122,30 +122,40 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   useEffect(() => {
     if (mode === 'review') {
       setIsReviewOnly(true)
-      if (stage === 'opening') {
-        setStage('momento1')
-      }
+      setStage('momento1')
     } else if (mode === 'correcting') {
       setIsReviewOnly(false)
-      if (stage === 'opening') {
-        setStage('momento1')
-      }
+      setStage((prev) => {
+        if (prev === 'opening' || prev === 'closing') {
+          const stepMap: Record<number, Chapter2FlowStage> = {
+            1: 'momento1',
+            2: 'momento2',
+            3: 'momento3',
+            4: 'momento4',
+            5: 'momento5',
+          }
+          return stepMap[initialStep || 1] || 'momento1'
+        }
+        return prev
+      })
     } else if (mode === 'ready_to_complete' || mode === 'completed') {
       setIsReviewOnly(false)
       setStage('closing')
     } else if (mode === 'intro') {
       setIsReviewOnly(false)
       setStage('opening')
-    } else if (mode === 'answering' && initialStep) {
+    } else if (mode === 'answering') {
       setIsReviewOnly(false)
-      const stepMap: Record<number, Chapter2FlowStage> = {
-        1: 'momento1',
-        2: 'momento2',
-        3: 'momento3',
-        4: 'momento4',
-        5: 'momento5',
+      if (initialStep) {
+        const stepMap: Record<number, Chapter2FlowStage> = {
+          1: 'momento1',
+          2: 'momento2',
+          3: 'momento3',
+          4: 'momento4',
+          5: 'momento5',
+        }
+        setStage(stepMap[initialStep] || 'momento1')
       }
-      setStage(stepMap[initialStep] || 'momento1')
     }
   }, [mode, initialStep])
 
@@ -177,13 +187,11 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       const { migratedResponses } = migrateLegacyChapter2Responses(rawFromBackend)
       setRawResponses(migratedResponses)
 
-      // Identificar revisão ativa a ser carregada: prioriza explícito > persistido no localStorage > derivado
+      // Identificar revisão ativa a ser carregada: prioriza explícito > revisionNumber do prop > persistido no localStorage > derivado
       const persistedRev = getPersistedActiveChapter2Revision(enrollmentId)
-      const derivedTemp = deriveChapter2Status(
-        migratedResponses,
-        explicitTargetRevision ?? persistedRev ?? undefined,
-      )
-      const targetRev = explicitTargetRevision ?? persistedRev ?? derivedTemp.activeRevisionNumber
+      const candidateRev = explicitTargetRevision ?? revisionNumber ?? persistedRev
+      const derivedTemp = deriveChapter2Status(migratedResponses, candidateRev ?? undefined)
+      const targetRev = candidateRev ?? derivedTemp.activeRevisionNumber
 
       setActiveRevision(targetRev)
       setPersistedActiveChapter2Revision(enrollmentId, targetRev)
@@ -288,7 +296,14 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
           setStage('momento1')
         } else if (mode === 'correcting') {
           setIsReviewOnly(false)
-          setStage('momento1')
+          const stageMap: Record<number, Chapter2FlowStage> = {
+            1: 'momento1',
+            2: 'momento2',
+            3: 'momento3',
+            4: 'momento4',
+            5: 'momento5',
+          }
+          setStage(stageMap[initialStep || 1] || 'momento1')
         } else if (mode === 'ready_to_complete' || mode === 'completed') {
           setIsReviewOnly(false)
           setStage('closing')
@@ -337,13 +352,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
 
   useEffect(() => {
     loadResponses(activeRevision)
-  }, [enrollmentId, experienceId])
+  }, [enrollmentId, experienceId, activeRevision])
 
   const derived = deriveChapter2Status(rawResponses, activeRevision)
   const currentActiveRev = activeRevision ?? derived.activeRevisionNumber
-  const isCompleted = derived.status === 'completed'
-  const isReadyToComplete = derived.status === 'ready_to_complete'
-  const chapter2Status: AyurvedaChapter2Status = derived.status
+  // Se o modo for explicitamente "correcting", o fluxo NUNCA é tratado como completed ou review
+  const isCompleted = mode === 'correcting' ? false : derived.status === 'completed'
+  const isReadyToComplete = mode === 'correcting' ? false : derived.status === 'ready_to_complete'
+  const chapter2Status: AyurvedaChapter2Status =
+    mode === 'correcting' ? 'in_progress' : derived.status
 
   // Helper de persistência epistêmica genérica
   const persistCanonicalResponse = async (params: {
@@ -717,8 +734,14 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
     const previousActiveRevision = currentActiveRev
 
     try {
-      // 0. Garantir sanitização/migração não destrutiva prévia nos registros existentes
-      const { migratedResponses } = migrateLegacyChapter2Responses(rawResponses)
+      // 0. Recarregar lista fresca de respostas do backend para garantir integridade absoluta
+      const freshResponses = await experienceResponseService.listResponsesByExperience(
+        enrollmentId,
+        experienceId,
+      )
+      const { migratedResponses } = migrateLegacyChapter2Responses(
+        freshResponses.length > 0 ? freshResponses : rawResponses,
+      )
 
       // 1. Criar nova revisão canônica desvinculada de qualquer conclusão
       const { nextRevisionNumber, newActiveResponses } = createChapter2Revision({
@@ -728,7 +751,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         respondentUserId,
       })
 
-      // 2. Persistir de forma robusta e assíncrona todas as respostas copiadas
+      // 2. Persistir atomicamente e de forma assíncrona todas as respostas copiadas
       const persistedActiveResponses: ExperienceResponseRecord[] = []
       for (const item of newActiveResponses) {
         const sVal = (item.structured_value || {}) as any
@@ -757,7 +780,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         persistedActiveResponses.push(saved)
       }
 
-      // 3. Persistir no storage local que a nova revisão é a ATIVA antes de qualquer transição
+      // 3. Persistir imediatamente no storage local que a nova revisão é a ATIVA
       setPersistedActiveChapter2Revision(enrollmentId, nextRevisionNumber)
 
       // 4. Recarregar o chapterState com as respostas da nova revisão
@@ -852,12 +875,19 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       setActiveRevision(nextRevisionNumber)
       setIsReviewOnly(false)
       setStage('momento1')
+
+      // 7. Notificar callback externo para o navegador sincronizar mode: 'correcting' e activeRevision
+      if (onStartCorrection) {
+        onStartCorrection()
+      }
     } catch (err) {
       console.error('Falha ao abrir correção do Capítulo 2:', err)
       // Rollback seguro em caso de falha: permanece no encerramento anterior
       setRawResponses(previousRawResponses)
       setActiveRevision(previousActiveRevision)
-      setPersistedActiveChapter2Revision(enrollmentId, previousActiveRevision)
+      if (typeof previousActiveRevision === 'number') {
+        setPersistedActiveChapter2Revision(enrollmentId, previousActiveRevision)
+      }
       setCorrectionError('Não foi possível abrir a correção agora. Tente novamente.')
       setStage('closing')
     } finally {
@@ -1094,12 +1124,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             }
             handleReviewResponses()
           }}
-          onStartCorrection={() => {
-            if (onStartCorrection) {
-              onStartCorrection()
-            }
-            handleStartCorrection()
-          }}
+          onStartCorrection={handleStartCorrection}
           onBackToHub={onBackToHub}
           loading={saving}
           correctionError={correctionError}
