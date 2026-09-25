@@ -23,6 +23,7 @@ import {
   setPersistedActiveChapter2Revision,
   getChapter2RevisionPromptId,
   getChapter2BasePromptId,
+  repairIncompleteChapter2Revision,
 } from '@/services/ayurvedaChapter2'
 import { AyurvedaChapter2Opening } from './AyurvedaChapter2Opening'
 import { AyurvedaC2Momento1Hunger } from './AyurvedaC2Momento1Hunger'
@@ -113,6 +114,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
+  const [recoveryError, setRecoveryError] = useState<string | null>(null)
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
 
   const [chapterState, setChapterState] = useState<AyurvedaChapter2State>({})
@@ -194,8 +196,72 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       setActiveRevision(targetRev)
       setPersistedActiveChapter2Revision(enrollmentId, targetRev)
 
-      // Filtrar respostas estritamente pertencentes à revisão ativa
-      const activeResponses = migratedResponses.filter(
+      let effectiveResponsesList = migratedResponses
+
+      // M2B: Recuperação idempotente de revisão ativa incompleta antes de montar o formulário
+      // Executa se a revisão ativa for > 1 ou se estiver em modo 'correcting',
+      // ou se o status derivado for in_progress/not_started em revisão com histórico anterior
+      const activeHasCompletion = migratedResponses.some((r) => {
+        if (getResponseRevisionNumber(r) !== targetRev) return false
+        const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+        const sVal = (r as any).structured_value
+        const promptKey =
+          (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+        const baseId = getChapter2BasePromptId(promptId || '')
+        const baseKey = getChapter2BasePromptId(promptKey || '')
+        return (
+          (baseId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
+            baseKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key) &&
+          (sVal?.completed === true ||
+            sVal?.value?.completed === true ||
+            sVal?.status === 'completed')
+        )
+      })
+
+      // Se não possui conclusão canônica e está em 'correcting' ou possui revisão anterior (targetRev > 1)
+      if (!activeHasCompletion && (mode === 'correcting' || targetRev > 1)) {
+        try {
+          const repairResult = await repairIncompleteChapter2Revision({
+            existingResponses: migratedResponses,
+            enrollmentId,
+            experienceId,
+            respondentUserId,
+            targetActiveRevision: targetRev,
+            saveResponseFn: async (params) => {
+              return await experienceResponseService.saveResponse(params)
+            },
+          })
+
+          if (repairResult.repaired) {
+            // Re-ler respostas frescas do backend/armazenamento após reparo
+            const freshAfterRepair = await experienceResponseService.listResponsesByExperience(
+              enrollmentId,
+              experienceId,
+            )
+            const { migratedResponses: freshlyMigrated } =
+              migrateLegacyChapter2Responses(freshAfterRepair)
+            effectiveResponsesList = freshlyMigrated
+            setRawResponses(freshlyMigrated)
+          }
+          setRecoveryError(null)
+        } catch (repairErr: any) {
+          console.error('Falha na recuperação de revisão incompleta C2:', repairErr)
+          // Falha segura: Se não for possível recuperar e a revisão ativa estiver vazia/incompleta sem respostas
+          const activeCurrentCount = migratedResponses.filter(
+            (r) => getResponseRevisionNumber(r) === targetRev,
+          ).length
+          if (activeCurrentCount === 0) {
+            setRecoveryError(
+              'Não foi possível recuperar as respostas anteriores para esta correção.',
+            )
+            setLoading(false)
+            return
+          }
+        }
+      }
+
+      // Filtrar respostas estritamente pertencentes à revisão ativa (após eventual reparo)
+      const activeResponses = effectiveResponsesList.filter(
         (r) => getResponseRevisionNumber(r) === targetRev,
       )
 
@@ -916,6 +982,46 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
     } finally {
       setSaving(false)
     }
+  }
+
+  // Falha segura no carregamento/recuperação da revisão
+  if (recoveryError) {
+    return (
+      <div className="w-full max-w-2xl mx-auto p-6 space-y-4 text-center">
+        <div
+          role="alert"
+          data-testid="c2-recovery-error-banner"
+          className="p-4 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-950 dark:text-rose-200 space-y-3 text-sm"
+        >
+          <p className="font-medium">{recoveryError}</p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setRecoveryError(null)
+                loadResponses(activeRevision)
+              }}
+              className="text-xs h-8 px-4 border-rose-500/40 hover:bg-rose-500/20"
+            >
+              Tentar novamente
+            </Button>
+            {onBackToHub && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onBackToHub}
+                className="text-xs h-8 px-4"
+              >
+                Voltar aos capítulos
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

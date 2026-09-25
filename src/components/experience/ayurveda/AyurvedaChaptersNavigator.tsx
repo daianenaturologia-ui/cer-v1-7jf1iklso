@@ -337,7 +337,16 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   const handleStartChapter2FromHub = useCallback(() => {
     const currentPersisted = getPersistedActiveChapter2Revision(enrollmentId)
     const effectiveRev = currentPersisted ?? derivedC2.activeRevisionNumber ?? 1
-    if (isC2Completed) {
+    // Se a revisão ativa foi iniciada como correção (revisão > 1 sem conclusão),
+    // ao retomar do hub ela deve abrir como 'correcting' editável
+    if (currentPersisted && currentPersisted > 1 && !isC2Completed) {
+      setNavState({
+        chapterId: 'c2',
+        mode: 'correcting',
+        currentStep: 1,
+        activeRevision: currentPersisted,
+      })
+    } else if (isC2Completed) {
       setNavState({
         chapterId: 'c2',
         mode: 'review',

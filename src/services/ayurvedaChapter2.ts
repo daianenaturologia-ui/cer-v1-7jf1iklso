@@ -691,6 +691,356 @@ export function getChapter2RevisionPromptId(
  * 6. Vínculo parental (`parent_version_id`) apontando estritamente para o registro de origem.
  * 7. Coerência do `revision_number` na raiz, structured_value e metadata.
  */
+/**
+ * Resultado da recuperação de revisão incompleta do Capítulo 2 (M2B)
+ */
+export interface RepairIncompleteChapter2RevisionResult {
+  repaired: boolean
+  activeRevisionNumber: number
+  sourceRevisionNumber?: number
+  missingKeysRecovered: string[]
+  recoveredResponses: ExperienceResponseRecord[]
+  allResponses: Array<ExperienceResponseRecord | Record<string, any>>
+}
+
+/**
+ * Função canônica e testável do M2B: Recuperação idempotente de revisão ativa incompleta do Capítulo 2.
+ * 1. Localiza a revisão ativa do Capítulo 2 (ou usa targetActiveRevision se informado).
+ * 2. Confirma que ela está incompleta e ainda não possui conclusão canônica.
+ * 3. Localiza a revisão concluída válida imediatamente anterior (source revision).
+ * 4. Compara as respostas pelos IDs canônicos das perguntas (usando getChapter2BasePromptId).
+ * 5. Identifica somente as perguntas realmente ausentes na revisão ativa:
+ *    - "Ausência" significa exclusivamente: NÃO existe registro canônico daquela pergunta na revisão ativa.
+ *    - Escolha normal, texto livre, "Não sei identificar", "Prefiro não responder" ou structured_value
+ *      vazio explícito NÃO são ausência.
+ * 6. Copia para a revisão ativa somente as respostas ausentes.
+ * 7. Persiste cada cópia usando getChapter2RevisionPromptId(basePromptId, activeRevisionNumber).
+ * 8. Registra revision_number, parent_version_id, prompt_key, canonical_prompt_id, capítulo, momento, autoria, data e metadados epistêmicos.
+ * 9. Nunca copia o registro de conclusão da revisão anterior.
+ * 10. Nunca modifica a revisão de origem byte a byte.
+ * 11. Nunca sobrescreve uma resposta já existente na revisão ativa.
+ * 12. Idempotente: rodar novamente com a revisão já completa produz zero novas cópias e repaired: false.
+ */
+export async function repairIncompleteChapter2Revision(params: {
+  existingResponses: Array<ExperienceResponseRecord | Record<string, any>>
+  enrollmentId: string
+  experienceId: string
+  respondentUserId: string
+  targetActiveRevision?: number
+  saveResponseFn?: (item: {
+    enrollmentId: string
+    experienceId: string
+    promptId: string
+    respondentUserId: string
+    responseType: any
+    promptVersion: number
+    promptKey?: string
+    canonicalPromptId?: string
+    stepOrder?: number
+    accessClass?: any
+    changeReason?: string
+    structuredValue?: any
+  }) => Promise<ExperienceResponseRecord>
+}): Promise<RepairIncompleteChapter2RevisionResult> {
+  const {
+    existingResponses,
+    enrollmentId,
+    experienceId,
+    respondentUserId,
+    targetActiveRevision,
+    saveResponseFn,
+  } = params
+
+  // 1. Filtrar respostas canônicas de C2
+  const c2Responses = (existingResponses || []).filter((r) => {
+    if (!r) return false
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+    return (
+      (typeof promptId === 'string' && promptId.startsWith('ayv_c2_')) ||
+      (typeof promptKey === 'string' && promptKey.startsWith('ayv_c2_'))
+    )
+  })
+
+  // 2. Determinar a revisão ativa
+  let activeRev = targetActiveRevision
+  if (activeRev === undefined) {
+    const persisted = getPersistedActiveChapter2Revision(enrollmentId)
+    if (persisted) {
+      activeRev = persisted
+    } else {
+      let maxRev = 1
+      for (const r of c2Responses) {
+        const rev = getResponseRevisionNumber(r)
+        if (rev > maxRev) maxRev = rev
+      }
+      activeRev = maxRev
+    }
+  }
+
+  // 3. Checar se a revisão ativa possui conclusão canônica
+  const activeResponses = c2Responses.filter((r) => getResponseRevisionNumber(r) === activeRev)
+  const activeHasCompletion = activeResponses.some((r) => {
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+    const baseId = getChapter2BasePromptId(promptId || '')
+    const baseKey = getChapter2BasePromptId(promptKey || '')
+    if (
+      baseId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
+      baseKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+    ) {
+      return (
+        sVal?.completed === true || sVal?.value?.completed === true || sVal?.status === 'completed'
+      )
+    }
+    return false
+  })
+
+  // Se já está concluída, não precisa nem deve ser reparada
+  if (activeHasCompletion) {
+    return {
+      repaired: false,
+      activeRevisionNumber: activeRev,
+      missingKeysRecovered: [],
+      recoveredResponses: [],
+      allResponses: existingResponses,
+    }
+  }
+
+  // 4. Mapear respostas existentes na revisão ativa por pergunta canônica
+  // Uma pergunta é considerada presente se existir qualquer registro canônico correspondente na revisão ativa.
+  const activePresentKeys = new Set<string>()
+  for (const r of activeResponses) {
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+    const baseId = getChapter2BasePromptId(promptId || '')
+    const baseKey = getChapter2BasePromptId(promptKey || '')
+
+    for (let i = 0; i < AYV_C2_TOTAL_QUESTIONS; i++) {
+      const qKey = AYV_C2_QUESTION_PROMPT_KEYS[i]
+      const qId = AYV_C2_QUESTION_PROMPT_IDS[i]
+      if (baseKey === qKey || baseId === qId) {
+        activePresentKeys.add(qKey)
+      }
+    }
+  }
+
+  // 5. Determinar perguntas ausentes
+  const missingKeys = AYV_C2_QUESTION_PROMPT_KEYS.filter((k) => !activePresentKeys.has(k))
+
+  // Se nada está ausente, já é completa (idempotência: zero cópias)
+  if (missingKeys.length === 0) {
+    return {
+      repaired: false,
+      activeRevisionNumber: activeRev,
+      missingKeysRecovered: [],
+      recoveredResponses: [],
+      allResponses: existingResponses,
+    }
+  }
+
+  // 6. Localizar a revisão concluída válida imediatamente anterior (sourceRevision < activeRev)
+  const completedRevisions = new Set<number>()
+  for (const r of c2Responses) {
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+    const baseId = getChapter2BasePromptId(promptId || '')
+    const baseKey = getChapter2BasePromptId(promptKey || '')
+
+    if (
+      baseId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
+      baseKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+    ) {
+      const isCompleted =
+        sVal?.completed === true || sVal?.value?.completed === true || sVal?.status === 'completed'
+      if (isCompleted) {
+        completedRevisions.add(getResponseRevisionNumber(r))
+      }
+    }
+  }
+
+  // A revisão de origem deve ser < activeRev, preferencialmente a maior concluída anterior
+  const candidateSourceRevs = Array.from(completedRevisions)
+    .filter((rev) => rev < activeRev)
+    .sort((a, b) => b - a)
+
+  let sourceRevision: number | null = null
+  if (candidateSourceRevs.length > 0) {
+    sourceRevision = candidateSourceRevs[0]
+  } else {
+    // Se não há concluída formal < activeRev, buscar qualquer revisão anterior com respostas
+    const priorRevs = Array.from(
+      new Set(
+        c2Responses.map((r) => getResponseRevisionNumber(r)).filter((rev) => rev < activeRev),
+      ),
+    ).sort((a, b) => b - a)
+    if (priorRevs.length > 0) {
+      sourceRevision = priorRevs[0]
+    }
+  }
+
+  if (sourceRevision === null) {
+    // Sem revisão de origem válida para recuperar: falha segura
+    throw new Error(
+      `Não foi possível recuperar as respostas anteriores para esta correção (sem revisão anterior válida para a revisão ativa ${activeRev}).`,
+    )
+  }
+
+  // 7. Obter respostas clínicas válidas da revisão de origem
+  const sourceResponses = c2Responses.filter((r) => getResponseRevisionNumber(r) === sourceRevision)
+  const sourceQuestionsMap = new Map<string, ExperienceResponseRecord | Record<string, any>>()
+
+  for (const r of sourceResponses) {
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+    const baseId = getChapter2BasePromptId(promptId || '')
+    const baseKey = getChapter2BasePromptId(promptKey || '')
+
+    // Ignorar conclusão
+    if (
+      baseId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
+      baseKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+    ) {
+      continue
+    }
+
+    for (let i = 0; i < AYV_C2_TOTAL_QUESTIONS; i++) {
+      const qKey = AYV_C2_QUESTION_PROMPT_KEYS[i]
+      const qId = AYV_C2_QUESTION_PROMPT_IDS[i]
+      if (baseKey === qKey || baseId === qId) {
+        // Preserva escolha normal, "Não sei", "Prefiro não responder" ou escolha canônica explícita
+        sourceQuestionsMap.set(qKey, r)
+      }
+    }
+  }
+
+  // Falha segura: se a origem não possui respostas clínicas válidas
+  if (sourceQuestionsMap.size === 0) {
+    throw new Error(
+      `Não foi possível recuperar as respostas anteriores para esta correção (origem ${sourceRevision} sem respostas clínicas válidas).`,
+    )
+  }
+
+  // 8. Copiar somente as respostas ausentes
+  const recoveredResponses: ExperienceResponseRecord[] = []
+  const nowIso = new Date().toISOString()
+
+  for (const missingKey of missingKeys) {
+    const parentRecord = sourceQuestionsMap.get(missingKey)
+    if (!parentRecord) {
+      // Se a pergunta nem na origem existia, nada a copiar para essa chave
+      continue
+    }
+
+    const rawPromptId =
+      (parentRecord as any).prompt_id || (parentRecord as any).canonical_prompt_id || missingKey
+    const basePromptId = getChapter2BasePromptId(rawPromptId)
+    const physicalPromptId = getChapter2RevisionPromptId(basePromptId, activeRev)
+
+    const sVal = (parentRecord as any).structured_value || {}
+    const meta = (sVal as any).metadata || {}
+    const parentId = (parentRecord as any).id || `parent-${missingKey}`
+
+    const newMeta: AyurvedaCanonicalC2ResponseMetadata = {
+      ...meta,
+      prompt_key: missingKey,
+      canonical_prompt_id: basePromptId,
+      domain: 'ayurveda',
+      chapter_id: AYURVEDA_CHAPTER_2_ID,
+      time_layer: 'habitual_adult',
+      source: 'participant_self_report',
+      answered_at: nowIso,
+      experience_version: AYURVEDA_CHAPTER_2_VERSION,
+      revision_number: activeRev,
+      parent_version_id: parentId,
+      step_order:
+        (parentRecord as any).step_order ??
+        meta?.step_order ??
+        (AYV_C2_PROMPTS as any)[missingKey.toUpperCase()]?.step_order ??
+        1,
+      moment_number:
+        meta?.moment_number ?? (AYV_C2_PROMPTS as any)[missingKey.toUpperCase()]?.moment ?? 1,
+    }
+
+    const enrichedStructuredValue = {
+      ...sVal,
+      revision_number: activeRev,
+      parent_version_id: parentId,
+      metadata: newMeta,
+    }
+
+    if (saveResponseFn) {
+      const step =
+        (parentRecord as any).step_order ??
+        meta?.step_order ??
+        (AYV_C2_PROMPTS as any)[missingKey.toUpperCase()]?.step_order ??
+        1
+      const saved = await saveResponseFn({
+        enrollmentId,
+        experienceId,
+        promptId: physicalPromptId,
+        respondentUserId,
+        responseType: (parentRecord as any).response_type || 'MultiSelectCards',
+        promptVersion: (parentRecord as any).prompt_version || 1,
+        promptKey: missingKey,
+        canonicalPromptId: basePromptId,
+        stepOrder: step,
+        accessClass: (parentRecord as any).access_class || 'shared_care',
+        changeReason: `Recuperação idempotente da pergunta ausente ${missingKey} para revisão ${activeRev}`,
+        structuredValue: enrichedStructuredValue,
+      })
+      ;(saved as any).revision_number = activeRev
+      ;(saved as any).parent_version_id = parentId
+      ;(saved as any).prompt_key = missingKey
+      ;(saved as any).canonical_prompt_id = basePromptId
+      recoveredResponses.push(saved)
+    } else {
+      const newRecord: ExperienceResponseRecord = {
+        id: `c2-repair-rev${activeRev}-${missingKey}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        enrollment_id: enrollmentId,
+        experience_id: experienceId,
+        prompt_id: physicalPromptId,
+        respondent_user_id: respondentUserId,
+        response_type: (parentRecord as any).response_type || 'MultiSelectCards',
+        access_class: (parentRecord as any).access_class || 'shared_care',
+        structured_value: enrichedStructuredValue,
+        free_text: (parentRecord as any).free_text || '',
+        prompt_version: (parentRecord as any).prompt_version || 1,
+        version: activeRev,
+        status: 'saved',
+        created: nowIso,
+        updated: nowIso,
+      }
+      ;(newRecord as any).revision_number = activeRev
+      ;(newRecord as any).parent_version_id = parentId
+      ;(newRecord as any).prompt_key = missingKey
+      ;(newRecord as any).canonical_prompt_id = basePromptId
+      recoveredResponses.push(newRecord)
+    }
+  }
+
+  const allResponses = [...(existingResponses || []), ...recoveredResponses]
+
+  return {
+    repaired: recoveredResponses.length > 0,
+    activeRevisionNumber: activeRev,
+    sourceRevisionNumber: sourceRevision,
+    missingKeysRecovered: recoveredResponses.map((r) => (r as any).prompt_key || r.prompt_id),
+    recoveredResponses,
+    allResponses,
+  }
+}
+
 export function createChapter2Revision(params: {
   existingResponses: Array<ExperienceResponseRecord | Record<string, any>>
   enrollmentId: string
