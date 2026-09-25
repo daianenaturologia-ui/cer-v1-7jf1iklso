@@ -104,9 +104,10 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   }
 
   const [stage, setStage] = useState<Chapter2FlowStage>(resolveInitialStage)
-  const [isReviewOnly, setIsReviewOnly] = useState<boolean>(() =>
-    mode === 'correcting' ? false : mode === 'review' || initialStage === 'review',
-  )
+  // Derivação canônica da permissão de edição a partir do prop mode canônico
+  const isReviewOnly = mode ? mode === 'review' : initialStage === 'review'
+  const isCorrecting = mode === 'correcting'
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
@@ -118,13 +119,11 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
     return revisionNumber ?? getPersistedActiveChapter2Revision(enrollmentId) ?? undefined
   })
 
-  // Sincronizar caso o mode externo mude
+  // Sincronizar etapa (stage) caso o mode externo mude
   useEffect(() => {
     if (mode === 'review') {
-      setIsReviewOnly(true)
       setStage('momento1')
     } else if (mode === 'correcting') {
-      setIsReviewOnly(false)
       setStage((prev) => {
         if (prev === 'opening' || prev === 'closing') {
           const stepMap: Record<number, Chapter2FlowStage> = {
@@ -139,13 +138,10 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         return prev
       })
     } else if (mode === 'ready_to_complete' || mode === 'completed') {
-      setIsReviewOnly(false)
       setStage('closing')
     } else if (mode === 'intro') {
-      setIsReviewOnly(false)
       setStage('opening')
     } else if (mode === 'answering') {
-      setIsReviewOnly(false)
       if (initialStep) {
         const stepMap: Record<number, Chapter2FlowStage> = {
           1: 'momento1',
@@ -292,10 +288,8 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       const derived = deriveChapter2Status(migratedResponses, targetRev)
       if (mode) {
         if (mode === 'review') {
-          setIsReviewOnly(true)
           setStage('momento1')
         } else if (mode === 'correcting') {
-          setIsReviewOnly(false)
           const stageMap: Record<number, Chapter2FlowStage> = {
             1: 'momento1',
             2: 'momento2',
@@ -305,13 +299,10 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
           }
           setStage(stageMap[initialStep || 1] || 'momento1')
         } else if (mode === 'ready_to_complete' || mode === 'completed') {
-          setIsReviewOnly(false)
           setStage('closing')
         } else if (mode === 'intro') {
-          setIsReviewOnly(false)
           setStage('opening')
         } else if (mode === 'answering') {
-          setIsReviewOnly(false)
           const stageMap: Record<number, Chapter2FlowStage> = {
             1: 'momento1',
             2: 'momento2',
@@ -324,7 +315,6 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       } else {
         // Fallback legado se nenhum mode explícito foi passado
         if (initialStage === 'review') {
-          setIsReviewOnly(true)
           setStage('momento1')
         } else if (initialStage === 'closing' || derived.status === 'ready_to_complete') {
           setStage('closing')
@@ -720,7 +710,6 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
 
   // Rever Respostas (modo somente-leitura com banner visível e único comando para voltar)
   const handleReviewResponses = () => {
-    setIsReviewOnly(true)
     setStage('momento1')
   }
 
@@ -879,7 +868,6 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
 
       // 7. Só então comutar revisão ativa e navegar para o Momento 1 editável
       setActiveRevision(nextRevisionNumber)
-      setIsReviewOnly(false)
       setStage('momento1')
     } catch (err) {
       console.error('Falha ao abrir correção do Capítulo 2:', err)
@@ -913,7 +901,6 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             variant="outline"
             size="sm"
             onClick={() => {
-              setIsReviewOnly(false)
               setStage('closing')
             }}
             className="text-xs h-7 px-3 bg-background"

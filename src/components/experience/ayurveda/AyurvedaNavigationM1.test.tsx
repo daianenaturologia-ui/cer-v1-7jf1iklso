@@ -501,16 +501,98 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     expect(hungerOption).toBeDefined()
     expect(hungerOption).not.toBeDisabled()
 
+    // CLIQUE REAL (interação real com verificação de mudança visual e persistência):
+    // Na semente foi 'sharp_hunger' ("Fome intensa"). Clicamos em uma opção não selecionada ("Fome moderada e previsível")
+    const unselectedOption = buttons.find((btn) =>
+      btn.textContent?.includes('Fome moderada e previsível'),
+    )
+    expect(unselectedOption).toBeDefined()
+    expect(unselectedOption).toHaveAttribute('aria-pressed', 'false')
+
+    // Verificar contador antes do clique real: "Até 2 escolhas • 1/2"
+    expect(screen.getByText(/Até 2 escolhas • 1\/2/i)).toBeInTheDocument()
+
+    // Realizar o clique real
+    fireEvent.click(unselectedOption!)
+
+    // Asserção obrigatória: contador de escolhas muda VISUALMENTE
+    await waitFor(() => {
+      expect(screen.getByText(/Até 2 escolhas • 2\/2/i)).toBeInTheDocument()
+      expect(unselectedOption).toHaveAttribute('aria-pressed', 'true')
+    })
+
     // - o navegador permanece em mode: 'correcting';
     // No encerramento e no hub o título de percurso ou conclusão não está ativo enquanto em correcting
     expect(screen.queryByText(/Capítulo 2 Concluído/i)).toBeNull()
 
-    // - a revisão ativa é N+1 (2);
+    // - a rotina de salvamento recebe a revisão N+1 (2);
+    // Verificar que a resposta de hunger_pattern para a revisão 2 agora inclui 'moderate_hunger'
     const all = demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID, 'exp-corpo-fisiologia-07b')
     const rev2Responses = all.filter(
       (r) => (r as any).revision_number === 2 || (r.structured_value as any)?.revision_number === 2,
     )
     expect(rev2Responses.length).toBeGreaterThanOrEqual(12)
+    const rev2Hunger = rev2Responses.find(
+      (r) =>
+        (r as any).prompt_key === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key ||
+        (r.structured_value as any)?.prompt_key === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key ||
+        (r.structured_value as any)?.metadata?.prompt_key === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key,
+    )
+    expect(rev2Hunger).toBeDefined()
+    const rev2HungerVal =
+      (rev2Hunger?.structured_value as any)?.value ||
+      (rev2Hunger?.structured_value as any)?.selectedOptionIds
+    expect(rev2HungerVal).toContain('moderate_hunger')
+    expect(rev2HungerVal).toContain('sharp_hunger')
+
+    // - a revisão anterior permanece preservada (imutável)
+    const rev1Responses = all.filter(
+      (r) =>
+        ((r as any).revision_number === 1 ||
+          (r.structured_value as any)?.revision_number === 1 ||
+          (r as any).revision_number === undefined) &&
+        !r.prompt_id?.includes('_rev2'),
+    )
+    const rev1Hunger = rev1Responses.find(
+      (r) =>
+        (r as any).prompt_key === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key ||
+        (r.structured_value as any)?.prompt_key === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key ||
+        (r.structured_value as any)?.metadata?.prompt_key === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key,
+    )
+    const rev1HungerVal =
+      (rev1Hunger?.structured_value as any)?.value ||
+      (rev1Hunger?.structured_value as any)?.selectedOptionIds
+    expect(rev1HungerVal).not.toContain('moderate_hunger')
+
+    // - voltar ao hub funciona
+    // Primeiro avançamos ou vamos até o encerramento para clicar em Voltar ao hub
+    // Momento 1 -> Momento 2 -> Momento 3 -> Momento 4 -> Momento 5 -> Encerramento -> Hub
+    fireEvent.click(screen.getByRole('button', { name: /Avançar para Digestão/i }))
+    await waitFor(() => {
+      expect(screen.getByText(/Avançar para Eliminação/i)).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Avançar para Eliminação/i }))
+    await waitFor(() => {
+      expect(screen.getByText(/Avançar para Sono/i)).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Avançar para Sono/i }))
+    await waitFor(() => {
+      expect(screen.getByText(/Avançar para Energia/i)).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Avançar para Energia/i }))
+    await waitFor(() => {
+      expect(screen.getByText(/Ir para Encerramento/i)).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Ir para Encerramento/i }))
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i }),
+      ).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i }))
+    await waitFor(() => {
+      expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
+    })
 
     // - a conclusão da revisão anterior não reabre o modo de revisão
     const rev2Completion = all.find((r) => {
@@ -864,7 +946,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     expect(rev2Responses.length).toBeGreaterThanOrEqual(12)
   })
 
-  // 6. o formulário do teste 5 é editável
+  // 6. o formulário do teste 5 é editável (com clique real provando mudança visual e persistência)
   it('Teste 6. o formulário do teste 5 é editável', async () => {
     await seedC2Completed(true)
 
@@ -895,12 +977,76 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
 
     // Verifica se os botões/cards estão interativos (não desabilitados)
     const options = screen.getAllByRole('button')
-    const hungerOption = options.find(
-      (btn) =>
-        btn.textContent?.includes('Fome pontual') || btn.textContent?.includes('Fome intensa'),
+    const unselectedOption = options.find((btn) =>
+      btn.textContent?.includes('Fome moderada e previsível'),
     )
-    expect(hungerOption).toBeDefined()
-    expect(hungerOption).not.toBeDisabled()
+    expect(unselectedOption).toBeDefined()
+    expect(unselectedOption).not.toBeDisabled()
+    expect(unselectedOption).toHaveAttribute('aria-pressed', 'false')
+
+    // Contador antes do clique: 1/2
+    expect(screen.getByText(/Até 2 escolhas • 1\/2/i)).toBeInTheDocument()
+
+    // Clique real para alterar a seleção
+    fireEvent.click(unselectedOption!)
+
+    // Asserções reais de interação:
+    await waitFor(() => {
+      expect(screen.getByText(/Até 2 escolhas • 2\/2/i)).toBeInTheDocument()
+      expect(unselectedOption).toHaveAttribute('aria-pressed', 'true')
+    })
+  })
+
+  // Teste inverso obrigatório: com mode: 'review', clicar em uma opção NÃO muda a seleção e nenhuma gravação é realizada
+  it('Teste inverso obrigatório: com mode review, clicar em uma opção NÃO muda a seleção nem salva', async () => {
+    await seedC2Completed(true)
+
+    render(
+      <AyurvedaChaptersNavigator
+        enrollmentId={DEMO_ENROLLMENT_ID}
+        experienceId="exp-corpo-fisiologia-07b"
+        respondentUserId={DEMO_USER_MARIANA.id}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
+    })
+
+    // Entra em Rever Capítulo 2 (mode: 'review')
+    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 2/i }))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('banner-c2-review-mode')).toBeInTheDocument()
+      expect(screen.getByText(/Modo somente-leitura/i)).toBeInTheDocument()
+      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+    })
+
+    const buttons = screen.getAllByRole('button')
+    const unselectedOption = buttons.find((btn) =>
+      btn.textContent?.includes('Fome moderada e previsível'),
+    )
+    expect(unselectedOption).toBeDefined()
+    expect(unselectedOption).toHaveAttribute('aria-pressed', 'false')
+    expect(unselectedOption).toHaveAttribute('aria-disabled', 'true')
+
+    const responsesCountBefore = demoAdapter.listExperienceResponses(
+      DEMO_ENROLLMENT_ID,
+      'exp-corpo-fisiologia-07b',
+    ).length
+
+    // Tenta clicar na opção desmarcada no modo revisão
+    fireEvent.click(unselectedOption!)
+
+    // Asserção: a opção NÃO foi marcada e o contador NÃO mudou
+    expect(unselectedOption).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByText(/Até 2 escolhas • 1\/2/i)).toBeInTheDocument()
+
+    const responsesCountAfter = demoAdapter.listExperienceResponses(
+      DEMO_ENROLLMENT_ID,
+      'exp-corpo-fisiologia-07b',
+    ).length
+    expect(responsesCountAfter).toBe(responsesCountBefore)
   })
 
   // 7. o texto "Modo somente-leitura" NÃO aparece no teste 5
