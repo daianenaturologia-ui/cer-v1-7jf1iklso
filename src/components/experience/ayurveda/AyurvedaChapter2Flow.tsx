@@ -47,6 +47,7 @@ export interface AyurvedaChapter2FlowProps {
   revisionNumber?: number
   initialStep?: number
   onEnterReview?: () => void
+  onExitReview?: () => void
   onStartCorrection?: () => void
 }
 
@@ -71,6 +72,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   revisionNumber,
   initialStep,
   onEnterReview,
+  onExitReview,
   onStartCorrection,
 }) => {
   const resolveInitialStage = (): Chapter2FlowStage => {
@@ -107,8 +109,8 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   }
 
   const [stage, setStage] = useState<Chapter2FlowStage>(resolveInitialStage)
-  // Derivação canônica da permissão de edição a partir do prop mode canônico
-  const isReviewOnly = mode ? mode === 'review' : initialStage === 'review'
+  // Derivação estrita: isReviewOnly equivale exclusivamente a mode === 'review'
+  const isReviewOnly = mode === 'review'
   const isCorrecting = mode === 'correcting'
 
   const [loading, setLoading] = useState(true)
@@ -1041,7 +1043,11 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             variant="outline"
             size="sm"
             onClick={() => {
-              setStage('closing')
+              if (onExitReview) {
+                onExitReview()
+              } else {
+                setStage('closing')
+              }
             }}
             className="text-xs h-7 px-3 bg-background"
           >

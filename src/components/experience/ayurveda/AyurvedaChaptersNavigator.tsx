@@ -394,6 +394,19 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     })
   }, [enrollmentId, derivedC2.activeRevisionNumber])
 
+  const handleExitReviewChapter2 = useCallback(() => {
+    const currentPersisted = getPersistedActiveChapter2Revision(enrollmentId)
+    setNavState((prev): AyurvedaNavigationState => {
+      return {
+        chapterId: 'c2',
+        mode: isC2Completed ? 'completed' : 'ready_to_complete',
+        currentStep: 5,
+        activeRevision:
+          currentPersisted ?? (prev.chapterId === 'c2' ? prev.activeRevision : null) ?? 1,
+      }
+    })
+  }, [enrollmentId, isC2Completed])
+
   const handleCorrectChapter2 = handleStartCorrectionC2
 
   // RENDERIZAÇÃO CONFORME ESTADO CANÔNICO
@@ -440,6 +453,7 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
         initialStep={currentStep ?? undefined}
         onBackToHub={handleExitToHub}
         onEnterReview={handleReviewChapter2}
+        onExitReview={handleExitReviewChapter2}
         onStartCorrection={handleCorrectionStartedInC2}
         onCompleted={() => {
           reloadData()
