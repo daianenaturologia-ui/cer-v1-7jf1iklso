@@ -512,6 +512,125 @@ export type AyurvedaChapter2Status =
  *    - 1 a 11 perguntas respondidas sem completion record -> 'in_progress'.
  * 4. Progresso: percentual baseado nos cinco momentos (de 1 a 5).
  */
+/**
+ * Chave de armazenamento no localStorage para persistir a revisão ativa do Capítulo 2 por enrollment
+ */
+export const AYV_C2_ACTIVE_REVISION_STORAGE_KEY_PREFIX = 'cer_c2_active_revision_'
+
+export function getActiveChapter2RevisionStorageKey(enrollmentId: string): string {
+  return `${AYV_C2_ACTIVE_REVISION_STORAGE_KEY_PREFIX}${enrollmentId || 'default'}`
+}
+
+export function getPersistedActiveChapter2Revision(enrollmentId: string): number | null {
+  try {
+    if (typeof localStorage === 'undefined') return null
+    const val = localStorage.getItem(getActiveChapter2RevisionStorageKey(enrollmentId))
+    if (!val) return null
+    const num = parseInt(val, 10)
+    return Number.isFinite(num) && num >= 1 ? num : null
+  } catch {
+    return null
+  }
+}
+
+export function setPersistedActiveChapter2Revision(enrollmentId: string, revision: number): void {
+  try {
+    if (typeof localStorage === 'undefined') return
+    localStorage.setItem(getActiveChapter2RevisionStorageKey(enrollmentId), String(revision))
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearPersistedActiveChapter2Revision(enrollmentId: string): void {
+  try {
+    if (typeof localStorage === 'undefined') return
+    localStorage.removeItem(getActiveChapter2RevisionStorageKey(enrollmentId))
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Migração local idempotente e não destrutiva para registros do Capítulo 2:
+ * Registros `ayv_c2_*` sem `revision_number` passam a pertencer à revisão 1 (na raiz do registro e em `structured_value.metadata`);
+ * A conclusão legada `ayv_c2_chapter_completion` fica explicitamente na revisão 1.
+ * Nenhum conteúdo literal, autoria, data ou resposta é alterado;
+ * Nenhum registro é apagado;
+ * Rodar de novo não altera nada (idempotente).
+ */
+export function migrateLegacyChapter2Responses<
+  T extends ExperienceResponseRecord | Record<string, any>,
+>(responses: T[]): { migratedResponses: T[]; modifiedCount: number } {
+  if (!Array.isArray(responses) || responses.length === 0) {
+    return { migratedResponses: responses || [], modifiedCount: 0 }
+  }
+
+  let modifiedCount = 0
+
+  const migratedResponses = responses.map((r) => {
+    if (!r) return r
+
+    const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const sVal = (r as any).structured_value
+    const promptKey =
+      (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+
+    const matchesId = typeof promptId === 'string' && promptId.startsWith('ayv_c2_')
+    const matchesKey = typeof promptKey === 'string' && promptKey.startsWith('ayv_c2_')
+
+    if (!matchesId && !matchesKey) {
+      return r
+    }
+
+    const meta = sVal && typeof sVal === 'object' ? (sVal as any).metadata : undefined
+    const existingRev = (r as any).revision_number ?? sVal?.revision_number ?? meta?.revision_number
+
+    const hasExplicitRev =
+      typeof existingRev === 'number' && !Number.isNaN(existingRev) && existingRev >= 1
+
+    if (hasExplicitRev && meta?.revision_number !== undefined) {
+      return r
+    }
+
+    // Precisa de migração não destrutiva para a revisão 1
+    modifiedCount++
+    const newRev = 1
+
+    const newStructuredValue =
+      sVal && typeof sVal === 'object'
+        ? {
+            ...sVal,
+            revision_number: (sVal as any).revision_number ?? newRev,
+            metadata: {
+              ...(meta || {}),
+              revision_number: meta?.revision_number ?? newRev,
+              domain: meta?.domain || 'ayurveda',
+              chapter_id: meta?.chapter_id || AYURVEDA_CHAPTER_2_ID,
+              experience_version: meta?.experience_version || AYURVEDA_CHAPTER_2_VERSION,
+            },
+          }
+        : sVal
+
+    const updatedRecord: any = {
+      ...r,
+      revision_number: (r as any).revision_number ?? newRev,
+      structured_value: newStructuredValue,
+    }
+
+    if (!updatedRecord.prompt_key && promptKey) {
+      updatedRecord.prompt_key = promptKey
+    }
+    if (!updatedRecord.canonical_prompt_id && promptId) {
+      updatedRecord.canonical_prompt_id = promptId
+    }
+
+    return updatedRecord as T
+  })
+
+  return { migratedResponses, modifiedCount }
+}
+
 export function getResponseRevisionNumber(
   r: ExperienceResponseRecord | Record<string, any>,
 ): number {
@@ -635,6 +754,13 @@ export function createChapter2Revision(params: {
       experience_version: AYURVEDA_CHAPTER_2_VERSION,
       revision_number: nextRevisionNumber,
       parent_version_id: parentId,
+      step_order:
+        (parentRecord as any).step_order ??
+        meta?.step_order ??
+        (AYV_C2_PROMPTS as any)[qKey.toUpperCase()]?.step_order ??
+        1,
+      moment_number:
+        meta?.moment_number ?? (AYV_C2_PROMPTS as any)[qKey.toUpperCase()]?.moment ?? 1,
     }
 
     const newRecord: ExperienceResponseRecord = {

@@ -314,6 +314,73 @@ class DemoAdapter {
    * - NÃO apaga conclusão canônica verdadeira
    * - Idempotente: rodar duas vezes seguidas resulta no mesmo estado.
    */
+  /**
+   * Migração local idempotente e não destrutiva para respostas do Capítulo 2 de Ayurveda:
+   * Atribui revisão 1 a registros legados criados na 0.0.148 sem revision_number/metadata.
+   * Não altera conteúdo, autoria, datas nem apaga nada.
+   */
+  public migrateLegacyChapter2ResponsesInStore(store: DemoStateStore): DemoStateStore {
+    if (!store || !Array.isArray(store.experienceResponses)) return store
+
+    let modified = false
+    for (const r of store.experienceResponses) {
+      if (!r) continue
+      const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+      const sVal = (r as any).structured_value
+      const promptKey =
+        (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+
+      const isC2 =
+        (typeof promptId === 'string' && promptId.startsWith('ayv_c2_')) ||
+        (typeof promptKey === 'string' && promptKey.startsWith('ayv_c2_'))
+
+      if (!isC2) continue
+
+      const meta = sVal && typeof sVal === 'object' ? (sVal as any).metadata : undefined
+      const existingRev =
+        (r as any).revision_number ?? sVal?.revision_number ?? meta?.revision_number
+
+      if (typeof existingRev === 'number' && !Number.isNaN(existingRev) && existingRev >= 1) {
+        if (meta?.revision_number === undefined && sVal && typeof sVal === 'object') {
+          if (!sVal.metadata) sVal.metadata = {}
+          sVal.metadata.revision_number = existingRev
+          modified = true
+        }
+        continue
+      }
+
+      // Registro legado sem revision_number -> passa a pertencer à revisão 1
+      modified = true
+      const targetRev = 1
+      ;(r as any).revision_number = targetRev
+      if (sVal && typeof sVal === 'object') {
+        sVal.revision_number = targetRev
+        if (!sVal.metadata) {
+          sVal.metadata = {}
+        }
+        sVal.metadata.revision_number = targetRev
+        sVal.metadata.chapter_id = sVal.metadata.chapter_id || 'capitulo-2-ritmo-corpo'
+        sVal.metadata.domain = sVal.metadata.domain || 'ayurveda'
+      }
+      if (!(r as any).prompt_key && promptKey) {
+        ;(r as any).prompt_key = promptKey
+      }
+      if (!(r as any).canonical_prompt_id && promptId) {
+        ;(r as any).canonical_prompt_id = promptId
+      }
+    }
+
+    if (modified) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+      } catch {
+        /* ignore */
+      }
+    }
+
+    return store
+  }
+
   public sanitizeFalseAyurvedaChapter1Completion(store: DemoStateStore): DemoStateStore {
     if (!store || !store.enrollmentExperienceProgress) return store
 
@@ -388,7 +455,8 @@ class DemoAdapter {
         const sanitized = this.sanitizeVisibleDemoStore(parsed)
         const migratedMente = this.migrateIncompatibleMenteEmocoes(sanitized)
         const sanitizedAyv = this.sanitizeFalseAyurvedaChapter1Completion(migratedMente)
-        return sanitizedAyv
+        const migratedC2 = this.migrateLegacyChapter2ResponsesInStore(sanitizedAyv)
+        return migratedC2
       }
     } catch (e) {
       console.warn('Falha ao restaurar estado de demonstração:', e)
@@ -630,6 +698,7 @@ class DemoAdapter {
     this.state.activePersona = persona
     this.migrateIncompatibleMenteEmocoes(this.state)
     this.sanitizeFalseAyurvedaChapter1Completion(this.state)
+    this.migrateLegacyChapter2ResponsesInStore(this.state)
     this.saveState()
   }
 

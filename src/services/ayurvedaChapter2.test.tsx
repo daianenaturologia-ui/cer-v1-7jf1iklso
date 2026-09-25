@@ -5,6 +5,10 @@ import {
   deriveChapter2Status,
   buildChapter2LiteralSummary,
   createChapter2Revision,
+  migrateLegacyChapter2Responses,
+  getPersistedActiveChapter2Revision,
+  setPersistedActiveChapter2Revision,
+  clearPersistedActiveChapter2Revision,
   AYV_C2_PROMPTS,
   AYV_C2_QUESTION_PROMPT_KEYS,
   AYV_C2_TOTAL_MOMENTS,
@@ -787,6 +791,289 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
 
       // Nenhuma chamada PocketBase
       expect(pbCollectionSpy).not.toHaveBeenCalled()
+    })
+
+    describe('TESTES DE REGRESSÃO E RESILIÊNCIA: DADOS LEGADOS DA 0.0.148 E CORREÇÃO ROBUSTA', () => {
+      beforeEach(() => {
+        localStorage.clear()
+      })
+
+      it('15. Migração idempotente: registros legados da 0.0.148 (sem revision_number) passam à revisão 1 sem alterar dados nem apagar nada', () => {
+        const legacyFixture = [
+          {
+            id: 'legacy-c2-p1',
+            enrollment_id: 'enr-demo',
+            experience_id: 'exp-corpo-fisiologia-07b',
+            prompt_id: 'ayv_c2_hunger_pattern',
+            prompt_key: 'ayv_c2_hunger_pattern',
+            structured_value: {
+              value: ['regular_hours'],
+              selectedOptionIds: ['regular_hours'],
+              // sem revision_number e sem metadata
+            },
+            status: 'saved',
+            created: '2025-05-10T12:00:00.000Z',
+          },
+          {
+            id: 'legacy-c2-completion',
+            enrollment_id: 'enr-demo',
+            experience_id: 'exp-corpo-fisiologia-07b',
+            prompt_id: 'ayv_c2_chapter_completion',
+            prompt_key: 'ayv_c2_chapter_completion',
+            structured_value: {
+              completed: true,
+              completed_at: '2025-05-10T12:30:00.000Z',
+              // sem revision_number
+            },
+            status: 'saved',
+            created: '2025-05-10T12:30:00.000Z',
+          },
+          {
+            id: 'legacy-c1-resp',
+            enrollment_id: 'enr-demo',
+            experience_id: 'exp-corpo-fisiologia-07b',
+            prompt_id: 'ayv_c1_structure',
+            prompt_key: 'ayv_c1_structure',
+            structured_value: { choice: 'figura_a' },
+            status: 'saved',
+          },
+        ]
+
+        // 1ª execução da migração
+        const run1 = migrateLegacyChapter2Responses(legacyFixture)
+        expect(run1.modifiedCount).toBe(2) // 2 do C2 migrados, C1 intocado
+        expect(run1.migratedResponses.length).toBe(3)
+
+        const c2P1 = run1.migratedResponses.find((r) => r.id === 'legacy-c2-p1')
+        expect((c2P1 as any).revision_number).toBe(1)
+        expect((c2P1 as any).structured_value.revision_number).toBe(1)
+        expect((c2P1 as any).structured_value.metadata.revision_number).toBe(1)
+        expect((c2P1 as any).structured_value.value).toEqual(['regular_hours']) // valor literal intacto
+        expect((c2P1 as any).created).toBe('2025-05-10T12:00:00.000Z') // data intacta
+
+        const c2Comp = run1.migratedResponses.find((r) => r.id === 'legacy-c2-completion')
+        expect((c2Comp as any).revision_number).toBe(1)
+        expect((c2Comp as any).structured_value.revision_number).toBe(1)
+        expect((c2Comp as any).structured_value.completed).toBe(true)
+
+        const c1 = run1.migratedResponses.find((r) => r.id === 'legacy-c1-resp')
+        expect((c1 as any).structured_value.choice).toBe('figura_a')
+        expect((c1 as any).revision_number).toBeUndefined()
+
+        // 2ª execução (idempotência total: zero alterações adicionais)
+        const run2 = migrateLegacyChapter2Responses(run1.migratedResponses)
+        expect(run2.modifiedCount).toBe(0)
+        expect(run2.migratedResponses).toEqual(run1.migratedResponses)
+      })
+
+      it('16. CAMINHO REAL DOS BOTÕES COM FIXTURE LEGADO DA 0.0.148: Clicar Corrigir → Confirmar → Momento 1 editável com respostas preenchidas → Alterar resposta → Concluir de novo → Revisão 1 preservada', async () => {
+        // Criar fixture das 12 respostas + conclusão legada da 0.0.148 (sem revision_number e sem metadata)
+        const legacyResponses: any[] = []
+        const now = '2025-05-10T12:00:00.000Z'
+
+        const baseChoices: Record<string, string[]> = {
+          ayv_c2_hunger_pattern: ['regular_hours'],
+          ayv_c2_delayed_meal_response: ['can_wait'],
+          ayv_c2_post_meal: ['light_satisfied'],
+          ayv_c2_hunger_return: ['regular_intervals'],
+          ayv_c2_food_demands: ['digests_variety'],
+          ayv_c2_bowel_rhythm: ['daily_regular'],
+          ayv_c2_stool_pattern: ['formed_easy'],
+          ayv_c2_sleep_pattern: ['easy_deep'],
+          ayv_c2_waking: ['rested_ready'],
+          ayv_c2_energy_distribution: ['stable_throughout'],
+          ayv_c2_body_pace: ['constant'],
+          ayv_c2_historical_confidence: ['many_years'],
+        }
+
+        for (const [key, val] of Object.entries(baseChoices)) {
+          legacyResponses.push({
+            id: `legacy-${key}`,
+            enrollment_id: 'enr-demo',
+            experience_id: 'exp-corpo-fisiologia-07b',
+            prompt_id: key,
+            prompt_key: key,
+            response_type:
+              Array.isArray(val) && val.length > 1 ? 'MultiSelectCards' : 'ChoiceCards',
+            structured_value: {
+              value:
+                val.length === 1 && !key.includes('pattern') && !key.includes('demands')
+                  ? val[0]
+                  : val,
+              selectedOptionIds: val,
+              // propositalmente SEM revision_number e SEM metadata (formato v0.0.148)
+            },
+            status: 'saved',
+            created: now,
+            updated: now,
+          })
+        }
+
+        // Conclusão legada
+        legacyResponses.push({
+          id: 'legacy-completion-148',
+          enrollment_id: 'enr-demo',
+          experience_id: 'exp-corpo-fisiologia-07b',
+          prompt_id: AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+          prompt_key: AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
+          structured_value: {
+            completed: true,
+            completed_at: now,
+            // propositalmente SEM revision_number
+          },
+          status: 'saved',
+          created: now,
+        })
+
+        let backendResponses = [...legacyResponses]
+        const saveCalls: any[] = []
+
+        vi.spyOn(experienceResponseService, 'listResponsesByExperience').mockImplementation(
+          async () => {
+            return [...backendResponses]
+          },
+        )
+        vi.spyOn(experienceResponseService, 'saveResponse').mockImplementation(
+          async (params: any) => {
+            saveCalls.push(params)
+            const newRecord: any = {
+              id: `saved-${params.promptId}-${Date.now()}`,
+              enrollment_id: params.enrollmentId,
+              experience_id: params.experienceId,
+              prompt_id: params.promptId,
+              prompt_key: params.promptKey,
+              structured_value: params.structuredValue,
+              response_type: params.responseType,
+              status: 'saved',
+              created: new Date().toISOString(),
+              updated: new Date().toISOString(),
+            }
+            backendResponses.push(newRecord)
+            return newRecord
+          },
+        )
+
+        render(
+          <AyurvedaChapter2Flow
+            enrollmentId="enr-demo"
+            experienceId="exp-corpo-fisiologia-07b"
+            respondentUserId="usr-mariana"
+            onBackToHub={vi.fn()}
+          />,
+        )
+
+        // 1. App inicializa e detecta estado concluído da revisão 1
+        await waitFor(() => {
+          expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+        })
+        expect(
+          screen.getByText('Aparece em horários relativamente previsíveis.'),
+        ).toBeInTheDocument()
+
+        // 2. Clicar em "Corrigir minhas respostas"
+        const btnCorrect = screen.getByText('Corrigir minhas respostas')
+        fireEvent.click(btnCorrect)
+
+        expect(screen.getByText('Confirmar abertura de correção do Capítulo 2')).toBeInTheDocument()
+
+        // 3. Clicar em "Confirmar e corrigir"
+        const btnConfirm = screen.getByText('Confirmar e corrigir')
+        fireEvent.click(btnConfirm)
+
+        // 4. Encerramento antigo desaparece e Momento 1 editável aparece
+        await waitFor(() => {
+          expect(screen.queryByText('Capítulo 2 concluído')).not.toBeInTheDocument()
+          expect(screen.getByText(/Momento 1 de 5 — Fome/i)).toBeInTheDocument()
+        })
+
+        // 5. As 12 respostas foram salvas como revisão 2
+        const rev2Saves = saveCalls.filter((c) => c.changeReason?.includes('revisão 2'))
+        expect(rev2Saves.length).toBe(12)
+
+        // 6. Resposta anterior "Aparece em horários relativamente previsíveis." está preenchida/selecionada
+        expect(
+          screen.getByText('Aparece em horários relativamente previsíveis.'),
+        ).toBeInTheDocument()
+
+        // 7. Alterar uma resposta: adicionar "Surge de repente e pode ficar muito intensa."
+        const newOption = screen.getByText('Surge de repente e pode ficar muito intensa.')
+        fireEvent.click(newOption)
+
+        // 8. Avançar momentos até o encerramento
+        fireEvent.click(screen.getByText('Avançar para Digestão'))
+        await waitFor(() =>
+          expect(screen.getByText(/Momento 2 de 5 — Digestão/i)).toBeInTheDocument(),
+        )
+
+        fireEvent.click(screen.getByText('Avançar para Eliminação'))
+        await waitFor(() =>
+          expect(screen.getByText(/Momento 3 de 5 — Eliminação/i)).toBeInTheDocument(),
+        )
+
+        fireEvent.click(screen.getByText('Avançar para Sono'))
+        await waitFor(() => expect(screen.getByText(/Momento 4 de 5 — Sono/i)).toBeInTheDocument())
+
+        fireEvent.click(screen.getByText('Avançar para Energia'))
+        await waitFor(() =>
+          expect(screen.getByText(/Momento 5 de 5 — Energia/i)).toBeInTheDocument(),
+        )
+
+        fireEvent.click(screen.getByText('Ir para Encerramento'))
+        await waitFor(() => expect(screen.getByText('Concluir Capítulo 2')).toBeInTheDocument())
+
+        // 9. Concluir de novo explicitamente a revisão 2
+        fireEvent.click(screen.getByText('Concluir Capítulo 2'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+        })
+
+        // O novo resumo agora reflete a alteração (ambas as opções na revisão 2)
+        expect(screen.getByText('Surge de repente e pode ficar muito intensa.')).toBeInTheDocument()
+
+        // 10. A revisão 1 original permanece intacta nos registros legados
+        const rev1Completion = backendResponses.find((r) => r.id === 'legacy-completion-148')
+        expect((rev1Completion as any).structured_value.completed).toBe(true)
+      })
+
+      it('17. Tratamento de falha sem silêncio: se qualquer gravação falhar ao abrir correção, exibe mensagem "Não foi possível abrir a correção agora. Tente novamente." com botão e permanece no encerramento anterior', async () => {
+        const persistedStorage = buildCanonicalC2CompletedResponses(1)
+        vi.spyOn(experienceResponseService, 'listResponsesByExperience').mockResolvedValue(
+          persistedStorage,
+        )
+
+        // Simular falha de gravação (ex.: rede/metadados/exceção)
+        vi.spyOn(experienceResponseService, 'saveResponse').mockRejectedValue(
+          new Error('Simulated network error during correction creation'),
+        )
+
+        render(
+          <AyurvedaChapter2Flow
+            enrollmentId="enr-demo"
+            experienceId="exp-corpo-fisiologia-07b"
+            respondentUserId="usr-mariana"
+            onBackToHub={vi.fn()}
+          />,
+        )
+
+        await waitFor(() => {
+          expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Corrigir minhas respostas'))
+        fireEvent.click(screen.getByText('Confirmar e corrigir'))
+
+        // Falhou: não pode abrir momento1, deve exibir o aviso com botão "Tentar novamente"
+        await waitFor(() => {
+          expect(
+            screen.getByText('Não foi possível abrir a correção agora. Tente novamente.'),
+          ).toBeInTheDocument()
+        })
+
+        expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+        expect(screen.getByText('Tentar novamente')).toBeInTheDocument()
+        expect(screen.queryByText(/Momento 1 de 5 — Fome/i)).not.toBeInTheDocument()
+      })
     })
   })
 })

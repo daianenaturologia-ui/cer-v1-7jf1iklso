@@ -18,6 +18,9 @@ import {
   Chapter2TreatmentVariant,
   createChapter2Revision,
   getResponseRevisionNumber,
+  migrateLegacyChapter2Responses,
+  getPersistedActiveChapter2Revision,
+  setPersistedActiveChapter2Revision,
 } from '@/services/ayurvedaChapter2'
 import { AyurvedaChapter2Opening } from './AyurvedaChapter2Opening'
 import { AyurvedaC2Momento1Hunger } from './AyurvedaC2Momento1Hunger'
@@ -61,11 +64,14 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   const [isReviewOnly, setIsReviewOnly] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
 
   const [chapterState, setChapterState] = useState<AyurvedaChapter2State>({})
   const [rawResponses, setRawResponses] = useState<ExperienceResponseRecord[]>([])
-  const [activeRevision, setActiveRevision] = useState<number | undefined>(undefined)
+  const [activeRevision, setActiveRevision] = useState<number | undefined>(() => {
+    return getPersistedActiveChapter2Revision(enrollmentId) ?? undefined
+  })
 
   // Carregar respostas existentes com IDs canônicos AYV_C2
   const loadResponses = async (explicitTargetRevision?: number) => {
@@ -80,19 +86,30 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         setEnrollmentExp(currentEnrExp)
       }
 
-      const responses = await experienceResponseService.listResponsesByExperience(
+      const rawFromBackend = await experienceResponseService.listResponsesByExperience(
         enrollmentId,
         experienceId,
       )
-      setRawResponses(responses)
 
-      // Identificar revisão ativa a ser carregada
-      const derivedTemp = deriveChapter2Status(responses, explicitTargetRevision)
-      const targetRev = explicitTargetRevision ?? derivedTemp.activeRevisionNumber
+      // Migração não destrutiva e idempotente de registros legados da 0.0.148
+      const { migratedResponses } = migrateLegacyChapter2Responses(rawFromBackend)
+      setRawResponses(migratedResponses)
+
+      // Identificar revisão ativa a ser carregada: prioriza explícito > persistido no localStorage > derivado
+      const persistedRev = getPersistedActiveChapter2Revision(enrollmentId)
+      const derivedTemp = deriveChapter2Status(
+        migratedResponses,
+        explicitTargetRevision ?? persistedRev ?? undefined,
+      )
+      const targetRev = explicitTargetRevision ?? persistedRev ?? derivedTemp.activeRevisionNumber
+
       setActiveRevision(targetRev)
+      setPersistedActiveChapter2Revision(enrollmentId, targetRev)
 
       // Filtrar respostas estritamente pertencentes à revisão ativa
-      const activeResponses = responses.filter((r) => getResponseRevisionNumber(r) === targetRev)
+      const activeResponses = migratedResponses.filter(
+        (r) => getResponseRevisionNumber(r) === targetRev,
+      )
 
       const loadedState: AyurvedaChapter2State = {}
 
@@ -182,7 +199,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       setChapterState(loadedState)
 
       // Determinar stage inicial inteligente baseado na revisão ativa
-      const derived = deriveChapter2Status(responses, targetRev)
+      const derived = deriveChapter2Status(migratedResponses, targetRev)
       if (initialStage === 'review') {
         setIsReviewOnly(true)
         setStage('momento1')
@@ -583,40 +600,160 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
 
   // Corrigir minhas respostas com histórico preservado
   const handleStartCorrection = async () => {
-    // 1. Preservar integralmente as respostas anteriores (imutáveis)
-    // 2. Criar nova revisão canônica desvinculada de conclusão
-    const { nextRevisionNumber, newActiveResponses } = createChapter2Revision({
-      existingResponses: rawResponses,
-      enrollmentId,
-      experienceId,
-      respondentUserId,
-    })
+    setCorrectionError(null)
+    setSaving(true)
 
-    // 3. Persistir cada resposta copiada no adapter/backend vinculada à nova revisão
-    for (const item of newActiveResponses) {
-      const sVal = item.structured_value as any
-      const meta = sVal?.metadata || {}
-      await experienceResponseService.saveResponse({
+    // Snapshot das respostas antes de qualquer operação para garantir rollback atômico em caso de falha
+    const previousRawResponses = [...rawResponses]
+    const previousActiveRevision = currentActiveRev
+
+    try {
+      // 0. Garantir sanitização/migração não destrutiva prévia nos registros existentes
+      const { migratedResponses } = migrateLegacyChapter2Responses(rawResponses)
+
+      // 1. Criar nova revisão canônica desvinculada de qualquer conclusão
+      const { nextRevisionNumber, newActiveResponses } = createChapter2Revision({
+        existingResponses: migratedResponses,
         enrollmentId,
         experienceId,
-        promptId: item.prompt_id,
         respondentUserId,
-        responseType: item.response_type,
-        promptVersion: 1,
-        promptKey: (item as any).prompt_key || meta.prompt_key,
-        canonicalPromptId: (item as any).canonical_prompt_id || meta.canonical_prompt_id,
-        stepOrder: meta.step_order,
-        accessClass: 'shared_care',
-        changeReason: `Cópia inicial da revisão ${nextRevisionNumber} do Capítulo 2`,
-        structuredValue: sVal,
       })
-    }
 
-    // 4. Atualizar estado local com a nova revisão ativa
-    setActiveRevision(nextRevisionNumber)
-    setRawResponses((prev) => [...prev, ...newActiveResponses])
-    setIsReviewOnly(false)
-    setStage('momento1')
+      // 2. Persistir de forma robusta e assíncrona todas as respostas copiadas
+      const persistedActiveResponses: ExperienceResponseRecord[] = []
+      for (const item of newActiveResponses) {
+        const sVal = (item.structured_value || {}) as any
+        const meta = sVal?.metadata || {}
+        const pKey = (item as any).prompt_key || meta?.prompt_key || item.prompt_id
+        const pId = (item as any).canonical_prompt_id || meta?.canonical_prompt_id || item.prompt_id
+        const step = (item as any).step_order ?? meta?.step_order ?? 1
+
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: item.prompt_id,
+          respondentUserId,
+          responseType: item.response_type || ('MultiSelectCards' as any),
+          promptVersion: 1,
+          promptKey: pKey,
+          canonicalPromptId: pId,
+          stepOrder: step,
+          accessClass: 'shared_care',
+          changeReason: `Cópia inicial da revisão ${nextRevisionNumber} do Capítulo 2`,
+          structuredValue: sVal,
+        })
+        ;(saved as any).revision_number = nextRevisionNumber
+        ;(saved as any).prompt_key = pKey
+        ;(saved as any).canonical_prompt_id = pId
+        persistedActiveResponses.push(saved)
+      }
+
+      // 3. Persistir no storage local que a nova revisão é a ATIVA antes de qualquer transição
+      setPersistedActiveChapter2Revision(enrollmentId, nextRevisionNumber)
+
+      // 4. Recarregar o chapterState com as respostas da nova revisão
+      const newLoadedState: AyurvedaChapter2State = {}
+      for (const r of persistedActiveResponses) {
+        const sVal = r.structured_value as any
+        const pKey =
+          (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+        const pId = r.prompt_id || (r as any).canonical_prompt_id
+        const matches = (keyOrId: string) => pKey === keyOrId || pId === keyOrId
+
+        if (matches(AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key)) {
+          newLoadedState.hunger_pattern = Array.isArray(sVal?.selectedOptionIds)
+            ? sVal.selectedOptionIds
+            : Array.isArray(sVal?.value)
+              ? sVal.value
+              : Array.isArray(sVal)
+                ? sVal
+                : sVal?.choice
+                  ? [sVal.choice]
+                  : []
+        } else if (matches(AYV_C2_PROMPTS.P2_DELAYED_MEAL.key)) {
+          newLoadedState.delayed_meal_response = Array.isArray(sVal?.selectedOptionIds)
+            ? sVal.selectedOptionIds
+            : Array.isArray(sVal?.value)
+              ? sVal.value
+              : Array.isArray(sVal)
+                ? sVal
+                : sVal?.choice
+                  ? [sVal.choice]
+                  : []
+        } else if (matches(AYV_C2_PROMPTS.P3_POST_MEAL.key)) {
+          newLoadedState.post_meal = Array.isArray(sVal?.selectedOptionIds)
+            ? sVal.selectedOptionIds
+            : Array.isArray(sVal?.value)
+              ? sVal.value
+              : Array.isArray(sVal)
+                ? sVal
+                : sVal?.choice
+                  ? [sVal.choice]
+                  : []
+        } else if (matches(AYV_C2_PROMPTS.P4_HUNGER_RETURN.key)) {
+          newLoadedState.hunger_return = sVal?.value || sVal?.choice
+        } else if (matches(AYV_C2_PROMPTS.P5_FOOD_DEMANDS.key)) {
+          newLoadedState.food_demands = Array.isArray(sVal?.selectedOptionIds)
+            ? sVal.selectedOptionIds
+            : Array.isArray(sVal?.value)
+              ? sVal.value
+              : Array.isArray(sVal)
+                ? sVal
+                : sVal?.choice
+                  ? [sVal.choice]
+                  : []
+        } else if (matches(AYV_C2_PROMPTS.P6_BOWEL_RHYTHM.key)) {
+          newLoadedState.bowel_rhythm = sVal?.value || sVal?.choice
+        } else if (matches(AYV_C2_PROMPTS.P7_STOOL_PATTERN.key)) {
+          newLoadedState.stool_pattern = Array.isArray(sVal?.selectedOptionIds)
+            ? sVal.selectedOptionIds
+            : Array.isArray(sVal?.value)
+              ? sVal.value
+              : Array.isArray(sVal)
+                ? sVal
+                : sVal?.choice
+                  ? [sVal.choice]
+                  : []
+        } else if (matches(AYV_C2_PROMPTS.P8_SLEEP_PATTERN.key)) {
+          newLoadedState.sleep_pattern = Array.isArray(sVal?.selectedOptionIds)
+            ? sVal.selectedOptionIds
+            : Array.isArray(sVal?.value)
+              ? sVal.value
+              : Array.isArray(sVal)
+                ? sVal
+                : sVal?.choice
+                  ? [sVal.choice]
+                  : []
+        } else if (matches(AYV_C2_PROMPTS.P9_WAKING.key)) {
+          newLoadedState.waking = sVal?.value || sVal?.choice
+        } else if (matches(AYV_C2_PROMPTS.P10_ENERGY_DISTRIBUTION.key)) {
+          newLoadedState.energy_distribution = sVal?.value || sVal?.choice
+        } else if (matches(AYV_C2_PROMPTS.P11_BODY_PACE.key)) {
+          newLoadedState.body_pace = sVal?.value || sVal?.choice
+        } else if (matches(AYV_C2_PROMPTS.P12_HISTORICAL_CONFIDENCE.key)) {
+          newLoadedState.historical_confidence = sVal?.value || sVal?.choice
+        }
+      }
+
+      // 5. Atualizar respostas e estado local da nova revisão
+      setRawResponses((prev) => [...prev, ...persistedActiveResponses])
+      setChapterState(newLoadedState)
+
+      // 6. Só então comutar revisão ativa e navegar para o Momento 1 editável
+      setActiveRevision(nextRevisionNumber)
+      setIsReviewOnly(false)
+      setStage('momento1')
+    } catch (err) {
+      console.error('Falha ao abrir correção do Capítulo 2:', err)
+      // Rollback seguro em caso de falha: permanece no encerramento anterior
+      setRawResponses(previousRawResponses)
+      setActiveRevision(previousActiveRevision)
+      setPersistedActiveChapter2Revision(enrollmentId, previousActiveRevision)
+      setCorrectionError('Não foi possível abrir a correção agora. Tente novamente.')
+      setStage('closing')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -845,6 +982,8 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
           onReviewResponses={handleReviewResponses}
           onStartCorrection={handleStartCorrection}
           loading={saving}
+          correctionError={correctionError}
+          onClearCorrectionError={() => setCorrectionError(null)}
         />
       )}
     </div>
