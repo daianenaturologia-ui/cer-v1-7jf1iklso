@@ -1100,6 +1100,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             }
             handleStartCorrection()
           }}
+          onBackToHub={onBackToHub}
           loading={saving}
           correctionError={correctionError}
           onClearCorrectionError={() => setCorrectionError(null)}

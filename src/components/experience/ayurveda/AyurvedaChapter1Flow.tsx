@@ -778,7 +778,6 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           </Button>
         </div>
       )}
-
       {/* 1. Hub dos 4 Capítulos */}
       {stage === 'hub' && (
         <AyurvedaChaptersHub
@@ -825,7 +824,6 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           onClose={onClose}
         />
       )}
-
       {/* Fluxo do Capítulo 2 */}
       {stage === 'chapter2_flow' && (
         <AyurvedaChapter2Flow
@@ -843,12 +841,10 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           }}
         />
       )}
-
       {/* 2. Transição pós-avatar */}
       {stage === 'post_avatar_transition' && (
         <AyurvedaPostAvatarTransition onStartChapter1={() => setStage('opening')} />
       )}
-
       {/* 3. Abertura do Capítulo 1 */}
       {stage === 'opening' && (
         <AyurvedaChapter1Opening
@@ -862,7 +858,6 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           }}
         />
       )}
-
       {/* 4. Tela 1: Estrutura Corporal */}
       {stage === 'step1' && (
         <div className="space-y-6">
@@ -901,7 +896,6 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           </div>
         </div>
       )}
-
       {/* 5. Tela 2: Pele */}
       {stage === 'step2' && (
         <div className="space-y-6">
@@ -933,7 +927,6 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           </div>
         </div>
       )}
-
       {/* 6. Tela 3: Cabelo */}
       {stage === 'step3' && (
         <div className="space-y-6">
@@ -965,7 +958,6 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           </div>
         </div>
       )}
-
       {/* 7. Tela 4: Temperatura */}
       {stage === 'step4' && (
         <div className="space-y-6">
@@ -997,7 +989,6 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           </div>
         </div>
       )}
-
       {/* 8. Tela 5: Sede, Bebida e Transpiração */}
       {stage === 'step5' && (
         <div className="space-y-6">
@@ -1031,7 +1022,6 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           </div>
         </div>
       )}
-
       {/* 9. Encerramento do Capítulo 1 */}
       {stage === 'closing' && (
         <AyurvedaClosing
@@ -1057,9 +1047,16 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             }
             handleStartCorrection()
           }}
+          onBackToHub={() => {
+            if (onExitToHub) {
+              onExitToHub()
+            } else {
+              setStage('hub')
+            }
+          }}
           loading={saving}
         />
-      )}
+      )}{' '}
     </div>
   )
 }

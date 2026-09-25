@@ -29,6 +29,7 @@ export interface AyurvedaChapter2ClosingProps {
   onCompleteChapter: () => void
   onReviewResponses: () => void
   onStartCorrection: () => void
+  onBackToHub?: () => void
   loading?: boolean
   correctionError?: string | null
   onClearCorrectionError?: () => void
@@ -42,6 +43,7 @@ export const AyurvedaChapter2Closing: React.FC<AyurvedaChapter2ClosingProps> = (
   onCompleteChapter,
   onReviewResponses,
   onStartCorrection,
+  onBackToHub,
   loading = false,
   correctionError = null,
   onClearCorrectionError,
@@ -139,6 +141,18 @@ export const AyurvedaChapter2Closing: React.FC<AyurvedaChapter2ClosingProps> = (
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Corrigir minhas respostas</span>
             </Button>
+            {onBackToHub && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={loading}
+                onClick={onBackToHub}
+                className="w-full sm:w-auto text-xs h-9 px-4 gap-1.5"
+              >
+                <span>Voltar aos capítulos</span>
+              </Button>
+            )}
           </div>
 
           {/* Diálogo explícito de confirmação de correção */}
