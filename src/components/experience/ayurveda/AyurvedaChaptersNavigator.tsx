@@ -15,6 +15,8 @@ import {
   migrateLegacyChapter2Responses,
   getChapter2RevisionPromptId,
   getChapter2BasePromptId,
+  getResponseRevisionNumber as getChapter2ResponseRevisionNumber,
+  AYV_C2_PROMPTS,
 } from '@/services/ayurvedaChapter2'
 import {
   createChapter1Revision,
@@ -23,6 +25,8 @@ import {
   migrateLegacyChapter1Responses,
   getChapter1RevisionPromptId,
   getChapter1BasePromptId,
+  getChapter1ResponseRevisionNumber,
+  AYV_C1_PROMPTS,
 } from '@/services/ayurvedaChapter1'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
 import { ExperienceResponseRecord, EnrollmentExperienceRecord } from '@/types/cer'
@@ -169,6 +173,29 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   const totalStepsC1 = derivedC1.totalSteps
   const firstUnansweredStepC1 = derivedC1.firstUnansweredStep
 
+  // Identificar última revisão concluída de C1
+  let c1LastCompletedRev: number | null = null
+  for (const r of migratedC1) {
+    const pId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const pKey = (r as any).prompt_key || (r as any).structured_value?.prompt_key
+    const bId = getChapter1BasePromptId(pId || '')
+    const bKey = getChapter1BasePromptId(pKey || '')
+    if (
+      bId === AYV_C1_PROMPTS.CHAPTER_COMPLETION.id ||
+      bKey === AYV_C1_PROMPTS.CHAPTER_COMPLETION.key
+    ) {
+      const sVal = (r as any).structured_value
+      const isComp =
+        sVal?.completed === true || sVal?.value?.completed === true || sVal?.status === 'completed'
+      if (isComp) {
+        const rev = getChapter1ResponseRevisionNumber(r)
+        if (c1LastCompletedRev === null || rev > c1LastCompletedRev) {
+          c1LastCompletedRev = rev
+        }
+      }
+    }
+  }
+
   const persistedC2Rev = getPersistedActiveChapter2Revision(enrollmentId)
   const { migratedResponses: migratedC2 } = migrateLegacyChapter2Responses(rawResponses)
   const derivedC2 = deriveChapter2Status(migratedC2, persistedC2Rev ?? undefined)
@@ -179,6 +206,29 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   const answeredMomentsCountC2 = derivedC2.answeredMomentsCount
   const totalMomentsC2 = derivedC2.totalMoments
   const firstUnansweredMomentC2 = derivedC2.firstUnansweredMoment
+
+  // Identificar última revisão concluída de C2
+  let c2LastCompletedRev: number | null = null
+  for (const r of migratedC2) {
+    const pId = (r as any).prompt_id || (r as any).canonical_prompt_id
+    const pKey = (r as any).prompt_key || (r as any).structured_value?.prompt_key
+    const bId = getChapter2BasePromptId(pId || '')
+    const bKey = getChapter2BasePromptId(pKey || '')
+    if (
+      bId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
+      bKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+    ) {
+      const sVal = (r as any).structured_value
+      const isComp =
+        sVal?.completed === true || sVal?.value?.completed === true || sVal?.status === 'completed'
+      if (isComp) {
+        const rev = getChapter2ResponseRevisionNumber(r)
+        if (c2LastCompletedRev === null || rev > c2LastCompletedRev) {
+          c2LastCompletedRev = rev
+        }
+      }
+    }
+  }
 
   const treatmentVariant: Chapter2TreatmentVariant =
     userPresentation === 'feminine'
@@ -204,12 +254,15 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     const currentPersisted = getPersistedActiveChapter1Revision(enrollmentId)
     const effectiveRev = currentPersisted ?? derivedC1.activeRevisionNumber ?? 1
     // Se há revisão ativa > 1 incompleta (sem conclusão), retoma em correcting preenchido
-    if (currentPersisted && currentPersisted > 1 && !isC1Completed) {
+    if (
+      (currentPersisted && currentPersisted > 1 && !isC1Completed) ||
+      (derivedC1.activeRevisionNumber > 1 && !isC1Completed)
+    ) {
       setNavState({
         chapterId: 'c1',
         mode: 'correcting',
-        currentStep: 1,
-        activeRevision: currentPersisted,
+        currentStep: firstUnansweredStepC1 || 1,
+        activeRevision: effectiveRev,
       })
     } else if (isC1Completed) {
       setNavState({
@@ -235,8 +288,8 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     } else {
       setNavState({
         chapterId: 'c1',
-        mode: 'intro',
-        currentStep: null,
+        mode: 'answering',
+        currentStep: 1,
         activeRevision: effectiveRev,
       })
     }
@@ -492,12 +545,15 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     const effectiveRev = currentPersisted ?? derivedC2.activeRevisionNumber ?? 1
     // Se a revisão ativa foi iniciada como correção (revisão > 1 sem conclusão),
     // ao retomar do hub ela deve abrir como 'correcting' editável
-    if (currentPersisted && currentPersisted > 1 && !isC2Completed) {
+    if (
+      (currentPersisted && currentPersisted > 1 && !isC2Completed) ||
+      (derivedC2.activeRevisionNumber > 1 && !isC2Completed)
+    ) {
       setNavState({
         chapterId: 'c2',
         mode: 'correcting',
-        currentStep: 1,
-        activeRevision: currentPersisted,
+        currentStep: firstUnansweredMomentC2 || 1,
+        activeRevision: effectiveRev,
       })
     } else if (isC2Completed) {
       setNavState({
@@ -523,8 +579,8 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     } else {
       setNavState({
         chapterId: 'c2',
-        mode: 'intro',
-        currentStep: null,
+        mode: 'answering',
+        currentStep: 1,
         activeRevision: effectiveRev,
       })
     }
@@ -649,10 +705,26 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
       chapter1StepOrder={firstUnansweredStepC1 || 1}
       answeredStepsCount={answeredStepsCountC1}
       totalSteps={totalStepsC1}
+      chapter1ActiveRevision={persistedC1Rev ?? derivedC1.activeRevisionNumber ?? 1}
+      chapter1LastCompletedRevision={c1LastCompletedRev}
+      chapter1HasCorrectionInProgress={Boolean(
+        (persistedC1Rev && persistedC1Rev > (c1LastCompletedRev ?? 0) && !isC1Completed) ||
+        (derivedC1.activeRevisionNumber > 1 &&
+          !isC1Completed &&
+          derivedC1.activeRevisionNumber > (c1LastCompletedRev ?? 0)),
+      )}
       chapter2Status={chapter2Status}
       chapter2Progress={chapter2Progress}
       answeredMomentsCountC2={answeredMomentsCountC2}
       totalMomentsC2={totalMomentsC2}
+      chapter2ActiveRevision={persistedC2Rev ?? derivedC2.activeRevisionNumber ?? 1}
+      chapter2LastCompletedRevision={c2LastCompletedRev}
+      chapter2HasCorrectionInProgress={Boolean(
+        (persistedC2Rev && persistedC2Rev > (c2LastCompletedRev ?? 0) && !isC2Completed) ||
+        (derivedC2.activeRevisionNumber > 1 &&
+          !isC2Completed &&
+          derivedC2.activeRevisionNumber > (c2LastCompletedRev ?? 0)),
+      )}
       avatarDeferred={avatarDeferred}
       onClose={onClose}
     />
