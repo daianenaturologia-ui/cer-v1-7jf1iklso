@@ -16,6 +16,14 @@ import {
   getChapter2RevisionPromptId,
   getChapter2BasePromptId,
 } from '@/services/ayurvedaChapter2'
+import {
+  createChapter1Revision,
+  setPersistedActiveChapter1Revision,
+  getPersistedActiveChapter1Revision,
+  migrateLegacyChapter1Responses,
+  getChapter1RevisionPromptId,
+  getChapter1BasePromptId,
+} from '@/services/ayurvedaChapter1'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
 import { ExperienceResponseRecord, EnrollmentExperienceRecord } from '@/types/cer'
 
@@ -40,7 +48,7 @@ export type AyurvedaNavigationState =
       chapterId: 'c1'
       mode: AyurvedaNavigationChapterMode
       currentStep: number | null
-      activeRevision: null
+      activeRevision: number | null
     }
   | {
       chapterId: 'c2'
@@ -119,6 +127,19 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     }
   }, [enrollmentId, experienceId])
 
+  const handleCorrectionStartedInC1 = useCallback(() => {
+    const currentPersisted = getPersistedActiveChapter1Revision(enrollmentId)
+    setNavState((prev): AyurvedaNavigationState => {
+      return {
+        chapterId: 'c1',
+        mode: 'correcting',
+        currentStep: 1,
+        activeRevision:
+          currentPersisted ?? (prev.chapterId === 'c1' ? prev.activeRevision : null) ?? 2,
+      }
+    })
+  }, [enrollmentId])
+
   const handleCorrectionStartedInC2 = useCallback(() => {
     const currentPersisted = getPersistedActiveChapter2Revision(enrollmentId)
     setNavState((prev): AyurvedaNavigationState => {
@@ -137,7 +158,9 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   }, [reloadData])
 
   // Derivações canônicas de C1 e C2
-  const derivedC1 = deriveChapter1Status(rawResponses)
+  const persistedC1Rev = getPersistedActiveChapter1Revision(enrollmentId)
+  const { migratedResponses: migratedC1 } = migrateLegacyChapter1Responses(rawResponses)
+  const derivedC1 = deriveChapter1Status(migratedC1, persistedC1Rev ?? undefined)
   const isC1Completed = derivedC1.status === 'completed'
   const isC1ReadyToComplete = derivedC1.status === 'ready_to_complete'
   const chapter1Status: AyurvedaChapter1Status = derivedC1.status
@@ -178,54 +201,184 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
 
   // Ações explícitas do Hub para Capítulo 1
   const handleStartChapter1FromHub = useCallback(() => {
-    if (isC1Completed) {
+    const currentPersisted = getPersistedActiveChapter1Revision(enrollmentId)
+    const effectiveRev = currentPersisted ?? derivedC1.activeRevisionNumber ?? 1
+    // Se há revisão ativa > 1 incompleta (sem conclusão), retoma em correcting preenchido
+    if (currentPersisted && currentPersisted > 1 && !isC1Completed) {
+      setNavState({
+        chapterId: 'c1',
+        mode: 'correcting',
+        currentStep: 1,
+        activeRevision: currentPersisted,
+      })
+    } else if (isC1Completed) {
       setNavState({
         chapterId: 'c1',
         mode: 'review',
         currentStep: 1,
-        activeRevision: null,
+        activeRevision: effectiveRev,
       })
     } else if (isC1ReadyToComplete) {
       setNavState({
         chapterId: 'c1',
         mode: 'ready_to_complete',
         currentStep: 5,
-        activeRevision: null,
+        activeRevision: effectiveRev,
       })
     } else if (chapter1Status === 'in_progress') {
       setNavState({
         chapterId: 'c1',
         mode: 'answering',
         currentStep: firstUnansweredStepC1 || 1,
-        activeRevision: null,
+        activeRevision: effectiveRev,
       })
     } else {
       setNavState({
         chapterId: 'c1',
         mode: 'intro',
         currentStep: null,
-        activeRevision: null,
+        activeRevision: effectiveRev,
       })
     }
-  }, [isC1Completed, isC1ReadyToComplete, chapter1Status, firstUnansweredStepC1])
+  }, [
+    enrollmentId,
+    isC1Completed,
+    isC1ReadyToComplete,
+    chapter1Status,
+    firstUnansweredStepC1,
+    derivedC1.activeRevisionNumber,
+  ])
 
   const handleReviewChapter1 = useCallback(() => {
+    const currentPersisted = getPersistedActiveChapter1Revision(enrollmentId)
     setNavState({
       chapterId: 'c1',
       mode: 'review',
       currentStep: 1,
-      activeRevision: null,
+      activeRevision: currentPersisted ?? derivedC1.activeRevisionNumber ?? 1,
     })
-  }, [])
+  }, [enrollmentId, derivedC1.activeRevisionNumber])
 
-  const handleCorrectChapter1 = useCallback(() => {
-    setNavState({
-      chapterId: 'c1',
-      mode: 'correcting',
-      currentStep: 1,
-      activeRevision: null,
+  const handleExitReviewChapter1 = useCallback(() => {
+    const currentPersisted = getPersistedActiveChapter1Revision(enrollmentId)
+    setNavState((prev): AyurvedaNavigationState => {
+      return {
+        chapterId: 'c1',
+        mode: isC1Completed ? 'completed' : 'ready_to_complete',
+        currentStep: 5,
+        activeRevision:
+          currentPersisted ?? (prev.chapterId === 'c1' ? prev.activeRevision : null) ?? 1,
+      }
     })
-  }, [])
+  }, [enrollmentId, isC1Completed])
+
+  const handleStartCorrectionC1 = useCallback(async () => {
+    try {
+      // 1. Carregar respostas frescas
+      const freshResponses = await experienceResponseService.listResponsesByExperience(
+        enrollmentId,
+        experienceId,
+      )
+      const { migratedResponses } = migrateLegacyChapter1Responses(
+        freshResponses.length > 0 ? freshResponses : rawResponses,
+      )
+
+      // 2. Criar nova revisão canônica
+      const { nextRevisionNumber, newActiveResponses } = createChapter1Revision({
+        existingResponses: migratedResponses,
+        enrollmentId,
+        experienceId,
+        respondentUserId,
+      })
+
+      // 3. Persistir cópias da nova revisão com ID físico canônico exclusivo
+      const persistedCopies: ExperienceResponseRecord[] = []
+      for (const item of newActiveResponses) {
+        const sVal = (item.structured_value || {}) as any
+        const meta = sVal?.metadata || {}
+        const pKey = (item as any).prompt_key || meta?.prompt_key || item.prompt_id
+        const baseCanonicalPromptId = getChapter1BasePromptId(
+          (item as any).canonical_prompt_id || meta?.canonical_prompt_id || item.prompt_id,
+        )
+        const physicalPromptId = getChapter1RevisionPromptId(
+          baseCanonicalPromptId,
+          nextRevisionNumber,
+        )
+        const step = (item as any).step_order ?? meta?.step_order ?? 1
+
+        const enrichedStructuredVal = {
+          ...sVal,
+          revision_number: nextRevisionNumber,
+          parent_version_id: (item as any).parent_version_id || sVal?.parent_version_id,
+          metadata: {
+            ...(meta || {}),
+            revision_number: nextRevisionNumber,
+            parent_version_id: (item as any).parent_version_id || sVal?.parent_version_id,
+            canonical_prompt_id: baseCanonicalPromptId,
+            prompt_key: pKey,
+          },
+        }
+
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: physicalPromptId,
+          respondentUserId,
+          responseType: item.response_type || ('ChoiceCards' as any),
+          promptVersion: 1,
+          promptKey: pKey,
+          canonicalPromptId: baseCanonicalPromptId,
+          stepOrder: step,
+          accessClass: 'shared_care',
+          changeReason: `Cópia inicial da revisão ${nextRevisionNumber} do Capítulo 1`,
+          structuredValue: enrichedStructuredVal,
+        })
+        ;(saved as any).revision_number = nextRevisionNumber
+        ;(saved as any).prompt_key = pKey
+        ;(saved as any).canonical_prompt_id = baseCanonicalPromptId
+        persistedCopies.push(saved)
+      }
+
+      // Validação: garantir que todas as cópias foram persistidas
+      if (persistedCopies.length === 0 || persistedCopies.length !== newActiveResponses.length) {
+        throw new Error(
+          `Falha ao persistir cópias da revisão ${nextRevisionNumber}: persistidas ${persistedCopies.length} de ${newActiveResponses.length}`,
+        )
+      }
+
+      // 4. Persistir a nova revisão ativa no storage SOMENTE após sucesso de todas as cópias
+      setPersistedActiveChapter1Revision(enrollmentId, nextRevisionNumber)
+
+      // 5. Atualizar respostas em cache e transicionar navegação canônica
+      await reloadData()
+
+      setNavState({
+        chapterId: 'c1',
+        mode: 'correcting',
+        currentStep: 1,
+        activeRevision: nextRevisionNumber,
+      })
+    } catch (err) {
+      console.error('Erro ao iniciar correção do C1 a partir do hub:', err)
+      // Fallback gracioso: abre o encerramento do C1 para o usuário tentar novamente
+      setNavState({
+        chapterId: 'c1',
+        mode: 'ready_to_complete',
+        currentStep: 5,
+        activeRevision: persistedC1Rev ?? derivedC1.activeRevisionNumber ?? 1,
+      })
+    }
+  }, [
+    enrollmentId,
+    experienceId,
+    respondentUserId,
+    rawResponses,
+    reloadData,
+    persistedC1Rev,
+    derivedC1.activeRevisionNumber,
+  ])
+
+  const handleCorrectChapter1 = handleStartCorrectionC1
 
   const handleStartCorrectionC2 = useCallback(async () => {
     try {
@@ -416,6 +569,7 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   if (activeChapterId === 'c1') {
     const currentStep = navState.currentStep
     const c1Mode = navState.mode as AyurvedaNavigationChapterMode
+    const activeRev = navState.activeRevision
     return (
       <AyurvedaChapter1Flow
         enrollmentId={enrollmentId}
@@ -424,10 +578,12 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
         userPresentation={userPresentation}
         avatarDeferred={avatarDeferred}
         mode={c1Mode}
+        revisionNumber={activeRev ?? undefined}
         initialStep={currentStep ?? undefined}
         onExitToHub={handleExitToHub}
         onEnterReview={handleReviewChapter1}
-        onStartCorrection={handleCorrectChapter1}
+        onExitReview={handleExitReviewChapter1}
+        onStartCorrection={handleCorrectionStartedInC1}
         onClose={onClose}
         onCompleted={() => {
           reloadData()

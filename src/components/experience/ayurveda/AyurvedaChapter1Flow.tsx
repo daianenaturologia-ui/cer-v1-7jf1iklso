@@ -10,6 +10,14 @@ import {
   AYURVEDA_EXPERIENCE_VERSION,
   deriveChapter1Status,
   AyurvedaChapter1Status,
+  createChapter1Revision,
+  repairIncompleteChapter1Revision,
+  migrateLegacyChapter1Responses,
+  getChapter1RevisionPromptId,
+  getChapter1BasePromptId,
+  getPersistedActiveChapter1Revision,
+  setPersistedActiveChapter1Revision,
+  getChapter1ResponseRevisionNumber,
 } from '@/services/ayurvedaChapter1'
 import {
   deriveChapter2Status,
@@ -38,9 +46,11 @@ export interface AyurvedaChapter1FlowProps {
   avatarDeferred?: boolean
   initialShowPostAvatarTransition?: boolean
   mode?: 'intro' | 'answering' | 'ready_to_complete' | 'completed' | 'review' | 'correcting' | 'hub'
+  revisionNumber?: number
   initialStep?: number
   onExitToHub?: () => void
   onEnterReview?: () => void
+  onExitReview?: () => void
   onStartCorrection?: () => void
   onClose?: () => void
   onCompleted?: () => void
@@ -67,9 +77,11 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   avatarDeferred = false,
   initialShowPostAvatarTransition = false,
   mode,
+  revisionNumber: propRevisionNumber,
   initialStep,
   onExitToHub,
   onEnterReview,
+  onExitReview,
   onStartCorrection,
   onClose,
   onCompleted,
@@ -110,9 +122,18 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   }
 
   const [stage, setStage] = useState<Chapter1Stage>(resolveInitialStage)
-  const [isReviewOnly, setIsReviewOnly] = useState<boolean>(() => mode === 'review')
+  const [internalMode, setInternalMode] = useState<AyurvedaChapter1FlowProps['mode']>(mode)
+
+  // Derivação estrita da permissão de edição a partir da prop canônica mode
+  const isReviewOnly = mode ? mode === 'review' : internalMode === 'review'
+
+  const [activeRevision, setActiveRevision] = useState<number>(() => {
+    return propRevisionNumber ?? getPersistedActiveChapter1Revision(enrollmentId) ?? 1
+  })
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
 
   // Estado das respostas do Capítulo 1
@@ -121,24 +142,22 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
 
   // Sincronizar caso o mode externo mude
   useEffect(() => {
+    if (mode) {
+      setInternalMode(mode)
+    }
     if (mode === 'review') {
-      setIsReviewOnly(true)
       if (stage === 'hub' || stage === 'opening') {
         setStage('step1')
       }
     } else if (mode === 'correcting') {
-      setIsReviewOnly(false)
       if (stage === 'hub' || stage === 'opening') {
         setStage('step1')
       }
     } else if (mode === 'ready_to_complete' || mode === 'completed') {
-      setIsReviewOnly(false)
       setStage('closing')
     } else if (mode === 'intro') {
-      setIsReviewOnly(false)
       setStage('opening')
     } else if (mode === 'answering' && initialStep) {
-      setIsReviewOnly(false)
       const stepMap: Record<number, Chapter1Stage> = {
         1: 'step1',
         2: 'step2',
@@ -150,7 +169,97 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     }
   }, [mode, initialStep])
 
-  // Carregar respostas existentes com IDs canônicos AYV_C1
+  useEffect(() => {
+    if (propRevisionNumber && propRevisionNumber !== activeRevision) {
+      setActiveRevision(propRevisionNumber)
+    }
+  }, [propRevisionNumber])
+
+  // Helper para preencher chapterState a partir de respostas de uma revisão específica
+  const applyResponsesToState = (responses: ExperienceResponseRecord[], targetRevision: number) => {
+    const loadedState: AyurvedaChapter1State = {}
+
+    // Filtrar apenas respostas pertencentes à targetRevision (ou fallback na maior <= targetRevision)
+    const matchingResponses = responses.filter(
+      (r) => getChapter1ResponseRevisionNumber(r) === targetRevision,
+    )
+    const listToApply =
+      matchingResponses.length > 0
+        ? matchingResponses
+        : responses.filter((r) => getChapter1ResponseRevisionNumber(r) <= targetRevision)
+
+    for (const r of listToApply) {
+      const sVal = r.structured_value as any
+      const rawPromptId = (r as any).prompt_id || (r as any).canonical_prompt_id
+      const basePromptId = getChapter1BasePromptId(rawPromptId || '')
+      const pKey = (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
+      const basePromptKey = getChapter1BasePromptId(pKey || '')
+
+      if (
+        basePromptId === AYV_C1_PROMPTS.P1_STRUCTURE.id ||
+        basePromptKey === AYV_C1_PROMPTS.P1_STRUCTURE.key
+      ) {
+        loadedState.structure_choice = sVal?.value || sVal?.choice || sVal?.structure_choice
+        loadedState.secondary_structure_choice =
+          sVal?.secondary_choice || sVal?.secondaryStructureChoice
+      } else if (
+        basePromptId === AYV_C1_PROMPTS.P1_DURATION.id ||
+        basePromptKey === AYV_C1_PROMPTS.P1_DURATION.key
+      ) {
+        loadedState.structure_duration = sVal?.value || sVal?.choice || sVal?.durationChoice
+      } else if (
+        basePromptId === AYV_C1_PROMPTS.P2_SKIN.id ||
+        basePromptKey === AYV_C1_PROMPTS.P2_SKIN.key
+      ) {
+        loadedState.skin_choices = Array.isArray(sVal?.selectedOptionIds)
+          ? sVal.selectedOptionIds
+          : Array.isArray(sVal?.value)
+            ? sVal.value
+            : Array.isArray(sVal)
+              ? sVal
+              : sVal?.choice
+                ? [sVal.choice]
+                : []
+      } else if (
+        basePromptId === AYV_C1_PROMPTS.P3_HAIR.id ||
+        basePromptKey === AYV_C1_PROMPTS.P3_HAIR.key
+      ) {
+        loadedState.hair_choices = Array.isArray(sVal?.selectedOptionIds)
+          ? sVal.selectedOptionIds
+          : Array.isArray(sVal?.value)
+            ? sVal.value
+            : Array.isArray(sVal)
+              ? sVal
+              : sVal?.choice
+                ? [sVal.choice]
+                : []
+      } else if (
+        basePromptId === AYV_C1_PROMPTS.P4_TEMPERATURE.id ||
+        basePromptKey === AYV_C1_PROMPTS.P4_TEMPERATURE.key
+      ) {
+        loadedState.temperature_choice = sVal?.value || sVal?.choice
+      } else if (
+        basePromptId === AYV_C1_PROMPTS.P5_THIRST.id ||
+        basePromptKey === AYV_C1_PROMPTS.P5_THIRST.key
+      ) {
+        loadedState.thirst_choice = sVal?.value || sVal?.choice
+      } else if (
+        basePromptId === AYV_C1_PROMPTS.P5_DRINK_TEMP.id ||
+        basePromptKey === AYV_C1_PROMPTS.P5_DRINK_TEMP.key
+      ) {
+        loadedState.drink_temperature_choice = sVal?.value || sVal?.choice
+      } else if (
+        basePromptId === AYV_C1_PROMPTS.P5_SWEAT.id ||
+        basePromptKey === AYV_C1_PROMPTS.P5_SWEAT.key
+      ) {
+        loadedState.sweat_choice = sVal?.value || sVal?.choice
+      }
+    }
+
+    setChapterState(loadedState)
+  }
+
+  // Carregar respostas existentes com IDs canônicos AYV_C1 e migração idempotente
   const loadResponses = async () => {
     setLoading(true)
     try {
@@ -167,77 +276,49 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         enrollmentId,
         experienceId,
       )
-      setRawResponses(responses)
+      const { migratedResponses } = migrateLegacyChapter1Responses(responses)
+      setRawResponses(migratedResponses)
 
-      const loadedState: AyurvedaChapter1State = {}
+      // Identificar revisão ativa
+      let targetRev = propRevisionNumber ?? getPersistedActiveChapter1Revision(enrollmentId)
+      if (!targetRev) {
+        let maxRev = 1
+        for (const r of migratedResponses) {
+          const rev = getChapter1ResponseRevisionNumber(r)
+          if (rev > maxRev) maxRev = rev
+        }
+        targetRev = maxRev
+      }
+      setActiveRevision(targetRev)
 
-      for (const r of responses) {
-        const sVal = r.structured_value as any
-        const pKey =
-          (r as any).prompt_key || sVal?.prompt_key || (sVal?.metadata as any)?.prompt_key
-
-        if (
-          r.prompt_id === AYV_C1_PROMPTS.P1_STRUCTURE.id ||
-          pKey === AYV_C1_PROMPTS.P1_STRUCTURE.key
-        ) {
-          loadedState.structure_choice = sVal?.value || sVal?.choice || sVal?.structure_choice
-          loadedState.secondary_structure_choice =
-            sVal?.secondary_choice || sVal?.secondaryStructureChoice
-        } else if (
-          r.prompt_id === AYV_C1_PROMPTS.P1_DURATION.id ||
-          pKey === AYV_C1_PROMPTS.P1_DURATION.key
-        ) {
-          loadedState.structure_duration = sVal?.value || sVal?.choice || sVal?.durationChoice
-        } else if (
-          r.prompt_id === AYV_C1_PROMPTS.P2_SKIN.id ||
-          pKey === AYV_C1_PROMPTS.P2_SKIN.key
-        ) {
-          loadedState.skin_choices = Array.isArray(sVal?.selectedOptionIds)
-            ? sVal.selectedOptionIds
-            : Array.isArray(sVal?.value)
-              ? sVal.value
-              : Array.isArray(sVal)
-                ? sVal
-                : sVal?.choice
-                  ? [sVal.choice]
-                  : []
-        } else if (
-          r.prompt_id === AYV_C1_PROMPTS.P3_HAIR.id ||
-          pKey === AYV_C1_PROMPTS.P3_HAIR.key
-        ) {
-          loadedState.hair_choices = Array.isArray(sVal?.selectedOptionIds)
-            ? sVal.selectedOptionIds
-            : Array.isArray(sVal?.value)
-              ? sVal.value
-              : Array.isArray(sVal)
-                ? sVal
-                : sVal?.choice
-                  ? [sVal.choice]
-                  : []
-        } else if (
-          r.prompt_id === AYV_C1_PROMPTS.P4_TEMPERATURE.id ||
-          pKey === AYV_C1_PROMPTS.P4_TEMPERATURE.key
-        ) {
-          loadedState.temperature_choice = sVal?.value || sVal?.choice
-        } else if (
-          r.prompt_id === AYV_C1_PROMPTS.P5_THIRST.id ||
-          pKey === AYV_C1_PROMPTS.P5_THIRST.key
-        ) {
-          loadedState.thirst_choice = sVal?.value || sVal?.choice
-        } else if (
-          r.prompt_id === AYV_C1_PROMPTS.P5_DRINK_TEMP.id ||
-          pKey === AYV_C1_PROMPTS.P5_DRINK_TEMP.key
-        ) {
-          loadedState.drink_temperature_choice = sVal?.value || sVal?.choice
-        } else if (
-          r.prompt_id === AYV_C1_PROMPTS.P5_SWEAT.id ||
-          pKey === AYV_C1_PROMPTS.P5_SWEAT.key
-        ) {
-          loadedState.sweat_choice = sVal?.value || sVal?.choice
+      // Se estamos em modo correcting (ou revisão > 1 sem conclusão), executar reparo idempotente se parcial
+      if (mode === 'correcting' || targetRev > 1) {
+        try {
+          const repairResult = await repairIncompleteChapter1Revision({
+            existingResponses: migratedResponses,
+            enrollmentId,
+            experienceId,
+            respondentUserId,
+            targetActiveRevision: targetRev,
+            saveResponseFn: experienceResponseService.saveResponse,
+          })
+          if (repairResult.repaired) {
+            const freshAfterRepair = await experienceResponseService.listResponsesByExperience(
+              enrollmentId,
+              experienceId,
+            )
+            const { migratedResponses: finalMigrated } =
+              migrateLegacyChapter1Responses(freshAfterRepair)
+            setRawResponses(finalMigrated)
+            applyResponsesToState(finalMigrated, targetRev)
+            return
+          }
+        } catch (repairErr) {
+          console.warn('Reparo automático de C1 ignorado ou sem revisão anterior:', repairErr)
         }
       }
 
-      setChapterState(loadedState)
+      applyResponsesToState(migratedResponses, targetRev)
     } catch (err) {
       console.error('Erro ao carregar respostas do Capítulo 1:', err)
     } finally {
@@ -249,8 +330,8 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     loadResponses()
   }, [enrollmentId, experienceId])
 
-  // Derivação canônica explícita do Capítulo 1 — NUNCA usa enrollmentExp.progress_status
-  const derived = deriveChapter1Status(rawResponses)
+  // Derivação canônica explícita do Capítulo 1 para a revisão ativa
+  const derived = deriveChapter1Status(rawResponses, activeRevision)
   const isCompleted = derived.status === 'completed'
   const isReadyToComplete = derived.status === 'ready_to_complete'
   const chapter1Status: AyurvedaChapter1Status = derived.status
@@ -291,6 +372,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
 
     if (isReviewOnly) return
 
+    const physicalStructureId = getChapter1RevisionPromptId(
+      AYV_C1_PROMPTS.P1_STRUCTURE.id,
+      activeRevision,
+    )
+    const physicalDurationId = getChapter1RevisionPromptId(
+      AYV_C1_PROMPTS.P1_DURATION.id,
+      activeRevision,
+    )
+
     if (data.structureChoice) {
       const isUnsure = data.structureChoice === 'dont_know'
       const isRefusal = data.structureChoice === 'refusal'
@@ -311,16 +401,17 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         answered_at: new Date().toISOString(),
         experience_version: AYURVEDA_EXPERIENCE_VERSION,
         chapter_id: 'capitulo-1-estrutura-caracteristicas',
+        revision_number: activeRevision,
         contradiction_flag: isChanged,
         notes_for_professional: isChanged
           ? 'Interagente relatou grande mudança corporal ou dificuldade de comparação.'
           : undefined,
       }
 
-      await experienceResponseService.saveResponse({
+      const saved = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
-        promptId: AYV_C1_PROMPTS.P1_STRUCTURE.id,
+        promptId: physicalStructureId,
         respondentUserId,
         responseType: 'ChoiceCards',
         promptVersion: 1,
@@ -333,8 +424,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           value: data.structureChoice,
           choice: data.structureChoice,
           secondary_choice: data.secondaryStructureChoice,
+          revision_number: activeRevision,
           metadata: meta,
         },
+      })
+      ;(saved as any).revision_number = activeRevision
+      setRawResponses((prev) => {
+        const next = prev.filter((r) => r.prompt_id !== physicalStructureId)
+        return [...next, saved]
       })
     }
 
@@ -364,12 +461,13 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         answered_at: new Date().toISOString(),
         experience_version: AYURVEDA_EXPERIENCE_VERSION,
         chapter_id: 'capitulo-1-estrutura-caracteristicas',
+        revision_number: activeRevision,
       }
 
-      await experienceResponseService.saveResponse({
+      const saved = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
-        promptId: AYV_C1_PROMPTS.P1_DURATION.id,
+        promptId: physicalDurationId,
         respondentUserId,
         responseType: 'ChoiceCards',
         promptVersion: 1,
@@ -381,8 +479,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         structuredValue: {
           value: data.durationChoice,
           choice: data.durationChoice,
+          revision_number: activeRevision,
           metadata: meta,
         },
+      })
+      ;(saved as any).revision_number = activeRevision
+      setRawResponses((prev) => {
+        const next = prev.filter((r) => r.prompt_id !== physicalDurationId)
+        return [...next, saved]
       })
     }
   }
@@ -391,6 +495,8 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   const handleSaveStep2 = async (choices: string[]) => {
     setChapterState((prev) => ({ ...prev, skin_choices: choices }))
     if (isReviewOnly) return
+
+    const physicalSkinId = getChapter1RevisionPromptId(AYV_C1_PROMPTS.P2_SKIN.id, activeRevision)
 
     const isUnsure = choices.includes('dont_know')
     const isRefusal = choices.includes('refusal')
@@ -411,12 +517,13 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       answered_at: new Date().toISOString(),
       experience_version: AYURVEDA_EXPERIENCE_VERSION,
       chapter_id: 'capitulo-1-estrutura-caracteristicas',
+      revision_number: activeRevision,
     }
 
-    await experienceResponseService.saveResponse({
+    const saved = await experienceResponseService.saveResponse({
       enrollmentId,
       experienceId,
-      promptId: AYV_C1_PROMPTS.P2_SKIN.id,
+      promptId: physicalSkinId,
       respondentUserId,
       responseType: 'MultiSelectCards',
       promptVersion: 1,
@@ -428,8 +535,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       structuredValue: {
         selectedOptionIds: choices,
         value: choices,
+        revision_number: activeRevision,
         metadata: meta,
       },
+    })
+    ;(saved as any).revision_number = activeRevision
+    setRawResponses((prev) => {
+      const next = prev.filter((r) => r.prompt_id !== physicalSkinId)
+      return [...next, saved]
     })
   }
 
@@ -437,6 +550,8 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   const handleSaveStep3 = async (choices: string[]) => {
     setChapterState((prev) => ({ ...prev, hair_choices: choices }))
     if (isReviewOnly) return
+
+    const physicalHairId = getChapter1RevisionPromptId(AYV_C1_PROMPTS.P3_HAIR.id, activeRevision)
 
     const isUnsure = choices.includes('no_reference')
     const isRefusal = choices.includes('refusal')
@@ -457,15 +572,16 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       answered_at: new Date().toISOString(),
       experience_version: AYURVEDA_EXPERIENCE_VERSION,
       chapter_id: 'capitulo-1-estrutura-caracteristicas',
+      revision_number: activeRevision,
       notes_for_professional: isUnsure
         ? 'Interagente indicou ausência de referência suficiente sobre o cabelo natural.'
         : undefined,
     }
 
-    await experienceResponseService.saveResponse({
+    const saved = await experienceResponseService.saveResponse({
       enrollmentId,
       experienceId,
-      promptId: AYV_C1_PROMPTS.P3_HAIR.id,
+      promptId: physicalHairId,
       respondentUserId,
       responseType: 'MultiSelectCards',
       promptVersion: 1,
@@ -477,8 +593,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       structuredValue: {
         selectedOptionIds: choices,
         value: choices,
+        revision_number: activeRevision,
         metadata: meta,
       },
+    })
+    ;(saved as any).revision_number = activeRevision
+    setRawResponses((prev) => {
+      const next = prev.filter((r) => r.prompt_id !== physicalHairId)
+      return [...next, saved]
     })
   }
 
@@ -486,6 +608,11 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   const handleSaveStep4 = async (choice: string) => {
     setChapterState((prev) => ({ ...prev, temperature_choice: choice }))
     if (isReviewOnly) return
+
+    const physicalTempId = getChapter1RevisionPromptId(
+      AYV_C1_PROMPTS.P4_TEMPERATURE.id,
+      activeRevision,
+    )
 
     const isUnsure = choice === 'dont_know'
     const isRefusal = choice === 'refusal'
@@ -506,12 +633,13 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       answered_at: new Date().toISOString(),
       experience_version: AYURVEDA_EXPERIENCE_VERSION,
       chapter_id: 'capitulo-1-estrutura-caracteristicas',
+      revision_number: activeRevision,
     }
 
-    await experienceResponseService.saveResponse({
+    const saved = await experienceResponseService.saveResponse({
       enrollmentId,
       experienceId,
-      promptId: AYV_C1_PROMPTS.P4_TEMPERATURE.id,
+      promptId: physicalTempId,
       respondentUserId,
       responseType: 'ChoiceCards',
       promptVersion: 1,
@@ -523,8 +651,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       structuredValue: {
         value: choice,
         choice,
+        revision_number: activeRevision,
         metadata: meta,
       },
+    })
+    ;(saved as any).revision_number = activeRevision
+    setRawResponses((prev) => {
+      const next = prev.filter((r) => r.prompt_id !== physicalTempId)
+      return [...next, saved]
     })
   }
 
@@ -543,6 +677,16 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
 
     if (isReviewOnly) return
 
+    const physicalThirstId = getChapter1RevisionPromptId(
+      AYV_C1_PROMPTS.P5_THIRST.id,
+      activeRevision,
+    )
+    const physicalDrinkId = getChapter1RevisionPromptId(
+      AYV_C1_PROMPTS.P5_DRINK_TEMP.id,
+      activeRevision,
+    )
+    const physicalSweatId = getChapter1RevisionPromptId(AYV_C1_PROMPTS.P5_SWEAT.id, activeRevision)
+
     // Bloco A: Sede
     if (data.thirstChoice) {
       const isUnsure = data.thirstChoice === 'dont_know'
@@ -560,12 +704,13 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         answered_at: new Date().toISOString(),
         experience_version: AYURVEDA_EXPERIENCE_VERSION,
         chapter_id: 'capitulo-1-estrutura-caracteristicas',
+        revision_number: activeRevision,
       }
 
-      await experienceResponseService.saveResponse({
+      const saved = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
-        promptId: AYV_C1_PROMPTS.P5_THIRST.id,
+        promptId: physicalThirstId,
         respondentUserId,
         responseType: 'ChoiceCards',
         promptVersion: 1,
@@ -577,8 +722,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         structuredValue: {
           value: data.thirstChoice,
           choice: data.thirstChoice,
+          revision_number: activeRevision,
           metadata: meta,
         },
+      })
+      ;(saved as any).revision_number = activeRevision
+      setRawResponses((prev) => {
+        const next = prev.filter((r) => r.prompt_id !== physicalThirstId)
+        return [...next, saved]
       })
     }
 
@@ -599,12 +750,13 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         answered_at: new Date().toISOString(),
         experience_version: AYURVEDA_EXPERIENCE_VERSION,
         chapter_id: 'capitulo-1-estrutura-caracteristicas',
+        revision_number: activeRevision,
       }
 
-      await experienceResponseService.saveResponse({
+      const saved = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
-        promptId: AYV_C1_PROMPTS.P5_DRINK_TEMP.id,
+        promptId: physicalDrinkId,
         respondentUserId,
         responseType: 'ChoiceCards',
         promptVersion: 1,
@@ -616,8 +768,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         structuredValue: {
           value: data.drinkTemperatureChoice,
           choice: data.drinkTemperatureChoice,
+          revision_number: activeRevision,
           metadata: meta,
         },
+      })
+      ;(saved as any).revision_number = activeRevision
+      setRawResponses((prev) => {
+        const next = prev.filter((r) => r.prompt_id !== physicalDrinkId)
+        return [...next, saved]
       })
     }
 
@@ -638,12 +796,13 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         answered_at: new Date().toISOString(),
         experience_version: AYURVEDA_EXPERIENCE_VERSION,
         chapter_id: 'capitulo-1-estrutura-caracteristicas',
+        revision_number: activeRevision,
       }
 
-      await experienceResponseService.saveResponse({
+      const saved = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
-        promptId: AYV_C1_PROMPTS.P5_SWEAT.id,
+        promptId: physicalSweatId,
         respondentUserId,
         responseType: 'ChoiceCards',
         promptVersion: 1,
@@ -655,8 +814,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         structuredValue: {
           value: data.sweatChoice,
           choice: data.sweatChoice,
+          revision_number: activeRevision,
           metadata: meta,
         },
+      })
+      ;(saved as any).revision_number = activeRevision
+      setRawResponses((prev) => {
+        const next = prev.filter((r) => r.prompt_id !== physicalSweatId)
+        return [...next, saved]
       })
     }
   }
@@ -673,17 +838,21 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     }
   }
 
-  // Concluir Capítulo 1
+  // Concluir Capítulo 1 (exclusivo para a revisão ativa)
   const handleCompleteChapter1 = async () => {
     setSaving(true)
     try {
       const nowIso = new Date().toISOString()
+      const physicalCompletionId = getChapter1RevisionPromptId(
+        AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+        activeRevision,
+      )
 
-      // 1. Gravar registro canônico explícito de conclusão do Capítulo 1
+      // 1. Gravar registro canônico explícito de conclusão da revisão ativa do Capítulo 1
       const completionResp = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
-        promptId: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+        promptId: physicalCompletionId,
         respondentUserId,
         responseType: 'ChapterCompletion' as any,
         promptVersion: 1,
@@ -691,13 +860,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         canonicalPromptId: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
         stepOrder: 5,
         accessClass: 'shared_care',
-        changeReason: 'Conclusão canônica do Capítulo 1 de Ayurveda',
+        changeReason: `Conclusão canônica da revisão ${activeRevision} do Capítulo 1 de Ayurveda`,
         structuredValue: {
           completed: true,
           completed_at: nowIso,
           chapter_id: 'capitulo-1-estrutura-caracteristicas',
           experience_version: AYURVEDA_EXPERIENCE_VERSION,
           step_order: 5,
+          revision_number: activeRevision,
           metadata: {
             prompt_key: AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
             canonical_prompt_id: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
@@ -705,16 +875,19 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             completed_at: nowIso,
             chapter_id: 'capitulo-1-estrutura-caracteristicas',
             experience_version: AYURVEDA_EXPERIENCE_VERSION,
+            revision_number: activeRevision,
           },
         },
       })
+      ;(completionResp as any).revision_number = activeRevision
 
       // Atualiza lista local de respostas com a de conclusão canônica
       setRawResponses((prev) => {
         const existingIdx = prev.findIndex(
           (r) =>
-            r.prompt_id === AYV_C1_PROMPTS.CHAPTER_COMPLETION.id ||
-            (r as any).prompt_key === AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
+            r.prompt_id === physicalCompletionId ||
+            ((r as any).prompt_key === AYV_C1_PROMPTS.CHAPTER_COMPLETION.key &&
+              getChapter1ResponseRevisionNumber(r) === activeRevision),
         )
         if (existingIdx >= 0) {
           const updated = [...prev]
@@ -742,14 +915,106 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
 
   // Rever Respostas (modo somente-leitura com banner visível e único comando para voltar)
   const handleReviewResponses = () => {
-    setIsReviewOnly(true)
+    setInternalMode('review')
     setStage('step1')
   }
 
-  // Corrigir minhas respostas com histórico preservado
-  const handleStartCorrection = () => {
-    setIsReviewOnly(false)
-    setStage('step1')
+  // Corrigir minhas respostas com histórico preservado e criação fail-closed
+  const handleStartCorrection = async () => {
+    setSaving(true)
+    setCorrectionError(null)
+    try {
+      // 1. Carregar respostas frescas e migrar
+      const freshResponses = await experienceResponseService.listResponsesByExperience(
+        enrollmentId,
+        experienceId,
+      )
+      const { migratedResponses } = migrateLegacyChapter1Responses(
+        freshResponses.length > 0 ? freshResponses : rawResponses,
+      )
+
+      // 2. Criar nova revisão canônica a partir da última válida
+      const { nextRevisionNumber, newActiveResponses } = createChapter1Revision({
+        existingResponses: migratedResponses,
+        enrollmentId,
+        experienceId,
+        respondentUserId,
+      })
+
+      // 3. Persistir cópias com ID físico exclusivo
+      const persistedCopies: ExperienceResponseRecord[] = []
+      for (const item of newActiveResponses) {
+        const sVal = (item.structured_value || {}) as any
+        const meta = sVal?.metadata || {}
+        const pKey = (item as any).prompt_key || meta?.prompt_key || item.prompt_id
+        const baseCanonicalPromptId = getChapter1BasePromptId(
+          (item as any).canonical_prompt_id || meta?.canonical_prompt_id || item.prompt_id,
+        )
+        const physicalPromptId = getChapter1RevisionPromptId(
+          baseCanonicalPromptId,
+          nextRevisionNumber,
+        )
+        const step = (item as any).step_order ?? meta?.step_order ?? 1
+
+        const enrichedStructuredVal = {
+          ...sVal,
+          revision_number: nextRevisionNumber,
+          parent_version_id: (item as any).parent_version_id || sVal?.parent_version_id,
+          metadata: {
+            ...(meta || {}),
+            revision_number: nextRevisionNumber,
+            parent_version_id: (item as any).parent_version_id || sVal?.parent_version_id,
+            canonical_prompt_id: baseCanonicalPromptId,
+            prompt_key: pKey,
+          },
+        }
+
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: physicalPromptId,
+          respondentUserId,
+          responseType: item.response_type || ('ChoiceCards' as any),
+          promptVersion: 1,
+          promptKey: pKey,
+          canonicalPromptId: baseCanonicalPromptId,
+          stepOrder: step,
+          accessClass: 'shared_care',
+          changeReason: `Cópia inicial da revisão ${nextRevisionNumber} do Capítulo 1`,
+          structuredValue: enrichedStructuredVal,
+        })
+        ;(saved as any).revision_number = nextRevisionNumber
+        ;(saved as any).prompt_key = pKey
+        ;(saved as any).canonical_prompt_id = baseCanonicalPromptId
+        persistedCopies.push(saved)
+      }
+
+      // Validação: integridade de todas as cópias
+      if (persistedCopies.length === 0 || persistedCopies.length !== newActiveResponses.length) {
+        throw new Error(
+          `Falha ao persistir cópias da revisão ${nextRevisionNumber}: persistidas ${persistedCopies.length} de ${newActiveResponses.length}`,
+        )
+      }
+
+      // 4. Ponteiro ativo persistido SOMENTE após o salvamento completo de todas as cópias
+      setPersistedActiveChapter1Revision(enrollmentId, nextRevisionNumber)
+      setActiveRevision(nextRevisionNumber)
+
+      // 5. Atualizar respostas em cache e estado de tela
+      const combined = [...migratedResponses, ...persistedCopies]
+      setRawResponses(combined)
+      applyResponsesToState(combined, nextRevisionNumber)
+
+      // 6. Transição de modo canônico para correcting
+      setInternalMode('correcting')
+      onStartCorrection?.()
+      setStage('step1')
+    } catch (err: any) {
+      console.error('Falha ao criar revisão do Capítulo 1:', err)
+      setCorrectionError('Não foi possível recuperar as respostas anteriores para esta correção.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -769,8 +1034,12 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             variant="outline"
             size="sm"
             onClick={() => {
-              setIsReviewOnly(false)
-              setStage('closing')
+              if (onExitReview) {
+                onExitReview()
+              } else {
+                setInternalMode(isCompleted ? 'completed' : 'ready_to_complete')
+                setStage('closing')
+              }
             }}
             className="text-xs h-7 px-3 bg-background"
           >
@@ -1041,12 +1310,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             }
             handleReviewResponses()
           }}
-          onStartCorrection={() => {
-            if (onStartCorrection) {
-              onStartCorrection()
-            }
-            handleStartCorrection()
-          }}
+          onStartCorrection={handleStartCorrection}
           onBackToHub={() => {
             if (onExitToHub) {
               onExitToHub()
@@ -1055,6 +1319,8 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             }
           }}
           loading={saving}
+          correctionError={correctionError}
+          onClearCorrectionError={() => setCorrectionError(null)}
         />
       )}{' '}
     </div>

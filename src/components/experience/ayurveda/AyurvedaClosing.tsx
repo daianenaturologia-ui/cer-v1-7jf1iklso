@@ -27,6 +27,8 @@ export interface AyurvedaClosingProps {
   onStartCorrection: () => void
   onBackToHub?: () => void
   loading?: boolean
+  correctionError?: string | null
+  onClearCorrectionError?: () => void
 }
 
 export const AyurvedaClosing: React.FC<AyurvedaClosingProps> = ({
@@ -38,6 +40,8 @@ export const AyurvedaClosing: React.FC<AyurvedaClosingProps> = ({
   onStartCorrection,
   onBackToHub,
   loading = false,
+  correctionError = null,
+  onClearCorrectionError,
 }) => {
   const [showCorrectionDialog, setShowCorrectionDialog] = useState(false)
   const { longerTerm, contextVariable, pointsToClarify } = categorizeChapter1Responses(state)
@@ -59,12 +63,47 @@ export const AyurvedaClosing: React.FC<AyurvedaClosingProps> = ({
             </p>
           </div>
 
+          {/* Mensagem explícita de erro com botão Tentar novamente se a correção falhar */}
+          {correctionError && (
+            <div
+              role="alert"
+              data-testid="c1-correction-error-banner"
+              className="p-4 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-950 dark:text-rose-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs"
+            >
+              <span className="font-medium text-center sm:text-left">{correctionError}</span>
+              <div className="flex items-center gap-2 shrink-0">
+                {onClearCorrectionError && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={onClearCorrectionError}
+                    className="text-xs h-8 px-2 text-rose-800 dark:text-rose-300"
+                  >
+                    Fechar
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onStartCorrection}
+                  disabled={loading}
+                  className="text-xs h-8 px-3 border-rose-500/40 text-rose-900 dark:text-rose-100 hover:bg-rose-500/20"
+                >
+                  Tentar novamente
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Duas ações distintas pós-conclusão */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
+              disabled={loading}
               onClick={onReviewResponses}
               className="w-full sm:w-auto text-xs h-9 px-4 gap-1.5"
             >
@@ -74,6 +113,7 @@ export const AyurvedaClosing: React.FC<AyurvedaClosingProps> = ({
               type="button"
               variant="outline"
               size="sm"
+              disabled={loading}
               onClick={() => setShowCorrectionDialog(true)}
               className="w-full sm:w-auto text-xs h-9 px-4 gap-1.5 border-amber-600/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/10"
             >
@@ -85,6 +125,7 @@ export const AyurvedaClosing: React.FC<AyurvedaClosingProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
+                disabled={loading}
                 onClick={onBackToHub}
                 className="w-full sm:w-auto text-xs h-9 px-4 gap-1.5"
               >
@@ -110,6 +151,7 @@ export const AyurvedaClosing: React.FC<AyurvedaClosingProps> = ({
                   type="button"
                   variant="ghost"
                   size="sm"
+                  disabled={loading}
                   onClick={() => setShowCorrectionDialog(false)}
                   className="text-xs h-8"
                 >
@@ -119,13 +161,14 @@ export const AyurvedaClosing: React.FC<AyurvedaClosingProps> = ({
                   type="button"
                   variant="default"
                   size="sm"
+                  disabled={loading}
                   onClick={() => {
                     setShowCorrectionDialog(false)
                     onStartCorrection()
                   }}
-                  className="text-xs h-8 bg-amber-700 hover:bg-amber-800 text-white"
+                  className="text-xs h-8 bg-amber-700 hover:bg-amber-800 text-white disabled:opacity-50"
                 >
-                  Confirmar e corrigir
+                  {loading ? 'Criando correção...' : 'Confirmar e corrigir'}
                 </Button>
               </div>
             </div>
