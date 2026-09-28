@@ -18,6 +18,7 @@ import type {
   EnrollmentRecord,
   EnrollmentExperienceRecord,
   ExperienceResponseRecord,
+  ExperienceResponseVersionRecord,
   CerPromptRecord,
 } from '@/types/cer'
 import { enrollmentExperienceService } from '@/services/experienceEngine'
@@ -114,6 +115,9 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
 }) => {
   const [enrollmentExps, setEnrollmentExps] = useState<EnrollmentExperienceRecord[]>([])
   const [allResponses, setAllResponses] = useState<ExperienceResponseRecord[]>([])
+  const [allResponseVersions, setAllResponseVersions] = useState<ExperienceResponseVersionRecord[]>(
+    [],
+  )
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [showProfessionalMap, setShowProfessionalMap] = useState(false)
@@ -128,23 +132,30 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
       const { demoAdapter } = await import('@/services/demoAdapter')
       if (demoAdapter.isEnabled()) {
         const demoResponses = demoAdapter.listExperienceResponses(enrollment.id)
+        const demoVersions = demoAdapter.listExperienceResponseVersions(enrollment.id)
         setEnrollmentExps([])
         setAllResponses(Array.isArray(demoResponses) ? demoResponses : [])
+        setAllResponseVersions(Array.isArray(demoVersions) ? demoVersions : [])
         setLoading(false)
         return
       }
 
-      const [exps, resps] = await Promise.all([
+      const [exps, resps, versions] = await Promise.all([
         enrollmentExperienceService.listByEnrollment(enrollment.id),
         pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
           filter: `enrollment_id = "${enrollment.id}"`,
           expand: 'prompt_id',
           sort: 'created',
         }),
+        pb.collection('experience_response_versions').getFullList<ExperienceResponseVersionRecord>({
+          filter: `enrollment_id = "${enrollment.id}"`,
+          sort: 'created',
+        }),
       ])
 
       setEnrollmentExps(Array.isArray(exps) ? exps : [])
       setAllResponses(Array.isArray(resps) ? resps : [])
+      setAllResponseVersions(Array.isArray(versions) ? versions : [])
     } catch (err) {
       console.error('Erro ao carregar dados da Consciência Profissional:', err)
       setLoadError(true)
@@ -340,6 +351,9 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                           {/* Visão Especializada Factual dos Capítulos 1 e 2 de Corpo & Fisiologia (M4A) */}
                           <ProfessionalAyurvedaCorpoFisiologiaView
                             responses={responses}
+                            responseVersions={allResponseVersions.filter(
+                              (version) => version.experience_id === dim.experienceId,
+                            )}
                             participantName={participantName}
                             treatmentPreference={treatmentPreference}
                             treatmentPreferenceCustom={treatmentPreferenceCustom}
