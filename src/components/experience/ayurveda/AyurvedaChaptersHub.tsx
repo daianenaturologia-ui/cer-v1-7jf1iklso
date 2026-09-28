@@ -163,9 +163,12 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-6 px-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <Badge variant="outline" className="text-[10px] tracking-wider uppercase font-mono">
+    <div className="mx-auto w-full max-w-2xl min-w-0 space-y-6 px-4 py-6">
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <Badge
+          variant="outline"
+          className="max-w-full whitespace-normal text-[10px] tracking-wider uppercase font-mono"
+        >
           Corpo & Fisiologia • Avaliação Ayurveda
         </Badge>
         {onClose && (
@@ -218,7 +221,7 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
 
       {/* Barra de Progresso Canônica: Foco exclusivo no Capítulo 1 */}
       <div className="p-4 rounded-xl bg-card border border-border/70 space-y-2">
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between">
           <span className="font-medium text-foreground">Progresso do Capítulo 1</span>
           <span className="text-muted-foreground font-mono">
             {c1CanonicalState === 'completed' && '100% concluído'}
