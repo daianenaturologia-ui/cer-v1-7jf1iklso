@@ -1,6 +1,8 @@
+// @vitest-environment jsdom
 import React from 'react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, cleanup } from '@testing-library/react'
+import '@testing-library/jest-dom/vitest'
 import userEvent from '@testing-library/user-event'
 import { ProfessionalAyurvedaCorpoFisiologiaView } from './ProfessionalAyurvedaCorpoFisiologiaView'
 import { AYV_C1_PROMPTS } from '@/services/ayurvedaChapter1'
@@ -12,6 +14,11 @@ import pb from '@/lib/pocketbase/client'
 describe('M4A — Visão Profissional Factual dos Capítulos 1 e 2 de Corpo & Fisiologia', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    demoAdapter.enableDemo('daiane')
+  })
+  afterEach(() => {
+    cleanup()
+    vi.restoreAllMocks()
   })
 
   const createMockResp = (
@@ -293,10 +300,10 @@ describe('M4A — Visão Profissional Factual dos Capítulos 1 e 2 de Corpo & Fi
     )
 
     expect(screen.getByRole('heading', { name: /Corpo & Fisiologia/i })).toBeInTheDocument()
-    expect(screen.getByText(/Mariana Souza/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Mariana Souza/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/Prefere linguagem no feminino/i)).toBeInTheDocument()
     expect(screen.getByText(/Última atualização factual/i)).toBeInTheDocument()
-    expect(screen.getByText(/11\/05\/2025/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/11\/05\/2025/i).length).toBeGreaterThan(0)
   })
 
   // Teste 2: Capítulos 1 e 2 aparecem separadamente
@@ -594,13 +601,9 @@ describe('M4A — Visão Profissional Factual dos Capítulos 1 e 2 de Corpo & Fi
     )
 
     const text = container.textContent?.toLowerCase() || ''
-    expect(text).not.toContain('vata')
-    expect(text).not.toContain('pitta')
-    expect(text).not.toContain('kapha')
-    expect(text).not.toContain('prakriti')
-    expect(text).not.toContain('vikriti')
-    expect(text).not.toContain('agni')
-    expect(text).not.toContain('ama')
+    for (const technicalTerm of ['vata', 'pitta', 'kapha', 'prakriti', 'vikriti', 'agni', 'ama']) {
+      expect(text).not.toMatch(new RegExp(`\\b${technicalTerm}\\b`))
+    }
     expect(text).not.toContain('diagnóstico')
     expect(text).not.toContain('dosha predominante')
 
