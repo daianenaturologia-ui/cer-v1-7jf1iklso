@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle2, Moon } from 'lucide-react'
 import { AYV_C2_P8_SLEEP_OPTIONS, AYV_C2_P9_WAKING_OPTIONS } from '@/services/ayurvedaChapter2'
@@ -12,14 +12,17 @@ export interface AyurvedaC2Momento4SleepProps {
 }
 
 export const AyurvedaC2Momento4Sleep: React.FC<AyurvedaC2Momento4SleepProps> = ({
-  sleepPatternChoices: initialP8 = [],
+  sleepPatternChoices: initialP8,
   wakingChoice: initialP9 = '',
   onSaveSleepPattern,
   onSaveWaking,
   disabled = false,
 }) => {
-  const [selectedP8, setSelectedP8] = useState<string[]>(initialP8)
+  const [selectedP8, setSelectedP8] = useState<string[]>(initialP8 ?? [])
   const [selectedP9, setSelectedP9] = useState<string>(initialP9)
+
+  useEffect(() => setSelectedP8(initialP8 ?? []), [initialP8])
+  useEffect(() => setSelectedP9(initialP9), [initialP9])
 
   // Toggle P8: até 2 escolhas, 'dont_know' e 'refusal' exclusivos
   const handleToggleP8 = (optId: string) => {

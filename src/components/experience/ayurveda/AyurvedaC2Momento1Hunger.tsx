@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle2, UtensilsCrossed, AlertCircle } from 'lucide-react'
 import {
@@ -17,15 +17,18 @@ export interface AyurvedaC2Momento1HungerProps {
 }
 
 export const AyurvedaC2Momento1Hunger: React.FC<AyurvedaC2Momento1HungerProps> = ({
-  hungerPatternChoices: initialP1 = [],
-  delayedMealChoices: initialP2 = [],
+  hungerPatternChoices: initialP1,
+  delayedMealChoices: initialP2,
   treatmentVariant = 'neutro',
   onSaveHungerPattern,
   onSaveDelayedMeal,
   disabled = false,
 }) => {
-  const [selectedP1, setSelectedP1] = useState<string[]>(initialP1)
-  const [selectedP2, setSelectedP2] = useState<string[]>(initialP2)
+  const [selectedP1, setSelectedP1] = useState<string[]>(initialP1 ?? [])
+  const [selectedP2, setSelectedP2] = useState<string[]>(initialP2 ?? [])
+
+  useEffect(() => setSelectedP1(initialP1 ?? []), [initialP1])
+  useEffect(() => setSelectedP2(initialP2 ?? []), [initialP2])
 
   const p2Options = getAyvC2P2Options(treatmentVariant)
 

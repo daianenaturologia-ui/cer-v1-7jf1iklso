@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { AyurvedaChaptersHub } from './AyurvedaChaptersHub'
 import { AyurvedaChapter1Flow } from './AyurvedaChapter1Flow'
 import { AyurvedaChapter2Flow } from './AyurvedaChapter2Flow'
+import { AyurvedaChapter3Flow } from './AyurvedaChapter3Flow'
+import { AyurvedaChapter4Flow } from './AyurvedaChapter4Flow'
 import { AyurvedaPostAvatarTransition } from './AyurvedaPostAvatarTransition'
 import { AvatarPresentation } from '@/services/avatarCompositor'
 import { deriveChapter1Status, AyurvedaChapter1Status } from '@/services/ayurvedaChapter1'
@@ -30,8 +32,10 @@ import {
 } from '@/services/ayurvedaChapter1'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
 import { ExperienceResponseRecord, EnrollmentExperienceRecord } from '@/types/cer'
+import { deriveChapter3Status } from '@/services/ayurvedaChapter3'
+import { isChapter4Completed } from '@/services/ayurvedaChapter4'
 
-export type AyurvedaNavigationChapterId = 'c1' | 'c2'
+export type AyurvedaNavigationChapterId = 'c1' | 'c2' | 'c3' | 'c4'
 
 export type AyurvedaNavigationChapterMode =
   | 'intro'
@@ -59,6 +63,18 @@ export type AyurvedaNavigationState =
       mode: AyurvedaNavigationChapterMode
       currentStep: number | null
       activeRevision: number | null
+    }
+  | {
+      chapterId: 'c3'
+      mode: AyurvedaNavigationChapterMode
+      currentStep: number | null
+      activeRevision: null
+    }
+  | {
+      chapterId: 'c4'
+      mode: 'review'
+      currentStep: null
+      activeRevision: null
     }
 
 export interface AyurvedaChaptersNavigatorProps {
@@ -236,6 +252,9 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
       : userPresentation === 'masculine'
         ? 'masculino'
         : 'neutro'
+
+  const derivedC3 = deriveChapter3Status(rawResponses)
+  const c4Completed = isChapter4Completed(rawResponses)
 
   // Transições canônicas do Hub
   const handleExitToHub = useCallback(() => {
@@ -618,6 +637,23 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
 
   const handleCorrectChapter2 = handleStartCorrectionC2
 
+  const handleStartChapter3FromHub = useCallback(() => {
+    const current = deriveChapter3Status(rawResponses)
+    setNavState({
+      chapterId: 'c3',
+      mode: current.status === 'completed' ? 'review' : 'answering',
+      currentStep:
+        current.status === 'completed' || current.status === 'ready_to_complete'
+          ? 6
+          : current.firstUnansweredStep,
+      activeRevision: null,
+    })
+  }, [rawResponses])
+
+  const handleStartChapter4FromHub = useCallback(() => {
+    setNavState({ chapterId: 'c4', mode: 'review', currentStep: null, activeRevision: null })
+  }, [])
+
   // RENDERIZAÇÃO CONFORME ESTADO CANÔNICO
 
   // Renderização de acordo com o estado canônico
@@ -675,6 +711,37 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     )
   }
 
+  if (activeChapterId === 'c3') {
+    return (
+      <AyurvedaChapter3Flow
+        enrollmentId={enrollmentId}
+        experienceId={experienceId}
+        respondentUserId={respondentUserId}
+        initialStep={navState.currentStep ?? 1}
+        onBackToHub={handleExitToHub}
+        onCompleted={() => {
+          reloadData()
+          onCompleted?.()
+        }}
+      />
+    )
+  }
+
+  if (activeChapterId === 'c4') {
+    return (
+      <AyurvedaChapter4Flow
+        enrollmentId={enrollmentId}
+        experienceId={experienceId}
+        respondentUserId={respondentUserId}
+        onBackToHub={handleExitToHub}
+        onCompleted={() => {
+          reloadData()
+          onCompleted?.()
+        }}
+      />
+    )
+  }
+
   const nullState = navState as { chapterId: null; mode: 'hub' | 'post_avatar_transition' }
   if (nullState.mode === 'post_avatar_transition') {
     return (
@@ -696,6 +763,8 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     <AyurvedaChaptersHub
       onStartChapter1={handleStartChapter1FromHub}
       onStartChapter2={handleStartChapter2FromHub}
+      onStartChapter3={handleStartChapter3FromHub}
+      onStartChapter4={handleStartChapter4FromHub}
       onOpenCustomization={onOpenAvatarCustomization}
       onCorrectChapter1={handleCorrectChapter1}
       onCorrectChapter2={handleCorrectChapter2}
@@ -725,6 +794,10 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
           !isC2Completed &&
           derivedC2.activeRevisionNumber > (c2LastCompletedRev ?? 0)),
       )}
+      chapter3Status={derivedC3.status}
+      chapter3AnsweredSteps={derivedC3.answeredSteps}
+      chapter3TotalSteps={derivedC3.totalSteps}
+      chapter4Completed={c4Completed}
       avatarDeferred={avatarDeferred}
       onClose={onClose}
     />

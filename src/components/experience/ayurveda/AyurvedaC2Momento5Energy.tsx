@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle2, Zap, ShieldCheck } from 'lucide-react'
 import {
@@ -29,6 +29,10 @@ export const AyurvedaC2Momento5Energy: React.FC<AyurvedaC2Momento5EnergyProps> =
   const [selectedP10, setSelectedP10] = useState<string>(initialP10)
   const [selectedP11, setSelectedP11] = useState<string>(initialP11)
   const [selectedP12, setSelectedP12] = useState<string>(initialP12)
+
+  useEffect(() => setSelectedP10(initialP10), [initialP10])
+  useEffect(() => setSelectedP11(initialP11), [initialP11])
+  useEffect(() => setSelectedP12(initialP12), [initialP12])
 
   const handleSelectP10 = (optId: string) => {
     if (disabled) return

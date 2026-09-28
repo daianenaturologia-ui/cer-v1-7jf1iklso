@@ -463,7 +463,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       source: 'participant_self_report',
       explicit_unsure: isUnsure,
       explicit_refusal: isRefusal,
-      historical_confidence: isUnsure ? 'low' : 'high',
+      historical_confidence: isUnsure ? 'unknown' : 'high',
       answered_at: nowIso,
       experience_version: AYURVEDA_CHAPTER_2_VERSION,
       notes_for_professional: params.notesForProfessional,
