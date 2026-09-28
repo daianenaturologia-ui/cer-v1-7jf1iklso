@@ -1531,7 +1531,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           promptVersion: p13Prompt.version,
           structuredValue: {
             value: text,
-            collection_origin: collectionOrigin,
+            collection_origin: 'newly_collected',
             prompt_key: pKey,
             canonical_prompt_id: p13Prompt.id,
             metadata: {
@@ -1661,11 +1661,24 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
               </p>
             )}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" size="sm" disabled={saving}
-                onClick={() => { setShowCorrectionConfirmation(false); setCorrectionError(null) }}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={saving}
+                onClick={() => {
+                  setShowCorrectionConfirmation(false)
+                  setCorrectionError(null)
+                }}
+              >
                 Cancelar
               </Button>
-              <Button type="button" size="sm" disabled={saving} onClick={handleStartMenteEmocoesCorrection}>
+              <Button
+                type="button"
+                size="sm"
+                disabled={saving}
+                onClick={handleStartMenteEmocoesCorrection}
+              >
                 {saving ? 'Abrindo correção...' : 'Confirmar e corrigir'}
               </Button>
             </div>
