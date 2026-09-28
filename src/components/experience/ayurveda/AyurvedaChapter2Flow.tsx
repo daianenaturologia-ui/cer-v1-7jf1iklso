@@ -771,6 +771,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       })
 
       onCompleted?.()
+      onBackToHub()
     } catch (e) {
       console.error('Erro ao concluir Capítulo 2:', e)
     } finally {

@@ -242,6 +242,7 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
     )
 
     expect(screen.getByText('Correção pronta para concluir')).toBeInTheDocument()
+    expect(screen.getByText('Correção do Capítulo 1 pronta para concluir')).toBeInTheDocument()
     expect(
       screen.getByText('Suas correções estão preenchidas. Revise e confirme a nova versão.'),
     ).toBeInTheDocument()
