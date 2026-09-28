@@ -4,10 +4,7 @@ import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ExperienceEngine } from './ExperienceEngine'
-import {
-  enrollmentExperienceService,
-  experienceResponseService,
-} from '@/services/experienceEngine'
+import { enrollmentExperienceService, experienceResponseService } from '@/services/experienceEngine'
 import { demoAdapter } from '@/services/demoAdapter'
 
 describe('Correção de Mente & Emoções', () => {
