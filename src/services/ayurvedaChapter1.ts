@@ -609,9 +609,9 @@ export function migrateLegacyChapter1Responses<
       return r
     }
 
-    // Precisa de migração não destrutiva para a revisão 1
+    // Completa o metadado sem rebaixar uma revisão já explicitamente versionada.
     modifiedCount++
-    const newRev = 1
+    const newRev = hasExplicitRev ? existingRev : 1
 
     const newStructuredValue =
       sVal && typeof sVal === 'object'

@@ -268,15 +268,13 @@ export const ProfissionalHome: React.FC = () => {
         {/* ABA 1: PARTICIPANTES & HOME COTIDIANA */}
         {activeMainTab === 'participantes' && (
           <div className="space-y-6">
-            {/* Bloco B: Hoje / Painel de Atenção e Cuidado */}
-            <AttentionPanel items={attentionItems} loading={loading} />
-
-            {/* Bloco A: Participantes Centrados na Pessoa */}
+            {/* A pessoa e o acesso ao workspace são a ação principal. */}
             <ParticipantList
               participants={participantListItems}
               loading={loading}
               onNewParticipantClick={handleOpenModal}
             />
+            <AttentionPanel items={attentionItems} loading={loading} />
           </div>
         )}
 

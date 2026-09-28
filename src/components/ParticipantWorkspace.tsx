@@ -37,6 +37,9 @@ import { ProfessionalExperienceManager } from '@/components/experience/Professio
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
 import { ProfessionalSessionManager } from '@/components/ProfessionalSessionManager'
 import { ProfessionalConscienciaSection } from '@/components/ProfessionalConscienciaSection'
+import { ProfessionalPlannerView } from '@/components/ProfessionalPlannerView'
+import { MandalaStructuredView } from '@/components/MandalaStructuredView'
+import { demoAdapter } from '@/services/demoAdapter'
 
 export type WorkspaceTab =
   | 'sessoes'
@@ -55,6 +58,11 @@ export const ParticipantWorkspace: React.FC = () => {
   const navigate = useNavigate()
 
   const rawTab = searchParams.get('tab') as WorkspaceTab | null
+  const requestedTool = searchParams.get('tool')
+  const careTool =
+    requestedTool === 'biblioteca' || requestedTool === 'mandala' || requestedTool === 'planner'
+      ? requestedTool
+      : 'plano'
   // Normalização para a arquitetura aprovada (4 fases + sessões)
   const currentTab: 'sessoes' | 'consciencia' | 'equilibrio' | 'evolucao' =
     rawTab === 'consciencia'
@@ -141,6 +149,9 @@ export const ParticipantWorkspace: React.FC = () => {
 
   const setTab = (tab: WorkspaceTab) => {
     setSearchParams({ tab })
+  }
+  const openCareTool = (tool: 'plano' | 'biblioteca' | 'mandala' | 'planner') => {
+    setSearchParams({ tab: 'equilibrio', tool })
   }
 
   const participantName =
@@ -307,6 +318,20 @@ export const ParticipantWorkspace: React.FC = () => {
       {/* SESSÕES & ATENÇÃO */}
       {currentTab === 'sessoes' && (
         <div className="space-y-5">
+          <div className="rounded-xl border border-border/70 p-3 space-y-2">
+            <p className="text-xs font-semibold">Ferramentas para esta sessão</p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => openCareTool('biblioteca')}>
+                Biblioteca de práticas
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => openCareTool('mandala')}>
+                Mandala
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => openCareTool('planner')}>
+                Planner
+              </Button>
+            </div>
+          </div>
           <AttentionPanel items={attentionItems} showParticipantName={false} />
 
           {/* Retornos da interagente sobre o próximo passo (cer_operational_acceptances) */}
@@ -437,43 +462,76 @@ export const ParticipantWorkspace: React.FC = () => {
       {/* EQUILÍBRIO & REALIZAÇÃO */}
       {currentTab === 'equilibrio' && (
         <div className="space-y-6">
-          <CarePlanEditor
-            enrollmentId={enrollment.id}
-            participantName={participantName}
-            onPlanUpdated={loadWorkspaceData}
-          />
-
-          <div className="border-t border-border/50 pt-6 space-y-5">
-            <div className="space-y-1">
-              <h2 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span>Práticas, Recursos e Experimentos</span>
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Atribua experimentos do acervo alinhados às prioridades combinadas com{' '}
-                {participantName}.
-              </p>
-            </div>
-
-            <AssignmentEditor
+          <div className="flex flex-wrap gap-2 border-b border-border/50 pb-3">
+            {(['plano', 'biblioteca', 'mandala', 'planner'] as const).map((tool) => (
+              <Button
+                key={tool}
+                size="sm"
+                variant={careTool === tool ? 'default' : 'outline'}
+                onClick={() => openCareTool(tool)}
+              >
+                {
+                  {
+                    plano: 'Plano',
+                    biblioteca: 'Biblioteca de práticas',
+                    mandala: 'Mandala',
+                    planner: 'Planner',
+                  }[tool]
+                }
+              </Button>
+            ))}
+          </div>
+          {careTool === 'plano' && (
+            <CarePlanEditor
               enrollmentId={enrollment.id}
               participantName={participantName}
-              selectedPractice={selectedPractice}
-              selectedVersion={selectedVersion}
-              onAssignmentCreated={() => {
-                setSelectedPractice(null)
-                setSelectedVersion(null)
-              }}
+              onPlanUpdated={loadWorkspaceData}
             />
+          )}
 
-            <PracticeSelector
-              selectedPracticeId={selectedPractice?.id}
-              onSelectPractice={(pr, ver) => {
-                setSelectedPractice(pr)
-                setSelectedVersion(ver)
-              }}
-            />
-          </div>
+          {careTool === 'biblioteca' && (
+            <div className="space-y-5">
+              <div className="space-y-1">
+                <h2 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span>Práticas, Recursos e Experimentos</span>
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Atribua experimentos do acervo alinhados às prioridades combinadas com{' '}
+                  {participantName}.
+                </p>
+              </div>
+
+              <AssignmentEditor
+                enrollmentId={enrollment.id}
+                participantName={participantName}
+                selectedPractice={selectedPractice}
+                selectedVersion={selectedVersion}
+                onAssignmentCreated={() => {
+                  setSelectedPractice(null)
+                  setSelectedVersion(null)
+                }}
+              />
+
+              <PracticeSelector
+                selectedPracticeId={selectedPractice?.id}
+                onSelectPractice={(pr, ver) => {
+                  setSelectedPractice(pr)
+                  setSelectedVersion(ver)
+                }}
+              />
+            </div>
+          )}
+          {careTool === 'mandala' &&
+            (demoAdapter.isEnabled() ? (
+              <p className="text-sm text-muted-foreground">
+                A Mandala da demonstração ainda não tem projeção profissional. Nenhum dado real foi
+                consultado.
+              </p>
+            ) : (
+              <MandalaStructuredView enrollmentId={enrollment.id} audience="professional" />
+            ))}
+          {careTool === 'planner' && <ProfessionalPlannerView enrollmentId={enrollment.id} />}
         </div>
       )}
 

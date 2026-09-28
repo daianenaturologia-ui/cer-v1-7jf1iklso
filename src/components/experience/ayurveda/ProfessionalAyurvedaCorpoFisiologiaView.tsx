@@ -1107,8 +1107,7 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
           </p>
           <p className="text-muted-foreground leading-relaxed">
             Esta área apresenta as respostas registradas pela interagente. A interpretação
-            profissional será construída separadamente. Nenhum dosha predominante, Prakriti,
-            Vikriti, Agni ou Ama é calculado automaticamente.
+            profissional será construída separadamente.
           </p>
         </div>
       </div>
