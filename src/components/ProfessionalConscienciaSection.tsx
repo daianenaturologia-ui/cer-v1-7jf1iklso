@@ -88,11 +88,15 @@ const EMPTY_SYNTHESIS_TEXT = 'Ainda não há informações suficientes para uma 
 interface ProfessionalConscienciaSectionProps {
   enrollment: EnrollmentRecord
   participantName: string
+  treatmentPreference?: string
+  treatmentPreferenceCustom?: string
 }
 
 export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSectionProps> = ({
   enrollment,
   participantName,
+  treatmentPreference,
+  treatmentPreferenceCustom,
 }) => {
   const [enrollmentExps, setEnrollmentExps] = useState<EnrollmentExperienceRecord[]>([])
   const [allResponses, setAllResponses] = useState<ExperienceResponseRecord[]>([])
@@ -521,14 +525,17 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                   <CardContent className="p-4 space-y-4 text-xs">
                     {dim.id === 'corpo_fisiologia' ? (
                       <div className="space-y-4">
-                        {/* Visão Especializada do Capítulo 1 de Corpo & Fisiologia */}
+                        {/* Visão Especializada Factual dos Capítulos 1 e 2 de Corpo & Fisiologia (M4A) */}
                         {React.createElement(
                           React.lazy(
-                            () => import('./experience/ayurveda/ProfessionalAyurvedaChapter1View'),
+                            () =>
+                              import('./experience/ayurveda/ProfessionalAyurvedaCorpoFisiologiaView'),
                           ),
                           {
                             responses,
                             participantName,
+                            treatmentPreference,
+                            treatmentPreferenceCustom,
                           },
                         )}
                       </div>

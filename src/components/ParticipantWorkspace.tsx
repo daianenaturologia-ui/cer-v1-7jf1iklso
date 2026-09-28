@@ -428,6 +428,8 @@ export const ParticipantWorkspace: React.FC = () => {
           <ProfessionalConscienciaSection
             enrollment={enrollment}
             participantName={participantName}
+            treatmentPreference={person?.treatment_preference}
+            treatmentPreferenceCustom={person?.treatment_preference_custom}
           />
         </div>
       )}
