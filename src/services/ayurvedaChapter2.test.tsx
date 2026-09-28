@@ -953,12 +953,13 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
           },
         )
 
+        const onBackToHub = vi.fn()
         render(
           <AyurvedaChapter2Flow
             enrollmentId="enr-demo"
             experienceId="exp-corpo-fisiologia-07b"
             respondentUserId="usr-mariana"
-            onBackToHub={vi.fn()}
+            onBackToHub={onBackToHub}
           />,
         )
 
@@ -1027,6 +1028,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
         await waitFor(() => {
           expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
         })
+        expect(onBackToHub).toHaveBeenCalledTimes(1)
 
         // O novo resumo agora reflete a alteração (ambas as opções na revisão 2)
         expect(screen.getByText('Surge de repente e pode ficar muito intensa.')).toBeInTheDocument()
