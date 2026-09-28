@@ -213,15 +213,25 @@ export const ParticipantWorkspace: React.FC = () => {
 
             {journeyState && (
               <Badge variant="secondary" className="text-[10px] capitalize">
-                {({
-                  onboarding: 'Acolhimento',
-                  consciousness: 'Consciência',
-                  equilibrium_realization: 'Equilíbrio & Realização',
-                } as const)[journeyState.current_stage]} · {({
-                  nao_iniciado: 'Não iniciada',
-                  em_andamento: 'Em andamento',
-                  integrado: 'Integrada',
-                } as const)[journeyState.stage_status]}
+                {
+                  (
+                    {
+                      onboarding: 'Acolhimento',
+                      consciousness: 'Consciência',
+                      equilibrium_realization: 'Equilíbrio & Realização',
+                    } as const
+                  )[journeyState.current_stage]
+                }{' '}
+                ·{' '}
+                {
+                  (
+                    {
+                      nao_iniciado: 'Não iniciada',
+                      em_andamento: 'Em andamento',
+                      integrado: 'Integrada',
+                    } as const
+                  )[journeyState.stage_status]
+                }
               </Badge>
             )}
 
@@ -462,7 +472,9 @@ export const ParticipantWorkspace: React.FC = () => {
               aria-expanded={showReleaseControls}
               onClick={() => setShowReleaseControls((current) => !current)}
             >
-              {showReleaseControls ? 'Fechar liberação das experiências' : 'Gerenciar liberação das experiências'}
+              {showReleaseControls
+                ? 'Fechar liberação das experiências'
+                : 'Gerenciar liberação das experiências'}
             </Button>
             {showReleaseControls && <ProfessionalExperienceManager enrollment={enrollment} />}
           </div>

@@ -154,16 +154,14 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              <CardTitle className="text-base font-medium">
-                Liberação das experiências
-              </CardTitle>
+              <CardTitle className="text-base font-medium">Liberação das experiências</CardTitle>
             </div>
             <CardDescription className="text-xs">
               Libere, pause, reabra e acompanhe as respostas registradas pela interagente
             </CardDescription>
           </div>
           <Badge variant="outline" className="text-[10px] font-mono">
-                {experiences.length} experiências
+            {experiences.length} experiências
           </Badge>
         </div>
       </CardHeader>
