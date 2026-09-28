@@ -24,6 +24,7 @@ import { enrollmentExperienceService } from '@/services/experienceEngine'
 import { ProfessionalMapEditor } from '@/components/ProfessionalMapEditor'
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
 import { ProfessionalAyurvedaCorpoFisiologiaView } from '@/components/experience/ayurveda/ProfessionalAyurvedaCorpoFisiologiaView'
+import { isChapter4Completed } from '@/services/ayurvedaChapter4'
 
 export interface DimensionConfig {
   id: string
@@ -78,6 +79,31 @@ interface ProfessionalConscienciaSectionProps {
   participantName: string
   treatmentPreference?: string
   treatmentPreferenceCustom?: string
+}
+
+export const getDimensionStatusLabel = (
+  dimensionId: string,
+  enrExp: EnrollmentExperienceRecord | undefined,
+  responses: ExperienceResponseRecord[],
+): 'Não iniciada' | 'Em andamento' | 'Concluída' => {
+  if (dimensionId === 'corpo_fisiologia' && isChapter4Completed(responses)) {
+    return 'Concluída'
+  }
+  if (!enrExp) {
+    return responses.length > 0 ? 'Em andamento' : 'Não iniciada'
+  }
+  if (enrExp.progress_status === 'completed' || enrExp.release_status === 'completed') {
+    return 'Concluída'
+  }
+  if (
+    enrExp.progress_status === 'in_progress' ||
+    enrExp.started_at ||
+    responses.length > 0 ||
+    (enrExp.current_step_order && enrExp.current_step_order > 1)
+  ) {
+    return 'Em andamento'
+  }
+  return 'Não iniciada'
 }
 
 export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSectionProps> = ({
@@ -157,27 +183,6 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
 
   const getResponsesForDim = (experienceId: string): ExperienceResponseRecord[] => {
     return (allResponses || []).filter((r) => r?.experience_id === experienceId)
-  }
-
-  const getStatusLabel = (
-    enrExp?: EnrollmentExperienceRecord,
-    responsesCount = 0,
-  ): 'Não iniciada' | 'Em andamento' | 'Concluída' => {
-    if (!enrExp) {
-      return responsesCount > 0 ? 'Em andamento' : 'Não iniciada'
-    }
-    if (enrExp.progress_status === 'completed' || enrExp.release_status === 'completed') {
-      return 'Concluída'
-    }
-    if (
-      enrExp.progress_status === 'in_progress' ||
-      enrExp.started_at ||
-      responsesCount > 0 ||
-      (enrExp.current_step_order && enrExp.current_step_order > 1)
-    ) {
-      return 'Em andamento'
-    }
-    return 'Não iniciada'
   }
 
   const getLastUpdateDate = (
@@ -277,7 +282,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
               const isExpanded = Boolean(expandedDimensions[dim.id])
               const enrExp = getEnrollmentExpForDim(dim.experienceId)
               const responses = getResponsesForDim(dim.experienceId)
-              const status = getStatusLabel(enrExp, responses.length)
+              const status = getDimensionStatusLabel(dim.id, enrExp, responses)
               const lastUpdate = getLastUpdateDate(enrExp, responses)
 
               return (
@@ -434,7 +439,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                     </CardTitle>
                   </div>
                   <Badge variant="secondary" className="text-[10px]">
-                    {getStatusLabel(integracaoExp, integracaoResponses.length)}
+                    {getDimensionStatusLabel('integracao', integracaoExp, integracaoResponses)}
                   </Badge>
                 </div>
                 <CardDescription className="text-xs">
