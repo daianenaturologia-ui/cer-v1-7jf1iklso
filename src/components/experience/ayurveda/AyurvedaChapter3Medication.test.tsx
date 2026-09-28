@@ -68,4 +68,76 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
     await user.click(reviewButton)
     expect(screen.getByText(/Medicamento informado/)).toBeTruthy()
   })
+
+  it('preserva a versão concluída enquanto a correção está em rascunho e publica só ao concluir', async () => {
+    const completedResponses = [
+      {
+        id: 'domains-v1',
+        prompt_id: 'ayv_c3_changed_domains',
+        structured_value: {
+          value: ['no_current_changes'],
+          metadata: { prompt_key: 'ayv_c3_changed_domains' },
+        },
+      },
+      {
+        id: 'med-status-v1',
+        prompt_id: 'ayv_c3_medication_status',
+        structured_value: {
+          value: 'no_use',
+          metadata: { prompt_key: 'ayv_c3_medication_status' },
+        },
+      },
+      {
+        id: 'completion-v1',
+        prompt_id: 'ayv_c3_chapter_completion',
+        structured_value: {
+          completed: true,
+          metadata: { prompt_key: 'ayv_c3_chapter_completion' },
+        },
+      },
+    ] as any
+    vi.mocked(experienceResponseService.listResponsesByExperience).mockResolvedValue(
+      completedResponses,
+    )
+    const saveSpy = vi.mocked(experienceResponseService.saveResponse)
+    const user = userEvent.setup()
+
+    render(
+      <AyurvedaChapter3Flow
+        enrollmentId="enrollment-demo"
+        experienceId="exp-corpo-fisiologia-07b"
+        respondentUserId="participant-demo"
+        onBackToHub={() => {}}
+      />,
+    )
+
+    await screen.findByText('Capítulo 3 concluído')
+    await user.click(screen.getByRole('button', { name: 'Corrigir minhas respostas' }))
+    expect(screen.getByRole('dialog', { name: 'Corrigir respostas do Capítulo 3?' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Começar correção' }))
+
+    expect(screen.getByText(/versão anterior preservada/i)).toBeTruthy()
+    expect(saveSpy).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    await user.click(screen.getByRole('button', { name: 'Uso atualmente' }))
+    await user.type(
+      screen.getByPlaceholderText('Nome do medicamento ou suplemento'),
+      'Medicamento fictício',
+    )
+    await user.tab()
+    await user.click(screen.getByRole('button', { name: 'Revisar' }))
+
+    expect(saveSpy).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Concluir correção' }))
+
+    await waitFor(() =>
+      expect(saveSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          promptId: 'ayv_c3_medication_details',
+          changeReason: expect.stringContaining('Correção concluída'),
+        }),
+      ),
+    )
+  })
 })
