@@ -56,6 +56,15 @@ import {
   deriveChapter2Status,
   Chapter2TreatmentVariant,
 } from '@/services/ayurvedaChapter2'
+import {
+  AYV_C3_CONTEXT_OPTIONS,
+  AYV_C3_DIRECTION_OPTIONS,
+  AYV_C3_DOMAIN_OPTIONS,
+  AYV_C3_STARTED_OPTIONS,
+  chapter3Label,
+  deriveChapter3Status,
+} from '@/services/ayurvedaChapter3'
+import { isChapter4Completed } from '@/services/ayurvedaChapter4'
 
 export interface ProfessionalAyurvedaCorpoFisiologiaViewProps {
   responses: ExperienceResponseRecord[]
@@ -324,9 +333,12 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
     return deriveChapter2Status(migratedC2)
   }, [migratedC2])
 
+  const c3DerivedStatus = useMemo(() => deriveChapter3Status(responses || []), [responses])
+  const c4Completed = useMemo(() => isChapter4Completed(responses || []), [responses])
+
   // Data da última atualização factual (geral de Corpo & Fisiologia)
   const lastFactualDate = useMemo(() => {
-    const all = [...migratedC1, ...migratedC2]
+    const all = responses || []
     if (all.length === 0) return null
     const timestamps = all
       .map((r) => new Date(r.updated || r.created).getTime())
@@ -338,7 +350,7 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
       month: '2-digit',
       year: 'numeric',
     })
-  }, [migratedC1, migratedC2])
+  }, [responses])
 
   // Rótulo textual humano dos estados dos capítulos
   const getChapterStateLabel = (
@@ -1016,7 +1028,8 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
             </div>
             <p className="text-xs text-muted-foreground">
               Acompanhamento factual das respostas declaradas por{' '}
-              <strong className="text-foreground">{participantName}</strong> nos Capítulos 1 e 2.
+              <strong className="text-foreground">{participantName}</strong> nos quatro capítulos
+              desta dimensão.
             </p>
           </div>
 
@@ -1035,7 +1048,7 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
         </div>
 
         {/* Estados dos Capítulos e Última Atualização (Sem porcentagens clínicas, notas ou doshas) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-border/40 text-xs">
+        <div className="grid grid-cols-1 gap-2.5 border-t border-border/40 pt-2 text-xs sm:grid-cols-2 lg:grid-cols-5">
           <div className="p-2.5 rounded-lg bg-muted/20 border border-border/40 space-y-0.5">
             <span className="text-[10px] text-muted-foreground uppercase font-mono block">
               Capítulo 1
@@ -1082,6 +1095,31 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
                 )}
               </Badge>
             </div>
+          </div>
+
+          <div className="p-2.5 rounded-lg bg-muted/20 border border-border/40 space-y-0.5">
+            <span className="text-[10px] text-muted-foreground uppercase font-mono block">
+              Capítulo 3
+            </span>
+            <Badge
+              variant={c3DerivedStatus.status === 'completed' ? 'secondary' : 'outline'}
+              className="text-[10px]"
+            >
+              {getChapterStateLabel(c3DerivedStatus.status, false, null)}
+            </Badge>
+          </div>
+
+          <div className="p-2.5 rounded-lg bg-muted/20 border border-border/40 space-y-0.5">
+            <span className="text-[10px] text-muted-foreground uppercase font-mono block">
+              Capítulo 4
+            </span>
+            <Badge variant={c4Completed ? 'secondary' : 'outline'} className="text-[10px]">
+              {c4Completed
+                ? 'Concluído'
+                : c3DerivedStatus.status === 'completed'
+                  ? 'Disponível'
+                  : 'Bloqueado'}
+            </Badge>
           </div>
 
           <div className="p-2.5 rounded-lg bg-muted/20 border border-border/40 space-y-0.5">
@@ -1225,6 +1263,98 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
               {/* Grid das respostas literais */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {c2QuestionsData.map(renderQuestionCard)}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden border-border/70 shadow-none">
+        <CardHeader className="space-y-1 border-b border-border/40 bg-muted/20 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="font-serif text-sm font-semibold">
+              Capítulo 3 — O que está diferente agora
+            </CardTitle>
+            <Badge variant="outline" className="text-[10px]">
+              {c3DerivedStatus.status === 'completed'
+                ? 'Concluído'
+                : c3DerivedStatus.status === 'ready_to_complete'
+                  ? 'Pronto para concluir'
+                  : c3DerivedStatus.status === 'in_progress'
+                    ? 'Em andamento'
+                    : 'Não iniciado'}
+            </Badge>
+          </div>
+          <CardDescription className="text-xs">
+            Mudanças atuais preservadas separadamente das características e dos ritmos habituais.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 p-4 text-xs">
+          {c3DerivedStatus.status === 'not_started' ? (
+            <div className="py-8 text-center italic text-muted-foreground">
+              Esta interagente ainda não iniciou este capítulo.
+            </div>
+          ) : (
+            <>
+              {c3DerivedStatus.status !== 'completed' && (
+                <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-2.5 text-blue-950 dark:text-blue-200">
+                  <Info className="h-4 w-4 shrink-0" />
+                  Estas respostas ainda podem ser alteradas pela interagente.
+                </div>
+              )}
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-xl border border-border/60 p-3">
+                  <span className="mb-1 block text-[10px] uppercase text-muted-foreground">
+                    Áreas com mudança percebida
+                  </span>
+                  <p>
+                    {(c3DerivedStatus.state.changed_domains || [])
+                      .map((id) => chapter3Label(AYV_C3_DOMAIN_OPTIONS, id))
+                      .join('; ') || 'Ainda não respondido.'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border/60 p-3">
+                  <span className="mb-1 block text-[10px] uppercase text-muted-foreground">
+                    Início percebido
+                  </span>
+                  <p>
+                    {chapter3Label(AYV_C3_STARTED_OPTIONS, c3DerivedStatus.state.started_change_at)}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border/60 p-3 md:col-span-2">
+                  <span className="mb-1 block text-[10px] uppercase text-muted-foreground">
+                    Direção literal das mudanças
+                  </span>
+                  {(c3DerivedStatus.state.changed_domains || [])
+                    .filter((domain) => c3DerivedStatus.state.change_directions?.[domain])
+                    .map((domain) => (
+                      <p key={domain} className="mt-1">
+                        <strong>{chapter3Label(AYV_C3_DOMAIN_OPTIONS, domain)}:</strong>{' '}
+                        {chapter3Label(
+                          AYV_C3_DIRECTION_OPTIONS,
+                          c3DerivedStatus.state.change_directions?.[domain],
+                        )}
+                      </p>
+                    ))}
+                </div>
+                <div className="rounded-xl border border-border/60 p-3 md:col-span-2">
+                  <span className="mb-1 block text-[10px] uppercase text-muted-foreground">
+                    Contextos relacionados pela interagente
+                  </span>
+                  <p>
+                    {(c3DerivedStatus.state.change_contexts || [])
+                      .map((id) => chapter3Label(AYV_C3_CONTEXT_OPTIONS, id))
+                      .join('; ') || 'Ainda não respondido.'}
+                  </p>
+                </div>
+                {c3DerivedStatus.state.optional_note && (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 md:col-span-2">
+                    <span className="mb-1 block text-[10px] uppercase text-primary">
+                      Registro espontâneo
+                    </span>
+                    <p className="italic">“{c3DerivedStatus.state.optional_note}”</p>
+                  </div>
+                )}
               </div>
             </>
           )}

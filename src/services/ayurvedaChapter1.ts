@@ -156,8 +156,7 @@ export const AYURVEDA_FOUR_CHAPTERS: AyurvedaChapterDefinition[] = [
     title: 'Capítulo 2 — O ritmo do meu corpo',
     shortTitle: 'O ritmo do meu corpo',
     subtitle: 'Digestão, fome, rotina, eliminação e sono',
-    active: false,
-    statusLabel: 'Será liberado na continuação desta experiência',
+    active: true,
   },
   {
     id: 'capitulo-3-diferente-agora',
@@ -165,8 +164,7 @@ export const AYURVEDA_FOUR_CHAPTERS: AyurvedaChapterDefinition[] = [
     title: 'Capítulo 3 — O que está diferente agora',
     shortTitle: 'O que está diferente agora',
     subtitle: 'Sintomas recentes, variações sazonais e mudanças percebidas',
-    active: false,
-    statusLabel: 'Será liberado na continuação desta experiência',
+    active: true,
   },
   {
     id: 'capitulo-4-corpo-sintese',
@@ -174,8 +172,7 @@ export const AYURVEDA_FOUR_CHAPTERS: AyurvedaChapterDefinition[] = [
     title: 'Capítulo 4 — Meu corpo em síntese',
     shortTitle: 'Meu corpo em síntese',
     subtitle: 'Visão integrativa preparada para a conversa com Daiane',
-    active: false,
-    statusLabel: 'Será liberado na continuação desta experiência',
+    active: true,
   },
 ]
 
