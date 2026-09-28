@@ -35,6 +35,8 @@ import {
   AYV_C3_CONTEXT_OPTIONS,
   AYV_C3_DIRECTION_OPTIONS,
   AYV_C3_DOMAIN_OPTIONS,
+  AYV_C3_MEDICATION_STATUS_OPTIONS,
+  AYV_C3_MEDICATION_TIMING_OPTIONS,
   AYV_C3_STARTED_OPTIONS,
   chapter3Label,
   deriveChapter3Status,
@@ -188,6 +190,7 @@ export function buildChapter4Synthesis(responses: ExperienceResponseRecord[]): C
   ])
   const c3 = deriveChapter3Status(responses).state
   const current: Chapter4LiteralItem[] = []
+  const questionsForSession: Chapter4LiteralItem[] = []
   for (const domain of c3.changed_domains || []) {
     if (['no_current_changes', 'dont_know', 'refusal'].includes(domain)) {
       current.push({
@@ -214,9 +217,29 @@ export function buildChapter4Synthesis(responses: ExperienceResponseRecord[]): C
       title: 'Contextos percebidos',
       value: c3.change_contexts.map((id) => chapter3Label(AYV_C3_CONTEXT_OPTIONS, id)).join('; '),
     })
+  if (c3.medication_status)
+    current.push({
+      title: 'Medicamentos e suplementos',
+      value: chapter3Label(AYV_C3_MEDICATION_STATUS_OPTIONS, c3.medication_status),
+    })
+  for (const item of c3.medication_items || []) {
+    const details = [
+      item.kind === 'supplement' ? 'Suplemento' : 'Medicamento',
+      item.dose,
+      item.frequency,
+      item.timing ? chapter3Label(AYV_C3_MEDICATION_TIMING_OPTIONS, item.timing) : '',
+      item.started_or_changed_at ? `início ou mudança: ${item.started_or_changed_at}` : '',
+      item.purpose ? `uso informado: ${item.purpose}` : '',
+    ].filter(Boolean)
+    current.push({ title: item.name, value: details.join(' • ') })
+    if (item.perceived_changes)
+      questionsForSession.push({
+        title: `Percepção após mudança em ${item.name}`,
+        value: item.perceived_changes,
+      })
+  }
   if (c3.optional_note) current.push({ title: 'Registro espontâneo', value: c3.optional_note })
 
-  const questionsForSession: Chapter4LiteralItem[] = []
   const questionResponses = [
     ...c1.filter(
       (response) =>

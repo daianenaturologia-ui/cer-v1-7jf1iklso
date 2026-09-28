@@ -93,4 +93,31 @@ describe('Capítulo 3 — mudanças atuais', () => {
     })
     expect(deriveChapter3Status([completed]).status).toBe('completed')
   })
+
+  it('carrega medicamentos estruturados sem inferir causalidade', () => {
+    const responses = [
+      response(AYV_C3_PROMPTS.MEDICATION_STATUS.key, { value: 'recent_change' }),
+      response(AYV_C3_PROMPTS.MEDICATION_DETAILS.key, {
+        value: [
+          {
+            id: 'med-1',
+            kind: 'medication',
+            name: 'Medicamento informado',
+            dose: '10 mg',
+            frequency: 'uma vez ao dia',
+            timing: 'dose_changed',
+            perceived_changes: 'Percebi mais cansaço depois da alteração.',
+          },
+        ],
+      }),
+    ]
+
+    const state = loadChapter3State(responses)
+    expect(state.medication_status).toBe('recent_change')
+    expect(state.medication_items).toHaveLength(1)
+    expect(state.medication_items?.[0].perceived_changes).toBe(
+      'Percebi mais cansaço depois da alteração.',
+    )
+    expect(JSON.stringify(state).toLowerCase()).not.toContain('causou')
+  })
 })

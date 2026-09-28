@@ -1,9 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ArrowRight, CheckCircle2, Clock, Mic, RotateCcw } from 'lucide-react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  Mic,
+  Plus,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import { experienceResponseService } from '@/services/experienceEngine'
 import type { ExperienceResponseRecord } from '@/types/cer'
@@ -11,11 +21,15 @@ import {
   AYV_C3_CONTEXT_OPTIONS,
   AYV_C3_DIRECTION_OPTIONS,
   AYV_C3_DOMAIN_OPTIONS,
+  AYV_C3_MEDICATION_STATUS_OPTIONS,
+  AYV_C3_MEDICATION_TIMING_OPTIONS,
   AYV_C3_PROMPTS,
   AYV_C3_STARTED_OPTIONS,
   AYURVEDA_CHAPTER_3_ID,
   AYURVEDA_CHAPTER_3_VERSION,
   AyurvedaChapter3State,
+  AyurvedaMedicationItem,
+  AyurvedaMedicationStatus,
   chapter3Label,
   deriveChapter3Status,
   loadChapter3State,
@@ -43,6 +57,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   const [responses, setResponses] = useState<ExperienceResponseRecord[]>([])
   const [saving, setSaving] = useState(false)
   const [showVoice, setShowVoice] = useState(false)
+  const medicationItemsRef = useRef<AyurvedaMedicationItem[]>([])
 
   useEffect(() => {
     let active = true
@@ -51,7 +66,9 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
       .then((loaded) => {
         if (!active) return
         setResponses(loaded)
-        setState(loadChapter3State(loaded))
+        const loadedState = loadChapter3State(loaded)
+        medicationItemsRef.current = loadedState.medication_items || []
+        setState(loadedState)
         const derived = deriveChapter3Status(loaded)
         if (derived.status === 'completed' || derived.status === 'ready_to_complete') setStep(6)
         else setStep(initialStep || derived.firstUnansweredStep)
@@ -161,6 +178,58 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     await persist(AYV_C3_PROMPTS.CONTEXTS, next, next)
   }
 
+  const persistMedicationItems = async (items: AyurvedaMedicationItem[]) => {
+    medicationItemsRef.current = items
+    setState((previous) => ({ ...previous, medication_items: items }))
+    await persist(
+      AYV_C3_PROMPTS.MEDICATION_DETAILS,
+      items,
+      items.map((item) => item.id),
+    )
+  }
+
+  const selectMedicationStatus = async (status: AyurvedaMedicationStatus) => {
+    const keepItems = status === 'current_use' || status === 'recent_change'
+    const items = keepItems
+      ? state.medication_items?.length
+        ? state.medication_items
+        : [
+            {
+              id: `medication-${Date.now()}`,
+              kind: 'medication' as const,
+              name: '',
+              timing: status === 'recent_change' ? 'started_recently' : 'ongoing_stable',
+            },
+          ]
+      : []
+    setState((previous) => ({
+      ...previous,
+      medication_status: status,
+      medication_items: items,
+    }))
+    medicationItemsRef.current = items
+    await persist(AYV_C3_PROMPTS.MEDICATION_STATUS, status, [status])
+    if (!keepItems && state.medication_items?.length) await persistMedicationItems([])
+  }
+
+  const updateMedicationItem = (id: string, patch: Partial<AyurvedaMedicationItem>) => {
+    setState((previous) => {
+      const items = (previous.medication_items || []).map((item) =>
+        item.id === id ? { ...item, ...patch } : item,
+      )
+      medicationItemsRef.current = items
+      return { ...previous, medication_items: items }
+    })
+  }
+
+  const medicationDetailsRequired =
+    state.medication_status === 'current_use' || state.medication_status === 'recent_change'
+  const medicationDetailsReady =
+    !medicationDetailsRequired ||
+    Boolean(
+      state.medication_items?.length && state.medication_items.every((item) => item.name.trim()),
+    )
+
   const complete = async () => {
     setSaving(true)
     try {
@@ -259,6 +328,24 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                     .join('; ')}
                 </p>
               </>
+            )}
+            {state.medication_status && (
+              <div className="space-y-1">
+                <p>
+                  <strong>Medicamentos e suplementos:</strong>{' '}
+                  {chapter3Label(AYV_C3_MEDICATION_STATUS_OPTIONS, state.medication_status)}
+                </p>
+                {(state.medication_items || []).map((item) => (
+                  <p key={item.id} className="text-muted-foreground">
+                    {item.name}
+                    {item.dose ? ` • ${item.dose}` : ''}
+                    {item.frequency ? ` • ${item.frequency}` : ''}
+                    {item.timing
+                      ? ` • ${chapter3Label(AYV_C3_MEDICATION_TIMING_OPTIONS, item.timing)}`
+                      : ''}
+                  </p>
+                ))}
+              </div>
             )}
             {state.optional_note && (
               <p>
@@ -379,6 +466,182 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
 
       {step === 5 && (
         <div className="space-y-4">
+          <div className="space-y-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold">Medicamentos e suplementos</h3>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Você usa algum medicamento ou suplemento atualmente, ou começou, parou ou alterou
+                algum recentemente?
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {AYV_C3_MEDICATION_STATUS_OPTIONS.map((option) => (
+                <React.Fragment key={option.id}>
+                  {optionButton(
+                    state.medication_status === option.id,
+                    () => void selectMedicationStatus(option.id),
+                    option.label,
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+
+            {medicationDetailsRequired && (
+              <div className="space-y-3 border-t border-primary/15 pt-3">
+                <p className="text-xs text-muted-foreground">
+                  Registre o que souber. Dose e datas podem ficar em branco.
+                </p>
+                {(state.medication_items || []).map((item, index) => (
+                  <div key={item.id} className="space-y-3 rounded-xl border bg-background p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold">Item {index + 1}</span>
+                      {(state.medication_items || []).length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Remover item ${index + 1}`}
+                          onClick={() =>
+                            void persistMedicationItems(
+                              (state.medication_items || []).filter(
+                                (candidate) => candidate.id !== item.id,
+                              ),
+                            )
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="space-y-1 text-xs">
+                        <span>Tipo</span>
+                        <select
+                          className="h-9 w-full rounded-md border border-input bg-background px-3"
+                          value={item.kind}
+                          onChange={(event) =>
+                            updateMedicationItem(item.id, {
+                              kind: event.target.value as AyurvedaMedicationItem['kind'],
+                            })
+                          }
+                          onBlur={() => void persistMedicationItems(medicationItemsRef.current)}
+                        >
+                          <option value="medication">Medicamento</option>
+                          <option value="supplement">Suplemento</option>
+                        </select>
+                      </label>
+                      <label className="space-y-1 text-xs">
+                        <span>Nome *</span>
+                        <Input
+                          value={item.name}
+                          onChange={(event) =>
+                            updateMedicationItem(item.id, { name: event.target.value })
+                          }
+                          onBlur={() => void persistMedicationItems(medicationItemsRef.current)}
+                          placeholder="Nome do medicamento ou suplemento"
+                        />
+                      </label>
+                      <label className="space-y-1 text-xs">
+                        <span>Dose, se souber</span>
+                        <Input
+                          value={item.dose || ''}
+                          onChange={(event) =>
+                            updateMedicationItem(item.id, { dose: event.target.value })
+                          }
+                          onBlur={() => void persistMedicationItems(medicationItemsRef.current)}
+                          placeholder="Ex.: 75 mcg"
+                        />
+                      </label>
+                      <label className="space-y-1 text-xs">
+                        <span>Frequência</span>
+                        <Input
+                          value={item.frequency || ''}
+                          onChange={(event) =>
+                            updateMedicationItem(item.id, { frequency: event.target.value })
+                          }
+                          onBlur={() => void persistMedicationItems(medicationItemsRef.current)}
+                          placeholder="Ex.: uma vez ao dia"
+                        />
+                      </label>
+                      <label className="space-y-1 text-xs sm:col-span-2">
+                        <span>Como está esse uso?</span>
+                        <select
+                          className="h-9 w-full rounded-md border border-input bg-background px-3"
+                          value={item.timing || 'dont_know'}
+                          onChange={(event) =>
+                            updateMedicationItem(item.id, { timing: event.target.value })
+                          }
+                          onBlur={() => void persistMedicationItems(medicationItemsRef.current)}
+                        >
+                          {AYV_C3_MEDICATION_TIMING_OPTIONS.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="space-y-1 text-xs">
+                        <span>Quando começou ou mudou?</span>
+                        <Input
+                          value={item.started_or_changed_at || ''}
+                          onChange={(event) =>
+                            updateMedicationItem(item.id, {
+                              started_or_changed_at: event.target.value,
+                            })
+                          }
+                          onBlur={() => void persistMedicationItems(medicationItemsRef.current)}
+                          placeholder="Ex.: há cerca de 2 meses"
+                        />
+                      </label>
+                      <label className="space-y-1 text-xs">
+                        <span>Para quê utiliza?</span>
+                        <Input
+                          value={item.purpose || ''}
+                          onChange={(event) =>
+                            updateMedicationItem(item.id, { purpose: event.target.value })
+                          }
+                          onBlur={() => void persistMedicationItems(medicationItemsRef.current)}
+                          placeholder="Se souber ou quiser informar"
+                        />
+                      </label>
+                      <label className="space-y-1 text-xs sm:col-span-2">
+                        <span>O que percebeu depois de começar, parar ou alterar?</span>
+                        <Textarea
+                          value={item.perceived_changes || ''}
+                          onChange={(event) =>
+                            updateMedicationItem(item.id, {
+                              perceived_changes: event.target.value,
+                            })
+                          }
+                          onBlur={() => void persistMedicationItems(medicationItemsRef.current)}
+                          placeholder="Opcional. Registre apenas o que você percebeu, sem precisar concluir a causa."
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    void persistMedicationItems([
+                      ...(state.medication_items || []),
+                      {
+                        id: `medication-${Date.now()}`,
+                        kind: 'medication',
+                        name: '',
+                        timing: 'ongoing_stable',
+                      },
+                    ])
+                  }
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Adicionar outro
+                </Button>
+              </div>
+            )}
+          </div>
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">
               Se quiser, conte algo que ajude Daiane a compreender melhor.
@@ -431,7 +694,10 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           {step === 1 ? 'Capítulos' : 'Voltar'}
         </Button>
         <Button
-          disabled={step === 1 && !state.changed_domains?.length}
+          disabled={
+            (step === 1 && !state.changed_domains?.length) ||
+            (step === 5 && (!state.medication_status || !medicationDetailsReady))
+          }
           onClick={() => {
             if (step === 1 && shortPath) setStep(5)
             else if (step === 5) {

@@ -105,4 +105,37 @@ describe('Capítulo 4 — síntese descritiva', () => {
       },
     ])
   })
+
+  it('leva o contexto medicamentoso factual para a síntese e para a conversa profissional', () => {
+    const synthesis = buildChapter4Synthesis([
+      response(AYV_C3_PROMPTS.MEDICATION_STATUS.key, { value: 'recent_change' }),
+      response(AYV_C3_PROMPTS.MEDICATION_DETAILS.key, {
+        value: [
+          {
+            id: 'med-1',
+            kind: 'medication',
+            name: 'Medicamento informado',
+            dose: '10 mg',
+            timing: 'started_recently',
+            perceived_changes: 'Sono mais leve desde então.',
+          },
+        ],
+      }),
+    ])
+
+    expect(synthesis.current).toEqual(
+      expect.arrayContaining([
+        {
+          title: 'Medicamentos e suplementos',
+          value: 'Comecei, parei ou alterei algo recentemente',
+        },
+        expect.objectContaining({ title: 'Medicamento informado' }),
+      ]),
+    )
+    expect(synthesis.questionsForSession).toContainEqual({
+      title: 'Percepção após mudança em Medicamento informado',
+      value: 'Sono mais leve desde então.',
+    })
+    expect(JSON.stringify(synthesis).toLowerCase()).not.toContain('efeito colateral confirmado')
+  })
 })
