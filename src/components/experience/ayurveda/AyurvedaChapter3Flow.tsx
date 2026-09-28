@@ -57,6 +57,9 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   const [responses, setResponses] = useState<ExperienceResponseRecord[]>([])
   const [saving, setSaving] = useState(false)
   const [showVoice, setShowVoice] = useState(false)
+  const [isCorrectionMode, setIsCorrectionMode] = useState(false)
+  const [showCorrectionConfirmation, setShowCorrectionConfirmation] = useState(false)
+  const [correctionError, setCorrectionError] = useState<string | null>(null)
   const medicationItemsRef = useRef<AyurvedaMedicationItem[]>([])
 
   useEffect(() => {
@@ -83,11 +86,12 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     ['no_current_changes', 'dont_know', 'refusal'].includes(id),
   )
 
-  const persist = async (
+  const savePrompt = async (
     prompt: (typeof AYV_C3_PROMPTS)[keyof typeof AYV_C3_PROMPTS],
     value: unknown,
     optionIds: string[],
     freeText = '',
+    changeReason = 'Resposta da interagente ao Capítulo 3 de Corpo & Fisiologia',
   ) => {
     const now = new Date().toISOString()
     const saved = await experienceResponseService.saveResponse({
@@ -101,7 +105,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
       canonicalPromptId: prompt.id,
       stepOrder: prompt.step_order,
       accessClass: 'shared_care',
-      changeReason: 'Resposta da interagente ao Capítulo 3 de Corpo & Fisiologia',
+      changeReason,
       structuredValue: {
         value,
         selectedOptionIds: optionIds,
@@ -134,6 +138,18 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
       }),
       saved,
     ])
+  }
+
+  const persist = async (
+    prompt: (typeof AYV_C3_PROMPTS)[keyof typeof AYV_C3_PROMPTS],
+    value: unknown,
+    optionIds: string[],
+    freeText = '',
+  ) => {
+    // Durante uma correção, as mudanças permanecem apenas no rascunho local.
+    // A versão compartilhada só é substituída depois da nova conclusão explícita.
+    if (isCorrectionMode) return
+    await savePrompt(prompt, value, optionIds, freeText)
   }
 
   const toggleDomain = async (id: string) => {
@@ -232,7 +248,60 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
 
   const complete = async () => {
     setSaving(true)
+    setCorrectionError(null)
     try {
+      if (isCorrectionMode) {
+        const reason = 'Correção concluída pela interagente no Capítulo 3 de Corpo & Fisiologia'
+        await savePrompt(
+          AYV_C3_PROMPTS.DOMAINS,
+          state.changed_domains || [],
+          state.changed_domains || [],
+          '',
+          reason,
+        )
+        await savePrompt(
+          AYV_C3_PROMPTS.DIRECTIONS,
+          state.change_directions || {},
+          Object.values(state.change_directions || {}),
+          '',
+          reason,
+        )
+        await savePrompt(
+          AYV_C3_PROMPTS.STARTED_AT,
+          state.started_change_at || '',
+          state.started_change_at ? [state.started_change_at] : [],
+          '',
+          reason,
+        )
+        await savePrompt(
+          AYV_C3_PROMPTS.CONTEXTS,
+          state.change_contexts || [],
+          state.change_contexts || [],
+          '',
+          reason,
+        )
+        await savePrompt(
+          AYV_C3_PROMPTS.MEDICATION_STATUS,
+          state.medication_status || '',
+          state.medication_status ? [state.medication_status] : [],
+          '',
+          reason,
+        )
+        await savePrompt(
+          AYV_C3_PROMPTS.MEDICATION_DETAILS,
+          state.medication_items || [],
+          (state.medication_items || []).map((item) => item.id),
+          '',
+          reason,
+        )
+        await savePrompt(
+          AYV_C3_PROMPTS.NOTE,
+          state.optional_note || '',
+          [],
+          state.optional_note || '',
+          reason,
+        )
+      }
       const now = new Date().toISOString()
       const saved = await experienceResponseService.saveResponse({
         enrollmentId,
@@ -245,7 +314,9 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
         canonicalPromptId: AYV_C3_PROMPTS.COMPLETION.id,
         stepOrder: 5,
         accessClass: 'shared_care',
-        changeReason: 'Conclusão explícita do Capítulo 3 de Corpo & Fisiologia',
+        changeReason: isCorrectionMode
+          ? 'Conclusão explícita da correção do Capítulo 3 de Corpo & Fisiologia'
+          : 'Conclusão explícita do Capítulo 3 de Corpo & Fisiologia',
         structuredValue: {
           completed: true,
           completed_at: now,
@@ -256,7 +327,14 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
       })
       ;(saved as any).prompt_key = AYV_C3_PROMPTS.COMPLETION.key
       setResponses((current) => [...current, saved])
+      setIsCorrectionMode(false)
       onCompleted?.()
+      if (isCorrectionMode) onBackToHub()
+    } catch (error) {
+      console.error('Erro ao concluir correção do Capítulo 3:', error)
+      setCorrectionError(
+        'Não foi possível concluir a correção agora. Seu rascunho continua nesta tela para você tentar novamente.',
+      )
     } finally {
       setSaving(false)
     }
@@ -355,18 +433,73 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           </CardContent>
         </Card>
         <div className="flex flex-wrap justify-between gap-2">
-          <Button variant="outline" onClick={() => setStep(1)}>
-            <RotateCcw className="mr-1 h-4 w-4" />
-            Rever respostas
-          </Button>
+          {derived.status === 'completed' && !isCorrectionMode ? (
+            <Button variant="outline" onClick={() => setShowCorrectionConfirmation(true)}>
+              <RotateCcw className="mr-1 h-4 w-4" />
+              Corrigir minhas respostas
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={() => setStep(1)}>
+              <RotateCcw className="mr-1 h-4 w-4" />
+              Rever respostas
+            </Button>
+          )}
           {derived.status === 'completed' ? (
-            <Button onClick={onBackToHub}>Voltar aos capítulos</Button>
+            isCorrectionMode ? (
+              <Button disabled={saving} onClick={complete}>
+                Concluir correção
+              </Button>
+            ) : (
+              <Button onClick={onBackToHub}>Voltar aos capítulos</Button>
+            )
           ) : (
             <Button disabled={saving || derived.status !== 'ready_to_complete'} onClick={complete}>
               Concluir este capítulo
             </Button>
           )}
         </div>
+        {correctionError && (
+          <p role="alert" className="text-xs text-destructive">
+            {correctionError}
+          </p>
+        )}
+        {showCorrectionConfirmation && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="c3-correction-dialog-title"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+          >
+            <div className="w-full max-w-md space-y-4 rounded-2xl bg-background p-5 shadow-xl">
+              <h3 id="c3-correction-dialog-title" className="font-serif text-lg font-semibold">
+                Corrigir respostas do Capítulo 3?
+              </h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Suas respostas atuais serão carregadas para correção. A versão já concluída
+                continuará preservada até você revisar e concluir novamente este capítulo.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCorrectionConfirmation(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowCorrectionConfirmation(false)
+                    setIsCorrectionMode(true)
+                    setStep(1)
+                  }}
+                >
+                  Começar correção
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -375,6 +508,9 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     <div className="mx-auto max-w-2xl space-y-6 py-4">
       <div className="space-y-2">
         <Badge variant="outline">Capítulo 3 • Etapa {step} de 5</Badge>
+        {isCorrectionMode && (
+          <Badge variant="secondary">Correção em andamento — versão anterior preservada</Badge>
+        )}
         <h2 className="font-serif text-2xl">O que está diferente agora</h2>
         <p className="text-xs leading-relaxed text-muted-foreground">
           Aqui olhamos somente para mudanças do momento atual. Suas características antigas e seus
