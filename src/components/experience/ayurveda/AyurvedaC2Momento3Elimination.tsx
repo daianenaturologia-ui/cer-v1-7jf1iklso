@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle2, Activity } from 'lucide-react'
 import {
@@ -16,13 +16,16 @@ export interface AyurvedaC2Momento3EliminationProps {
 
 export const AyurvedaC2Momento3Elimination: React.FC<AyurvedaC2Momento3EliminationProps> = ({
   bowelRhythmChoice: initialP6 = '',
-  stoolPatternChoices: initialP7 = [],
+  stoolPatternChoices: initialP7,
   onSaveBowelRhythm,
   onSaveStoolPattern,
   disabled = false,
 }) => {
   const [selectedP6, setSelectedP6] = useState<string>(initialP6)
-  const [selectedP7, setSelectedP7] = useState<string[]>(initialP7)
+  const [selectedP7, setSelectedP7] = useState<string[]>(initialP7 ?? [])
+
+  useEffect(() => setSelectedP6(initialP6), [initialP6])
+  useEffect(() => setSelectedP7(initialP7 ?? []), [initialP7])
 
   // Seleção única P6
   const handleSelectP6 = (optId: string) => {

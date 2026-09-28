@@ -712,4 +712,56 @@ describe('M4A — Visão Profissional Factual dos Capítulos 1 e 2 de Corpo & Fi
     expect(container.querySelector('.w-\\[500px\\]')).toBeNull()
     expect(container.querySelector('.w-\\[800px\\]')).toBeNull()
   })
+
+  it('19. dúvida explícita não é apresentada como baixa confiança histórica', () => {
+    const response = createMockResp({
+      id: 'c1-sweat-unsure',
+      prompt_id: AYV_C1_PROMPTS.P5_SWEAT.id,
+      structured_value: {
+        value: 'dont_know',
+        prompt_key: AYV_C1_PROMPTS.P5_SWEAT.key,
+        revision_number: 1,
+        metadata: {
+          explicit_unsure: true,
+          historical_confidence: 'low',
+        },
+      },
+    })
+
+    render(
+      <ProfessionalAyurvedaCorpoFisiologiaView
+        responses={[response]}
+        participantName="Mariana Souza"
+      />,
+    )
+
+    expect(screen.getByText(/Não sei identificar\./i)).toBeInTheDocument()
+    expect(screen.queryByText(/Atenção clínica \(Baixa confiança histórica\):/i)).toBeNull()
+  })
+
+  it('20. revisão concluída selecionada não recebe aviso do rascunho posterior', () => {
+    const responses = buildMockResponsesRev1()
+    responses.push(
+      createMockResp({
+        id: 'c1-rev2-draft',
+        prompt_id: AYV_C1_PROMPTS.P1_STRUCTURE.id,
+        structured_value: {
+          value: 'intermediate',
+          prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key,
+          revision_number: 2,
+          metadata: { revision_number: 2 },
+        },
+      }),
+    )
+
+    render(
+      <ProfessionalAyurvedaCorpoFisiologiaView
+        responses={responses}
+        participantName="Mariana Souza"
+      />,
+    )
+
+    expect(screen.getAllByRole('button', { name: /Revisão 1.*Mais recente/i })).toHaveLength(2)
+    expect(screen.queryByText(/Este capítulo está em andamento\./i)).toBeNull()
+  })
 })

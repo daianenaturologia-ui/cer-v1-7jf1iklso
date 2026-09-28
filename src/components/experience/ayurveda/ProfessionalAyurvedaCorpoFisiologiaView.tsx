@@ -430,7 +430,7 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
       }
 
       const hasLowConfidence =
-        meta.historical_confidence === 'low' ||
+        (meta.historical_confidence === 'low' && !isExplicitUnsure && !isExplicitRefusal) ||
         Boolean(meta.contradiction_flag) ||
         rawVal === 'changed_lot' ||
         (Array.isArray(rawVal) && rawVal.includes('changed_lot'))
@@ -627,7 +627,7 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
 
       // Baixa confiança histórica: se registrado no metadado ou se marcou explicitamente hard_to_remember na P12
       const hasLowConfidence =
-        meta.historical_confidence === 'low' ||
+        (meta.historical_confidence === 'low' && !isExplicitUnsure && !isExplicitRefusal) ||
         (key === 'c2_p12_confidence' && rawVal === 'hard_to_remember')
 
       let lowConfidenceDetail: string | undefined = undefined
@@ -1151,7 +1151,9 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
               )}
 
               {/* Aviso se o capítulo estiver em andamento sem revisão concluída */}
-              {c1DerivedStatus.status !== 'completed' && c1RevisionsInfo.length > 0 && (
+              {c1RevisionsInfo.some(
+                (revision) => revision.revisionNumber === c1SelectedRev && !revision.isCompleted,
+              ) && (
                 <div className="p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-950 dark:text-blue-200 text-xs flex items-center gap-2">
                   <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                   <span>
@@ -1208,7 +1210,9 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
               )}
 
               {/* Aviso se o capítulo estiver em andamento sem revisão concluída */}
-              {c2DerivedStatus.status !== 'completed' && c2RevisionsInfo.length > 0 && (
+              {c2RevisionsInfo.some(
+                (revision) => revision.revisionNumber === c2SelectedRev && !revision.isCompleted,
+              ) && (
                 <div className="p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-950 dark:text-blue-200 text-xs flex items-center gap-2">
                   <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                   <span>
