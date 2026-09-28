@@ -2149,7 +2149,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-6 px-4 space-y-6">
+    <div className="mx-auto w-full max-w-2xl min-w-0 space-y-6 px-4 py-6">
       {/* Banner de Revisão Somente-Leitura */}
       {isReviewOnly && (
         <div
@@ -2179,8 +2179,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       )}
 
       {/* Topo: Progresso Humanizado Sem Gamificação */}
-      <div className="flex items-center justify-between border-b border-border/50 pb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-col gap-2 border-b border-border/50 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
           {!isReviewOnly && (
             <Button
               variant="ghost"
