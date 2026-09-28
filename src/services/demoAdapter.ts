@@ -27,6 +27,7 @@ import type {
   CerMapItemRecord,
   CerMapItemSourceRecord,
   ExperienceResponseRecord,
+  ExperienceResponseVersionRecord,
   ExperienceProgressStatus,
   ExperienceReleaseStatus,
   EnrollmentRecord,
@@ -136,6 +137,7 @@ interface DemoStateStore {
   presentations: CerCarePlanPresentationRecord[]
   acceptances: CerOperationalAcceptanceRecord[]
   experienceResponses: ExperienceResponseRecord[]
+  experienceResponseVersions?: ExperienceResponseVersionRecord[]
   retiredExperienceResponses?: (ExperienceResponseRecord & {
     retired_reason?: string
     retired_at?: string
@@ -177,6 +179,7 @@ function getInitialState(): DemoStateStore {
     acceptances: [],
     maps: [],
     experienceResponses: [],
+    experienceResponseVersions: [],
     retiredExperienceResponses: [],
     menteEmocoesNeedsRedo: false,
     enrollmentExperienceProgress: {},
@@ -520,6 +523,9 @@ class DemoAdapter {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
         const parsed: DemoStateStore = JSON.parse(raw)
+        if (!Array.isArray(parsed.experienceResponseVersions)) {
+          parsed.experienceResponseVersions = []
+        }
         const sanitized = this.sanitizeVisibleDemoStore(parsed)
         const migratedMente = this.migrateIncompatibleMenteEmocoes(sanitized)
         const sanitizedAyv = this.sanitizeFalseAyurvedaChapter1Completion(migratedMente)
@@ -1733,6 +1739,12 @@ class DemoAdapter {
     })
   }
 
+  public listExperienceResponseVersions(enrollmentId?: string): ExperienceResponseVersionRecord[] {
+    return (this.state.experienceResponseVersions || []).filter(
+      (version) => !enrollmentId || version.enrollment_id === enrollmentId,
+    )
+  }
+
   public saveExperienceResponse(params: {
     enrollmentId: string
     experienceId: string
@@ -1811,6 +1823,31 @@ class DemoAdapter {
       (r) => r.enrollment_id === params.enrollmentId && r.prompt_id === params.promptId,
     )
     if (existing) {
+      const snapshotVersion = existing.version || 1
+      const alreadySnapshotted = (this.state.experienceResponseVersions || []).some(
+        (version) =>
+          version.response_id === existing.id && version.version_number === snapshotVersion,
+      )
+      if (!alreadySnapshotted) {
+        if (!this.state.experienceResponseVersions) this.state.experienceResponseVersions = []
+        this.state.experienceResponseVersions.push({
+          id: `demo-resp-version-${existing.id}-${snapshotVersion}`,
+          response_id: existing.id,
+          enrollment_id: existing.enrollment_id,
+          experience_id: existing.experience_id,
+          prompt_id: existing.prompt_id,
+          respondent_user_id: existing.respondent_user_id,
+          response_type: existing.response_type,
+          access_class: existing.access_class,
+          structured_value: existing.structured_value,
+          free_text: existing.free_text,
+          version_number: snapshotVersion,
+          prompt_version: existing.prompt_version,
+          change_reason: 'Versão anterior preservada antes da correção',
+          created: existing.created,
+          updated: existing.updated,
+        })
+      }
       existing.structured_value = enrichedStructuredValue
       existing.free_text = params.freeText !== undefined ? params.freeText : existing.free_text
       existing.version = (existing.version || 1) + 1
