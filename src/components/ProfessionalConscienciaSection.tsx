@@ -11,27 +11,16 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  FileText,
-  Calendar,
-  Layers,
-  CheckCircle2,
-  Clock,
-  Circle,
-  Eye,
-  Info,
+  RefreshCw,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import type {
   EnrollmentRecord,
   EnrollmentExperienceRecord,
   ExperienceResponseRecord,
-  CerKnowledgeItemRecord,
-  CerParticipantRecognitionRecord,
-  CerExperienceRecord,
   CerPromptRecord,
 } from '@/types/cer'
-import { enrollmentExperienceService, experienceResponseService } from '@/services/experienceEngine'
-import { cerKnowledgeItemService } from '@/services/cerKnowledge'
+import { enrollmentExperienceService } from '@/services/experienceEngine'
 import { ProfessionalMapEditor } from '@/components/ProfessionalMapEditor'
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
 
@@ -83,8 +72,6 @@ export const SIX_CANONICAL_DIMENSIONS: DimensionConfig[] = [
 
 export const INTEGRACAO_EXPERIENCE_ID = 'exp-integracao-consciencia-07g'
 
-const EMPTY_SYNTHESIS_TEXT = 'Ainda não há informações suficientes para uma síntese.'
-
 interface ProfessionalConscienciaSectionProps {
   enrollment: EnrollmentRecord
   participantName: string
@@ -100,28 +87,28 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
 }) => {
   const [enrollmentExps, setEnrollmentExps] = useState<EnrollmentExperienceRecord[]>([])
   const [allResponses, setAllResponses] = useState<ExperienceResponseRecord[]>([])
-  const [knowledgeItems, setKnowledgeItems] = useState<CerKnowledgeItemRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [showProfessionalMap, setShowProfessionalMap] = useState(false)
 
   // Painéis expansíveis do Nível 3
   const [expandedDimensions, setExpandedDimensions] = useState<Record<string, boolean>>({})
 
   const loadData = async () => {
     setLoading(true)
+    setLoadError(false)
     try {
       const { demoAdapter } = await import('@/services/demoAdapter')
       if (demoAdapter.isEnabled()) {
         const demoResponses = demoAdapter.listExperienceResponses(enrollment.id)
         setEnrollmentExps([])
         setAllResponses(Array.isArray(demoResponses) ? demoResponses : [])
-        setKnowledgeItems([])
         setLoading(false)
         return
       }
 
-      const [exps, kis, resps] = await Promise.all([
+      const [exps, resps] = await Promise.all([
         enrollmentExperienceService.listByEnrollment(enrollment.id),
-        cerKnowledgeItemService.listByEnrollment(enrollment.id),
         pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
           filter: `enrollment_id = "${enrollment.id}"`,
           expand: 'prompt_id',
@@ -130,13 +117,10 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
       ])
 
       setEnrollmentExps(Array.isArray(exps) ? exps : [])
-      setKnowledgeItems(Array.isArray(kis) ? kis : [])
       setAllResponses(Array.isArray(resps) ? resps : [])
     } catch (err) {
       console.error('Erro ao carregar dados da Consciência Profissional:', err)
-      setEnrollmentExps([])
-      setKnowledgeItems([])
-      setAllResponses([])
+      setLoadError(true)
     } finally {
       setLoading(false)
     }
@@ -149,21 +133,16 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
   }, [enrollment?.id])
 
   const toggleExpand = (dimId: string) => {
-    setExpandedDimensions((prev) => ({
-      ...prev,
-      [dimId]: !prev[dimId],
-    }))
+    setExpandedDimensions((prev) => ({ [dimId]: !prev[dimId] }))
   }
 
   const expandAndScrollTo = (dimId: string) => {
-    setExpandedDimensions((prev) => ({
-      ...prev,
-      [dimId]: true,
-    }))
-    const el = document.getElementById(`relatorio-${dimId}`)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    setExpandedDimensions({ [dimId]: true })
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`relatorio-${dimId}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   // Helpers de derivação de estado
@@ -220,24 +199,6 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
     })
   }
 
-  const getObjectiveSummary = (responses: ExperienceResponseRecord[]): string | null => {
-    // Procura por respostas objetivas já produzidas pelo instrumento
-    if (responses.length === 0) return null
-    // Se houver responses com structured_value claro
-    const scoredOrCategorized = responses.filter(
-      (r) =>
-        r.structured_value !== undefined &&
-        r.structured_value !== null &&
-        typeof r.structured_value !== 'object',
-    )
-    if (scoredOrCategorized.length > 0) {
-      return `${responses.length} momento(s) respondido(s). Último registro objetivo: ${String(
-        scoredOrCategorized[scoredOrCategorized.length - 1].structured_value,
-      )}.`
-    }
-    return `${responses.length} resposta(s) autoral(is) registrada(s).`
-  }
-
   // Integração 07G como síntese complementar
   const integracaoExp = getEnrollmentExpForDim(INTEGRACAO_EXPERIENCE_ID)
   const integracaoResponses = getResponsesForDim(INTEGRACAO_EXPERIENCE_ID)
@@ -247,226 +208,66 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
       {/* ═══════════════════════════════════════════════════════════════════
           NÍVEL 1 — RESUMO ESSENCIAL (6 CARTÕES)
          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="space-y-3" aria-labelledby="nivel-1-resumo-title">
-        <div className="space-y-1 border-b border-border/40 pb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-primary font-semibold">
-              Nível 1
-            </span>
-            <h2 id="nivel-1-resumo-title" className="text-lg font-bold font-serif text-foreground">
-              Resumo essencial
+      <section className="space-y-3" aria-labelledby="dimensoes-title">
+        <div className="flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <h2 id="dimensoes-title" className="text-lg font-bold font-serif">
+              Consciência de {participantName}
             </h2>
+            <p className="text-xs text-muted-foreground">
+              Escolha uma dimensão para ler as respostas.
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Visão sintética das seis dimensões da Consciência de {participantName}. Sem conclusões
-            inventadas ou dados demonstrativos artificiais.
-          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadData}
+            disabled={loading}
+            className="gap-1.5 text-xs"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Atualizar respostas
+          </Button>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        {loadError && (
+          <p role="alert" className="p-3 rounded-lg border border-destructive/40 text-sm">
+            Não foi possível atualizar agora. As informações anteriores foram mantidas.
+          </p>
+        )}
+        <div className="rounded-xl border border-border/70 divide-y divide-border/50">
           {SIX_CANONICAL_DIMENSIONS.map((dim) => {
-            const Icon = dim.icon
             const enrExp = getEnrollmentExpForDim(dim.experienceId)
             const responses = getResponsesForDim(dim.experienceId)
-            const status = getStatusLabel(enrExp, responses.length)
             const lastUpdate = getLastUpdateDate(enrExp, responses)
-            const objectiveSummary = getObjectiveSummary(responses)
-
             return (
-              <Card
-                key={dim.id}
-                className="border-border/70 hover:border-border transition-colors shadow-none flex flex-col justify-between"
-              >
-                <CardHeader className="p-4 pb-2 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <CardTitle className="text-sm font-semibold truncate font-serif">
-                        {dim.name}
-                      </CardTitle>
-                    </div>
-
-                    <Badge
-                      variant={
-                        status === 'Concluída'
-                          ? 'secondary'
-                          : status === 'Em andamento'
-                            ? 'default'
-                            : 'outline'
-                      }
-                      className="text-[10px] font-normal shrink-0"
-                    >
-                      {status === 'Concluída' && (
-                        <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
-                      )}
-                      {status === 'Em andamento' && <Clock className="w-3 h-3 mr-1" />}
-                      {status === 'Não iniciada' && (
-                        <Circle className="w-2.5 h-2.5 mr-1 text-muted-foreground" />
-                      )}
-                      {status}
-                    </Badge>
-                  </div>
-
-                  {lastUpdate && (
-                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <Calendar className="w-3 h-3" />
-                      <span>Última atualização: {lastUpdate}</span>
-                    </div>
-                  )}
-                </CardHeader>
-
-                <CardContent className="p-4 pt-1 space-y-3 flex-1 flex flex-col justify-between">
-                  <div className="text-xs text-foreground/90 leading-relaxed bg-muted/20 p-2.5 rounded-md border border-border/40">
-                    {objectiveSummary ? (
-                      <span>{objectiveSummary}</span>
-                    ) : (
-                      <span className="italic text-muted-foreground">{EMPTY_SYNTHESIS_TEXT}</span>
-                    )}
-                  </div>
-
-                  <div className="pt-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => expandAndScrollTo(dim.id)}
-                      className="w-full text-xs h-8 gap-1.5"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Ver relatório detalhado</span>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={dim.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
+                <div>
+                  <h3 className="text-sm font-semibold">{dim.name}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {responses.length ? 'Há respostas registradas' : 'Ainda sem respostas'}
+                    {lastUpdate ? ` · ${lastUpdate}` : ''}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => expandAndScrollTo(dim.id)}
+                >
+                  Ver respostas
+                </Button>
+              </div>
             )
           })}
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          NÍVEL 2 — MAPA INTEGRATIVO CER
-         ═══════════════════════════════════════════════════════════════════ */}
-      <section
-        className="space-y-4 pt-4 border-t border-border/50"
-        aria-labelledby="nivel-2-mapa-title"
-      >
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-primary font-semibold">
-              Nível 2
-            </span>
-            <h2 id="nivel-2-mapa-title" className="text-lg font-bold font-serif text-foreground">
-              Mapa Integrativo CER
-            </h2>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Centro de integração e publicação explícita. Distingue com rigor ético respostas da
-            interagente, resultados objetivos dos instrumentos, sínteses do sistema e hipóteses de
-            Daiane.
-          </p>
-        </div>
-
-        {/* Legenda visual com distinção epistêmica obrigatória */}
-        <div className="p-3 bg-muted/20 rounded-xl border border-border/60 text-xs space-y-2">
-          <span className="font-semibold text-foreground text-[11px] uppercase tracking-wider block">
-            Distinção visual do conteúdo:
-          </span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-[11px]">
-            <div className="flex items-center gap-2 p-1.5 rounded bg-background border border-border/40">
-              <Badge variant="outline" className="text-[9px] font-mono">
-                respostas da interagente
-              </Badge>
-              <span className="text-muted-foreground truncate">autoria preservada na íntegra</span>
-            </div>
-
-            <div className="flex items-center gap-2 p-1.5 rounded bg-background border border-border/40">
-              <Badge variant="outline" className="text-[9px] font-mono">
-                resultados objetivos dos instrumentos
-              </Badge>
-              <span className="text-muted-foreground truncate">escalas e escolhas canônicas</span>
-            </div>
-
-            <div className="flex items-center gap-2 p-1.5 rounded bg-background border border-border/40">
-              <Badge variant="secondary" className="text-[9px] font-mono">
-                Síntese organizada pelo sistema
-              </Badge>
-              <span className="text-muted-foreground truncate">apoio automático organizado</span>
-            </div>
-
-            <div className="flex items-center gap-2 p-1.5 rounded bg-background border border-border/40">
-              <Badge
-                variant="default"
-                className="text-[9px] font-mono bg-primary/20 text-primary border-primary/30"
-              >
-                observações de Daiane
-              </Badge>
-              <span className="text-muted-foreground truncate">registro privado de sessão</span>
-            </div>
-
-            <div className="flex items-center gap-2 p-1.5 rounded bg-background border border-border/40">
-              <Badge
-                variant="outline"
-                className="text-[9px] font-mono border-amber-400 text-amber-700 dark:text-amber-300"
-              >
-                hipóteses profissionais
-              </Badge>
-              <span className="text-muted-foreground truncate">
-                compreensão situada, nunca fato
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 p-1.5 rounded bg-background border border-border/40">
-              <Badge
-                variant="outline"
-                className="text-[9px] font-mono border-emerald-400 text-emerald-700 dark:text-emerald-300"
-              >
-                versão publicada para a interagente
-              </Badge>
-              <span className="text-muted-foreground truncate">apenas por decisão de Daiane</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Editor do Mapa CER com a Trava do Primeiro Encontro integrada */}
-        <ProfessionalMapEditor
-          enrollmentId={enrollment.id}
-          participantName={participantName}
-          professionalUserId={pb.authStore.record?.id || ''}
-        />
-
-        {/* Conhecimento, Hipóteses e Provenance Clínica */}
-        <ProfessionalKnowledgeBuilding
-          enrollmentId={enrollment.id}
-          participantName={participantName}
-        />
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          NÍVEL 3 — RELATÓRIOS DETALHADOS POR DIMENSÃO
-         ═══════════════════════════════════════════════════════════════════ */}
       <section
         className="space-y-4 pt-4 border-t border-border/50"
         aria-labelledby="nivel-3-relatorios-title"
       >
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-primary font-semibold">
-              Nível 3
-            </span>
-            <h2
-              id="nivel-3-relatorios-title"
-              className="text-lg font-bold font-serif text-foreground"
-            >
-              Relatórios detalhados por dimensão
-            </h2>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Aprofundamento dimensão a dimensão. Reaproveita dados existentes sem duplicar
-            questionários: respostas originais, classificações, registros espontâneos em texto ou
-            voz e observações profissionais em área separada.
-          </p>
-        </div>
+        <h2 id="nivel-3-relatorios-title" className="text-base font-semibold font-serif">
+          Respostas por dimensão
+        </h2>
 
         <div className="space-y-3">
           {SIX_CANONICAL_DIMENSIONS.map((dim) => {
@@ -611,18 +412,6 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                         })}
                       </div>
                     )}
-
-                    {/* Observações profissionais em área separada */}
-                    <div className="p-3 bg-muted/20 border border-border/50 rounded-lg space-y-1 text-xs">
-                      <span className="font-semibold text-foreground text-[11px] uppercase tracking-wider block">
-                        Observações profissionais de Daiane (Área Separada):
-                      </span>
-                      <p className="text-muted-foreground text-[11px] leading-relaxed">
-                        As impressões clínicas, anotações de sessão e hipóteses desta dimensão são
-                        mantidas no Nível 2 (Conhecimento em Construção e Prontuário) e não são
-                        expostas diretamente à interagente sem validação explícita.
-                      </p>
-                    </div>
                   </CardContent>
                 )}
               </Card>
@@ -666,6 +455,42 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
             </CardContent>
           </Card>
         </div>
+      </section>
+      <section className="border-t border-border/50 pt-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-base font-semibold font-serif">
+              Mapa e interpretação profissional
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Observações e hipóteses ficam separadas das respostas da interagente.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            onClick={() => setShowProfessionalMap((current) => !current)}
+            aria-expanded={showProfessionalMap}
+          >
+            {showProfessionalMap ? 'Fechar mapa' : 'Abrir mapa'}
+          </Button>
+        </div>
+        {showProfessionalMap && (
+          <div className="space-y-4">
+            <ProfessionalMapEditor
+              enrollmentId={enrollment.id}
+              participantName={participantName}
+              professionalUserId={pb.authStore.record?.id || ''}
+            />
+
+            {/* Conhecimento, Hipóteses e Provenance Clínica */}
+            <ProfessionalKnowledgeBuilding
+              enrollmentId={enrollment.id}
+              participantName={participantName}
+            />
+          </div>
+        )}
       </section>
     </div>
   )

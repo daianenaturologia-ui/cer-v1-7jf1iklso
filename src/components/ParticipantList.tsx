@@ -229,44 +229,54 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
                   className="p-4 hover:bg-muted/20 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3"
                 >
                   <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm text-foreground">{item.fullName}</span>
-                      {item.preferredName && item.preferredName !== item.fullName && (
-                        <span className="text-xs text-muted-foreground">
-                          ({item.preferredName})
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm text-foreground">
+                          {item.fullName}
                         </span>
-                      )}
+                        {item.preferredName && item.preferredName !== item.fullName && (
+                          <span className="text-xs text-muted-foreground">
+                            ({item.preferredName})
+                          </span>
+                        )}
 
-                      <Badge
-                        variant={item.status === 'active' ? 'default' : 'outline'}
-                        className="text-[10px] capitalize font-normal"
-                      >
-                        {item.status === 'active'
-                          ? 'Ativo'
-                          : item.status === 'paused'
-                            ? 'Pausado'
-                            : item.status}
-                      </Badge>
-
-                      {hasSecurity && (
                         <Badge
-                          variant="destructive"
-                          className="text-[10px] gap-1 font-bold bg-red-600"
+                          variant={item.status === 'active' ? 'default' : 'outline'}
+                          className="text-[10px] capitalize font-normal"
                         >
-                          <ShieldAlert className="w-3 h-3" />
-                          Segurança
+                          {item.status === 'active'
+                            ? 'Ativo'
+                            : item.status === 'paused'
+                              ? 'Pausado'
+                              : item.status}
                         </Badge>
-                      )}
 
-                      {hasReview && !hasSecurity && (
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] gap-1 bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-300 font-medium"
-                        >
-                          <AlertCircle className="w-3 h-3 text-amber-600" />
-                          Revisar Devolutiva
-                        </Badge>
-                      )}
+                        {hasSecurity && (
+                          <Badge
+                            variant="destructive"
+                            className="text-[10px] gap-1 font-bold bg-red-600"
+                          >
+                            <ShieldAlert className="w-3 h-3" />
+                            Segurança
+                          </Badge>
+                        )}
+
+                        {hasReview && !hasSecurity && (
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] gap-1 bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-300 font-medium"
+                          >
+                            <AlertCircle className="w-3 h-3 text-amber-600" />
+                            Revisar Devolutiva
+                          </Badge>
+                        )}
+                      </div>
+                      <Link to={`/profissional/participantes/${item.enrollment.id}`}>
+                        <Button size="sm" className="h-8 text-xs px-3 gap-1.5">
+                          <span>Abrir workspace</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      </Link>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -293,15 +303,6 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
                       <span className="font-medium text-foreground/80">Próximo passo: </span>
                       <span>{item.nextStep}</span>
                     </div>
-                  </div>
-
-                  <div className="shrink-0 self-end md:self-center">
-                    <Link to={`/profissional/participantes/${item.enrollment.id}`}>
-                      <Button size="sm" className="h-8 text-xs px-3 gap-1.5">
-                        <span>Abrir Workspace</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Button>
-                    </Link>
                   </div>
                 </div>
               )

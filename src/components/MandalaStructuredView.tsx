@@ -19,11 +19,13 @@ import {
 interface MandalaStructuredViewProps {
   enrollmentId: string
   onRefreshRequested?: () => void
+  audience?: 'participant' | 'professional'
 }
 
 export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
   enrollmentId,
   onRefreshRequested,
+  audience = 'participant',
 }) => {
   const [mandala, setMandala] = useState<MandalaReadModel | null>(null)
   const [loading, setLoading] = useState(true)
@@ -80,7 +82,11 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
           </div>
           <h1 className="text-2xl font-serif font-bold text-foreground mt-1 flex items-center gap-2">
             <Compass className="w-6 h-6 text-primary" />
-            <span>Como o meu cuidado está se organizando e mudando</span>
+            <span>
+              {audience === 'professional'
+                ? 'Mandala de cuidado da interagente'
+                : 'Como o meu cuidado está se organizando e mudando'}
+            </span>
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             Estrutura descritiva integrada. A Mandala deriva de prioridades, experimentos, recursos
@@ -252,7 +258,10 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
               <span>5. Movimento recente</span>
             </CardTitle>
             <CardDescription className="text-xs">
-              O que você experimentou e registrou nas últimas semanas (sem percentuais de eficácia)
+              {audience === 'professional'
+                ? 'Registros da interagente nas últimas semanas'
+                : 'O que você experimentou e registrou nas últimas semanas'}{' '}
+              (sem percentuais de eficácia)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-xs">
