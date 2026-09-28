@@ -34,6 +34,8 @@ describe('Navegação profissional da Consciência', () => {
 
     await user.click(screen.getAllByRole('button', { name: 'Ver respostas' })[1])
     expect(screen.queryByText(/Capítulo 1 — Minha estrutura/i)).toBeNull()
-    expect(screen.getByText(/Nenhuma resposta registrada ainda nesta dimensão/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Nenhuma resposta registrada ainda nesta dimensão/i),
+    ).toBeInTheDocument()
   })
 })
