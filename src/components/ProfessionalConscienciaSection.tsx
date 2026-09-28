@@ -23,6 +23,7 @@ import type {
 import { enrollmentExperienceService } from '@/services/experienceEngine'
 import { ProfessionalMapEditor } from '@/components/ProfessionalMapEditor'
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
+import { ProfessionalAyurvedaCorpoFisiologiaView } from '@/components/experience/ayurveda/ProfessionalAyurvedaCorpoFisiologiaView'
 
 export interface DimensionConfig {
   id: string
@@ -261,201 +262,201 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
         </div>
       </section>
 
-      <section
-        className="space-y-4 pt-4 border-t border-border/50"
-        aria-labelledby="nivel-3-relatorios-title"
-      >
-        <h2 id="nivel-3-relatorios-title" className="text-base font-semibold font-serif">
-          Respostas por dimensão
-        </h2>
+      {Object.values(expandedDimensions).some(Boolean) && (
+        <section
+          className="space-y-4 pt-4 border-t border-border/50"
+          aria-labelledby="nivel-3-relatorios-title"
+        >
+          <h2 id="nivel-3-relatorios-title" className="text-base font-semibold font-serif">
+            Respostas por dimensão
+          </h2>
 
-        <div className="space-y-3">
-          {SIX_CANONICAL_DIMENSIONS.map((dim) => {
-            const Icon = dim.icon
-            const isExpanded = Boolean(expandedDimensions[dim.id])
-            const enrExp = getEnrollmentExpForDim(dim.experienceId)
-            const responses = getResponsesForDim(dim.experienceId)
-            const status = getStatusLabel(enrExp, responses.length)
-            const lastUpdate = getLastUpdateDate(enrExp, responses)
+          <div className="space-y-3">
+            {SIX_CANONICAL_DIMENSIONS.filter((dim) => expandedDimensions[dim.id]).map((dim) => {
+              const Icon = dim.icon
+              const isExpanded = Boolean(expandedDimensions[dim.id])
+              const enrExp = getEnrollmentExpForDim(dim.experienceId)
+              const responses = getResponsesForDim(dim.experienceId)
+              const status = getStatusLabel(enrExp, responses.length)
+              const lastUpdate = getLastUpdateDate(enrExp, responses)
 
-            return (
-              <Card
-                key={dim.id}
-                id={`relatorio-${dim.id}`}
-                className="border-border/70 overflow-hidden shadow-none transition-all scroll-mt-20"
-              >
-                <div
-                  onClick={() => toggleExpand(dim.id)}
-                  className="p-4 bg-muted/15 hover:bg-muted/25 cursor-pointer flex items-center justify-between gap-3 border-b border-border/30 select-none transition-colors"
+              return (
+                <Card
+                  key={dim.id}
+                  id={`relatorio-${dim.id}`}
+                  className="border-border/70 overflow-hidden shadow-none transition-all scroll-mt-20"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 rounded-lg bg-card border border-border/50 text-primary shrink-0">
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="space-y-0.5 truncate">
-                      <h3 className="text-sm font-semibold text-foreground font-serif">
-                        {dim.name}
-                      </h3>
-                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                        <span>{responses.length} resposta(s) registrada(s)</span>
-                        {lastUpdate && (
-                          <>
-                            <span>•</span>
-                            <span>Última atualização: {lastUpdate}</span>
-                          </>
-                        )}
+                  <div
+                    onClick={() => toggleExpand(dim.id)}
+                    className="p-4 bg-muted/15 hover:bg-muted/25 cursor-pointer flex items-center justify-between gap-3 border-b border-border/30 select-none transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 rounded-lg bg-card border border-border/50 text-primary shrink-0">
+                        <Icon className="w-4 h-4" />
                       </div>
+                      <div className="space-y-0.5 truncate">
+                        <h3 className="text-sm font-semibold text-foreground font-serif">
+                          {dim.name}
+                        </h3>
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          <span>{responses.length} resposta(s) registrada(s)</span>
+                          {lastUpdate && (
+                            <>
+                              <span>•</span>
+                              <span>Última atualização: {lastUpdate}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="outline" className="text-[10px] font-normal">
+                        {status}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-muted-foreground"
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant="outline" className="text-[10px] font-normal">
-                      {status}
-                    </Badge>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground">
-                      {isExpanded ? (
-                        <ChevronUp className="w-4 h-4" />
+                  {isExpanded && (
+                    <CardContent className="p-4 space-y-4 text-xs">
+                      {dim.id === 'corpo_fisiologia' ? (
+                        <div className="space-y-4">
+                          {/* Visão Especializada Factual dos Capítulos 1 e 2 de Corpo & Fisiologia (M4A) */}
+                          <ProfessionalAyurvedaCorpoFisiologiaView
+                            responses={responses}
+                            participantName={participantName}
+                            treatmentPreference={treatmentPreference}
+                            treatmentPreferenceCustom={treatmentPreferenceCustom}
+                          />
+                        </div>
+                      ) : responses.length === 0 ? (
+                        <div className="py-6 text-center text-muted-foreground italic">
+                          Nenhuma resposta registrada ainda nesta dimensão por {participantName}.
+                        </div>
                       ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <CardContent className="p-4 space-y-4 text-xs">
-                    {dim.id === 'corpo_fisiologia' ? (
-                      <div className="space-y-4">
-                        {/* Visão Especializada Factual dos Capítulos 1 e 2 de Corpo & Fisiologia (M4A) */}
-                        {React.createElement(
-                          React.lazy(
-                            () =>
-                              import('./experience/ayurveda/ProfessionalAyurvedaCorpoFisiologiaView'),
-                          ),
-                          {
-                            responses,
-                            participantName,
-                            treatmentPreference,
-                            treatmentPreferenceCustom,
-                          },
-                        )}
-                      </div>
-                    ) : responses.length === 0 ? (
-                      <div className="py-6 text-center text-muted-foreground italic">
-                        Nenhuma resposta registrada ainda nesta dimensão por {participantName}.
-                      </div>
-                    ) : (
-                      <div className="space-y-3.5">
-                        {responses.map((resp, idx) => {
-                          const prompt = resp.expand?.prompt_id as CerPromptRecord | undefined
-                          return (
-                            <div
-                              key={resp.id || idx}
-                              className="p-3.5 rounded-xl border border-border/60 bg-card space-y-2.5"
-                            >
-                              <div className="flex items-center justify-between gap-2 flex-wrap">
-                                <div className="space-y-0.5">
-                                  <span className="text-[10px] font-mono text-muted-foreground uppercase">
-                                    Momento {prompt?.step_order || idx + 1} • {resp.response_type}
-                                  </span>
-                                  <p className="font-medium text-foreground text-xs sm:text-sm">
-                                    {prompt?.prompt_text || 'Pergunta do momento'}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <Badge variant="outline" className="text-[10px] font-mono">
-                                    v{resp.version} ({resp.status})
-                                  </Badge>
-                                </div>
-                              </div>
-
-                              {/* Resposta objetiva do instrumento */}
-                              {resp.structured_value !== undefined &&
-                                resp.structured_value !== null && (
-                                  <div className="p-2.5 rounded-lg bg-muted/20 border border-border/40 space-y-1">
-                                    <span className="text-[10px] font-medium text-muted-foreground block">
-                                      Resultado objetivo do instrumento:
+                        <div className="space-y-3.5">
+                          {responses.map((resp, idx) => {
+                            const prompt = resp.expand?.prompt_id as CerPromptRecord | undefined
+                            return (
+                              <div
+                                key={resp.id || idx}
+                                className="p-3.5 rounded-xl border border-border/60 bg-card space-y-2.5"
+                              >
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <div className="space-y-0.5">
+                                    <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                                      Momento {prompt?.step_order || idx + 1} • {resp.response_type}
                                     </span>
-                                    <div className="text-foreground font-mono text-xs break-words">
-                                      {typeof resp.structured_value === 'object' ? (
-                                        <pre className="whitespace-pre-wrap font-sans text-xs">
-                                          {JSON.stringify(resp.structured_value, null, 2)}
-                                        </pre>
-                                      ) : (
-                                        <span>{String(resp.structured_value)}</span>
-                                      )}
+                                    <p className="font-medium text-foreground text-xs sm:text-sm">
+                                      {prompt?.prompt_text || 'Pergunta do momento'}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <Badge variant="outline" className="text-[10px] font-mono">
+                                      v{resp.version} ({resp.status})
+                                    </Badge>
+                                  </div>
+                                </div>
+
+                                {/* Resposta objetiva do instrumento */}
+                                {resp.structured_value !== undefined &&
+                                  resp.structured_value !== null && (
+                                    <div className="p-2.5 rounded-lg bg-muted/20 border border-border/40 space-y-1">
+                                      <span className="text-[10px] font-medium text-muted-foreground block">
+                                        Resultado objetivo do instrumento:
+                                      </span>
+                                      <div className="text-foreground font-mono text-xs break-words">
+                                        {typeof resp.structured_value === 'object' ? (
+                                          <pre className="whitespace-pre-wrap font-sans text-xs">
+                                            {JSON.stringify(resp.structured_value, null, 2)}
+                                          </pre>
+                                        ) : (
+                                          <span>{String(resp.structured_value)}</span>
+                                        )}
+                                      </div>
                                     </div>
+                                  )}
+
+                                {/* Registro espontâneo em texto ou voz */}
+                                {resp.free_text && (
+                                  <div className="p-2.5 rounded-lg bg-primary/5 border border-primary/20 space-y-1">
+                                    <span className="text-[10px] font-medium text-primary block">
+                                      Registro espontâneo da interagente (texto ou voz):
+                                    </span>
+                                    <p className="text-foreground text-xs italic leading-relaxed">
+                                      &ldquo;{resp.free_text}&rdquo;
+                                    </p>
                                   </div>
                                 )}
 
-                              {/* Registro espontâneo em texto ou voz */}
-                              {resp.free_text && (
-                                <div className="p-2.5 rounded-lg bg-primary/5 border border-primary/20 space-y-1">
-                                  <span className="text-[10px] font-medium text-primary block">
-                                    Registro espontâneo da interagente (texto ou voz):
+                                {/* Data de preenchimento */}
+                                <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/30">
+                                  <span>
+                                    Preenchido em: {new Date(resp.created).toLocaleString('pt-BR')}
                                   </span>
-                                  <p className="text-foreground text-xs italic leading-relaxed">
-                                    &ldquo;{resp.free_text}&rdquo;
-                                  </p>
+                                  <span>Versão do instrumento: {resp.prompt_version}</span>
                                 </div>
-                              )}
-
-                              {/* Data de preenchimento */}
-                              <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/30">
-                                <span>
-                                  Preenchido em: {new Date(resp.created).toLocaleString('pt-BR')}
-                                </span>
-                                <span>Versão do instrumento: {resp.prompt_version}</span>
                               </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                )}
-              </Card>
-            )
-          })}
+                            )
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
+                </Card>
+              )
+            })}
 
-          {/* Integração 07G como Síntese Complementar após as seis dimensões */}
-          <Card className="border-primary/30 bg-gradient-to-r from-primary/5 via-card to-card">
-            <CardHeader className="p-4 pb-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] uppercase font-mono border-primary/40 text-primary"
-                  >
-                    Síntese complementar
+            {/* Integração 07G como Síntese Complementar após as seis dimensões */}
+            <Card className="border-primary/30 bg-gradient-to-r from-primary/5 via-card to-card">
+              <CardHeader className="p-4 pb-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] uppercase font-mono border-primary/40 text-primary"
+                    >
+                      Síntese complementar
+                    </Badge>
+                    <CardTitle className="text-sm font-semibold font-serif text-foreground">
+                      Integração da Consciência
+                    </CardTitle>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {getStatusLabel(integracaoExp, integracaoResponses.length)}
                   </Badge>
-                  <CardTitle className="text-sm font-semibold font-serif text-foreground">
-                    Integração da Consciência
-                  </CardTitle>
                 </div>
-                <Badge variant="secondary" className="text-[10px]">
-                  {getStatusLabel(integracaoExp, integracaoResponses.length)}
-                </Badge>
-              </div>
-              <CardDescription className="text-xs">
-                Visão transversal pós-avaliações. Não constitui uma sétima dimensão, mas a amarração
-                integrativa dos fios identificados nas seis esferas da pessoa humana.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-2 text-xs text-muted-foreground">
-              {integracaoResponses.length === 0 ? (
-                <p className="italic">
-                  Nenhum registro de síntese complementar preenchido até o momento.
-                </p>
-              ) : (
-                <p className="text-foreground">
-                  {integracaoResponses.length} reflexão(ões) de integração registrada(s).
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+                <CardDescription className="text-xs">
+                  Visão transversal pós-avaliações. Não constitui uma sétima dimensão, mas a
+                  amarração integrativa dos fios identificados nas seis esferas da pessoa humana.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 pt-2 text-xs text-muted-foreground">
+                {integracaoResponses.length === 0 ? (
+                  <p className="italic">
+                    Nenhum registro de síntese complementar preenchido até o momento.
+                  </p>
+                ) : (
+                  <p className="text-foreground">
+                    {integracaoResponses.length} reflexão(ões) de integração registrada(s).
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
       <section className="border-t border-border/50 pt-5 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
