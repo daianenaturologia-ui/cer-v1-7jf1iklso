@@ -149,6 +149,9 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [engineStage, setEngineStage] = useState<EngineStage>('opening')
   const [isReviewOnly, setIsReviewOnly] = useState(false)
+  const [isCorrectionMode, setIsCorrectionMode] = useState(false)
+  const [showCorrectionConfirmation, setShowCorrectionConfirmation] = useState(false)
+  const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -581,6 +584,31 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     setEngineStage('closing')
   }
 
+  const handleStartMenteEmocoesCorrection = async () => {
+    setCorrectionError(null)
+    setSaving(true)
+    try {
+      if (enrollmentExp) {
+        const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
+          progressStatus: 'in_progress',
+          stepOrder: 1,
+          enrollmentId,
+        })
+        setEnrollmentExp(updated)
+      }
+      setIsReviewOnly(false)
+      setIsCorrectionMode(true)
+      setShowCorrectionConfirmation(false)
+      setCurrentStepIndex(0)
+      setEngineStage('moments')
+    } catch (err) {
+      console.error('Falha ao abrir correção de Mente & Emoções:', err)
+      setCorrectionError('Não foi possível abrir a correção agora. Tente novamente.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const saveCurrentStepResponse = async () => {
     if (isReviewOnly) return
     const currentPrompt = prompts[currentStepIndex]
@@ -619,7 +647,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         prompt_key: pKey,
         canonical_prompt_id: currentPrompt.id,
         step_order: currentPrompt.step_order,
+        response_context: isCorrectionMode ? 'participant_correction' : 'initial_response',
       }
+
+      const collectionOrigin = isCorrectionMode ? 'participant_correction' : 'newly_collected'
 
       // Envelopar SEMPRE em objeto plano (NUNCA anexar propriedades diretamente a instâncias de Array,
       // pois perdem-se em JSON.stringify).
@@ -629,7 +660,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         structToSave = {
           selectedOptionIds: valToSave,
           value: valToSave,
-          collection_origin: 'newly_collected',
+          collection_origin: collectionOrigin,
           ...(pSchema.open_first?.enabled ? { naming_origin: currentNamingOrigin } : {}),
           prompt_key: pKey,
           canonical_prompt_id: currentPrompt.id,
@@ -646,7 +677,9 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         if (isRatingsMap && !('ratings' in rawObj)) {
           structToSave = {
             ratings: { ...rawObj },
-            collection_origin: rawObj.collection_origin || 'newly_collected',
+            collection_origin: isCorrectionMode
+              ? collectionOrigin
+              : rawObj.collection_origin || collectionOrigin,
             ...(pSchema.open_first?.enabled
               ? { naming_origin: rawObj.naming_origin || currentNamingOrigin }
               : {}),
@@ -657,7 +690,9 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         } else {
           structToSave = {
             ...rawObj,
-            collection_origin: rawObj.collection_origin || 'newly_collected',
+            collection_origin: isCorrectionMode
+              ? collectionOrigin
+              : rawObj.collection_origin || collectionOrigin,
             ...(pSchema.open_first?.enabled
               ? { naming_origin: rawObj.naming_origin || currentNamingOrigin }
               : {}),
@@ -675,7 +710,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         structToSave = {
           value: valToSave,
           choice: typeof valToSave === 'string' ? valToSave : undefined,
-          collection_origin: 'newly_collected',
+          collection_origin: collectionOrigin,
           ...(pSchema.open_first?.enabled ? { naming_origin: currentNamingOrigin } : {}),
           prompt_key: pKey,
           canonical_prompt_id: currentPrompt.id,
@@ -710,7 +745,9 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         freeText: effectiveFreeText,
         accessClass: targetAccessClass,
         changeReason: responsesMap[currentPrompt.id]
-          ? 'Atualização pelo interagente durante a experiência'
+          ? isCorrectionMode
+            ? 'Correção explícita pela interagente após conclusão'
+            : 'Atualização pelo interagente durante a experiência'
           : 'Primeiro registro de resposta',
         promptKey: pKey,
         canonicalPromptId: currentPrompt.id,
@@ -868,6 +905,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       const targetAccessClass = pSchema.access_destination || 'shared_care'
 
       const pKey = pSchema.prompt_key
+      const collectionOrigin = isCorrectionMode ? 'participant_correction' : 'newly_collected'
       const saved = await experienceResponseService.saveResponse({
         enrollmentId,
         experienceId,
@@ -878,7 +916,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         structuredValue: {
           is_legitimate_skip: true,
           skip_reason: reason,
-          collection_origin: 'newly_collected',
+          collection_origin: collectionOrigin,
           prompt_key: pKey,
           canonical_prompt_id: currentPrompt.id,
           metadata: {
@@ -892,7 +930,9 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         },
         freeText: reason === 'nao_sei' ? 'Não sei' : 'Prefiro não responder',
         accessClass: targetAccessClass,
-        changeReason: 'Declaração legítima de resposta não punitiva (' + reason + ')',
+        changeReason: isCorrectionMode
+          ? 'Correção explícita pela interagente com resposta não punitiva (' + reason + ')'
+          : 'Declaração legítima de resposta não punitiva (' + reason + ')',
         promptKey: pKey,
         canonicalPromptId: currentPrompt.id,
         stepOrder: currentPrompt.step_order,
@@ -967,6 +1007,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       })
       setEnrollmentExp(updated)
     }
+    setIsCorrectionMode(false)
     setEngineStage('closing')
     onCompleted?.()
   }
@@ -1490,7 +1531,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           promptVersion: p13Prompt.version,
           structuredValue: {
             value: text,
-            collection_origin: 'newly_collected',
+            collection_origin: collectionOrigin,
             prompt_key: pKey,
             canonical_prompt_id: p13Prompt.id,
             metadata: {
@@ -1598,6 +1639,39 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           <span>Suas respostas foram integradas de forma segura e autoral à sua jornada.</span>
         </div>
 
+        {isClosingMenteEmocoes && showCorrectionConfirmation && (
+          <div
+            role="alertdialog"
+            aria-labelledby="mente-emocoes-correction-title"
+            className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-left space-y-3"
+          >
+            <div className="space-y-1">
+              <p id="mente-emocoes-correction-title" className="text-sm font-semibold">
+                Corrigir respostas de Mente & Emoções?
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Suas respostas atuais serão carregadas para edição. Somente as alterações que você
+                salvar substituirão a versão atual, e o retrato será atualizado quando você concluir
+                novamente.
+              </p>
+            </div>
+            {correctionError && (
+              <p role="alert" className="text-xs text-destructive">
+                {correctionError}
+              </p>
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" size="sm" disabled={saving}
+                onClick={() => { setShowCorrectionConfirmation(false); setCorrectionError(null) }}>
+                Cancelar
+              </Button>
+              <Button type="button" size="sm" disabled={saving} onClick={handleStartMenteEmocoesCorrection}>
+                {saving ? 'Abrindo correção...' : 'Confirmar e corrigir'}
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Button onClick={onClose} className="w-full sm:w-auto text-xs px-6 h-9">
             Concluir e Voltar ao Início
@@ -1614,6 +1688,19 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Rever Minhas Respostas</span>
           </Button>
+          {isClosingMenteEmocoes && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCorrectionError(null)
+                setShowCorrectionConfirmation(true)
+              }}
+              className="w-full sm:w-auto text-xs px-4 h-9 gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Corrigir minhas respostas</span>
+            </Button>
+          )}
         </div>
       </div>
     )
@@ -2175,6 +2262,24 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           >
             Voltar ao encerramento
           </Button>
+        </div>
+      )}
+
+      {isCorrectionMode && (
+        <div
+          data-testid="banner-correcao-mente-emocoes"
+          className="rounded-xl border border-primary/25 bg-primary/10 p-3.5 text-xs text-foreground"
+        >
+          <div className="flex items-start gap-2">
+            <RotateCcw className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <div className="space-y-0.5">
+              <span className="block font-semibold text-primary">Correção de Mente & Emoções</span>
+              <span className="block text-[11px] leading-relaxed text-muted-foreground">
+                Suas respostas anteriores estão carregadas. Revise no seu ritmo e conclua novamente
+                para atualizar seu retrato.
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
