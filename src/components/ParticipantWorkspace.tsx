@@ -82,6 +82,7 @@ export const ParticipantWorkspace: React.FC = () => {
   >([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [showReleaseControls, setShowReleaseControls] = useState(false)
 
   // Estado compartilhado entre Library e Assignment
   const [selectedPractice, setSelectedPractice] = useState<CerPracticeRecord | null>(null)
@@ -212,7 +213,15 @@ export const ParticipantWorkspace: React.FC = () => {
 
             {journeyState && (
               <Badge variant="secondary" className="text-[10px] capitalize">
-                Etapa: {journeyState.current_stage} ({journeyState.stage_status})
+                {({
+                  onboarding: 'Acolhimento',
+                  consciousness: 'Consciência',
+                  equilibrium_realization: 'Equilíbrio & Realização',
+                } as const)[journeyState.current_stage]} · {({
+                  nao_iniciado: 'Não iniciada',
+                  em_andamento: 'Em andamento',
+                  integrado: 'Integrada',
+                } as const)[journeyState.stage_status]}
               </Badge>
             )}
 
@@ -446,8 +455,17 @@ export const ParticipantWorkspace: React.FC = () => {
               </div>
             )}
 
-          {/* Controle de Progressive Release das experiências */}
-          <ProfessionalExperienceManager enrollment={enrollment} />
+          <div className="space-y-3">
+            <Button
+              variant="outline"
+              size="sm"
+              aria-expanded={showReleaseControls}
+              onClick={() => setShowReleaseControls((current) => !current)}
+            >
+              {showReleaseControls ? 'Fechar liberação das experiências' : 'Gerenciar liberação das experiências'}
+            </Button>
+            {showReleaseControls && <ProfessionalExperienceManager enrollment={enrollment} />}
+          </div>
 
           {/* 3 Níveis Clínicos da Consciência: Resumo Essencial, Mapa Integrativo e Relatórios Detalhados */}
           <ProfessionalConscienciaSection
