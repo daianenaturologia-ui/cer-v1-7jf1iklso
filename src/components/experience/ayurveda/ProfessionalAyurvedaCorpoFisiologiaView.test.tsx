@@ -764,4 +764,92 @@ describe('M4A — Visão Profissional Factual dos Capítulos 1 e 2 de Corpo & Fi
     expect(screen.getAllByRole('button', { name: /Revisão 1.*Mais recente/i })).toHaveLength(2)
     expect(screen.queryByText(/Este capítulo está em andamento\./i)).toBeNull()
   })
+
+  it('21. Capítulo 3 abre na revisão concluída mais recente e permite consultar a anterior sem misturar respostas', async () => {
+    const user = userEvent.setup()
+    const c3Responses = [
+      createMockResp({
+        id: 'c3-domains',
+        prompt_id: 'ayv_c3_changed_domains',
+        version: 2,
+        structured_value: {
+          value: ['energy_pace'],
+          metadata: { prompt_key: 'ayv_c3_changed_domains', chapter_revision_number: 2 },
+        },
+      }),
+      createMockResp({
+        id: 'c3-med-status',
+        prompt_id: 'ayv_c3_medication_status',
+        version: 2,
+        structured_value: {
+          value: 'current_use',
+          metadata: { prompt_key: 'ayv_c3_medication_status', chapter_revision_number: 2 },
+        },
+      }),
+      createMockResp({
+        id: 'c3-med-details',
+        prompt_id: 'ayv_c3_medication_details',
+        version: 2,
+        structured_value: {
+          value: [{ id: 'donaren', kind: 'medication', name: 'Donaren' }],
+          metadata: { prompt_key: 'ayv_c3_medication_details', chapter_revision_number: 2 },
+        },
+      }),
+      createMockResp({
+        id: 'c3-completion',
+        prompt_id: 'ayv_c3_chapter_completion',
+        version: 2,
+        structured_value: {
+          completed: true,
+          metadata: { prompt_key: 'ayv_c3_chapter_completion', chapter_revision_number: 2 },
+        },
+      }),
+    ]
+    const responseVersions = c3Responses.map((response) => ({
+      id: `snapshot-${response.id}`,
+      response_id: response.id,
+      enrollment_id: response.enrollment_id,
+      experience_id: response.experience_id,
+      prompt_id: response.prompt_id,
+      respondent_user_id: response.respondent_user_id,
+      response_type: response.response_type,
+      access_class: response.access_class,
+      structured_value:
+        response.prompt_id === 'ayv_c3_medication_status'
+          ? {
+              value: 'no_use',
+              metadata: { prompt_key: response.prompt_id, chapter_revision_number: 1 },
+            }
+          : response.prompt_id === 'ayv_c3_medication_details'
+            ? {
+                value: [],
+                metadata: { prompt_key: response.prompt_id, chapter_revision_number: 1 },
+              }
+            : {
+                ...(response.structured_value as object),
+                metadata: { prompt_key: response.prompt_id, chapter_revision_number: 1 },
+              },
+      free_text: '',
+      version_number: 1,
+      prompt_version: 1,
+      created: '2025-05-01T10:00:00.000Z',
+      updated: '2025-05-01T10:00:00.000Z',
+    }))
+
+    render(
+      <ProfessionalAyurvedaCorpoFisiologiaView
+        responses={c3Responses}
+        responseVersions={responseVersions}
+        participantName="Mariana Souza"
+      />,
+    )
+
+    expect(screen.getByText('Donaren')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Revisão 2.*Mais recente/i })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^Revisão 1$/i }))
+
+    expect(screen.getByText('Não uso medicamentos ou suplementos atualmente')).toBeInTheDocument()
+    expect(screen.queryByText('Donaren')).toBeNull()
+  })
 })

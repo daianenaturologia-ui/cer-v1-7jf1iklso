@@ -16,7 +16,7 @@ import {
   ChevronRight,
   Info,
 } from 'lucide-react'
-import type { ExperienceResponseRecord } from '@/types/cer'
+import type { ExperienceResponseRecord, ExperienceResponseVersionRecord } from '@/types/cer'
 import {
   AYV_C1_PROMPTS,
   AYV_C1_QUESTION_PROMPT_KEYS,
@@ -70,6 +70,7 @@ import { isChapter4Completed } from '@/services/ayurvedaChapter4'
 
 export interface ProfessionalAyurvedaCorpoFisiologiaViewProps {
   responses: ExperienceResponseRecord[]
+  responseVersions?: ExperienceResponseVersionRecord[]
   participantName: string
   treatmentPreference?: string
   treatmentPreferenceCustom?: string
@@ -102,6 +103,7 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
   ProfessionalAyurvedaCorpoFisiologiaViewProps
 > = ({
   responses,
+  responseVersions = [],
   participantName,
   treatmentPreference,
   treatmentPreferenceCustom,
@@ -335,7 +337,76 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
     return deriveChapter2Status(migratedC2)
   }, [migratedC2])
 
-  const c3DerivedStatus = useMemo(() => deriveChapter3Status(responses || []), [responses])
+  const c3CurrentResponses = useMemo(
+    () =>
+      (responses || []).filter((response) =>
+        String(response.prompt_id || '').startsWith('ayv_c3_'),
+      ),
+    [responses],
+  )
+
+  const c3CurrentRevision = useMemo(() => {
+    const completion = c3CurrentResponses.find((response) => {
+      const key =
+        (response as any).prompt_key ||
+        (response.structured_value as any)?.metadata?.prompt_key ||
+        response.prompt_id
+      return key === 'ayv_c3_chapter_completion'
+    })
+    return (completion?.structured_value as any)?.metadata?.chapter_revision_number || 1
+  }, [c3CurrentResponses])
+
+  const c3AvailableRevisionNumbers = useMemo(() => {
+    const revisions = new Set<number>()
+    if (c3CurrentResponses.length > 0) revisions.add(c3CurrentRevision)
+    for (const version of responseVersions) {
+      if (!String(version.prompt_id || '').startsWith('ayv_c3_')) continue
+      const chapterRevision = (version.structured_value as any)?.metadata?.chapter_revision_number
+      if (chapterRevision) revisions.add(chapterRevision)
+    }
+    return Array.from(revisions).sort((a, b) => a - b)
+  }, [c3CurrentResponses.length, c3CurrentRevision, responseVersions])
+
+  const c3DefaultRevision = c3AvailableRevisionNumbers.at(-1) || 1
+  const [c3SelectedRevision, setC3SelectedRevision] = useState(c3DefaultRevision)
+
+  const c3SelectedResponses = useMemo(() => {
+    const selected: ExperienceResponseRecord[] = []
+    for (const current of c3CurrentResponses) {
+      if (c3CurrentRevision === c3SelectedRevision) {
+        selected.push(current)
+        continue
+      }
+      const snapshot = responseVersions
+        .filter(
+          (version) =>
+            version.response_id === current.id &&
+            (version.structured_value as any)?.metadata?.chapter_revision_number ===
+              c3SelectedRevision,
+        )
+        .sort((a, b) => b.version_number - a.version_number)[0]
+      if (snapshot) {
+        selected.push({
+          ...current,
+          structured_value: snapshot.structured_value,
+          free_text: snapshot.free_text,
+          version: snapshot.version_number,
+          created: snapshot.created,
+          updated: snapshot.updated,
+        })
+      }
+    }
+    return selected
+  }, [c3CurrentResponses, c3CurrentRevision, c3SelectedRevision, responseVersions])
+
+  const c3DerivedStatus = useMemo(
+    () => deriveChapter3Status(c3SelectedResponses),
+    [c3SelectedResponses],
+  )
+  const c3CurrentDerivedStatus = useMemo(
+    () => deriveChapter3Status(c3CurrentResponses),
+    [c3CurrentResponses],
+  )
   const c4Completed = useMemo(() => isChapter4Completed(responses || []), [responses])
 
   // Data da última atualização factual (geral de Corpo & Fisiologia)
@@ -1104,10 +1175,10 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
               Capítulo 3
             </span>
             <Badge
-              variant={c3DerivedStatus.status === 'completed' ? 'secondary' : 'outline'}
+              variant={c3CurrentDerivedStatus.status === 'completed' ? 'secondary' : 'outline'}
               className="text-[10px]"
             >
-              {getChapterStateLabel(c3DerivedStatus.status, false, null)}
+              {getChapterStateLabel(c3CurrentDerivedStatus.status, false, null)}
             </Badge>
           </div>
 
@@ -1118,7 +1189,7 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
             <Badge variant={c4Completed ? 'secondary' : 'outline'} className="text-[10px]">
               {c4Completed
                 ? 'Concluído'
-                : c3DerivedStatus.status === 'completed'
+                : c3CurrentDerivedStatus.status === 'completed'
                   ? 'Disponível'
                   : 'Bloqueado'}
             </Badge>
@@ -1292,6 +1363,28 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-4 text-xs">
+          {c3AvailableRevisionNumbers.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-muted/20 p-3">
+              <History className="h-4 w-4 shrink-0 text-primary" />
+              <span className="font-semibold">Histórico de Versões:</span>
+              {c3AvailableRevisionNumbers.map((revision) => (
+                <Button
+                  key={revision}
+                  size="sm"
+                  variant={c3SelectedRevision === revision ? 'default' : 'outline'}
+                  className="h-7 gap-1.5 px-2.5 text-xs"
+                  onClick={() => setC3SelectedRevision(revision)}
+                >
+                  Revisão {revision}
+                  {revision === c3DefaultRevision && (
+                    <Badge variant="secondary" className="h-3.5 px-1 py-0 text-[9px] font-normal">
+                      Mais recente
+                    </Badge>
+                  )}
+                </Button>
+              ))}
+            </div>
+          )}
           {c3DerivedStatus.status === 'not_started' ? (
             <div className="py-8 text-center italic text-muted-foreground">
               Esta interagente ainda não iniciou este capítulo.
