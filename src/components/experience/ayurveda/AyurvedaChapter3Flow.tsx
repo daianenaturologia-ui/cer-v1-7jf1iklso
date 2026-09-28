@@ -121,17 +121,19 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
 
   const toggleDomain = async (id: string) => {
     const option = AYV_C3_DOMAIN_OPTIONS.find((item) => item.id === id)
+    const isExclusive = Boolean(option && 'exclusive' in option && option.exclusive)
     const current = state.changed_domains || []
-    const next = option?.exclusive
+    const next = isExclusive
       ? current.includes(id)
         ? []
         : [id]
       : current.includes(id)
         ? current.filter((item) => item !== id)
         : [
-            ...current.filter(
-              (item) => !AYV_C3_DOMAIN_OPTIONS.find((o) => o.id === item)?.exclusive,
-            ),
+            ...current.filter((item) => {
+              const o = AYV_C3_DOMAIN_OPTIONS.find((opt) => opt.id === item)
+              return !(o && 'exclusive' in o && o.exclusive)
+            }),
             id,
           ]
     setState((previous) => ({ ...previous, changed_domains: next, change_directions: {} }))
@@ -140,17 +142,19 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
 
   const toggleContext = async (id: string) => {
     const option = AYV_C3_CONTEXT_OPTIONS.find((item) => item.id === id)
+    const isExclusive = Boolean(option && 'exclusive' in option && option.exclusive)
     const current = state.change_contexts || []
-    const next = option?.exclusive
+    const next = isExclusive
       ? current.includes(id)
         ? []
         : [id]
       : current.includes(id)
         ? current.filter((item) => item !== id)
         : [
-            ...current.filter(
-              (item) => !AYV_C3_CONTEXT_OPTIONS.find((o) => o.id === item)?.exclusive,
-            ),
+            ...current.filter((item) => {
+              const o = AYV_C3_CONTEXT_OPTIONS.find((opt) => opt.id === item)
+              return !(o && 'exclusive' in o && o.exclusive)
+            }),
             id,
           ]
     setState((previous) => ({ ...previous, change_contexts: next }))
