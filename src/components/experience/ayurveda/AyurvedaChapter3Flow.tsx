@@ -61,6 +61,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   const [showCorrectionConfirmation, setShowCorrectionConfirmation] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
   const medicationItemsRef = useRef<AyurvedaMedicationItem[]>([])
+  const revisionNumberRef = useRef(1)
 
   useEffect(() => {
     let active = true
@@ -73,6 +74,15 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
         medicationItemsRef.current = loadedState.medication_items || []
         setState(loadedState)
         const derived = deriveChapter3Status(loaded)
+        const completion = loaded.find((response) => {
+          const key =
+            (response as any).prompt_key ||
+            (response.structured_value as any)?.metadata?.prompt_key ||
+            response.prompt_id
+          return key === AYV_C3_PROMPTS.COMPLETION.key
+        })
+        revisionNumberRef.current =
+          (completion?.structured_value as any)?.metadata?.chapter_revision_number || 1
         if (derived.status === 'completed' || derived.status === 'ready_to_complete') setStep(6)
         else setStep(initialStep || derived.firstUnansweredStep)
       })
@@ -111,6 +121,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
         selectedOptionIds: optionIds,
         chapter_id: AYURVEDA_CHAPTER_3_ID,
         experience_version: AYURVEDA_CHAPTER_3_VERSION,
+        chapter_revision_number: revisionNumberRef.current,
         metadata: {
           prompt_key: prompt.key,
           canonical_prompt_id: prompt.id,
@@ -124,6 +135,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           answered_at: now,
           experience_version: AYURVEDA_CHAPTER_3_VERSION,
           chapter_id: AYURVEDA_CHAPTER_3_ID,
+          chapter_revision_number: revisionNumberRef.current,
         },
       },
       freeText,
@@ -322,7 +334,11 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           completed_at: now,
           chapter_id: AYURVEDA_CHAPTER_3_ID,
           experience_version: AYURVEDA_CHAPTER_3_VERSION,
-          metadata: { prompt_key: AYV_C3_PROMPTS.COMPLETION.key, answered_at: now },
+          metadata: {
+            prompt_key: AYV_C3_PROMPTS.COMPLETION.key,
+            answered_at: now,
+            chapter_revision_number: revisionNumberRef.current,
+          },
         },
       })
       ;(saved as any).prompt_key = AYV_C3_PROMPTS.COMPLETION.key
@@ -490,6 +506,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                   type="button"
                   onClick={() => {
                     setShowCorrectionConfirmation(false)
+                    revisionNumberRef.current += 1
                     setIsCorrectionMode(true)
                     setStep(1)
                   }}
