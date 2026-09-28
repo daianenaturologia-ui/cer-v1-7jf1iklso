@@ -38,6 +38,20 @@ interface ProfessionalExperienceManagerProps {
   enrollment: EnrollmentRecord
 }
 
+const releaseLabels: Record<EnrollmentExperienceRecord['release_status'], string> = {
+  locked: 'Bloqueada',
+  available: 'Disponível',
+  in_progress: 'Em andamento',
+  paused: 'Pausada',
+  completed: 'Concluída',
+}
+
+const progressLabels: Record<EnrollmentExperienceRecord['progress_status'], string> = {
+  not_started: 'Não iniciada',
+  in_progress: 'Em andamento',
+  completed: 'Concluída',
+}
+
 export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManagerProps> = ({
   enrollment,
 }) => {
@@ -141,7 +155,7 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
               <CardTitle className="text-base font-medium">
-                Experiências da Consciência (Progressive Release)
+                Liberação das experiências
               </CardTitle>
             </div>
             <CardDescription className="text-xs">
@@ -149,7 +163,7 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
             </CardDescription>
           </div>
           <Badge variant="outline" className="text-[10px] font-mono">
-            {experiences.length} vinculada(s)
+                {experiences.length} experiências
           </Badge>
         </div>
       </CardHeader>
@@ -196,10 +210,10 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
                         }
                         className="text-[10px] capitalize font-normal"
                       >
-                        {ee.release_status}
+                        {releaseLabels[ee.release_status] || 'Estado indisponível'}
                       </Badge>
                       <span className="text-[11px] text-muted-foreground font-mono">
-                        (progresso: {ee.progress_status})
+                        Progresso: {progressLabels[ee.progress_status] || 'Indisponível'}
                       </span>
                     </div>
 
