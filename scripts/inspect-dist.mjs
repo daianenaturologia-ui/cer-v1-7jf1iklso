@@ -31,7 +31,9 @@ if (distExists) {
           }
           if (content.includes('Experiências da Consciência (Progressive Release)')) {
             result.hasOldConsciencia = true
-            console.log(`[WARNING] "Experiências da Consciência (Progressive Release)" found in ${ent.name}`)
+            console.log(
+              `[WARNING] "Experiências da Consciência (Progressive Release)" found in ${ent.name}`,
+            )
           }
           if (content.includes('Resumo essencial')) {
             result.hasResumoEssencial = true

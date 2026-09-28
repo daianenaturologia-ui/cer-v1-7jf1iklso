@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "start": "vite dev",
-    "qa:probe": "echo probe",
+    "qa:probe": "echo probe 1",
     "dev": "vite",
     "copy:asset": "node scripts/copy-asset.mjs && node scripts/crop-atlases.mjs && node scripts/collect-evidence.mjs",
     "prebuild": "node scripts/copy-asset.mjs && node scripts/crop-atlases.mjs && node scripts/collect-evidence.mjs",
