@@ -673,8 +673,8 @@ describe('M4A — Visão Profissional Factual dos Capítulos 1 e 2 de Corpo & Fi
       />,
     )
 
-    expect(screen.getAllByText(/Esta interagente ainda não iniciou este capítulo\./i).length).toBe(
-      2,
+    expect(screen.getAllByText(/Esta interagente ainda não iniciou este capítulo\./i)).toHaveLength(
+      3,
     )
   })
 

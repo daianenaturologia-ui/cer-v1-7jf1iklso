@@ -10,10 +10,13 @@ import {
   AyurvedaChapter1Status,
 } from '@/services/ayurvedaChapter1'
 import { AyurvedaChapter2Status } from '@/services/ayurvedaChapter2'
+import { AyurvedaChapter3Status } from '@/services/ayurvedaChapter3'
 
 export interface AyurvedaChaptersHubProps {
   onStartChapter1?: () => void
   onStartChapter2?: () => void
+  onStartChapter3?: () => void
+  onStartChapter4?: () => void
   onOpenCustomization?: () => void
   onCorrectChapter1?: () => void
   onCorrectChapter2?: () => void
@@ -34,6 +37,10 @@ export interface AyurvedaChaptersHubProps {
   chapter2ActiveRevision?: number
   chapter2LastCompletedRevision?: number | null
   chapter2HasCorrectionInProgress?: boolean
+  chapter3Status?: AyurvedaChapter3Status
+  chapter3AnsweredSteps?: number
+  chapter3TotalSteps?: number
+  chapter4Completed?: boolean
   avatarDeferred?: boolean
   onClose?: () => void
 }
@@ -50,12 +57,13 @@ export type HubCanonicalStateId =
 export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
   onStartChapter1,
   onStartChapter2,
+  onStartChapter3,
+  onStartChapter4,
   onOpenCustomization,
   onCorrectChapter1,
   onCorrectChapter2,
   isChapter1Completed,
   chapter1Status,
-  chapter1Progress,
   chapter1StepOrder = 1,
   answeredStepsCount,
   totalSteps = 5,
@@ -69,6 +77,10 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
   chapter2ActiveRevision = 1,
   chapter2LastCompletedRevision = null,
   chapter2HasCorrectionInProgress = false,
+  chapter3Status = 'not_started',
+  chapter3AnsweredSteps = 0,
+  chapter3TotalSteps = 4,
+  chapter4Completed = false,
   avatarDeferred = false,
   onClose,
 }) => {
@@ -114,19 +126,6 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
     c1CanonicalState = 'not_started'
   }
 
-  // Progresso do Capítulo 1
-  const effectiveProgressC1: number =
-    typeof chapter1Progress === 'number'
-      ? Math.max(0, Math.min(100, chapter1Progress))
-      : c1CanonicalState === 'completed'
-        ? 100
-        : c1CanonicalState === 'ready_to_complete' ||
-            c1CanonicalState === 'correcting_ready_to_complete'
-          ? 95
-          : c1CanonicalState === 'in_progress' || c1CanonicalState === 'correcting_in_progress'
-            ? Math.min(80, Math.max(20, Math.round((effectiveAnsweredStepsC1 / totalSteps) * 100)))
-            : 0
-
   // Capítulo 1 canonicamente concluído libera o Capítulo 2
   const isC1CanonicallyCompleted = c1CanonicalState === 'completed'
 
@@ -161,6 +160,27 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
   } else {
     c2CanonicalState = 'not_started'
   }
+
+  let c3CanonicalState: HubCanonicalStateId = 'locked'
+  if (c2CanonicalState !== 'completed') c3CanonicalState = 'locked'
+  else if (chapter3Status === 'completed') c3CanonicalState = 'completed'
+  else if (chapter3Status === 'ready_to_complete') c3CanonicalState = 'ready_to_complete'
+  else if (chapter3Status === 'in_progress') c3CanonicalState = 'in_progress'
+  else c3CanonicalState = 'not_started'
+
+  const currentJourneyLabel = chapter4Completed
+    ? 'Percurso concluído'
+    : c3CanonicalState === 'completed'
+      ? 'Capítulo 4 disponível'
+      : c2CanonicalState === 'completed'
+        ? c3CanonicalState === 'not_started'
+          ? 'Capítulo 3 disponível'
+          : 'Capítulo 3 em andamento'
+        : c1CanonicalState === 'completed'
+          ? c2CanonicalState === 'not_started'
+            ? 'Capítulo 2 disponível'
+            : 'Capítulo 2 em andamento'
+          : 'Capítulo 1 em andamento'
 
   return (
     <div className="mx-auto w-full max-w-2xl min-w-0 space-y-6 px-4 py-6">
@@ -219,47 +239,9 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
         </div>
       )}
 
-      {/* Barra de Progresso Canônica: Foco exclusivo no Capítulo 1 */}
-      <div className="p-4 rounded-xl bg-card border border-border/70 space-y-2">
-        <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between">
-          <span className="font-medium text-foreground">Progresso do Capítulo 1</span>
-          <span className="text-muted-foreground font-mono">
-            {c1CanonicalState === 'completed' && '100% concluído'}
-            {c1CanonicalState === 'correcting_ready_to_complete' &&
-              `Correção pronta para concluir (${effectiveAnsweredStepsC1} de ${totalSteps} etapas revisadas)`}
-            {c1CanonicalState === 'correcting_in_progress' &&
-              `Correção em andamento (${effectiveAnsweredStepsC1} de ${totalSteps} etapas revisadas)`}
-            {c1CanonicalState === 'ready_to_complete' &&
-              `Pronto para concluir (${effectiveAnsweredStepsC1} de ${totalSteps} etapas respondidas)`}
-            {c1CanonicalState === 'in_progress' &&
-              `Em andamento (${effectiveAnsweredStepsC1} de ${totalSteps} etapas respondidas)`}
-            {c1CanonicalState === 'not_started' && 'Não iniciado (0%)'}
-          </span>
-        </div>
-        <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
-          <div
-            className={`h-full transition-all duration-300 ${
-              c1CanonicalState === 'completed'
-                ? 'bg-emerald-600 dark:bg-emerald-500'
-                : c1CanonicalState === 'ready_to_complete' ||
-                    c1CanonicalState === 'correcting_ready_to_complete'
-                  ? 'bg-amber-600 dark:bg-amber-500'
-                  : 'bg-primary'
-            }`}
-            style={{
-              width: `${effectiveProgressC1}%`,
-            }}
-          />
-        </div>
-        <p className="text-[11px] text-muted-foreground italic">
-          {c1CanonicalState === 'ready_to_complete'
-            ? 'Suas respostas estão preenchidas. Revise e confirme a conclusão deste capítulo.'
-            : c1CanonicalState === 'correcting_ready_to_complete'
-              ? 'Suas correções estão preenchidas. Revise e confirme a nova versão.'
-              : c1CanonicalState === 'correcting_in_progress'
-                ? 'Você iniciou uma correção das suas respostas.'
-                : 'O progresso exibido considera somente o Capítulo 1 ativo nesta etapa.'}
-        </p>
+      <div className="flex flex-col gap-1 rounded-xl border border-border/70 bg-card p-4 text-xs sm:flex-row sm:items-center sm:justify-between">
+        <span className="font-medium text-foreground">Seu percurso em Corpo & Fisiologia</span>
+        <span className="text-muted-foreground">{currentJourneyLabel}</span>
       </div>
 
       {/* Grid com os Quatro Capítulos */}
@@ -267,6 +249,8 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
         {AYURVEDA_FOUR_CHAPTERS.map((chap: AyurvedaChapterDefinition) => {
           const isChap1 = chap.number === 1
           const isChap2 = chap.number === 2
+          const isChap3 = chap.number === 3
+          const isChap4 = chap.number === 4
 
           const chap2Title = isChap2 ? 'O ritmo do meu corpo' : chap.shortTitle
           const chap2Subtitle = isChap2
@@ -719,7 +703,150 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
             )
           }
 
-          // Capítulos 3 e 4 permanecem inalterados como Em breve
+          if (isChap3) {
+            const locked = c3CanonicalState === 'locked'
+            const completed = c3CanonicalState === 'completed'
+            return (
+              <Card
+                key={chap.id}
+                aria-disabled={locked ? 'true' : undefined}
+                className={`transition-all border ${locked ? 'border-border/50 bg-muted/20 opacity-80' : 'border-primary/50 bg-card shadow-xs'}`}
+              >
+                <CardHeader className="p-4 pb-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary">
+                        Capítulo 3
+                      </span>
+                      <CardTitle className="text-sm font-semibold font-serif">
+                        {chap.shortTitle}
+                      </CardTitle>
+                    </div>
+                    <Badge
+                      variant={completed ? 'secondary' : 'outline'}
+                      className="text-[10px] gap-1"
+                    >
+                      {locked ? (
+                        <Lock className="h-3 w-3" />
+                      ) : completed ? (
+                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                      ) : (
+                        <Clock className="h-3 w-3" />
+                      )}
+                      {locked
+                        ? 'Bloqueado'
+                        : completed
+                          ? 'Concluído'
+                          : c3CanonicalState === 'ready_to_complete'
+                            ? 'Pronto para concluir'
+                            : c3CanonicalState === 'in_progress'
+                              ? 'Em andamento'
+                              : 'Não iniciado'}
+                    </Badge>
+                  </div>
+                  <CardDescription className="pt-1 text-xs">{chap.subtitle}</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  {locked ? (
+                    <p className="flex items-center gap-1.5 text-[11px] italic text-muted-foreground">
+                      <Lock className="h-3 w-3" />
+                      Conclua o Capítulo 2 para liberar este capítulo.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                      <span className="text-[11px] text-muted-foreground">
+                        {completed
+                          ? 'Mudanças atuais registradas.'
+                          : c3CanonicalState === 'ready_to_complete'
+                            ? 'Respostas prontas para revisão e conclusão.'
+                            : c3CanonicalState === 'in_progress'
+                              ? `${chapter3AnsweredSteps} de ${chapter3TotalSteps} etapas essenciais respondidas.`
+                              : 'Observe somente o que está diferente no momento atual.'}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={onStartChapter3}
+                        className="h-8 px-4 text-xs"
+                      >
+                        {completed
+                          ? 'Rever Capítulo 3'
+                          : c3CanonicalState === 'not_started'
+                            ? 'Começar Capítulo 3'
+                            : 'Retomar Capítulo 3'}
+                        <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          }
+
+          if (isChap4) {
+            const locked = c3CanonicalState !== 'completed'
+            return (
+              <Card
+                key={chap.id}
+                aria-disabled={locked ? 'true' : undefined}
+                className={`transition-all border ${locked ? 'border-border/50 bg-muted/20 opacity-80' : 'border-primary/50 bg-card shadow-xs'}`}
+              >
+                <CardHeader className="p-4 pb-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary">
+                        Capítulo 4
+                      </span>
+                      <CardTitle className="text-sm font-semibold font-serif">
+                        {chap.shortTitle}
+                      </CardTitle>
+                    </div>
+                    <Badge
+                      variant={chapter4Completed ? 'secondary' : 'outline'}
+                      className="gap-1 text-[10px]"
+                    >
+                      {locked ? (
+                        <Lock className="h-3 w-3" />
+                      ) : chapter4Completed ? (
+                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
+                      {locked ? 'Bloqueado' : chapter4Completed ? 'Concluído' : 'Disponível'}
+                    </Badge>
+                  </div>
+                  <CardDescription className="pt-1 text-xs">{chap.subtitle}</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  {locked ? (
+                    <p className="flex items-center gap-1.5 text-[11px] italic text-muted-foreground">
+                      <Lock className="h-3 w-3" />
+                      Conclua o Capítulo 3 para liberar sua síntese.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                      <span className="text-[11px] text-muted-foreground">
+                        {chapter4Completed
+                          ? 'Sua síntese descritiva está disponível para rever.'
+                          : 'Reúna características antigas, ritmos habituais e mudanças atuais.'}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={onStartChapter4}
+                        className="h-8 px-4 text-xs"
+                      >
+                        {chapter4Completed ? 'Rever síntese' : 'Ver minha síntese'}
+                        <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          }
+
+          // Segurança para futuras definições adicionadas ao catálogo.
           return (
             <Card
               key={chap.id}
