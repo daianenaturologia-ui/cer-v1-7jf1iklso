@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   SIX_CANONICAL_DIMENSIONS,
   INTEGRACAO_EXPERIENCE_ID,
+  getDimensionStatusLabel,
 } from '../components/ProfessionalConscienciaSection'
 
 describe('Organização da Consciência Profissional em Três Níveis', () => {
@@ -33,5 +34,20 @@ describe('Organização da Consciência Profissional em Três Níveis', () => {
     const isSeven = SIX_CANONICAL_DIMENSIONS.some((d) => d.id === 'integracao')
     expect(isSeven).toBe(false)
     expect(INTEGRACAO_EXPERIENCE_ID).toBe('exp-integracao-consciencia-07g')
+  })
+
+  it('considera Corpo & Fisiologia concluído quando a síntese final foi confirmada', () => {
+    const responses = [
+      {
+        id: 'c4-completion',
+        enrollment_id: 'enr-demo',
+        experience_id: 'exp-corpo-fisiologia-07b',
+        prompt_id: 'ayv_c4_chapter_completion',
+        prompt_key: 'ayv_c4_chapter_completion',
+        structured_value: { completed: true },
+      },
+    ] as any
+
+    expect(getDimensionStatusLabel('corpo_fisiologia', undefined, responses)).toBe('Concluída')
   })
 })
