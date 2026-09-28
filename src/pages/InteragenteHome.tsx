@@ -593,11 +593,11 @@ export const InteragenteHome: React.FC = () => {
     availableExperiences.every((ee) => ee.release_status === 'completed')
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen min-w-0 max-w-full overflow-x-clip bg-background">
       {/* Top Header com navegação direta sem depender de URL digitada */}
       <header className="border-b border-border/60 bg-card/40 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="mx-auto flex min-h-14 max-w-4xl min-w-0 items-center justify-between gap-2 px-4 py-2">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-2">
             <span className="font-serif font-bold text-lg tracking-tight">CER</span>
             <Badge variant="outline" className="text-[10px] font-normal uppercase tracking-wider">
               Interagente
@@ -608,28 +608,34 @@ export const InteragenteHome: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => navigate('/experimentos')}
-              className="gap-1.5 text-xs h-8 text-foreground"
+              aria-label="Experimentos"
+              title="Experimentos"
+              className="gap-1.5 text-xs h-8 px-2 sm:px-3 text-foreground"
             >
               <Sparkles className="w-3.5 h-3.5 text-primary" />
-              <span>Experimentos</span>
+              <span className="hidden sm:inline">Experimentos</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate('/planner')}
-              className="gap-1.5 text-xs h-8 text-foreground"
+              aria-label="Planner"
+              title="Planner"
+              className="gap-1.5 text-xs h-8 px-2 sm:px-3 text-foreground"
             >
               <CalendarIcon className="w-3.5 h-3.5 text-primary" />
-              <span>Planner</span>
+              <span className="hidden sm:inline">Planner</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate('/mandala')}
-              className="gap-1.5 text-xs h-8 text-primary border-primary/30 hover:bg-primary/5"
+              aria-label="Mandala"
+              title="Mandala"
+              className="gap-1.5 text-xs h-8 px-2 sm:px-3 text-primary border-primary/30 hover:bg-primary/5"
             >
               <Compass className="w-3.5 h-3.5" />
-              <span>Mandala</span>
+              <span className="hidden sm:inline">Mandala</span>
             </Button>
             <span className="text-xs text-muted-foreground hidden sm:inline ml-2">
               {person?.preferred_name || person?.full_name || user?.name || user?.email}
@@ -638,10 +644,12 @@ export const InteragenteHome: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={logout}
+              aria-label="Sair"
+              title="Sair"
               className="text-xs text-muted-foreground hover:text-foreground h-8 px-2 gap-1.5"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Sair</span>
+              <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
         </div>
