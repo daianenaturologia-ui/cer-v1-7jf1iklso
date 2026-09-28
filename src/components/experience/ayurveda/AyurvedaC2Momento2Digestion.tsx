@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle2, Sparkles, Info } from 'lucide-react'
 import {
@@ -21,18 +21,22 @@ export interface AyurvedaC2Momento2DigestionProps {
 }
 
 export const AyurvedaC2Momento2Digestion: React.FC<AyurvedaC2Momento2DigestionProps> = ({
-  postMealChoices: initialP3 = [],
+  postMealChoices: initialP3,
   hungerReturnChoice: initialP4 = '',
-  foodDemandsChoices: initialP5 = [],
+  foodDemandsChoices: initialP5,
   treatmentVariant = 'neutro',
   onSavePostMeal,
   onSaveHungerReturn,
   onSaveFoodDemands,
   disabled = false,
 }) => {
-  const [selectedP3, setSelectedP3] = useState<string[]>(initialP3)
+  const [selectedP3, setSelectedP3] = useState<string[]>(initialP3 ?? [])
   const [selectedP4, setSelectedP4] = useState<string>(initialP4)
-  const [selectedP5, setSelectedP5] = useState<string[]>(initialP5)
+  const [selectedP5, setSelectedP5] = useState<string[]>(initialP5 ?? [])
+
+  useEffect(() => setSelectedP3(initialP3 ?? []), [initialP3])
+  useEffect(() => setSelectedP4(initialP4), [initialP4])
+  useEffect(() => setSelectedP5(initialP5 ?? []), [initialP5])
 
   const p3Options = getAyvC2P3Options(treatmentVariant)
 
