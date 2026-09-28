@@ -1,13 +1,23 @@
 import type { ExperienceResponseRecord } from '@/types/cer'
 
 export const AYURVEDA_CHAPTER_3_ID = 'capitulo-3-diferente-agora'
-export const AYURVEDA_CHAPTER_3_VERSION = '1.0.0'
+export const AYURVEDA_CHAPTER_3_VERSION = '1.1.0'
 
 export const AYV_C3_PROMPTS = {
   DOMAINS: { id: 'ayv_c3_changed_domains', key: 'ayv_c3_changed_domains', step_order: 1 },
   DIRECTIONS: { id: 'ayv_c3_change_directions', key: 'ayv_c3_change_directions', step_order: 2 },
   STARTED_AT: { id: 'ayv_c3_started_change_at', key: 'ayv_c3_started_change_at', step_order: 3 },
   CONTEXTS: { id: 'ayv_c3_change_contexts', key: 'ayv_c3_change_contexts', step_order: 4 },
+  MEDICATION_STATUS: {
+    id: 'ayv_c3_medication_status',
+    key: 'ayv_c3_medication_status',
+    step_order: 5,
+  },
+  MEDICATION_DETAILS: {
+    id: 'ayv_c3_medication_details',
+    key: 'ayv_c3_medication_details',
+    step_order: 5,
+  },
   NOTE: { id: 'ayv_c3_optional_note', key: 'ayv_c3_optional_note', step_order: 5 },
   COMPLETION: { id: 'ayv_c3_chapter_completion', key: 'ayv_c3_chapter_completion', step_order: 5 },
 } as const
@@ -24,6 +34,42 @@ export const AYV_C3_DOMAIN_OPTIONS = [
   { id: 'dont_know', label: 'Não sei identificar', exclusive: true, epistemic: 'unsure' },
   { id: 'refusal', label: 'Prefiro não responder', exclusive: true, epistemic: 'refusal' },
 ] as const
+
+export const AYV_C3_MEDICATION_STATUS_OPTIONS = [
+  { id: 'current_use', label: 'Uso atualmente' },
+  { id: 'recent_change', label: 'Comecei, parei ou alterei algo recentemente' },
+  { id: 'no_use', label: 'Não uso medicamentos ou suplementos atualmente' },
+  { id: 'dont_know', label: 'Não sei informar' },
+  { id: 'prefer_session', label: 'Prefiro conversar sobre isso no encontro' },
+] as const
+
+export const AYV_C3_MEDICATION_TIMING_OPTIONS = [
+  { id: 'ongoing_stable', label: 'Uso contínuo, sem mudança recente' },
+  { id: 'started_recently', label: 'Comecei recentemente' },
+  { id: 'dose_changed', label: 'A dose ou frequência mudou' },
+  { id: 'stopped_recently', label: 'Parei recentemente' },
+  { id: 'as_needed', label: 'Uso somente quando necessário' },
+  { id: 'dont_know', label: 'Não sei informar' },
+] as const
+
+export type AyurvedaMedicationStatus =
+  | 'current_use'
+  | 'recent_change'
+  | 'no_use'
+  | 'dont_know'
+  | 'prefer_session'
+
+export interface AyurvedaMedicationItem {
+  id: string
+  kind: 'medication' | 'supplement'
+  name: string
+  dose?: string
+  frequency?: string
+  purpose?: string
+  timing?: string
+  started_or_changed_at?: string
+  perceived_changes?: string
+}
 
 export const AYV_C3_DIRECTION_OPTIONS = [
   { id: 'increased', label: 'Aumentou ou ficou mais intenso' },
@@ -67,6 +113,8 @@ export interface AyurvedaChapter3State {
   change_directions?: Record<string, string>
   started_change_at?: string
   change_contexts?: string[]
+  medication_status?: AyurvedaMedicationStatus
+  medication_items?: AyurvedaMedicationItem[]
   optional_note?: string
 }
 
@@ -103,6 +151,9 @@ export function loadChapter3State(responses: ExperienceResponseRecord[]): Ayurve
     if (key === AYV_C3_PROMPTS.STARTED_AT.key) state.started_change_at = value
     if (key === AYV_C3_PROMPTS.CONTEXTS.key)
       state.change_contexts = Array.isArray(value) ? value : []
+    if (key === AYV_C3_PROMPTS.MEDICATION_STATUS.key) state.medication_status = value
+    if (key === AYV_C3_PROMPTS.MEDICATION_DETAILS.key)
+      state.medication_items = Array.isArray(value) ? value : []
     if (key === AYV_C3_PROMPTS.NOTE.key) state.optional_note = String(value || '')
   }
   return state

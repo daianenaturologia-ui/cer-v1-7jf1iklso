@@ -60,6 +60,8 @@ import {
   AYV_C3_CONTEXT_OPTIONS,
   AYV_C3_DIRECTION_OPTIONS,
   AYV_C3_DOMAIN_OPTIONS,
+  AYV_C3_MEDICATION_STATUS_OPTIONS,
+  AYV_C3_MEDICATION_TIMING_OPTIONS,
   AYV_C3_STARTED_OPTIONS,
   chapter3Label,
   deriveChapter3Status,
@@ -1347,6 +1349,55 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
                       .join('; ') || 'Ainda não respondido.'}
                   </p>
                 </div>
+                {c3DerivedStatus.state.medication_status && (
+                  <div className="space-y-3 rounded-xl border border-border/60 p-3 md:col-span-2">
+                    <div>
+                      <span className="mb-1 block text-[10px] uppercase text-muted-foreground">
+                        Medicamentos e suplementos informados
+                      </span>
+                      <p>
+                        {chapter3Label(
+                          AYV_C3_MEDICATION_STATUS_OPTIONS,
+                          c3DerivedStatus.state.medication_status,
+                        )}
+                      </p>
+                    </div>
+                    {(c3DerivedStatus.state.medication_items || []).map((item) => (
+                      <div key={item.id} className="rounded-lg border border-border/50 p-3">
+                        <p className="font-medium">{item.name}</p>
+                        <p className="mt-1 text-muted-foreground">
+                          {item.kind === 'supplement' ? 'Suplemento' : 'Medicamento'}
+                          {item.dose ? ` • ${item.dose}` : ''}
+                          {item.frequency ? ` • ${item.frequency}` : ''}
+                        </p>
+                        {item.timing && (
+                          <p className="mt-1 text-muted-foreground">
+                            {chapter3Label(AYV_C3_MEDICATION_TIMING_OPTIONS, item.timing)}
+                            {item.started_or_changed_at ? ` • ${item.started_or_changed_at}` : ''}
+                          </p>
+                        )}
+                        {item.purpose && (
+                          <p className="mt-1 text-muted-foreground">
+                            <strong>Uso informado:</strong> {item.purpose}
+                          </p>
+                        )}
+                        {item.perceived_changes && (
+                          <div className="mt-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2">
+                            <strong>
+                              Percepção da interagente após começar, parar ou alterar:
+                            </strong>{' '}
+                            {item.perceived_changes}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      Registro factual da interagente. Qualquer associação com sintomas precisa ser
+                      verificada separadamente; este painel não estabelece causalidade nem orienta
+                      alteração do tratamento.
+                    </p>
+                  </div>
+                )}
                 {c3DerivedStatus.state.optional_note && (
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 md:col-span-2">
                     <span className="mb-1 block text-[10px] uppercase text-primary">
