@@ -36,6 +36,26 @@ describe('Componente ProfessionalIntegrativeMapView (UI do Mapa Integrativo)', (
 
     expect(screen.getByTestId('professional-integrative-map-complete')).toBeInTheDocument()
 
+    // 1) Minimapa é a visualização padrão ao abrir
+    expect(screen.getByTestId('professional-minimapa-view')).toBeInTheDocument()
+    expect(screen.getByText(/Cobertura: 6\/6 dimensões/i)).toBeInTheDocument()
+    expect(screen.getByText(/Confiança geral: Alta/i)).toBeInTheDocument()
+    expect(screen.getByText(/Nota conceitual:/i)).toBeInTheDocument()
+
+    // Cards do Minimapa
+    expect(screen.getByTestId('minimapa-card-corpo')).toBeInTheDocument()
+    expect(screen.getByTestId('minimapa-card-mente')).toBeInTheDocument()
+    expect(screen.getByTestId('minimapa-card-regulacao')).toBeInTheDocument()
+    expect(screen.getByTestId('minimapa-card-relacoes')).toBeInTheDocument()
+    expect(screen.getByTestId('minimapa-card-sexualidade')).toBeInTheDocument()
+    expect(screen.getByTestId('minimapa-card-sentido')).toBeInTheDocument()
+
+    // 2) Alterna para Leitura Aprofundada e verifica os 8 blocos integrais
+    const deepTab = screen.getByTestId('tab-trigger-aprofundada')
+    fireEvent.click(deepTab)
+
+    expect(screen.getByTestId('professional-deep-reading-view')).toBeInTheDocument()
+
     // Bloco 1: Síntese Essencial
     expect(
       screen.getByText('1. Síntese Essencial da Pessoa e do Momento Atual'),
@@ -80,7 +100,7 @@ describe('Componente ProfessionalIntegrativeMapView (UI do Mapa Integrativo)', (
     expect(screen.getByText('8. Lacunas de Informação e Limites de Evidência')).toBeInTheDocument()
   })
 
-  it('permite alternar e inspecionar hipóteses e matriz de cobertura', () => {
+  it('permite alternar entre minimapa e leitura aprofundada via botões e atalhos de dimensão', () => {
     const fullResponses = buildConscienciaQaFixture(enrollmentId).responses
     render(
       <ProfessionalIntegrativeMapView
@@ -88,6 +108,33 @@ describe('Componente ProfessionalIntegrativeMapView (UI do Mapa Integrativo)', (
         participantName={participantName}
       />,
     )
+
+    // Inicialmente no Minimapa
+    expect(screen.getByTestId('professional-minimapa-view')).toBeInTheDocument()
+
+    // Clica em botão de aprofundar no topo
+    const aprofundarTopo = screen.getByTestId('btn-aprofundar-topo')
+    fireEvent.click(aprofundarTopo)
+    expect(screen.getByTestId('professional-deep-reading-view')).toBeInTheDocument()
+
+    // Retorna ao Minimapa
+    const voltarBtn = screen.getByTestId('btn-voltar-minimapa')
+    fireEvent.click(voltarBtn)
+    expect(screen.getByTestId('professional-minimapa-view')).toBeInTheDocument()
+  })
+
+  it('permite alternar e inspecionar hipóteses e matriz de cobertura na leitura aprofundada', () => {
+    const fullResponses = buildConscienciaQaFixture(enrollmentId).responses
+    render(
+      <ProfessionalIntegrativeMapView
+        responses={fullResponses}
+        participantName={participantName}
+      />,
+    )
+
+    // Muda para leitura aprofundada
+    const deepTab = screen.getByTestId('tab-trigger-aprofundada')
+    fireEvent.click(deepTab)
 
     // Abre matriz de cobertura no bloco 8
     const toggleMatrixBtn = screen.getByText('Ver matriz de cobertura')
