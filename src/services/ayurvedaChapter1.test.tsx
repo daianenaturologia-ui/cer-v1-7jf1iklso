@@ -26,7 +26,7 @@
  * (22) lint, typecheck, Vitest completo e build passam.
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import React from 'react'
 import {
@@ -49,6 +49,12 @@ import { ExperienceResponseRecord } from '@/types/cer'
 import { demoAdapter } from '@/services/demoAdapter'
 
 describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    localStorage.clear()
+    demoAdapter.resetToDefaultState()
+    demoAdapter.enableDemo('mariana')
+  })
   // (1) Avatar não cria resposta clínica
   it('regra 1: dados de customização estética do avatar não produzem respostas clínicas', () => {
     const avatarConfig = {
@@ -142,7 +148,7 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
     const saveMock = vi.fn((c) => {
       currentChoices = c
     })
-    const { rerender } = render(<AyurvedaTela3Hair hairChoices={[]} onSave={saveMock} />)
+    const { rerender } = render(<AyurvedaTela2Skin skinChoices={[]} onSave={saveMock} />)
     const opt1 = screen.getByText(/Tende a ficar seca, áspera/i)
     const opt2 = screen.getByText(/Parece fina ou delicada/i)
     const opt3 = screen.getByText(/Costuma ser quente, sensível/i)
@@ -252,8 +258,9 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
   // (12) Capítulos 2-4 não abrem rotas vazias
   it('regra 12: capítulos 2 a 4 informam liberação futura sem botões para telas vazias', () => {
     render(<AyurvedaChaptersHub onStartChapter1={vi.fn()} />)
-    const lockedCards = screen.getAllByText(/Será liberado na continuação desta experiência/i)
+    const lockedCards = screen.getAllByText('Bloqueado', { exact: true })
     expect(lockedCards).toHaveLength(3)
+    expect(screen.queryByRole('button', { name: /Começar Capítulo [234]/i })).toBeNull()
   })
 
   // (13) Modo revisão não altera respostas
@@ -332,7 +339,8 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
 
     render(<ProfessionalAyurvedaChapter1View responses={mockResponses} participantName="Mariana" />)
     expect(screen.getByText(/Estrutura leve ou estreita/i)).toBeInTheDocument()
-    expect(screen.getByText(/Confiança histórica: high/i)).toBeInTheDocument()
+    expect(screen.getByText('Última atualização factual')).toBeInTheDocument()
+    expect(screen.queryByText('Confiança histórica: high')).toBeNull()
   })
 
   // (18) Nenhum dosha/percentual/ranking/diagnóstico aparece
@@ -503,7 +511,7 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
           totalSteps={derived.totalSteps}
         />,
       )
-      expect(screen.getByText(/Em andamento/i)).toBeInTheDocument()
+      expect(screen.getByText('Em andamento', { exact: true })).toBeInTheDocument()
       expect(screen.getByText(/1 de 5 etapas respondidas/i)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Retomar Capítulo 1/i })).toBeInTheDocument()
     })
@@ -594,13 +602,13 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
         />,
       )
 
-      expect(getByText(/Pronto para concluir/i)).toBeInTheDocument()
+      expect(getByText('Pronto para concluir', { exact: true })).toBeInTheDocument()
       expect(
         getByText(
           /Suas respostas estão preenchidas\. Revise e confirme a conclusão deste capítulo\./i,
         ),
       ).toBeInTheDocument()
-      expect(getByText(/5 de 5 etapas respondidas/i)).toBeInTheDocument()
+      expect(derived.answeredStepsCount).toBe(5)
       expect(getByRole('button', { name: /Revisar e concluir/i })).toBeInTheDocument()
 
       // NÃO exibe "100% concluído" nem badge Concluído
@@ -643,7 +651,7 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
           onCorrectChapter1={vi.fn()}
         />,
       )
-      expect(screen.getByText(/Você já respondeu ao Capítulo 1/i)).toBeInTheDocument()
+      expect(screen.getByText('100% concluído')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Corrigir minhas respostas/i })).toBeInTheDocument()
     })

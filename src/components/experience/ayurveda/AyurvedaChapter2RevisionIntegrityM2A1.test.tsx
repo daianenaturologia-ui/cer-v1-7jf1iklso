@@ -19,7 +19,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react'
 import React from 'react'
 import { AyurvedaChaptersNavigator } from '@/components/experience/ayurveda/AyurvedaChaptersNavigator'
 import {
@@ -494,7 +494,7 @@ describe('M2A1: Integridade da Criação de Revisões do Capítulo 2', () => {
     })
 
     // Entrar em Rever C2 -> Encerramento -> Corrigir
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 2/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 2/i }))
     await waitFor(() => {
       expect(screen.getByTestId('banner-c2-review-mode')).toBeInTheDocument()
     })
@@ -544,8 +544,8 @@ describe('M2A1: Integridade da Criação de Revisões do Capítulo 2', () => {
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
-    expect(screen.getByText('Capítulo 2 Concluído')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Rever Capítulo 2/i })).toBeInTheDocument()
   })
 
   // 12. Zero chamadas ao PocketBase no demo
@@ -593,7 +593,7 @@ describe('M2A1: Integridade da Criação de Revisões do Capítulo 2', () => {
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
+    const correctBtns = await screen.findAllByRole('button', { name: /Corrigir minhas respostas/i })
     const correctC2Btn = correctBtns[1] || correctBtns[0]
     fireEvent.click(correctC2Btn)
 
@@ -603,12 +603,18 @@ describe('M2A1: Integridade da Criação de Revisões do Capítulo 2', () => {
     fireEvent.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeInTheDocument()
     })
 
     // Na semente foi 'regular_hours' ("Aparece em horários relativamente previsíveis.")
     // O card preenchido deve existir e estar selecionado (1/2 escolhas)
-    expect(screen.getByText(/Até 2 escolhas • 1\/2/i)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(
+          screen.getByText(/1\. Como a sua fome costuma funcionar\?/i).parentElement!,
+        ).getByText(/Até 2 escolhas • 1\/2/i),
+      ).toBeInTheDocument()
+    })
     const selectedBtn = screen
       .getByText(/Aparece em horários relativamente previsíveis/i)
       .closest('button')

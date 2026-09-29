@@ -1,23 +1,46 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
-  demoAdapter,
+  demoAdapter as initialDemoAdapter,
   DEMO_ENROLLMENT_ID,
   DEMO_USER_MARIANA,
   MENTE_EMOCOES_EXPERIENCE_ID,
   DEMO_ARCHIVED_INCOMPATIBLE_KEY,
 } from './demoAdapter'
-import { experienceResponseService, enrollmentExperienceService } from './experienceEngine'
-import { cerJournalService } from './cerJournalService'
+import {
+  experienceResponseService as initialResponseService,
+  enrollmentExperienceService as initialEnrollmentService,
+} from './experienceEngine'
+import { cerJournalService as initialJournalService } from './cerJournalService'
 import {
   evaluateFieldState,
   extractQuestionResponse,
 } from '@/components/experience/MindEmotionsReport'
 import type { ExperienceResponseRecord } from '@/types/cer'
-import pb from '@/lib/pocketbase/client'
+import initialPb from '@/lib/pocketbase/client'
+
+let demoAdapter = initialDemoAdapter
+let experienceResponseService = initialResponseService
+let enrollmentExperienceService = initialEnrollmentService
+let cerJournalService = initialJournalService
+let pb = initialPb
+
+// Recria o mesmo conjunto de módulos que uma recarga real da página carregaria.
+// Alternar a persona não deve recarregar nem sobrescrever o estado em memória.
+async function reloadDemoModules() {
+  vi.resetModules()
+  demoAdapter = (await import('./demoAdapter')).demoAdapter
+  const services = await import('./experienceEngine')
+  experienceResponseService = services.experienceResponseService
+  enrollmentExperienceService = services.enrollmentExperienceService
+  cerJournalService = (await import('./cerJournalService')).cerJournalService
+  pb = (await import('@/lib/pocketbase/client')).default
+}
 
 describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEMONSTRAÇÃO (0.0.120)', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    vi.restoreAllMocks()
     localStorage.clear()
+    await reloadDemoModules()
     demoAdapter.disableDemo()
     demoAdapter.enableDemo('mariana')
     demoAdapter.resetToDefaultState()
@@ -58,6 +81,7 @@ describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEM
       enrollmentExperienceProgress: {},
     }
     localStorage.setItem('cer_demo_mode_state_v3', JSON.stringify(rawState))
+    await reloadDemoModules()
 
     // Carregar estado através do demoAdapter
     demoAdapter.enableDemo('mariana')
@@ -114,6 +138,7 @@ describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEM
       enrollmentExperienceProgress: {},
     }
     localStorage.setItem('cer_demo_mode_state_v3', JSON.stringify(rawState))
+    await reloadDemoModules()
     demoAdapter.enableDemo('mariana')
 
     // Verifica se está nos retiredExperienceResponses com motivo técnico
@@ -171,6 +196,7 @@ describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEM
       enrollmentExperienceProgress: {},
     }
     localStorage.setItem('cer_demo_mode_state_v3', JSON.stringify(state))
+    await reloadDemoModules()
 
     // Executa migração ao habilitar demo
     demoAdapter.enableDemo('mariana')
@@ -224,7 +250,7 @@ describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEM
         {
           id: 'other-exp-resp',
           enrollment_id: DEMO_ENROLLMENT_ID,
-          experience_id: 'exp-corpo-fisiologia-07b',
+          experience_id: 'exp-regulacao-respostas-07c',
           prompt_id: 'p-corpo-01',
           respondent_user_id: DEMO_USER_MARIANA.id,
           response_type: 'BodyMap',
@@ -251,11 +277,12 @@ describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEM
         },
       ],
       enrollmentExperienceProgress: {
-        [`${DEMO_ENROLLMENT_ID}:exp-corpo-fisiologia-07b`]: otherExpProg,
+        [`${DEMO_ENROLLMENT_ID}:exp-regulacao-respostas-07c`]: otherExpProg,
       },
     }
 
     localStorage.setItem('cer_demo_mode_state_v3', JSON.stringify(state))
+    await reloadDemoModules()
     demoAdapter.enableDemo('mariana')
 
     // Sessões e notas preservadas
@@ -269,7 +296,7 @@ describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEM
     // Resposta de outra experiência preservada no estado ativo
     const corpoResponses = demoAdapter.listExperienceResponses(
       DEMO_ENROLLMENT_ID,
-      'exp-corpo-fisiologia-07b',
+      'exp-regulacao-respostas-07c',
     )
     expect(corpoResponses).toHaveLength(1)
     expect(corpoResponses[0].id).toBe('other-exp-resp')
@@ -277,7 +304,7 @@ describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEM
     // Progresso de outra experiência preservado
     const corpoProg = demoAdapter.getEnrollmentExperienceProgress(
       DEMO_ENROLLMENT_ID,
-      'exp-corpo-fisiologia-07b',
+      'exp-regulacao-respostas-07c',
     )
     expect(corpoProg?.progress_status).toBe('completed')
   })
@@ -418,6 +445,7 @@ describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEM
       },
     }
     localStorage.setItem('cer_demo_mode_state_v3', JSON.stringify(state))
+    await reloadDemoModules()
     demoAdapter.enableDemo('mariana')
 
     // Deve indicar que precisa refazer
@@ -536,11 +564,14 @@ describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEM
     )
     expect(list).toHaveLength(1)
 
-    const prog = await enrollmentExperienceService.updateProgress('demo-enr-prog-id', {
-      enrollmentId: DEMO_ENROLLMENT_ID,
-      stepOrder: 2,
-      progressStatus: 'in_progress',
-    })
+    const prog = await enrollmentExperienceService.updateProgress(
+      'demo-enr-exp-exp-mente-emocoes-07c',
+      {
+        enrollmentId: DEMO_ENROLLMENT_ID,
+        stepOrder: 2,
+        progressStatus: 'in_progress',
+      },
+    )
     expect(prog).toBeDefined()
 
     expect(collectionSpy).not.toHaveBeenCalled()

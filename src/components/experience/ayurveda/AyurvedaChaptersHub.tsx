@@ -586,7 +586,7 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
                         {c2CanonicalState === 'ready_to_complete' &&
                           'Suas respostas estão preenchidas. Revise e confirme a conclusão deste capítulo.'}
                         {c2CanonicalState === 'in_progress' &&
-                          `${effectiveAnsweredMomentsC2} de ${totalMomentsC2} momentos respondidas`}
+                          `${effectiveAnsweredMomentsC2} de ${totalMomentsC2} momentos respondidos`}
                         {c2CanonicalState === 'not_started' &&
                           'Capítulo liberado. Observe o ritmo da sua fome, digestão, sono e energia.'}
                       </span>
