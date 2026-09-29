@@ -435,6 +435,15 @@ export const InteragenteHome: React.FC = () => {
     loadData()
   }, [person])
 
+  useEffect(() => {
+    if (demoAdapter.isEnabled()) {
+      const unsubscribe = demoAdapter.subscribe(() => {
+        loadData()
+      })
+      return unsubscribe
+    }
+  }, [])
+
   const handleSaveTreatmentPreference = async () => {
     if (!person?.id) return
     setSavingTreatmentPreference(true)

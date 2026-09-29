@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { ParticipantIntegrativeMapView } from '@/components/experience/ParticipantIntegrativeMapView'
 import { buildConscienciaQaFixture } from '@/services/conscienciaQaFixture'
+import { demoAdapter, DEMO_ENROLLMENT_ID } from '@/services/demoAdapter'
 
 describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidade)', () => {
   const enrollmentId = 'enr-participant-test-123'
@@ -136,5 +137,100 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
     expect(bodyText).not.toContain('hipótese de trabalho')
     expect(bodyText).not.toContain('Hipótese de Trabalho')
     expect(bodyText).not.toContain('Área Exclusiva da Profissional')
+  })
+
+  describe('Sequência interperfil explícita com demoAdapter compartilhado', () => {
+    beforeEach(() => {
+      demoAdapter.enableDemo()
+      demoAdapter.setActiveScenario('default')
+    })
+
+    afterEach(() => {
+      demoAdapter.setActiveScenario('default')
+    })
+
+    it('transita deterministicamente entre perfis: QA off (0/6) -> profissional ativa QA (6/6) -> profissional desativa QA (0/6) com asserts de privacidade', () => {
+      // 1. QA off -> participante vê 0/6
+      expect(demoAdapter.getActiveScenario()).toBe('default')
+      const responsesOff = demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID)
+      const { rerender } = render(
+        <ParticipantIntegrativeMapView
+          responses={responsesOff}
+          participantName={participantName}
+        />,
+      )
+
+      expect(screen.getByTestId('participant-integrative-map-empty')).toBeInTheDocument()
+      expect(screen.getByText(/Cobertura das dimensões \(0 de 6\)/i)).toBeInTheDocument()
+
+      // Asserts de AUSÊNCIA de strings profissionais no estado 0/6
+      let bodyText = document.body.textContent || ''
+      expect(bodyText).not.toContain('Prioridades para a escuta')
+      expect(bodyText).not.toContain('Prioridades Possíveis para a Escuta Profissional')
+      expect(bodyText).not.toContain('perguntas para a sessão')
+      expect(bodyText).not.toContain('Perguntas Clínicas')
+      expect(bodyText).not.toContain('hipótese de trabalho')
+      expect(bodyText).not.toContain('Hipótese de Trabalho')
+      expect(bodyText).not.toContain('Área Exclusiva da Profissional')
+      expect(bodyText).not.toContain('Confiança geral:')
+
+      // 2. Profissional ativa o cenário QA via demoAdapter
+      demoAdapter.setActiveScenario('qa_consciencia_completa')
+      expect(demoAdapter.getActiveScenario()).toBe('qa_consciencia_completa')
+
+      const responsesOn = demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID)
+      rerender(
+        <ParticipantIntegrativeMapView responses={responsesOn} participantName={participantName} />,
+      )
+
+      expect(screen.getByTestId('participant-integrative-map-complete')).toBeInTheDocument()
+      expect(screen.getByText(/Cobertura: 6\/6 dimensões/i)).toBeInTheDocument()
+
+      // "Meu mapa essencial" disponível
+      expect(screen.getByTestId('participant-map-essencial-view')).toBeInTheDocument()
+      expect(screen.getByText('Meu mapa essencial')).toBeInTheDocument()
+
+      // "Compreender em profundidade" disponível
+      const deepTabTrigger = screen.getByTestId('tab-trigger-profundidade')
+      expect(deepTabTrigger).toBeInTheDocument()
+      fireEvent.click(deepTabTrigger)
+      expect(screen.getByTestId('participant-map-profundidade-view')).toBeInTheDocument()
+
+      // Asserts de AUSÊNCIA de strings profissionais no estado 6/6 (essencial e profundidade)
+      bodyText = document.body.textContent || ''
+      expect(bodyText).not.toContain('Prioridades para a escuta')
+      expect(bodyText).not.toContain('Prioridades Possíveis para a Escuta Profissional')
+      expect(bodyText).not.toContain('perguntas para a sessão')
+      expect(bodyText).not.toContain('Perguntas Clínicas')
+      expect(bodyText).not.toContain('hipótese de trabalho')
+      expect(bodyText).not.toContain('Hipótese de Trabalho')
+      expect(bodyText).not.toContain('Área Exclusiva da Profissional')
+      expect(bodyText).not.toContain('Confiança geral:')
+
+      // 3. Profissional desativa o cenário QA -> participante volta a 0/6
+      demoAdapter.setActiveScenario('default')
+      expect(demoAdapter.getActiveScenario()).toBe('default')
+
+      const responsesBackOff = demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID)
+      rerender(
+        <ParticipantIntegrativeMapView
+          responses={responsesBackOff}
+          participantName={participantName}
+        />,
+      )
+
+      expect(screen.getByTestId('participant-integrative-map-empty')).toBeInTheDocument()
+      expect(screen.getByText(/Cobertura das dimensões \(0 de 6\)/i)).toBeInTheDocument()
+
+      bodyText = document.body.textContent || ''
+      expect(bodyText).not.toContain('Prioridades para a escuta')
+      expect(bodyText).not.toContain('Prioridades Possíveis para a Escuta Profissional')
+      expect(bodyText).not.toContain('perguntas para a sessão')
+      expect(bodyText).not.toContain('Perguntas Clínicas')
+      expect(bodyText).not.toContain('hipótese de trabalho')
+      expect(bodyText).not.toContain('Hipótese de Trabalho')
+      expect(bodyText).not.toContain('Área Exclusiva da Profissional')
+      expect(bodyText).not.toContain('Confiança geral:')
+    })
   })
 })
