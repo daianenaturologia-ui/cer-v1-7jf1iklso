@@ -40,6 +40,25 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
     }
   })
 
+  it('mantém o Capítulo 2 acessível durante uma correção do Capítulo 1 já concluído', () => {
+    const startC2 = vi.fn()
+    render(
+      <AyurvedaChaptersHub
+        chapter1Status="in_progress"
+        chapter1ActiveRevision={2}
+        chapter1LastCompletedRevision={1}
+        chapter1HasCorrectionInProgress
+        answeredStepsCount={2}
+        chapter2Status="not_started"
+        onStartChapter2={startC2}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: /Começar Capítulo 2/i })).toBeEnabled()
+    expect(screen.queryByText('Conclua o Capítulo 1 para liberar este capítulo.')).toBeNull()
+    expect(screen.getByText(/2 de 5 etapas com respostas nesta versão/i)).toBeInTheDocument()
+  })
+
   // 1. C2 bloqueado antes da conclusão do C1
   it('1. C2 bloqueado antes da conclusão do C1: container inerte, aria-disabled, tabIndex=-1', async () => {
     const user = userEvent.setup()
@@ -58,7 +77,9 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
     )
 
     // C1 está Não iniciado, C2 deve ser Bloqueado
-    const c2Badge = screen.getByText('Bloqueado')
+    const c2Badge = screen
+      .getAllByText('Bloqueado')
+      .find((el) => el.closest('[aria-disabled="true"]'))!
     expect(c2Badge).toBeInTheDocument()
     expect(screen.getByText('Conclua o Capítulo 1 para liberar este capítulo.')).toBeInTheDocument()
 
@@ -189,7 +210,7 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
     ).toBeInTheDocument()
     expect(screen.queryByText('100% concluído')).not.toBeInTheDocument()
     // C2 deve continuar bloqueado porque C1 ainda não foi canonicamente concluído
-    expect(screen.getByText('Bloqueado')).toBeInTheDocument()
+    expect(screen.getAllByText('Bloqueado').length).toBeGreaterThan(0)
 
     const reviewBtn = screen.getByRole('button', { name: /Revisar e concluir/i })
     expect(reviewBtn).toBeInTheDocument()
@@ -216,7 +237,9 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
 
     expect(screen.getByText('Correção em andamento')).toBeInTheDocument()
     expect(
-      screen.getByText(/2 de 5 etapas revisadas\. Você iniciou uma correção das suas respostas\./i),
+      screen.getByText(
+        /2 de 5 etapas com respostas nesta versão\. Você iniciou uma correção das suas respostas\./i,
+      ),
     ).toBeInTheDocument()
     const resumeCorrectionBtn = screen.getByRole('button', { name: /Retomar correção/i })
     expect(resumeCorrectionBtn).toBeInTheDocument()
@@ -368,10 +391,11 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
     const resumeBtn = screen.getByRole('button', { name: /Retomar correção/i })
     await user.click(resumeBtn)
 
-    // Deve abrir o fluxo C1 em modo correcting na revisão ativa 2
+    // Deve abrir o fluxo C1 na revisão ativa 2, sem criar outra.
     await waitFor(() => {
-      expect(screen.getByTestId('banner-c1-correcting-mode')).toBeInTheDocument()
+      expect(screen.getByText(/Tela 1 de 5 • Estrutura habitual/i)).toBeInTheDocument()
     })
+    expect(getPersistedActiveChapter1Revision(DEMO_ENROLLMENT_ID)).toBe(2)
 
     // Contagem de respostas no DB NÃO deve ter aumentado (não criou revisão)
     const responsesCountAfter = (
@@ -395,6 +419,8 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
       AYV_C1_PROMPTS.P3_HAIR,
       AYV_C1_PROMPTS.P4_TEMPERATURE,
       AYV_C1_PROMPTS.P5_THIRST,
+      AYV_C1_PROMPTS.P5_DRINK_TEMP,
+      AYV_C1_PROMPTS.P5_SWEAT,
     ]
     for (const p of prompts) {
       await experienceResponseService.saveResponse({
@@ -466,7 +492,7 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
     await user.click(reviewBtn)
 
     await waitFor(() => {
-      expect(screen.getByTestId('banner-c1-correcting-mode')).toBeInTheDocument()
+      expect(screen.getByText(/O que você observou sobre o seu corpo/i)).toBeInTheDocument()
     })
 
     const countAfter = (
@@ -528,7 +554,7 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
 
     await waitFor(() => {
       expect(screen.getByTestId('banner-review-mode')).toBeInTheDocument()
-      expect(screen.getByText(/Modo somente-leitura/i)).toBeInTheDocument()
+      expect(screen.getByText(/Revisão das suas respostas/i)).toBeInTheDocument()
     })
   })
 
@@ -708,6 +734,20 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
       structuredValue: { value: 'dont_know', choice: 'dont_know' },
     })
 
+    // A quinta tela possui três blocos independentes; todos precisam de resposta.
+    for (const prompt of [AYV_C1_PROMPTS.P5_DRINK_TEMP, AYV_C1_PROMPTS.P5_SWEAT]) {
+      await experienceResponseService.saveResponse({
+        enrollmentId: DEMO_ENROLLMENT_ID,
+        experienceId: DEMO_EXPERIENCE_ID,
+        promptId: prompt.id,
+        promptKey: prompt.key,
+        respondentUserId: DEMO_USER_ID,
+        responseType: 'ChoiceCards',
+        promptVersion: 1,
+        structuredValue: { value: 'dont_know', choice: 'dont_know' },
+      })
+    }
+
     render(
       <AyurvedaChaptersNavigator
         enrollmentId={DEMO_ENROLLMENT_ID}
@@ -797,10 +837,10 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
       />,
     )
 
-    // O hub canônico deve apontar 2 de 5 etapas revisadas, e NÃO 7 (somando rev1 + rev2)
+    // O hub canônico deve apontar 2 de 5 etapas com respostas nesta versão, e NÃO 7 (somando rev1 + rev2)
     await waitFor(() => {
       expect(screen.getByText('Correção em andamento')).toBeInTheDocument()
-      expect(screen.getByText(/2 de 5 etapas revisadas/i)).toBeInTheDocument()
+      expect(screen.getByText(/2 de 5 etapas com respostas nesta versão/i)).toBeInTheDocument()
       expect(screen.queryByText(/7 de 5/i)).not.toBeInTheDocument()
     })
   })
@@ -915,7 +955,7 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
     await waitFor(() => {
       expect(
         screen.getByText(
-          /Estrutura e Características Corporais|Estrutura Corporal|Qual é a sua estrutura/i,
+          /Minha estrutura e minhas características|Pensando na maior parte da sua vida adulta/i,
         ),
       ).toBeInTheDocument()
     })

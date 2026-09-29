@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import {
   ExperienceEngine,
   EMOTION_ID_TO_LABEL,
@@ -8,6 +8,7 @@ import {
 import { BUILD_07C_MENTE_PROMPTS } from '@/services/build07cPrompts'
 import { ExperienceResponseRecord } from '@/types/cer'
 import React from 'react'
+import { experienceResponseService } from '@/services/experienceEngine'
 
 // Trigger QA run
 
@@ -59,13 +60,13 @@ describe('Pergunta 3 de Mente & Emoções — Resolução Dinâmica de Emoções
     expect(formatSelectedEmotionsPhrase(['   '])).toBe('')
   })
 
-  it('renderiza dinamicamente na P3 em tempo de render com 1 escolha', () => {
+  it('renderiza dinamicamente na P3 com 1 escolha carregada', async () => {
     const mockP2Response: ExperienceResponseRecord = {
       id: 'resp-p2',
       enrollment_id: 'enr-demo',
       experience_id: 'exp-mente-emocoes-07c',
       respondent_user_id: 'user-demo',
-      prompt_id: 'p-07c-pm1-p2-emocoes-recorrentes',
+      prompt_id: 'p-07c-pm1-p2-emocoes-presentes',
       response_type: 'MultiSelectCards',
       structured_value: ['ansiedade_apreensao'],
       free_text: '',
@@ -77,17 +78,31 @@ describe('Pergunta 3 de Mente & Emoções — Resolução Dinâmica de Emoções
       updated: new Date().toISOString(),
     }
 
+    const mockP1Response: ExperienceResponseRecord = {
+      ...mockP2Response,
+      id: 'resp-p1',
+      prompt_id: 'p-07c-pm1-p1-funcionamento-emocional',
+      response_type: 'FreeReflection',
+      structured_value: { value: 'Reconheço minhas emoções.' },
+      free_text: 'Reconheço minhas emoções.',
+    }
+    const responses = [mockP1Response, mockP2Response]
+    vi.spyOn(experienceResponseService, 'listResponsesByExperience').mockResolvedValue(responses)
     render(
       <ExperienceEngine
         experienceId="exp-mente-emocoes-07c"
         enrollmentId="enr-demo"
         respondentUserId="user-demo"
-        initialResponses={[mockP2Response]}
+        initialResponses={responses}
       />,
     )
 
     // O ExperienceEngine avança ou renderiza os prompts de BUILD_07C
     // Verificamos a presença de "Você selecionou: <rótulos>" e ausência de IDs internos ou marcador cru
+    fireEvent.click(await screen.findByRole('button', { name: 'Iniciar este momento' }))
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('Você selecionou: ansiedade ou apreensão.'),
+    )
     const containerText = document.body.textContent || ''
     expect(containerText).toContain('Você selecionou: ansiedade ou apreensão.')
     expect(containerText).not.toContain('ansiedade_apreensao')
@@ -95,13 +110,13 @@ describe('Pergunta 3 de Mente & Emoções — Resolução Dinâmica de Emoções
     expect(containerText).not.toContain('{{emocoes_selecionadas}}')
   })
 
-  it('afirma que nenhum {{emocoes_selecionadas}} cru permanece no DOM na P3 e na P4', () => {
+  it('afirma que nenhum {{emocoes_selecionadas}} cru permanece no DOM na P3 e na P4', async () => {
     const mockP2Response: ExperienceResponseRecord = {
       id: 'resp-p2',
       enrollment_id: 'enr-demo',
       experience_id: 'exp-mente-emocoes-07c',
       respondent_user_id: 'user-demo',
-      prompt_id: 'p-07c-pm1-p2-emocoes-recorrentes',
+      prompt_id: 'p-07c-pm1-p2-emocoes-presentes',
       response_type: 'MultiSelectCards',
       structured_value: ['medo', 'raiva'],
       free_text: '',
@@ -130,19 +145,31 @@ describe('Pergunta 3 de Mente & Emoções — Resolução Dinâmica de Emoções
       updated: new Date().toISOString(),
     }
 
+    const mockP1Response: ExperienceResponseRecord = {
+      ...mockP2Response,
+      id: 'resp-p1',
+      prompt_id: 'p-07c-pm1-p1-funcionamento-emocional',
+      response_type: 'FreeReflection',
+      structured_value: { value: 'Reconheço minhas emoções.' },
+      free_text: 'Reconheço minhas emoções.',
+    }
+    const responses = [mockP1Response, mockP2Response, mockP3Response]
+    vi.spyOn(experienceResponseService, 'listResponsesByExperience').mockResolvedValue(responses)
     render(
       <ExperienceEngine
         experienceId="exp-mente-emocoes-07c"
         enrollmentId="enr-demo"
         respondentUserId="user-demo"
-        initialResponses={[mockP2Response, mockP3Response]}
+        initialResponses={responses}
       />,
     )
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Iniciar este momento' }))
+    await waitFor(() => expect(document.body.textContent).toContain('medo e raiva'))
     const containerText = document.body.textContent || ''
     expect(containerText).not.toContain('{{emocoes_selecionadas}}')
     // Na P4 ou em qualquer tela, o marcador foi substituído pelo texto das emoções
-    expect(containerText).toContain('medo, raiva')
+    expect(containerText).toContain('medo e raiva')
   })
 
   it('normaliza a frase sem vírgula órfã nem marcador quando não há emoções selecionadas', () => {

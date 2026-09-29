@@ -231,7 +231,7 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
 
     // Clarification note do Vítima
     expect(screen.getByText(/Nota de esclarecimento:/i)).toBeTruthy()
-    expect(screen.getByText(/não se refere a uma pessoa que sofreu violência/i)).toBeTruthy()
+    expect(screen.getByText(/não invalida situações reais de violência, abuso/i)).toBeTruthy()
 
     // Expande o cartão do Hipervigilante
     const vigCard = screen.getByTestId('pattern-card-cartao_6_antecipar_riscos')
@@ -240,7 +240,7 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
 
     // Clarification note do Hipervigilante
     expect(
-      screen.getByText(/diferencia-se da hipervigilância como sintoma pós-traumático/i),
+      screen.getByText(/se diferencia do estado fisiológico de hipervigilância/i),
     ).toBeTruthy()
   })
 
@@ -467,7 +467,7 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
 
     // 2. P7b / P8: "Crítico" ("cartao_10_cobrar_e_criticar") nos padrões mais interferentes
     expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toBeTruthy()
-    expect(screen.getByText('Crítico')).toBeTruthy()
+    expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toHaveTextContent('padrão Crítico')
 
     // 3. P12: Recurso ("Ainda não descobri o que me ajuda")
     expect(screen.getByText('Ainda não descobri o que me ajuda')).toBeTruthy()
@@ -613,8 +613,8 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
 
     // 5. Somente Evitativa ("cartao_9_evitar_desconfortos") com "Percebido como mais interferente"
     expect(screen.getByTestId('pattern-card-cartao_9_evitar_desconfortos')).toBeTruthy()
-    expect(screen.getByText('Evitativa')).toBeTruthy()
-    expect(screen.getByText('Percebido como mais interferente')).toBeTruthy()
+    expect(screen.getByTestId('pattern-card-cartao_9_evitar_desconfortos')).toHaveTextContent('padrão Evitativo')
+    expect(screen.getByTestId('pattern-card-cartao_9_evitar_desconfortos')).toHaveTextContent('Percebido como mais interferente')
     // Outros padrões não devem ter cartão na P8
     expect(screen.queryByTestId('pattern-card-cartao_1_fazer_certo')).toBeNull()
 

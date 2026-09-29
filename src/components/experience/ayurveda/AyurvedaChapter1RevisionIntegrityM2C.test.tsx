@@ -72,7 +72,7 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
       {
         prompt: AYV_C1_PROMPTS.P1_STRUCTURE,
         type: 'ChoiceCards',
-        value: { value: 'narrow_long', choice: 'narrow_long' },
+        value: { value: 'light_narrow', choice: 'light_narrow' },
       },
       {
         prompt: AYV_C1_PROMPTS.P1_DURATION,
@@ -178,7 +178,7 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     const structureItem = migratedResponses.find(
       (r) => r.prompt_id === AYV_C1_PROMPTS.P1_STRUCTURE.id,
     )
-    expect((structureItem?.structured_value as any)?.value).toBe('narrow_long')
+    expect((structureItem?.structured_value as any)?.value).toBe('light_narrow')
   })
 
   // 2. Migração executada duas vezes não produz alterações adicionais (idempotência)
@@ -212,16 +212,16 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
     })
 
-    const reviewBtn = screen.getByRole('button', { name: /Rever respostas do Capítulo 1/i })
+    const reviewBtn = screen.getByRole('button', { name: /Rever Capítulo 1/i })
     await user.click(reviewBtn)
 
     await waitFor(() => {
       expect(screen.getByTestId('banner-review-mode')).toBeInTheDocument()
     })
-    expect(screen.getByText(/Modo somente-leitura/i)).toBeInTheDocument()
+    expect(screen.getByText(/Revisão das suas respostas/i)).toBeInTheDocument()
   })
 
   // 4. Clique no modo review não altera nem salva
@@ -238,10 +238,10 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
     })
 
-    const reviewBtn = screen.getByRole('button', { name: /Rever respostas do Capítulo 1/i })
+    const reviewBtn = screen.getByRole('button', { name: /Rever Capítulo 1/i })
     await user.click(reviewBtn)
 
     await waitFor(() => {
@@ -249,9 +249,9 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     })
 
     // Tentar clicar em outra opção de estrutura
-    const broadBoneOption = screen
-      .getByText(/Ossos mais largos, ombros ou quadris proporcionalmente mais evidentes/i)
-      .closest('button')!
+    const broadBoneOption = screen.getByRole('button', {
+      name: /Figura feminina — estrutura ampla ou sólida/i,
+    })
     await user.click(broadBoneOption)
 
     // A opção não deve se tornar ativa e nenhum dado _rev deve ser criado
@@ -278,18 +278,17 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
     })
 
-    // No Hub, clicar em "Corrigir respostas do Capítulo 1"
-    const correctBtn = screen.getByRole('button', { name: /Corrigir respostas do Capítulo 1/i })
+    // No Hub, confirmar explicitamente a abertura de uma correção.
+    const correctBtn = await screen.findByRole('button', { name: /Corrigir minhas respostas/i })
     await user.click(correctBtn)
+    await user.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     // Deve abrir o formulário em modo correcting preenchido
     await waitFor(() => {
-      expect(
-        screen.getByText(/1\. Qual descrição melhor reflete a sua estrutura física basal\?/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Tela 1 de 5 • Estrutura habitual/i)).toBeInTheDocument()
     })
 
     // Afirmar que a revisão ativa é 2
@@ -317,20 +316,19 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
       />,
     )
 
-    const correctBtn = screen.getByRole('button', { name: /Corrigir respostas do Capítulo 1/i })
+    const correctBtn = await screen.findByRole('button', { name: /Corrigir minhas respostas/i })
     await user.click(correctBtn)
+    await user.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/1\. Qual descrição melhor reflete a sua estrutura física basal\?/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Pensando na maior parte da sua vida adulta/i)).toBeInTheDocument()
     })
 
-    // Opção "narrow_long" foi a salva na rev 1; deve estar selecionada (aria-pressed: true)
-    const narrowOption = screen
-      .getByText(/Mais esguia, longilínea ou com ossos finos/i)
-      .closest('button')!
-    expect(narrowOption).toHaveAttribute('aria-pressed', 'true')
+    // Opção "light_narrow" foi a salva na rev 1; deve estar selecionada (aria-pressed: true)
+    const narrowOption = screen.getByRole('button', {
+      name: /Figura feminina — estrutura leve ou estreita/i,
+    })
+    await waitFor(() => expect(narrowOption).toHaveAttribute('aria-pressed', 'true'))
   })
 
   // 7. Clique real altera uma resposta da revisão 2
@@ -346,19 +344,18 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
       />,
     )
 
-    const correctBtn = screen.getByRole('button', { name: /Corrigir respostas do Capítulo 1/i })
+    const correctBtn = await screen.findByRole('button', { name: /Corrigir minhas respostas/i })
     await user.click(correctBtn)
+    await user.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/1\. Qual descrição melhor reflete a sua estrutura física basal\?/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Pensando na maior parte da sua vida adulta/i)).toBeInTheDocument()
     })
 
-    // Clicar em "broad_bone"
-    const broadBoneOption = screen
-      .getByText(/Ossos mais largos, ombros ou quadris proporcionalmente mais evidentes/i)
-      .closest('button')!
+    // Clicar em "broad_solid"
+    const broadBoneOption = screen.getByRole('button', {
+      name: /Figura feminina — estrutura ampla ou sólida/i,
+    })
     await user.click(broadBoneOption)
 
     await waitFor(() => {
@@ -371,7 +368,7 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
       'exp-corpo-fisiologia-07b',
     )
     const rev2Structure = all.find((r) => r.prompt_id === `${AYV_C1_PROMPTS.P1_STRUCTURE.id}_rev2`)
-    expect((rev2Structure?.structured_value as any)?.value).toBe('broad_bone')
+    expect((rev2Structure?.structured_value as any)?.value).toBe('broad_solid')
   })
 
   // 8. Avançar, voltar e remontar preserva a alteração
@@ -387,19 +384,18 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
       />,
     )
 
-    const correctBtn = screen.getByRole('button', { name: /Corrigir respostas do Capítulo 1/i })
+    const correctBtn = await screen.findByRole('button', { name: /Corrigir minhas respostas/i })
     await user.click(correctBtn)
+    await user.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/1\. Qual descrição melhor reflete a sua estrutura física basal\?/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Pensando na maior parte da sua vida adulta/i)).toBeInTheDocument()
     })
 
-    // Trocar estrutura para broad_bone
-    const broadBoneOption = screen
-      .getByText(/Ossos mais largos, ombros ou quadris proporcionalmente mais evidentes/i)
-      .closest('button')!
+    // Trocar estrutura para broad_solid
+    const broadBoneOption = screen.getByRole('button', {
+      name: /Figura feminina — estrutura ampla ou sólida/i,
+    })
     await user.click(broadBoneOption)
     await waitFor(() => {
       expect(broadBoneOption).toHaveAttribute('aria-pressed', 'true')
@@ -409,22 +405,20 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     const nextBtn = screen.getByRole('button', { name: /Avançar para Pele/i })
     await user.click(nextBtn)
     await waitFor(() => {
-      expect(screen.getByText(/2\. Pele — Características Observadas/i)).toBeInTheDocument()
+      expect(screen.getByText(/Tela 2 de 5 • Pele habitual/i)).toBeInTheDocument()
     })
 
     // Voltar para Tela 1 (Estrutura)
     const backBtn = screen.getByRole('button', { name: /Estrutura/i })
     await user.click(backBtn)
     await waitFor(() => {
-      expect(
-        screen.getByText(/1\. Qual descrição melhor reflete a sua estrutura física basal\?/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Pensando na maior parte da sua vida adulta/i)).toBeInTheDocument()
     })
 
-    // A opção broad_bone continua marcada
-    const broadBoneAfterBack = screen
-      .getByText(/Ossos mais largos, ombros ou quadris proporcionalmente mais evidentes/i)
-      .closest('button')!
+    // A opção broad_solid continua marcada
+    const broadBoneAfterBack = screen.getByRole('button', {
+      name: /Figura feminina — estrutura ampla ou sólida/i,
+    })
     expect(broadBoneAfterBack).toHaveAttribute('aria-pressed', 'true')
 
     // Remontar o navegador inteiro
@@ -438,22 +432,24 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
       />,
     )
 
-    // A revisão ativa 2 está em andamento, logo ao abrir C1 retoma com broad_bone marcado
-    const resumeBtn = screen.queryByRole('button', { name: /Continuar Capítulo 1/i })
-    if (resumeBtn) {
-      await user.click(resumeBtn)
-    }
-
+    // A revisão preenchida abre no encerramento, com a escolha persistida na síntese.
+    await user.click(
+      (await screen.findAllByRole('button', { name: /Revisar e concluir correção/i }))[0],
+    )
     await waitFor(() => {
-      expect(
-        screen.getByText(/1\. Qual descrição melhor reflete a sua estrutura física basal\?/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/O que você observou sobre o seu corpo/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/Estrutura ampla ou sólida/i).length).toBeGreaterThan(0)
     })
-
-    const reloadedBroadBone = screen
-      .getByText(/Ossos mais largos, ombros ou quadris proporcionalmente mais evidentes/i)
-      .closest('button')!
-    expect(reloadedBroadBone).toHaveAttribute('aria-pressed', 'true')
+    const reloaded = await experienceResponseService.listResponsesByExperience(
+      DEMO_ENROLLMENT_ID,
+      'exp-corpo-fisiologia-07b',
+    )
+    expect(
+      (
+        reloaded.find((r) => r.prompt_id === `${AYV_C1_PROMPTS.P1_STRUCTURE.id}_rev2`)
+          ?.structured_value as any
+      )?.value,
+    ).toBe('broad_solid')
   })
 
   // 9. Revisão 1 permanece byte a byte inalterada (snapshot dos registros antes/depois)
@@ -479,19 +475,18 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
       />,
     )
 
-    const correctBtn = screen.getByRole('button', { name: /Corrigir respostas do Capítulo 1/i })
+    const correctBtn = await screen.findByRole('button', { name: /Corrigir minhas respostas/i })
     await user.click(correctBtn)
+    await user.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/1\. Qual descrição melhor reflete a sua estrutura física basal\?/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Pensando na maior parte da sua vida adulta/i)).toBeInTheDocument()
     })
 
     // Fazer alteração na revisão 2
-    const broadBoneOption = screen
-      .getByText(/Ossos mais largos, ombros ou quadris proporcionalmente mais evidentes/i)
-      .closest('button')!
+    const broadBoneOption = screen.getByRole('button', {
+      name: /Figura feminina — estrutura ampla ou sólida/i,
+    })
     await user.click(broadBoneOption)
 
     // Re-ler do armazenamento e verificar se a revisão 1 foi alterada
@@ -521,46 +516,45 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
       />,
     )
 
-    const correctBtn = screen.getByRole('button', { name: /Corrigir respostas do Capítulo 1/i })
+    const correctBtn = await screen.findByRole('button', { name: /Corrigir minhas respostas/i })
     await user.click(correctBtn)
+    await user.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/1\. Qual descrição melhor reflete a sua estrutura física basal\?/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Pensando na maior parte da sua vida adulta/i)).toBeInTheDocument()
     })
 
     // Alterar resposta
-    const broadBoneOption = screen
-      .getByText(/Ossos mais largos, ombros ou quadris proporcionalmente mais evidentes/i)
-      .closest('button')!
+    const broadBoneOption = screen.getByRole('button', {
+      name: /Figura feminina — estrutura ampla ou sólida/i,
+    })
     await user.click(broadBoneOption)
 
     // Avançar até o encerramento
     await user.click(screen.getByRole('button', { name: /Avançar para Pele/i }))
-    await waitFor(() => screen.getByText(/2\. Pele/i))
+    await waitFor(() => screen.getByText(/Tela 2 de 5 • Pele habitual/i))
 
     await user.click(screen.getByRole('button', { name: /Avançar para Cabelo/i }))
-    await waitFor(() => screen.getByText(/3\. Cabelo/i))
+    await waitFor(() => screen.getByText(/Tela 3 de 5 • Cabelo habitual/i))
 
     await user.click(screen.getByRole('button', { name: /Avançar para Temperatura/i }))
-    await waitFor(() => screen.getByText(/4\. Sensibilidade a Temperaturas/i))
+    await waitFor(() => screen.getByText(/Tela 4 de 5 • Temperatura habitual/i))
 
     await user.click(screen.getByRole('button', { name: /Avançar para Hábitos/i }))
-    await waitFor(() => screen.getByText(/5\. Sede, Bebida e Transpiração/i))
+    await waitFor(() => screen.getByText(/Tela 5 de 5 • Sede, bebida e transpiração/i))
 
     await user.click(screen.getByRole('button', { name: /Ir para Encerramento/i }))
-    await waitFor(() => screen.getByText(/Resumo das Respostas/i))
+    await waitFor(() => screen.getByText(/O que você observou sobre o seu corpo/i))
 
-    // O resumo da revisão ativa 2 deve refletir "Ossos mais largos"
-    expect(screen.getByText(/Ossos mais largos/i)).toBeInTheDocument()
+    // O resumo da revisão ativa 2 deve refletir "Estrutura ampla ou sólida"
+    expect(screen.getByText(/Estrutura ampla ou sólida/i)).toBeInTheDocument()
 
     // Concluir Capítulo
-    const completeBtn = screen.getByRole('button', { name: /Concluir Capítulo 1/i })
+    const completeBtn = screen.getByRole('button', { name: /Concluir este capítulo/i })
     await user.click(completeBtn)
 
     await waitFor(() => {
-      expect(screen.getByText(/Capítulo 1 Concluído!/i)).toBeInTheDocument()
+      expect(screen.getByText(/Capítulo 1 concluído/i)).toBeInTheDocument()
     })
 
     // Registro de conclusão da revisão 2 deve existir no armazenamento
@@ -595,8 +589,8 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     for (const item of newActiveResponses) {
       const sVal = (item.structured_value || {}) as any
       if (item.prompt_id.startsWith(AYV_C1_PROMPTS.P1_STRUCTURE.id)) {
-        sVal.value = 'broad_bone'
-        sVal.choice = 'broad_bone'
+        sVal.value = 'broad_solid'
+        sVal.choice = 'broad_solid'
       }
       await experienceResponseService.saveResponse({
         enrollmentId: DEMO_ENROLLMENT_ID,
@@ -646,21 +640,21 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
     })
 
-    const reviewBtn = screen.getByRole('button', { name: /Rever respostas do Capítulo 1/i })
+    const reviewBtn = screen.getByRole('button', { name: /Rever Capítulo 1/i })
     await user.click(reviewBtn)
 
     await waitFor(() => {
       expect(screen.getByTestId('banner-review-mode')).toBeInTheDocument()
     })
 
-    // Deve mostrar broad_bone selecionado
-    const broadBoneOption = screen
-      .getByText(/Ossos mais largos, ombros ou quadris proporcionalmente mais evidentes/i)
-      .closest('button')!
-    expect(broadBoneOption).toHaveAttribute('aria-pressed', 'true')
+    // Deve mostrar broad_solid selecionado
+    const broadBoneOption = screen.getByRole('button', {
+      name: /Figura feminina — estrutura ampla ou sólida/i,
+    })
+    await waitFor(() => expect(broadBoneOption).toHaveAttribute('aria-pressed', 'true'))
   })
 
   // 12. Revisão 3 usa `_rev3`, nunca `_rev2_rev3`
@@ -862,8 +856,8 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     expect(hasCompletion).toBe(false)
   })
 
-  // 16. Fonte inválida falha sem formulário vazio (mensagem + Tentar novamente + Voltar aos capítulos)
-  it('16. Fonte inválida falha sem formulário vazio (mensagem + Tentar novamente + Voltar aos capítulos)', async () => {
+  // 16. Fonte inválida falha sem criar correção ou versão concluída fictícia.
+  it('16. Fonte inválida não oferece correção sem respostas anteriores', async () => {
     // Banco vazio: zero respostas
     expect(() => {
       createChapter1Revision({
@@ -884,25 +878,12 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
       />,
     )
 
+    // Sem uma versão concluída real, a interface não oferece uma correção fictícia.
     await waitFor(() => {
-      expect(screen.getByText(/Corrigir minhas respostas/i)).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: /Corrigir minhas respostas/i }),
+      ).not.toBeInTheDocument()
     })
-
-    const user = userEvent.setup()
-    await user.click(screen.getByRole('button', { name: /Corrigir minhas respostas/i }))
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Confirmar e corrigir/i })).toBeInTheDocument()
-    })
-    await user.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
-
-    // Deve exibir banner de erro claro com ações "Tentar novamente" e "Voltar aos capítulos"
-    await waitFor(() => {
-      expect(screen.getByTestId('c1-correction-error-banner')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /Tentar novamente/i })).toBeInTheDocument()
-    })
-    expect(
-      screen.getByText(/Não foi possível recuperar as respostas anteriores para esta correção/i),
-    ).toBeInTheDocument()
   })
 
   // 17. Falha no meio da cópia não muda o ponteiro ativo
@@ -927,11 +908,12 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
     })
 
-    const correctBtn = screen.getByRole('button', { name: /Corrigir respostas do Capítulo 1/i })
+    const correctBtn = await screen.findByRole('button', { name: /Corrigir minhas respostas/i })
     await user.click(correctBtn)
+    await user.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     // O ponteiro ativo NÃO deve ter sido avançado para 2
     expect(getPersistedActiveChapter1Revision(DEMO_ENROLLMENT_ID)).toBe(1)
@@ -952,11 +934,11 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
     })
 
     // Entrar em Rever
-    await user.click(screen.getByRole('button', { name: /Rever respostas do Capítulo 1/i }))
+    await user.click(screen.getByRole('button', { name: /Rever Capítulo 1/i }))
     await waitFor(() => {
       expect(screen.getByTestId('banner-review-mode')).toBeInTheDocument()
     })
@@ -964,14 +946,14 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     // Voltar ao encerramento via comando do banner
     await user.click(screen.getByRole('button', { name: /Voltar ao encerramento/i }))
     await waitFor(() => {
-      expect(screen.getByText(/Resumo das Respostas/i)).toBeInTheDocument()
+      expect(screen.getByText(/O que você observou sobre o seu corpo/i)).toBeInTheDocument()
     })
 
     // Voltar ao Hub
     await user.click(screen.getByRole('button', { name: /Voltar aos capítulos/i }))
     await waitFor(() => {
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
-      expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
     })
 
     // Respostas preservadas
@@ -1012,16 +994,15 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
     })
 
-    const correctBtn = screen.getByRole('button', { name: /Corrigir respostas do Capítulo 1/i })
+    const correctBtn = await screen.findByRole('button', { name: /Corrigir minhas respostas/i })
     await user.click(correctBtn)
+    await user.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/1\. Qual descrição melhor reflete a sua estrutura física basal\?/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Pensando na maior parte da sua vida adulta/i)).toBeInTheDocument()
     })
 
     expect(sendSpy).not.toHaveBeenCalled()

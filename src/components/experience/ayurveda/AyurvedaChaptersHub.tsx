@@ -126,8 +126,9 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
     c1CanonicalState = 'not_started'
   }
 
-  // Capítulo 1 canonicamente concluído libera o Capítulo 2
-  const isC1CanonicallyCompleted = c1CanonicalState === 'completed'
+  // Uma versão concluída permanece válida enquanto a nova correção é preparada.
+  const isC1CanonicallyCompleted =
+    c1CanonicalState === 'completed' || (chapter1LastCompletedRevision ?? 0) > 0
 
   // Determinação canônica dos 7 estados para o Capítulo 2
   const effectiveAnsweredMomentsC2 = answeredMomentsCountC2
@@ -346,8 +347,8 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
                         'Suas correções estão preenchidas. Revise e confirme a nova versão.'}
                       {c1CanonicalState === 'correcting_in_progress' && (
                         <span>
-                          {effectiveAnsweredStepsC1} de {totalSteps} etapas revisadas. Você iniciou
-                          uma correção das suas respostas.
+                          {effectiveAnsweredStepsC1} de {totalSteps} etapas com respostas nesta
+                          versão. Você iniciou uma correção das suas respostas.
                         </span>
                       )}
                       {c1CanonicalState === 'ready_to_complete' &&
@@ -578,8 +579,8 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
                           'Suas correções estão preenchidas. Revise e confirme a nova versão.'}
                         {c2CanonicalState === 'correcting_in_progress' && (
                           <span>
-                            {effectiveAnsweredMomentsC2} de {totalMomentsC2} momentos revisadas.
-                            Você iniciou uma correção das suas respostas.
+                            {effectiveAnsweredMomentsC2} de {totalMomentsC2} momentos com respostas
+                            nesta versão. Você iniciou uma correção das suas respostas.
                           </span>
                         )}
                         {c2CanonicalState === 'ready_to_complete' &&
