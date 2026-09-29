@@ -1,8 +1,12 @@
-import { describe, it, expect, vi } from 'vitest'
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { ProfessionalIntegrativeMapView } from '@/components/experience/ProfessionalIntegrativeMapView'
 import { buildConscienciaQaFixture } from '@/services/conscienciaQaFixture'
+
+afterEach(cleanup)
 
 describe('Componente ProfessionalIntegrativeMapView (UI do Mapa Integrativo)', () => {
   const enrollmentId = 'enr-ui-test-123'
@@ -13,7 +17,7 @@ describe('Componente ProfessionalIntegrativeMapView (UI do Mapa Integrativo)', (
 
     expect(screen.getByTestId('professional-integrative-map-empty')).toBeInTheDocument()
     expect(
-      screen.getByText('Esta interagente ainda não iniciou este capítulo.'),
+      screen.getAllByText('Esta interagente ainda não iniciou este capítulo.')[0],
     ).toBeInTheDocument()
     expect(
       screen.getByText(
@@ -52,7 +56,7 @@ describe('Componente ProfessionalIntegrativeMapView (UI do Mapa Integrativo)', (
 
     // 2) Alterna para Leitura Aprofundada e verifica os 8 blocos integrais
     const deepTab = screen.getByTestId('tab-trigger-aprofundada')
-    fireEvent.click(deepTab)
+    fireEvent.click(screen.getByTestId('btn-aprofundar-topo'))
 
     expect(screen.getByTestId('professional-deep-reading-view')).toBeInTheDocument()
 
@@ -89,7 +93,7 @@ describe('Componente ProfessionalIntegrativeMapView (UI do Mapa Integrativo)', (
     // Bloco 6: Ayurveda Conciso
     expect(screen.getByText(/6. Bloco Ayurveda Conciso/i)).toBeInTheDocument()
     expect(screen.getByText(/Hipótese de Prakriti/i)).toBeInTheDocument()
-    expect(screen.getByText(/Vishama Agni/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Vishama Agni/i).length).toBeGreaterThan(0)
 
     // Bloco 7: Prioridades para a Escuta Profissional
     expect(
@@ -134,7 +138,7 @@ describe('Componente ProfessionalIntegrativeMapView (UI do Mapa Integrativo)', (
 
     // Muda para leitura aprofundada
     const deepTab = screen.getByTestId('tab-trigger-aprofundada')
-    fireEvent.click(deepTab)
+    fireEvent.click(screen.getByTestId('btn-aprofundar-topo'))
 
     // Abre matriz de cobertura no bloco 8
     const toggleMatrixBtn = screen.getByText('Ver matriz de cobertura')

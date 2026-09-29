@@ -232,9 +232,15 @@ export const InteragenteHome: React.FC = () => {
       if (activeEnr?.id && effectiveEngineEnabled) {
         const [exps, kiList, myRecogs, presList, mapData, resps] = await Promise.all([
           enrollmentExperienceService.listByEnrollment(activeEnr.id),
-          cerKnowledgeItemService.listByEnrollment(activeEnr.id),
-          cerParticipantRecognitionService.listByEnrollment(activeEnr.id),
-          cerKnowledgePresentationService.listPresentedByEnrollment(activeEnr.id),
+          demoAdapter.isEnabled()
+            ? Promise.resolve([])
+            : cerKnowledgeItemService.listByEnrollment(activeEnr.id),
+          demoAdapter.isEnabled()
+            ? Promise.resolve([])
+            : cerParticipantRecognitionService.listByEnrollment(activeEnr.id),
+          demoAdapter.isEnabled()
+            ? Promise.resolve([])
+            : cerKnowledgePresentationService.listPresentedByEnrollment(activeEnr.id),
           demoAdapter.isEnabled()
             ? Promise.resolve(demoAdapter.getCurrentPublishedMap(activeEnr.id))
             : cerMapService.getCurrentPublishedMap(activeEnr.id),

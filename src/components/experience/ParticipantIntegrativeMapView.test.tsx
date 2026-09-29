@@ -1,12 +1,15 @@
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { ParticipantIntegrativeMapView } from '@/components/experience/ParticipantIntegrativeMapView'
 import { ProfessionalConscienciaSection } from '@/components/ProfessionalConscienciaSection'
 import { InteragenteHome } from '@/pages/InteragenteHome'
 import { buildConscienciaQaFixture } from '@/services/conscienciaQaFixture'
 import { demoAdapter, DEMO_ENROLLMENT_ID, DEMO_ENROLLMENT } from '@/services/demoAdapter'
+import { cerJournalService } from '@/services/cerJournalService'
 
 // Mock useAuth para montagens completas de telas de Interagente
 vi.mock('@/contexts/AuthContext', () => ({
@@ -30,9 +33,21 @@ vi.mock('@/contexts/AuthContext', () => ({
   }),
 }))
 
+afterEach(cleanup)
+
 describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidade)', () => {
   const enrollmentId = 'enr-participant-test-123'
   const participantName = 'Mariana Silva'
+  const publishedMap = { status: 'published', items: [] } as any
+
+  it('não libera síntese interpretativa apenas por haver respostas em seis dimensões', () => {
+    const fullResponses = buildConscienciaQaFixture(enrollmentId).responses
+    render(<ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} />)
+
+    expect(screen.getByTestId('participant-integrative-map-awaiting-publication')).toBeInTheDocument()
+    expect(screen.queryByTestId('participant-map-essencial-view')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('participant-map-profundidade-view')).not.toBeInTheDocument()
+  })
 
   it('renderiza o estado vazio/insuficiente de forma gentil sem inventar padrões', () => {
     render(<ParticipantIntegrativeMapView responses={[]} participantName={participantName} />)
@@ -59,7 +74,7 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
   it('renderiza "Meu mapa essencial" como padrão com a faixa superior e os cards dimensionais', () => {
     const fullResponses = buildConscienciaQaFixture(enrollmentId).responses
     render(
-      <ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} />,
+      <ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} currentMap={publishedMap} />,
     )
 
     expect(screen.getByTestId('participant-integrative-map-complete')).toBeInTheDocument()
@@ -92,12 +107,12 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
   it('transita para "Compreender em profundidade" com 4 eixos por dimensão e linguagem provisória', () => {
     const fullResponses = buildConscienciaQaFixture(enrollmentId).responses
     render(
-      <ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} />,
+      <ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} currentMap={publishedMap} />,
     )
 
     // Clica na tab de profundidade
     const deepTabTrigger = screen.getByTestId('tab-trigger-profundidade')
-    fireEvent.click(deepTabTrigger)
+    fireEvent.click(screen.getByTestId('btn-aprofundar-essencial'))
 
     expect(screen.getByTestId('participant-map-profundidade-view')).toBeInTheDocument()
 
@@ -136,7 +151,7 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
   it('GATE DE PRIVACIDADE CRÍTICO: NUNCA expõe strings profissionais ou confiança técnica interna', () => {
     const fullResponses = buildConscienciaQaFixture(enrollmentId).responses
     render(
-      <ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} />,
+      <ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} currentMap={publishedMap} />,
     )
 
     // 1) Na profundidade 1 (essencial)
@@ -152,7 +167,7 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
 
     // 2) Na profundidade 2 (compreender em profundidade)
     const deepTabTrigger = screen.getByTestId('tab-trigger-profundidade')
-    fireEvent.click(deepTabTrigger)
+    fireEvent.click(screen.getByTestId('btn-aprofundar-essencial'))
 
     bodyText = document.body.textContent || ''
     expect(bodyText).not.toContain('Prioridades para a escuta')
@@ -169,11 +184,15 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
       localStorage.clear()
       demoAdapter.enableDemo('mariana')
       demoAdapter.setActiveScenario('default')
+      vi.spyOn(cerJournalService, 'listParticipantMessages').mockResolvedValue([
+        { id: 'qa-intake', status: 'approved', created: '2025-05-15T12:00:00Z', message_text: 'Relato inicial sintético.' } as any,
+      ])
     })
 
     afterEach(() => {
       localStorage.clear()
       demoAdapter.setActiveScenario('default')
+      vi.restoreAllMocks()
     })
 
     it('transita deterministicamente entre perfis com unmount/remount real: profissional ativa QA -> Mariana monta do zero e vê 6/6 no Meu Mapa CER -> desativa -> Mariana remonta e vê 0/6', async () => {
@@ -219,8 +238,10 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
       await waitFor(() => {
         expect(screen.getByTestId('ser-integral-map-center')).toBeInTheDocument()
       })
+      await waitFor(() => {
+        expect(screen.getAllByText('Abrir Meu Mapa CER').length).toBeGreaterThan(0)
+      })
       expect(screen.queryAllByText('Meu Mapa CER — em construção')).toHaveLength(0)
-      expect(screen.getAllByText('Abrir Meu Mapa CER').length).toBeGreaterThan(0)
 
       // (e) Abrir Meu Mapa CER
       fireEvent.click(screen.getByTestId('ser-integral-map-center'))
@@ -236,10 +257,10 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
 
       const deepTabTrigger = screen.getByTestId('tab-trigger-profundidade')
       expect(deepTabTrigger).toBeInTheDocument()
-      expect(screen.getByText('Compreender em profundidade')).toBeInTheDocument()
+      expect(screen.getAllByText('Compreender em profundidade').length).toBeGreaterThan(0)
 
       // Clicar e verificar profundidade
-      fireEvent.click(deepTabTrigger)
+      fireEvent.click(screen.getByTestId('btn-aprofundar-essencial'))
       expect(screen.getByTestId('participant-map-profundidade-view')).toBeInTheDocument()
 
       // Gate de privacidade: ausência de strings profissionais em ambas as tabs

@@ -69,6 +69,22 @@ export const ParticipantIntegrativeMapView: React.FC<ParticipantIntegrativeMapVi
   // Derivações determinísticas utilizando os mesmos motores analíticos canônicos
   const mapData = buildProfessionalIntegrativeMap(safeResponses, participantName)
 
+  // As respostas precedem a devolutiva. Só apresentar a leitura integrativa
+  // depois da publicação profissional do Mapa CER.
+  if (mapData.hasSufficientData && currentMap?.status !== 'published') {
+    return (
+      <Card className="border-border/70 shadow-none bg-muted/10" data-testid="participant-integrative-map-awaiting-publication">
+        <CardHeader>
+          <CardTitle className="font-serif">Meu Mapa CER está em construção</CardTitle>
+          <CardDescription>
+            Suas respostas já ajudam a compor o mapa. A leitura será compartilhada depois de ser
+            revisada pela profissional e conversada com você.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    )
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // ESTADO VAZIO / INSUFICIENTE: CANÔNICO, SEM FABRICAÇÃO DE SÍNTESE
   // ═══════════════════════════════════════════════════════════════════════════

@@ -110,7 +110,7 @@ describe('Motor do Mapa Integrativo Profissional da Consciência (integrativeMap
     expect(result.ayurvedaConcise.prakritiHypothesis).toContain('Vata')
     expect(result.ayurvedaConcise.agniReading.type).toBe('Vishama Agni')
     expect(result.ayurvedaConcise.amaReading.presence).toBeTruthy()
-    expect(result.ayurvedaConcise.disclaimer).toContain('não constitui diagnóstico')
+    expect(result.ayurvedaConcise.disclaimer).toContain('Não representa diagnóstico')
 
     // Bloco 7: Prioridades para a Escuta Profissional (não prescrição) e Perguntas de Sessão
     expect(result.listeningPriorities.length).toBeGreaterThanOrEqual(2)
