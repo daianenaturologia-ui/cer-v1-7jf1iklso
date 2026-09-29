@@ -166,6 +166,7 @@ const STORAGE_KEY = 'cer_demo_mode_state_v3'
 const LEGACY_STORAGE_KEY_V1 = 'cer_demo_mode_state_v1'
 const LEGACY_STORAGE_KEY_V2 = 'cer_demo_mode_state_v2'
 export const DEMO_ARCHIVED_INCOMPATIBLE_KEY = 'cer_demo_incompatible_archive_v1'
+export const DEMO_QA_SCENARIO_STORAGE_KEY = 'cer_demo_qa_consciencia_completa_active'
 export const MENTE_EMOCOES_EXPERIENCE_ID = 'exp-mente-emocoes-07c'
 
 function getInitialState(): DemoStateStore {
@@ -199,6 +200,10 @@ class DemoAdapter {
   constructor() {
     this.state = this.loadState()
     this.isDemoEnabled = localStorage.getItem('cer_demo_mode_active') === 'true'
+    this.activeScenario =
+      localStorage.getItem(DEMO_QA_SCENARIO_STORAGE_KEY) === 'true'
+        ? 'qa_consciencia_completa'
+        : 'default'
   }
 
   /**
@@ -789,10 +794,12 @@ class DemoAdapter {
       localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
       localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
       localStorage.removeItem(DEMO_ARCHIVED_INCOMPATIBLE_KEY)
+      localStorage.removeItem(DEMO_QA_SCENARIO_STORAGE_KEY)
       localStorage.removeItem('cer_demo_mode_active')
     } catch {
       /* ignore */
     }
+    this.activeScenario = 'default'
     this.state = getInitialState()
     this.notify()
   }
@@ -1503,20 +1510,70 @@ class DemoAdapter {
     const pub = this.state.maps.find(
       (m) => m.enrollment_id === enrollmentId && m.status === 'published',
     )
-    if (!pub) return null
-    return {
-      ...pub,
-      items: pub.items.map((it) => ({
-        id: it.id,
-        map_id: it.map_id,
-        section: it.section,
-        item_text: it.item_text,
-        position: it.position,
-        created_by_user_id: it.created_by_user_id,
-        created: it.created,
-        updated: it.updated,
-      })),
+    if (pub) {
+      return {
+        ...pub,
+        items: pub.items.map((it) => ({
+          id: it.id,
+          map_id: it.map_id,
+          section: it.section,
+          item_text: it.item_text,
+          position: it.position,
+          created_by_user_id: it.created_by_user_id,
+          created: it.created,
+          updated: it.updated,
+        })),
+      }
     }
+
+    if (this.activeScenario === 'qa_consciencia_completa') {
+      const now = '2025-05-16T18:00:00.000Z'
+      return {
+        id: `demo-map-qa-${enrollmentId || DEMO_ENROLLMENT_ID}`,
+        enrollment_id: enrollmentId || DEMO_ENROLLMENT_ID,
+        version_number: 1,
+        status: 'published',
+        published_at: now,
+        published_by_user_id: DEMO_USER_DAIANE.id,
+        created_by_user_id: DEMO_USER_DAIANE.id,
+        created: now,
+        updated: now,
+        items: [
+          {
+            id: 'demo-qa-map-item-1',
+            map_id: `demo-map-qa-${enrollmentId || DEMO_ENROLLMENT_ID}`,
+            section: 'minha_natureza',
+            item_text: 'Sensibilidade que percebe nuances e busca ritmo acolhedor nas pausas.',
+            position: 1,
+            created_by_user_id: DEMO_USER_DAIANE.id,
+            created: now,
+            updated: now,
+          },
+          {
+            id: 'demo-qa-map-item-2',
+            map_id: `demo-map-qa-${enrollmentId || DEMO_ENROLLMENT_ID}`,
+            section: 'desafios_atuais',
+            item_text: 'Oscilações de energia digestiva e tendência a carregar tensões no corpo.',
+            position: 2,
+            created_by_user_id: DEMO_USER_DAIANE.id,
+            created: now,
+            updated: now,
+          },
+          {
+            id: 'demo-qa-map-item-3',
+            map_id: `demo-map-qa-${enrollmentId || DEMO_ENROLLMENT_ID}`,
+            section: 'caminhos_equilibrio',
+            item_text: 'Espaços de quietude, alimento aquecido e conversas transparentes.',
+            position: 3,
+            created_by_user_id: DEMO_USER_DAIANE.id,
+            created: now,
+            updated: now,
+          },
+        ],
+      }
+    }
+
+    return null
   }
 
   public getDraftMap(
@@ -1736,9 +1793,22 @@ class DemoAdapter {
     return this.activeScenario
   }
 
+  public isConscienciaQaScenarioActive(): boolean {
+    return this.activeScenario === 'qa_consciencia_completa'
+  }
+
   public setActiveScenario(scenario: DemoScenarioMode): void {
     if (this.activeScenario !== scenario) {
       this.activeScenario = scenario
+      try {
+        if (scenario === 'qa_consciencia_completa') {
+          localStorage.setItem(DEMO_QA_SCENARIO_STORAGE_KEY, 'true')
+        } else {
+          localStorage.removeItem(DEMO_QA_SCENARIO_STORAGE_KEY)
+        }
+      } catch (err) {
+        console.warn('Falha ao persistir cenário QA:', err)
+      }
       this.notify()
     }
   }
