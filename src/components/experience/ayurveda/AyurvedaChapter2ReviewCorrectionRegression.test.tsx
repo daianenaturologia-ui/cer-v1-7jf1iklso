@@ -18,7 +18,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import { AyurvedaChaptersNavigator } from '@/components/experience/ayurveda/AyurvedaChaptersNavigator'
@@ -145,13 +145,13 @@ describe('Regressão: Banner Somente-Leitura ao transicionar de Revisão para Co
       />,
     )
 
-    await waitFor(() => {
+    await waitFor(async () => {
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
-      expect(screen.getByText('Capítulo 2 Concluído')).toBeInTheDocument()
+      expect(await screen.findByRole('button', { name: /Rever Capítulo 2/i })).toBeInTheDocument()
     })
 
     // 2. Clicar em "Rever Capítulo 2"
-    const reviewBtn = screen.getByRole('button', { name: /Rever respostas do Capítulo 2/i })
+    const reviewBtn = await screen.findByRole('button', { name: /Rever Capítulo 2/i })
     await user.click(reviewBtn)
 
     // 3. Afirmar que o banner banner-c2-review-mode existe
@@ -196,18 +196,28 @@ describe('Regressão: Banner Somente-Leitura ao transicionar de Revisão para Co
 
     // 9. Clicar com userEvent numa segunda opção da primeira pergunta
     // A opção 1 ("Aparece em horários relativamente previsíveis.") já está marcada (1/2)
-    expect(screen.getByText(/Até 2 escolhas • 1\/2/i)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(
+          screen.getByText(/1\. Como a sua fome costuma funcionar\?/i).parentElement!,
+        ).getByText(/Até 2 escolhas • 1\/2/i),
+      ).toBeInTheDocument()
+    })
 
     // Clicar na opção 2 ("Oscila muito: às vezes forte, às vezes sem fome.")
     const secondOptionBtn = screen
-      .getByText(/Oscila muito: às vezes forte, às vezes sem fome/i)
+      .getByText(/Às vezes aparece com força e outras vezes quase não aparece/i)
       .closest('button')!
     expect(secondOptionBtn).toBeInTheDocument()
     await user.click(secondOptionBtn)
 
     // 10. Afirmar contador mudando de 1/2 para 2/2 e a nova escolha marcada
     await waitFor(() => {
-      expect(screen.getByText(/Até 2 escolhas • 2\/2/i)).toBeInTheDocument()
+      expect(
+        within(
+          screen.getByText(/1\. Como a sua fome costuma funcionar\?/i).parentElement!,
+        ).getByText(/Até 2 escolhas • 2\/2/i),
+      ).toBeInTheDocument()
     })
     expect(secondOptionBtn).toHaveAttribute('aria-pressed', 'true')
 
@@ -232,23 +242,30 @@ describe('Regressão: Banner Somente-Leitura ao transicionar de Revisão para Co
       ).toBeInTheDocument()
     })
 
-    // Se estiver no hub, clica no C2 (que está em correção)
-    const resumeBtn = screen.queryByRole('button', { name: /Continuar Capítulo 2/i })
-    if (resumeBtn) {
-      await user.click(resumeBtn)
-    }
-
-    await waitFor(() => {
-      expect(screen.getByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeInTheDocument()
-    })
-
-    // Deve estar com 2/2 escolhas salvas na revisão 2
-    expect(screen.getByText(/Até 2 escolhas • 2\/2/i)).toBeInTheDocument()
-    const reloadedSecondOption = screen
-      .getByText(/Oscila muito: às vezes forte, às vezes sem fome/i)
-      .closest('button')!
-    expect(reloadedSecondOption).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.queryByTestId('banner-c2-review-mode')).not.toBeInTheDocument()
+    // As respostas copiadas deixam esta revisão pronta para confirmação,
+    // sem reutilizar a conclusão da revisão anterior.
+    expect(
+      await screen.findByRole('button', { name: /Revisar e concluir correção/i }),
+    ).toBeInTheDocument()
+    const persisted = await experienceResponseService.listResponsesByExperience(
+      DEMO_ENROLLMENT_ID,
+      'exp-corpo-fisiologia-07b',
+    )
+    const hunger = persisted.find(
+      (response) =>
+        response.prompt_id === getChapter2RevisionPromptId(AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id, 2),
+    )
+    expect((hunger?.structured_value as any)?.value).toEqual([
+      'regular_hours',
+      'variable_intensity',
+    ])
+    expect(
+      persisted.some(
+        (response) =>
+          response.prompt_id ===
+          getChapter2RevisionPromptId(AYV_C2_PROMPTS.CHAPTER_COMPLETION.id, 2),
+      ),
+    ).toBe(false)
   })
 
   // 12. Teste inverso: o percurso "Rever Capítulo 2" continua bloqueando cliques e salvamento
@@ -264,11 +281,11 @@ describe('Regressão: Banner Somente-Leitura ao transicionar de Revisão para Co
       />,
     )
 
-    await waitFor(() => {
-      expect(screen.getByText('Capítulo 2 Concluído')).toBeInTheDocument()
+    await waitFor(async () => {
+      expect(await screen.findByRole('button', { name: /Rever Capítulo 2/i })).toBeInTheDocument()
     })
 
-    const reviewBtn = screen.getByRole('button', { name: /Rever respostas do Capítulo 2/i })
+    const reviewBtn = await screen.findByRole('button', { name: /Rever Capítulo 2/i })
     await user.click(reviewBtn)
 
     await waitFor(() => {
@@ -276,16 +293,28 @@ describe('Regressão: Banner Somente-Leitura ao transicionar de Revisão para Co
     })
 
     // Afirmar contador 1/2
-    expect(screen.getByText(/Até 2 escolhas • 1\/2/i)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(
+          screen.getByText(/1\. Como a sua fome costuma funcionar\?/i).parentElement!,
+        ).getByText(/Até 2 escolhas • 1\/2/i),
+      ).toBeInTheDocument()
+    })
 
     // Clicar numa opção desmarcada não deve mudar nada
     const secondOptionBtn = screen
-      .getByText(/Oscila muito: às vezes forte, às vezes sem fome/i)
+      .getByText(/Às vezes aparece com força e outras vezes quase não aparece/i)
       .closest('button')!
     await user.click(secondOptionBtn)
 
     // O contador continua 1/2 e aria-pressed não é true
-    expect(screen.getByText(/Até 2 escolhas • 1\/2/i)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(
+          screen.getByText(/1\. Como a sua fome costuma funcionar\?/i).parentElement!,
+        ).getByText(/Até 2 escolhas • 1\/2/i),
+      ).toBeInTheDocument()
+    })
     expect(secondOptionBtn).not.toHaveAttribute('aria-pressed', 'true')
 
     // Nenhuma resposta nova de revisão foi criada

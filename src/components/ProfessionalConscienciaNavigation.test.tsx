@@ -30,12 +30,15 @@ describe('Navegação profissional da Consciência', () => {
     expect(screen.getAllByRole('heading', { name: 'Corpo & Fisiologia' }).length).toBeGreaterThan(1)
     expect(screen.getAllByText(/Capítulo 1 — Minha estrutura/i).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/Capítulo 2 — O ritmo do meu corpo/i).length).toBeGreaterThan(0)
-    expect(screen.getByRole('button', { name: 'Abrir mapa' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Mapa e interpretação profissional' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Mapa Integrativo Profissional da Consciência')).toBeInTheDocument()
 
     await user.click(screen.getAllByRole('button', { name: 'Ver respostas' })[1])
     expect(screen.queryByText(/Capítulo 1 — Minha estrutura/i)).toBeNull()
     expect(
-      screen.getByText(/Nenhuma resposta registrada ainda nesta dimensão/i),
+      (await screen.findAllByText('Esta interagente ainda não iniciou este capítulo.'))[0],
     ).toBeInTheDocument()
   })
 })

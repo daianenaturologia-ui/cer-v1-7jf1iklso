@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, ArrowRight, Eye } from 'lucide-react'
@@ -18,6 +18,7 @@ import {
   Chapter2TreatmentVariant,
   createChapter2Revision,
   getResponseRevisionNumber,
+  getResponseParentVersionId,
   migrateLegacyChapter2Responses,
   getPersistedActiveChapter2Revision,
   setPersistedActiveChapter2Revision,
@@ -109,6 +110,10 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   }
 
   const [stage, setStage] = useState<Chapter2FlowStage>(resolveInitialStage)
+  const openedCorrection = useRef(false)
+  useEffect(() => {
+    openedCorrection.current = false
+  }, [enrollmentId, experienceId])
   // Derivação estrita: isReviewOnly equivale exclusivamente a mode === 'review'
   const isReviewOnly = mode === 'review'
   const isCorrecting = mode === 'correcting'
@@ -384,7 +389,12 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         }
       } else {
         // Fallback legado se nenhum mode explícito foi passado
-        if (initialStage === 'review') {
+        if (openedCorrection.current) {
+          // Respostas copiadas não significam que a pessoa já revisou esta correção.
+          setStage((previous) =>
+            previous === 'opening' || previous === 'closing' ? 'momento1' : previous,
+          )
+        } else if (initialStage === 'review') {
           setStage('momento1')
         } else if (initialStage === 'closing' || derived.status === 'ready_to_complete') {
           setStage('closing')
@@ -449,6 +459,14 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
 
     const nowIso = new Date().toISOString()
     const targetRev = currentActiveRev
+    const previousResponse = rawResponses.find(
+      (response) =>
+        getResponseRevisionNumber(response) === targetRev &&
+        getChapter2BasePromptId(response.prompt_id) === getChapter2BasePromptId(params.promptId),
+    )
+    const parentVersionId = previousResponse
+      ? getResponseParentVersionId(previousResponse)
+      : undefined
 
     const meta: AyurvedaCanonicalC2ResponseMetadata = {
       prompt_key: params.promptKey,
@@ -468,6 +486,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       experience_version: AYURVEDA_CHAPTER_2_VERSION,
       notes_for_professional: params.notesForProfessional,
       revision_number: targetRev,
+      parent_version_id: parentVersionId,
     }
 
     // Usar o helper canônico getChapter2RevisionPromptId para obter o identificador físico
@@ -490,6 +509,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         value: params.value,
         selectedOptionIds: Array.isArray(params.value) ? params.value : [params.value],
         revision_number: targetRev,
+        parent_version_id: parentVersionId,
         metadata: meta,
       },
     })
@@ -770,6 +790,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         return [...prev, completionResp]
       })
 
+      openedCorrection.current = false
       onCompleted?.()
       onBackToHub()
     } catch (e) {
@@ -970,6 +991,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       setChapterState(newLoadedState)
 
       // 7. Só então comutar revisão ativa e navegar para o Momento 1 editável
+      openedCorrection.current = true
       setActiveRevision(nextRevisionNumber)
       setStage('momento1')
     } catch (err) {

@@ -145,7 +145,7 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
   })
 
   // 3. Em andamento com contagem real
-  it('3. Em andamento com contagem real: X de 5 etapas/momentos respondidas, ação Retomar', async () => {
+  it('3. Em andamento com contagem real: X de 5 etapas/momentos respondidos, ação Retomar', async () => {
     const user = userEvent.setup()
     const handleStartC1 = vi.fn()
     const handleStartC2 = vi.fn()
@@ -180,7 +180,7 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
       />,
     )
 
-    expect(screen.getByText('2 de 5 momentos respondidas')).toBeInTheDocument()
+    expect(screen.getByText('2 de 5 momentos respondidos')).toBeInTheDocument()
     const resumeC2 = screen.getByRole('button', { name: /Retomar Capítulo 2/i })
     expect(resumeC2).toBeInTheDocument()
     await user.click(resumeC2)
@@ -675,8 +675,8 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
 
     // C1 deve exibir Concluído
     expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
-    // C2 deve exibir Em andamento (3 de 5 momentos respondidas)
-    expect(screen.getByText('3 de 5 momentos respondidas')).toBeInTheDocument()
+    // C2 deve exibir Em andamento (3 de 5 momentos respondidos)
+    expect(screen.getByText('3 de 5 momentos respondidos')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Retomar Capítulo 2/i })).toBeInTheDocument()
   })
 
