@@ -615,7 +615,9 @@ describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 
     })
 
     // Clicar na opção canônica de intensidade variável para alternar
-    const oscilaBtn = screen.getByText(/Às vezes aparece com força e outras vezes quase não aparece/i).closest('button')
+    const oscilaBtn = screen
+      .getByText(/Às vezes aparece com força e outras vezes quase não aparece/i)
+      .closest('button')
     expect(oscilaBtn).not.toBeNull()
 
     await user.click(oscilaBtn!)

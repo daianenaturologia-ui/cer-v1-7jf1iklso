@@ -239,9 +239,7 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
     fireEvent.click(vigExpandBtn!)
 
     // Clarification note do Hipervigilante
-    expect(
-      screen.getByText(/se diferencia do estado fisiológico de hipervigilância/i),
-    ).toBeTruthy()
+    expect(screen.getByText(/se diferencia do estado fisiológico de hipervigilância/i)).toBeTruthy()
   })
 
   it('9. diferencia rigorosamente ausência de recusa sem inventar inferência', () => {
@@ -467,7 +465,9 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
 
     // 2. P7b / P8: "Crítico" ("cartao_10_cobrar_e_criticar") nos padrões mais interferentes
     expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toBeTruthy()
-    expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toHaveTextContent('padrão Crítico')
+    expect(screen.getByTestId('pattern-card-cartao_10_cobrar_e_criticar')).toHaveTextContent(
+      'padrão Crítico',
+    )
 
     // 3. P12: Recurso ("Ainda não descobri o que me ajuda")
     expect(screen.getByText('Ainda não descobri o que me ajuda')).toBeTruthy()
@@ -613,8 +613,12 @@ describe('MindEmotionsReport — Retrato de Mente & Emoções', () => {
 
     // 5. Somente Evitativa ("cartao_9_evitar_desconfortos") com "Percebido como mais interferente"
     expect(screen.getByTestId('pattern-card-cartao_9_evitar_desconfortos')).toBeTruthy()
-    expect(screen.getByTestId('pattern-card-cartao_9_evitar_desconfortos')).toHaveTextContent('padrão Evitativo')
-    expect(screen.getByTestId('pattern-card-cartao_9_evitar_desconfortos')).toHaveTextContent('Percebido como mais interferente')
+    expect(screen.getByTestId('pattern-card-cartao_9_evitar_desconfortos')).toHaveTextContent(
+      'padrão Evitativo',
+    )
+    expect(screen.getByTestId('pattern-card-cartao_9_evitar_desconfortos')).toHaveTextContent(
+      'Percebido como mais interferente',
+    )
     // Outros padrões não devem ter cartão na P8
     expect(screen.queryByTestId('pattern-card-cartao_1_fazer_certo')).toBeNull()
 

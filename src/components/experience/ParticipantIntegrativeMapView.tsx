@@ -73,7 +73,10 @@ export const ParticipantIntegrativeMapView: React.FC<ParticipantIntegrativeMapVi
   // depois da publicação profissional do Mapa CER.
   if (mapData.hasSufficientData && currentMap?.status !== 'published') {
     return (
-      <Card className="border-border/70 shadow-none bg-muted/10" data-testid="participant-integrative-map-awaiting-publication">
+      <Card
+        className="border-border/70 shadow-none bg-muted/10"
+        data-testid="participant-integrative-map-awaiting-publication"
+      >
         <CardHeader>
           <CardTitle className="font-serif">Meu Mapa CER está em construção</CardTitle>
           <CardDescription>

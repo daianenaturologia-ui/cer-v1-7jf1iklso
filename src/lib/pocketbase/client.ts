@@ -1,9 +1,10 @@
 import PocketBase from 'pocketbase'
 
 export function getPocketBaseUrl(): string {
-  const viteUrl = typeof import.meta !== 'undefined' && import.meta.env
-    ? import.meta.env.VITE_POCKETBASE_URL
-    : undefined
+  const viteUrl =
+    typeof import.meta !== 'undefined' && import.meta.env
+      ? import.meta.env.VITE_POCKETBASE_URL
+      : undefined
   const nodeUrl = typeof process !== 'undefined' ? process.env.VITE_POCKETBASE_URL : undefined
   const url = viteUrl || nodeUrl
   if (!url) {

@@ -42,9 +42,13 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
 
   it('não libera síntese interpretativa apenas por haver respostas em seis dimensões', () => {
     const fullResponses = buildConscienciaQaFixture(enrollmentId).responses
-    render(<ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} />)
+    render(
+      <ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} />,
+    )
 
-    expect(screen.getByTestId('participant-integrative-map-awaiting-publication')).toBeInTheDocument()
+    expect(
+      screen.getByTestId('participant-integrative-map-awaiting-publication'),
+    ).toBeInTheDocument()
     expect(screen.queryByTestId('participant-map-essencial-view')).not.toBeInTheDocument()
     expect(screen.queryByTestId('participant-map-profundidade-view')).not.toBeInTheDocument()
   })
@@ -74,7 +78,11 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
   it('renderiza "Meu mapa essencial" como padrão com a faixa superior e os cards dimensionais', () => {
     const fullResponses = buildConscienciaQaFixture(enrollmentId).responses
     render(
-      <ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} currentMap={publishedMap} />,
+      <ParticipantIntegrativeMapView
+        responses={fullResponses}
+        participantName={participantName}
+        currentMap={publishedMap}
+      />,
     )
 
     expect(screen.getByTestId('participant-integrative-map-complete')).toBeInTheDocument()
@@ -107,7 +115,11 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
   it('transita para "Compreender em profundidade" com 4 eixos por dimensão e linguagem provisória', () => {
     const fullResponses = buildConscienciaQaFixture(enrollmentId).responses
     render(
-      <ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} currentMap={publishedMap} />,
+      <ParticipantIntegrativeMapView
+        responses={fullResponses}
+        participantName={participantName}
+        currentMap={publishedMap}
+      />,
     )
 
     // Clica na tab de profundidade
@@ -151,7 +163,11 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
   it('GATE DE PRIVACIDADE CRÍTICO: NUNCA expõe strings profissionais ou confiança técnica interna', () => {
     const fullResponses = buildConscienciaQaFixture(enrollmentId).responses
     render(
-      <ParticipantIntegrativeMapView responses={fullResponses} participantName={participantName} currentMap={publishedMap} />,
+      <ParticipantIntegrativeMapView
+        responses={fullResponses}
+        participantName={participantName}
+        currentMap={publishedMap}
+      />,
     )
 
     // 1) Na profundidade 1 (essencial)
@@ -185,7 +201,12 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
       demoAdapter.enableDemo('mariana')
       demoAdapter.setActiveScenario('default')
       vi.spyOn(cerJournalService, 'listParticipantMessages').mockResolvedValue([
-        { id: 'qa-intake', status: 'approved', created: '2025-05-15T12:00:00Z', message_text: 'Relato inicial sintético.' } as any,
+        {
+          id: 'qa-intake',
+          status: 'approved',
+          created: '2025-05-15T12:00:00Z',
+          message_text: 'Relato inicial sintético.',
+        } as any,
       ])
     })
 

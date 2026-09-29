@@ -1367,9 +1367,13 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
             : ''
       return (
         <div className="space-y-1">
-          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{state.text}</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+            {state.text}
+          </p>
           {includeFreeText && freeText && !state.text.includes(freeText) && (
-            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{freeText}</p>
+            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+              {freeText}
+            </p>
           )}
         </div>
       )
