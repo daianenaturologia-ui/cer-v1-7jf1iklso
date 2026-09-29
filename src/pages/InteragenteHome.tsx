@@ -63,6 +63,7 @@ import {
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
 import { ExperienceEngine } from '@/components/experience'
 import { ParticipantMapDisplay } from '@/components/ParticipantMapDisplay'
+import { ParticipantIntegrativeMapView } from '@/components/experience/ParticipantIntegrativeMapView'
 import { AvatarRepresentationCard } from '@/components/experience/AvatarRepresentationCard'
 import {
   AvatarCustomizationFlow,
@@ -74,7 +75,11 @@ import { cerPlannerService } from '@/services/cerPlannerService'
 import { cerJournalService } from '@/services/cerJournalService'
 import { cerCarePlanService } from '@/services/cerCarePlanService'
 import { demoAdapter } from '@/services/demoAdapter'
-import type { CerCarePlanPresentationRecord, OperationalAcceptanceResponseType } from '@/types/cer'
+import type {
+  CerCarePlanPresentationRecord,
+  OperationalAcceptanceResponseType,
+  ExperienceResponseRecord,
+} from '@/types/cer'
 import { ExperimentCard } from '@/components/ExperimentCard'
 import { MandalaStructuredView } from '@/components/MandalaStructuredView'
 import { SerConscienciaMap } from '@/components/SerConscienciaMap'
@@ -101,6 +106,7 @@ export const InteragenteHome: React.FC = () => {
   const [currentMap, setCurrentMap] = useState<
     (CerMapRecord & { items: CerMapItemRecord[] }) | null
   >(null)
+  const [participantResponses, setParticipantResponses] = useState<ExperienceResponseRecord[]>([])
   const [selectedRecognitions, setSelectedRecognitions] = useState<
     Record<string, { type: RecognitionType; comment: string; saved: boolean }>
   >({})
@@ -220,17 +226,27 @@ export const InteragenteHome: React.FC = () => {
       }
 
       if (activeEnr?.id && isFlagActive) {
-        const [exps, kiList, myRecogs, presList, mapData] = await Promise.all([
+        const [exps, kiList, myRecogs, presList, mapData, resps] = await Promise.all([
           enrollmentExperienceService.listByEnrollment(activeEnr.id),
           cerKnowledgeItemService.listByEnrollment(activeEnr.id),
           cerParticipantRecognitionService.listByEnrollment(activeEnr.id),
           cerKnowledgePresentationService.listPresentedByEnrollment(activeEnr.id),
           cerMapService.getCurrentPublishedMap(activeEnr.id),
+          demoAdapter.isEnabled()
+            ? Promise.resolve(demoAdapter.listExperienceResponses(activeEnr.id))
+            : pb
+                .collection('experience_responses')
+                .getFullList<ExperienceResponseRecord>({
+                  filter: `enrollment_id = "${activeEnr.id}"`,
+                  sort: 'created',
+                })
+                .catch(() => []),
         ])
         setAvailableExperiences(exps)
         setKnowledgeItems(kiList)
         setPresentations(presList)
         setCurrentMap(mapData)
+        setParticipantResponses(Array.isArray(resps) ? resps : [])
 
         // ETAPA 4: Carregar planos apresentados à participante (status = presented)
         try {
@@ -1519,26 +1535,12 @@ export const InteragenteHome: React.FC = () => {
                 {/* Modal / Dialog do Meu Mapa CER para a Interagente */}
                 <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
                   <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle className="font-serif">Meu Mapa CER</DialogTitle>
-                      <DialogDescription>
-                        {currentMap
-                          ? 'Síntese integrativa deliberadamente compartilhada por Daiane com você.'
-                          : 'Seu Mapa CER está em construção conjunta com Daiane.'}
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    {currentMap ? (
-                      <ParticipantMapDisplay map={currentMap} />
-                    ) : (
-                      <div className="py-8 text-center space-y-3">
-                        <div className="p-3 bg-amber-500/10 text-amber-700 dark:text-amber-300 rounded-lg max-w-md mx-auto text-xs leading-relaxed border border-amber-300">
-                          <p className="font-medium text-sm mb-1">Mapa em construção</p>
-                          O Mapa CER reúne o que você descobriu ao longo das experiências e é
-                          revisado com carinho após seu primeiro encontro com Daiane.
-                        </div>
-                      </div>
-                    )}
+                    <ParticipantIntegrativeMapView
+                      responses={participantResponses}
+                      participantName={person?.preferred_name || person?.full_name || 'você'}
+                      currentMap={currentMap}
+                      onClose={() => setShowMapModal(false)}
+                    />
                   </DialogContent>
                 </Dialog>
               </>
