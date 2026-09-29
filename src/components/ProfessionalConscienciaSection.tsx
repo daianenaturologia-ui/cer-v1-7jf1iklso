@@ -25,6 +25,15 @@ import { enrollmentExperienceService } from '@/services/experienceEngine'
 import { ProfessionalMapEditor } from '@/components/ProfessionalMapEditor'
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
 import { ProfessionalAyurvedaCorpoFisiologiaView } from '@/components/experience/ayurveda/ProfessionalAyurvedaCorpoFisiologiaView'
+import { ProfessionalAyurvedaInterpretationView } from '@/components/experience/ayurveda/ProfessionalAyurvedaInterpretationView'
+import { ProfessionalMindEmotionsView } from '@/components/experience/ProfessionalMindEmotionsView'
+import { ProfessionalDimensionReportView } from '@/components/experience/ProfessionalDimensionReportView'
+import {
+  buildRegulacaoInterpretation,
+  buildRelacoesInterpretation,
+  buildSexualidadeInterpretation,
+  buildSentidoInterpretation,
+} from '@/services/universalDimensionInterpretationEngine'
 import { isChapter4Completed } from '@/services/ayurvedaChapter4'
 
 export interface DimensionConfig {
@@ -124,6 +133,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
 
   // Painéis expansíveis do Nível 3
   const [expandedDimensions, setExpandedDimensions] = useState<Record<string, boolean>>({})
+  const [corpoActiveTab, setCorpoActiveTab] = useState<'factual' | 'interpretacao'>('factual')
 
   const loadData = async () => {
     setLoading(true)
@@ -347,90 +357,101 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                   {isExpanded && (
                     <CardContent className="p-4 space-y-4 text-xs">
                       {dim.id === 'corpo_fisiologia' ? (
-                        <div className="space-y-4">
-                          {/* Visão Especializada Factual dos Capítulos 1 e 2 de Corpo & Fisiologia (M4A) */}
-                          <ProfessionalAyurvedaCorpoFisiologiaView
-                            responses={responses}
-                            responseVersions={allResponseVersions.filter(
-                              (version) => version.experience_id === dim.experienceId,
-                            )}
-                            participantName={participantName}
-                            treatmentPreference={treatmentPreference}
-                            treatmentPreferenceCustom={treatmentPreferenceCustom}
-                          />
+                        <div className="space-y-4" data-testid="corpo-fisiologia-container">
+                          {/* Alternador entre Visão Factual e Interpretação Profissional */}
+                          <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl bg-muted/30 border border-border/50 max-w-fit">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={corpoActiveTab === 'factual' ? 'default' : 'ghost'}
+                              className="h-7 text-xs px-3"
+                              onClick={() => setCorpoActiveTab('factual')}
+                            >
+                              Visão Factual (Capítulos 1, 2 e 3)
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={corpoActiveTab === 'interpretacao' ? 'default' : 'ghost'}
+                              className="h-7 text-xs px-3"
+                              onClick={() => setCorpoActiveTab('interpretacao')}
+                            >
+                              Interpretação Profissional (Ayurveda CER)
+                            </Button>
+                          </div>
+
+                          {corpoActiveTab === 'factual' ? (
+                            /* Visão Especializada Factual dos Capítulos 1 e 2 de Corpo & Fisiologia (M4A) */
+                            <ProfessionalAyurvedaCorpoFisiologiaView
+                              responses={responses}
+                              responseVersions={allResponseVersions.filter(
+                                (version) => version.experience_id === dim.experienceId,
+                              )}
+                              participantName={participantName}
+                              treatmentPreference={treatmentPreference}
+                              treatmentPreferenceCustom={treatmentPreferenceCustom}
+                              loadError={loadError}
+                              onRetryLoad={loadData}
+                            />
+                          ) : (
+                            /* Nova Seção: Interpretação Profissional (Prakriti, Vikriti, Agni, Ama) */
+                            <ProfessionalAyurvedaInterpretationView
+                              responses={responses}
+                              participantName={participantName}
+                            />
+                          )}
                         </div>
+                      ) : dim.id === 'mente_emocoes' ? (
+                        <ProfessionalMindEmotionsView
+                          responses={responses}
+                          participantName={participantName}
+                          loadError={loadError}
+                          onRetryLoad={loadData}
+                        />
+                      ) : dim.id === 'regulacao_respostas' ? (
+                        <ProfessionalDimensionReportView
+                          interpretation={buildRegulacaoInterpretation(responses, participantName)}
+                          responses={responses}
+                          participantName={participantName}
+                          icon={Shield}
+                          loadError={loadError}
+                          onRetryLoad={loadData}
+                        />
+                      ) : dim.id === 'relacoes' ? (
+                        <ProfessionalDimensionReportView
+                          interpretation={buildRelacoesInterpretation(responses, participantName)}
+                          responses={responses}
+                          participantName={participantName}
+                          icon={Users}
+                          loadError={loadError}
+                          onRetryLoad={loadData}
+                        />
+                      ) : dim.id === 'sexualidade' ? (
+                        <ProfessionalDimensionReportView
+                          interpretation={buildSexualidadeInterpretation(
+                            responses,
+                            participantName,
+                          )}
+                          responses={responses}
+                          participantName={participantName}
+                          icon={Flame}
+                          loadError={loadError}
+                          onRetryLoad={loadData}
+                        />
+                      ) : dim.id === 'sentido_conexao' ? (
+                        <ProfessionalDimensionReportView
+                          interpretation={buildSentidoInterpretation(responses, participantName)}
+                          responses={responses}
+                          participantName={participantName}
+                          icon={Sparkles}
+                          loadError={loadError}
+                          onRetryLoad={loadData}
+                        />
                       ) : responses.length === 0 ? (
                         <div className="py-6 text-center text-muted-foreground italic">
-                          Nenhuma resposta registrada ainda nesta dimensão por {participantName}.
+                          Esta interagente ainda não iniciou este capítulo.
                         </div>
-                      ) : (
-                        <div className="space-y-3.5">
-                          {responses.map((resp, idx) => {
-                            const prompt = resp.expand?.prompt_id as CerPromptRecord | undefined
-                            return (
-                              <div
-                                key={resp.id || idx}
-                                className="p-3.5 rounded-xl border border-border/60 bg-card space-y-2.5"
-                              >
-                                <div className="flex items-center justify-between gap-2 flex-wrap">
-                                  <div className="space-y-0.5">
-                                    <span className="text-[10px] font-mono text-muted-foreground uppercase">
-                                      Momento {prompt?.step_order || idx + 1} • {resp.response_type}
-                                    </span>
-                                    <p className="font-medium text-foreground text-xs sm:text-sm">
-                                      {prompt?.prompt_text || 'Pergunta do momento'}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 shrink-0">
-                                    <Badge variant="outline" className="text-[10px] font-mono">
-                                      v{resp.version} ({resp.status})
-                                    </Badge>
-                                  </div>
-                                </div>
-
-                                {/* Resposta objetiva do instrumento */}
-                                {resp.structured_value !== undefined &&
-                                  resp.structured_value !== null && (
-                                    <div className="p-2.5 rounded-lg bg-muted/20 border border-border/40 space-y-1">
-                                      <span className="text-[10px] font-medium text-muted-foreground block">
-                                        Resultado objetivo do instrumento:
-                                      </span>
-                                      <div className="text-foreground font-mono text-xs break-words">
-                                        {typeof resp.structured_value === 'object' ? (
-                                          <pre className="whitespace-pre-wrap font-sans text-xs">
-                                            {JSON.stringify(resp.structured_value, null, 2)}
-                                          </pre>
-                                        ) : (
-                                          <span>{String(resp.structured_value)}</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                {/* Registro espontâneo em texto ou voz */}
-                                {resp.free_text && (
-                                  <div className="p-2.5 rounded-lg bg-primary/5 border border-primary/20 space-y-1">
-                                    <span className="text-[10px] font-medium text-primary block">
-                                      Registro espontâneo da interagente (texto ou voz):
-                                    </span>
-                                    <p className="text-foreground text-xs italic leading-relaxed">
-                                      &ldquo;{resp.free_text}&rdquo;
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Data de preenchimento */}
-                                <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/30">
-                                  <span>
-                                    Preenchido em: {new Date(resp.created).toLocaleString('pt-BR')}
-                                  </span>
-                                  <span>Versão do instrumento: {resp.prompt_version}</span>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
+                      ) : null}
                     </CardContent>
                   )}
                 </Card>
