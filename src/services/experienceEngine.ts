@@ -651,6 +651,13 @@ export const experienceResponseService = {
     try {
       const { demoAdapter } = await import('@/services/demoAdapter')
       if (demoAdapter.isEnabled()) {
+        // Ayurveda já foi salvo sob códigos de dimensão e IDs de experiência.
+        // Ler todos os aliases preserva os registros originais e seu histórico.
+        if (canonicalExpId === 'exp-corpo-fisiologia-07b') {
+          return demoAdapter
+            .listExperienceResponses(enrollmentId)
+            .filter((response) => resolveExperienceId(response.experience_id) === canonicalExpId)
+        }
         return demoAdapter.listExperienceResponses(enrollmentId, canonicalExpId)
       }
       return await pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({

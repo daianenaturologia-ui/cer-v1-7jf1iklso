@@ -19,6 +19,7 @@ import {
 } from '@/services/ayurvedaChapter2'
 import AyurvedaChaptersNavigator from '@/components/experience/ayurveda/AyurvedaChaptersNavigator'
 import AyurvedaChapter2Flow from '@/components/experience/ayurveda/AyurvedaChapter2Flow'
+import { AYV_C1_PROMPTS } from '@/services/ayurvedaChapter1'
 
 const DEMO_PERSON_MARIANA = {
   id: 'person-mariana-demo',
@@ -129,6 +130,114 @@ describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 
   }
 
   // 1. Revisão ativa vazia recebe todas as respostas da última revisão concluída
+  it('recupera a correção quando as respostas anteriores usam um identificador legado da experiência', async () => {
+    await seedC2CompletedRev1()
+    const originals = demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID, EXPERIENCE_ID)
+    originals.forEach((r) => {
+      r.experience_id = 'corpo_fisiologia_ayurveda'
+    })
+    const snapshot = JSON.stringify(originals)
+    setPersistedActiveChapter2Revision(DEMO_ENROLLMENT_ID, 2)
+    const view = render(
+      <AyurvedaChapter2Flow
+        enrollmentId={DEMO_ENROLLMENT_ID}
+        experienceId={EXPERIENCE_ID}
+        respondentUserId={DEMO_USER_MARIANA.id}
+        mode="correcting"
+        revisionNumber={2}
+      />,
+    )
+    await waitFor(() => expect(screen.getByText('O ritmo da sua fome')).toBeInTheDocument())
+    expect(screen.queryByTestId('c2-recovery-error-banner')).toBeNull()
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Aparece em horários relativamente previsíveis.' }),
+      ).toHaveAttribute('aria-pressed', 'true'),
+    )
+    expect(JSON.stringify(originals)).toBe(snapshot)
+    expect(
+      demoAdapter
+        .listExperienceResponses(DEMO_ENROLLMENT_ID, EXPERIENCE_ID)
+        .filter((r) => r.prompt_id.endsWith('_rev2')),
+    ).toHaveLength(12)
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Surge de repente e pode ficar muito intensa.' }),
+    )
+    await waitFor(() =>
+      expect(
+        demoAdapter
+          .listExperienceResponses(DEMO_ENROLLMENT_ID, EXPERIENCE_ID)
+          .find(
+            (r) =>
+              r.prompt_id === getChapter2RevisionPromptId(AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id, 2),
+          )?.structured_value,
+      ).toMatchObject({ selectedOptionIds: ['regular_hours', 'sudden_intense'] }),
+    )
+    view.unmount()
+    render(
+      <AyurvedaChapter2Flow
+        enrollmentId={DEMO_ENROLLMENT_ID}
+        experienceId={EXPERIENCE_ID}
+        respondentUserId={DEMO_USER_MARIANA.id}
+        mode="correcting"
+        revisionNumber={2}
+      />,
+    )
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Surge de repente e pode ficar muito intensa.' }),
+      ).toHaveAttribute('aria-pressed', 'true'),
+    )
+    expect(JSON.stringify(originals)).toBe(snapshot)
+  })
+
+  it('não oferece retomar correção quando só existe o ponteiro e nenhuma resposta de C2', async () => {
+    for (const prompt of [
+      AYV_C1_PROMPTS.P1_STRUCTURE,
+      AYV_C1_PROMPTS.P2_SKIN,
+      AYV_C1_PROMPTS.P3_HAIR,
+      AYV_C1_PROMPTS.P4_TEMPERATURE,
+      AYV_C1_PROMPTS.P5_THIRST,
+    ]) {
+      await experienceResponseService.saveResponse({
+        enrollmentId: DEMO_ENROLLMENT_ID,
+        experienceId: EXPERIENCE_ID,
+        respondentUserId: DEMO_USER_MARIANA.id,
+        promptId: prompt.id,
+        promptKey: prompt.key,
+        responseType: 'ChoiceCards',
+        promptVersion: 1,
+        structuredValue: { value: 'opt_val', choice: 'opt_val' },
+      })
+    }
+    await experienceResponseService.saveResponse({
+      enrollmentId: DEMO_ENROLLMENT_ID,
+      experienceId: EXPERIENCE_ID,
+      respondentUserId: DEMO_USER_MARIANA.id,
+      promptId: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+      promptKey: AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
+      responseType: 'ChapterCompletion' as any,
+      promptVersion: 1,
+      structuredValue: { completed: true },
+    })
+    setPersistedActiveChapter2Revision(DEMO_ENROLLMENT_ID, 2)
+    const before = JSON.stringify(demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID))
+    render(
+      <AyurvedaChaptersNavigator
+        enrollmentId={DEMO_ENROLLMENT_ID}
+        experienceId={EXPERIENCE_ID}
+        respondentUserId={DEMO_USER_MARIANA.id}
+      />,
+    )
+    const start = await screen.findByRole('button', { name: /Começar Capítulo 2/i })
+    expect(screen.queryByRole('button', { name: /Retomar correção/i })).toBeNull()
+    await userEvent.click(start)
+    await waitFor(() => expect(screen.getByText('O ritmo da sua fome')).toBeInTheDocument())
+    expect(screen.queryByTestId('c2-recovery-error-banner')).toBeNull()
+    expect(JSON.stringify(demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID))).toBe(before)
+    expect(getPersistedActiveChapter2Revision(DEMO_ENROLLMENT_ID)).toBe(1)
+  })
+
   it('1. Revisão ativa vazia recebe todas as respostas da última revisão concluída', async () => {
     await seedC2CompletedRev1()
     // Revisão ativa apontada para 2, mas sem respostas ainda em rev2

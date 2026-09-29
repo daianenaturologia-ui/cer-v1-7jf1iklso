@@ -34,6 +34,7 @@ import { experienceResponseService, enrollmentExperienceService } from '@/servic
 import { ExperienceResponseRecord, EnrollmentExperienceRecord } from '@/types/cer'
 import { deriveChapter3Status } from '@/services/ayurvedaChapter3'
 import { isChapter4Completed } from '@/services/ayurvedaChapter4'
+import { demoAdapter } from '@/services/demoAdapter'
 
 export type AyurvedaNavigationChapterId = 'c1' | 'c2' | 'c3' | 'c4'
 
@@ -212,8 +213,15 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     }
   }
 
-  const persistedC2Rev = getPersistedActiveChapter2Revision(enrollmentId)
   const { migratedResponses: migratedC2 } = migrateLegacyChapter2Responses(rawResponses)
+  // Um ponteiro local isolado (por exemplo, após reiniciar a demonstração)
+  // não é evidência de uma correção. Só o usamos quando há registros de C2.
+  // Não apagamos respostas nem modificamos o ponteiro durante a leitura do hub.
+  const hasChapter2Responses = deriveChapter2Status(migratedC2).canonicalResponses.length > 0
+  const persistedC2Rev =
+    hasChapter2Responses || !demoAdapter.isEnabled()
+      ? getPersistedActiveChapter2Revision(enrollmentId)
+      : null
   const derivedC2 = deriveChapter2Status(migratedC2, persistedC2Rev ?? undefined)
   const isC2Completed = derivedC2.status === 'completed'
   const isC2ReadyToComplete = derivedC2.status === 'ready_to_complete'
@@ -561,7 +569,7 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
 
   // Ações explícitas do Hub para Capítulo 2
   const handleStartChapter2FromHub = useCallback(() => {
-    const currentPersisted = getPersistedActiveChapter2Revision(enrollmentId)
+    const currentPersisted = persistedC2Rev
     const effectiveRev = currentPersisted ?? derivedC2.activeRevisionNumber ?? 1
     // Se a revisão ativa foi iniciada como correção (revisão > 1 sem conclusão),
     // ao retomar do hub ela deve abrir como 'correcting' editável
@@ -611,6 +619,7 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     chapter2Status,
     firstUnansweredMomentC2,
     derivedC2.activeRevisionNumber,
+    persistedC2Rev,
   ])
 
   const handleReviewChapter2 = useCallback(() => {
