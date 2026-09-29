@@ -184,6 +184,9 @@ describe('Telas Profissionais da Dimensão Consciência', () => {
     const buttons = screen.getAllByRole('button', { name: 'Ver respostas' })
     expect(buttons).toHaveLength(6)
 
+    // O Mapa Integrativo Profissional está presente na seção (área de leitura)
+    expect(screen.getByText('Mapa Integrativo Profissional da Consciência')).toBeInTheDocument()
+
     // Clicando em cada dimensão para abrir
     for (const btn of buttons) {
       await user.click(btn)

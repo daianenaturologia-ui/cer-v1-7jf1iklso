@@ -28,6 +28,7 @@ import { ProfessionalAyurvedaCorpoFisiologiaView } from '@/components/experience
 import { ProfessionalAyurvedaInterpretationView } from '@/components/experience/ayurveda/ProfessionalAyurvedaInterpretationView'
 import { ProfessionalMindEmotionsView } from '@/components/experience/ProfessionalMindEmotionsView'
 import { ProfessionalDimensionReportView } from '@/components/experience/ProfessionalDimensionReportView'
+import { ProfessionalIntegrativeMapView } from '@/components/experience/ProfessionalIntegrativeMapView'
 import {
   buildRegulacaoInterpretation,
   buildRelacoesInterpretation,
@@ -532,28 +533,48 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
           </div>
         </section>
       )}
-      <section className="border-t border-border/50 pt-5 space-y-3">
+      <section
+        className="border-t border-border/50 pt-5 space-y-4"
+        data-testid="professional-integrative-map-section"
+      >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-base font-semibold font-serif">
               Mapa e interpretação profissional
             </h2>
             <p className="text-xs text-muted-foreground">
-              Observações e hipóteses ficam separadas das respostas da interagente.
+              Síntese transversal determinística das seis dimensões humanas. Somente leitura
+              clínica.
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs"
-            onClick={() => setShowProfessionalMap((current) => !current)}
-            aria-expanded={showProfessionalMap}
-          >
-            {showProfessionalMap ? 'Fechar mapa' : 'Abrir mapa'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => setShowProfessionalMap((current) => !current)}
+              aria-expanded={showProfessionalMap}
+            >
+              {showProfessionalMap ? 'Ocultar ferramentas avançadas' : 'Ferramentas avançadas'}
+            </Button>
+          </div>
         </div>
+
+        {/* Mapa Integrativo Profissional da Consciência (8 Blocos Determinísticos) */}
+        <ProfessionalIntegrativeMapView
+          responses={allResponses}
+          participantName={participantName}
+          onSelectDimension={expandAndScrollTo}
+        />
+
         {showProfessionalMap && (
-          <div className="space-y-4">
+          <div className="space-y-4 pt-4 border-t border-border/40">
+            <div className="p-3 rounded-lg bg-muted/20 border border-border/50 text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground block mb-0.5">
+                Ferramentas Editoriais e Provenance
+              </span>
+              Espaço reservado para anotações manuais de sessão e edição de mapa legado.
+            </div>
             <ProfessionalMapEditor
               enrollmentId={enrollment.id}
               participantName={participantName}
