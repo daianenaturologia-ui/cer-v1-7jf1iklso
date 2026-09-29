@@ -1,5 +1,5 @@
 /* Vite config for building the frontend react app: https://vite.dev/config/ */
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 // @ts-expect-error - uidPlugin is a custom plugin
@@ -7,10 +7,6 @@ import uidPlugin from './vite-plugin-react-uid'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-  },
   server: {
     host: '::',
     port: 8080,
