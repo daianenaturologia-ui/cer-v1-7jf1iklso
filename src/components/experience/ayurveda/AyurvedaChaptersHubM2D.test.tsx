@@ -40,6 +40,25 @@ describe('Microlote M2D — Hub Canônico de Corpo & Fisiologia: 20 Testes Canô
     }
   })
 
+  it('mantém o Capítulo 2 acessível durante uma correção do Capítulo 1 já concluído', () => {
+    const startC2 = vi.fn()
+    render(
+      <AyurvedaChaptersHub
+        chapter1Status="in_progress"
+        chapter1ActiveRevision={2}
+        chapter1LastCompletedRevision={1}
+        chapter1HasCorrectionInProgress
+        answeredStepsCount={2}
+        chapter2Status="not_started"
+        onStartChapter2={startC2}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: /Começar Capítulo 2/i })).toBeEnabled()
+    expect(screen.queryByText('Conclua o Capítulo 1 para liberar este capítulo.')).toBeNull()
+    expect(screen.getByText(/2 de 5 etapas com respostas nesta versão/i)).toBeInTheDocument()
+  })
+
   // 1. C2 bloqueado antes da conclusão do C1
   it('1. C2 bloqueado antes da conclusão do C1: container inerte, aria-disabled, tabIndex=-1', async () => {
     const user = userEvent.setup()

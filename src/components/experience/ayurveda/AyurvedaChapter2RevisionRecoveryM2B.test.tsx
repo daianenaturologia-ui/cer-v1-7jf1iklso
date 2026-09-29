@@ -39,6 +39,7 @@ const EXPERIENCE_ID = 'exp-corpo-fisiologia-07b'
 describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 2', () => {
   beforeEach(async () => {
     localStorage.clear()
+    demoAdapter.resetToDefaultState()
     demoAdapter.enableDemo('mariana')
     demoAdapter.updatePerson(DEMO_PERSON_MARIANA.id, {
       avatar_customization_status: 'completed',
@@ -523,14 +524,14 @@ describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/O ritmo da sua fome/i)).toBeInTheDocument()
     })
 
     // Na semente foi 'regular_hours'
     const regularHoursBtn = screen
       .getByText(/Aparece em horários relativamente previsíveis/i)
       .closest('button')
-    expect(regularHoursBtn).toHaveAttribute('aria-pressed', 'true')
+    await waitFor(() => expect(regularHoursBtn).toHaveAttribute('aria-pressed', 'true'))
 
     unmount()
 
@@ -547,13 +548,13 @@ describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/O ritmo da sua fome/i)).toBeInTheDocument()
     })
 
     const regularHoursBtnAfterReload = screen
       .getByText(/Aparece em horários relativamente previsíveis/i)
       .closest('button')
-    expect(regularHoursBtnAfterReload).toHaveAttribute('aria-pressed', 'true')
+    await waitFor(() => expect(regularHoursBtnAfterReload).toHaveAttribute('aria-pressed', 'true'))
   })
 
   // 11. Controles permanecem editáveis
@@ -573,7 +574,7 @@ describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/O ritmo da sua fome/i)).toBeInTheDocument()
     })
 
     // Em modo 'correcting', NÃO deve haver banner de somente leitura
@@ -610,11 +611,11 @@ describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/O ritmo da sua fome/i)).toBeInTheDocument()
     })
 
-    // Clicar na opção "Oscila muito" para alternar
-    const oscilaBtn = screen.getByText(/Oscila muito: às vezes quase não sinto/i).closest('button')
+    // Clicar na opção canônica de intensidade variável para alternar
+    const oscilaBtn = screen.getByText(/Às vezes aparece com força e outras vezes quase não aparece/i).closest('button')
     expect(oscilaBtn).not.toBeNull()
 
     await user.click(oscilaBtn!)
@@ -629,7 +630,7 @@ describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 
         (r) => r.prompt_id === getChapter2RevisionPromptId(AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id, 2),
       )
       const selected = (rev2Hunger?.structured_value as any)?.selectedOptionIds || []
-      expect(selected).toContain('variable_skips')
+      expect(selected).toContain('variable_intensity')
     })
   })
 
@@ -821,7 +822,7 @@ describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/O ritmo da sua fome/i)).toBeInTheDocument()
     })
 
     const forbiddenCollections = [

@@ -574,6 +574,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
         progressStatus: 'in_progress',
         stepOrder: prompts[currentStepIndex]?.step_order || 1,
+        enrollmentId,
       })
       setEnrollmentExp(updated)
     }
@@ -797,6 +798,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
           stepOrder: nextOrder,
           progressStatus: 'in_progress',
+          enrollmentId,
         })
         setEnrollmentExp(updated)
       }

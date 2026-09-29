@@ -515,10 +515,10 @@ export const enrollmentExperienceService = {
       enrollmentId?: string
     },
   ): Promise<EnrollmentExperienceRecord> {
-    const { demoAdapter } = await import('@/services/demoAdapter')
+    const { demoAdapter, DEMO_ENROLLMENT_ID } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {
       const expId = resolveExperienceId(id)
-      const effectiveEnrollmentId = params.enrollmentId || 'demo-enrollment-mariana'
+      const effectiveEnrollmentId = params.enrollmentId || DEMO_ENROLLMENT_ID
       const prog = demoAdapter.updateEnrollmentExperienceProgress(effectiveEnrollmentId, expId, {
         stepOrder: params.stepOrder,
         progressStatus: params.progressStatus,

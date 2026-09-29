@@ -278,18 +278,18 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
     })
 
-    // No Hub, clicar em "Corrigir respostas do Capítulo 1"
-    const correctBtn = screen.getByRole('button', { name: /Corrigir respostas do Capítulo 1/i })
+    // No Hub, confirmar explicitamente a abertura de uma correção.
+    const correctBtn = screen.getByRole('button', { name: /Corrigir minhas respostas/i })
     await user.click(correctBtn)
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     // Deve abrir o formulário em modo correcting preenchido
     await waitFor(() => {
-      expect(
-        screen.getByText(/1\. Qual descrição melhor reflete a sua estrutura física basal\?/i),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Tela 1 de 5 • Estrutura habitual/i)).toBeInTheDocument()
     })
 
     // Afirmar que a revisão ativa é 2

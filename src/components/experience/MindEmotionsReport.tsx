@@ -1285,8 +1285,21 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       'recovery_resources',
       'pergunta_12',
     ])
+  const p12StructuredValue =
+    p12Raw && typeof p12Raw === 'object' && 'structured_value' in p12Raw
+      ? p12Raw.structured_value
+      : p12Raw && typeof p12Raw === 'object' && 'free_text' in p12Raw
+        ? undefined
+        : p12Raw
+  const p12ResourceValue =
+    p12StructuredValue &&
+    typeof p12StructuredValue === 'object' &&
+    !Array.isArray(p12StructuredValue) &&
+    Object.keys(p12StructuredValue).every((key) => key === 'free_text' || key === 'metadata')
+      ? undefined
+      : p12StructuredValue
   const p12State = evaluateFieldState(
-    p12Raw,
+    p12ResourceValue,
     'recursos_recuperar_espaco',
     'p-07c-pm5-p12-recursos-espaco-interno',
   )
@@ -1331,7 +1344,11 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       (typeof p13Raw?.structured_value === 'string' && p13Raw.structured_value.trim().length > 0))
 
   // Render text helper for state
-  const renderStateText = (state: ReturnType<typeof evaluateFieldState>, rawFallback?: any) => {
+  const renderStateText = (
+    state: ReturnType<typeof evaluateFieldState>,
+    rawFallback?: any,
+    includeFreeText = true,
+  ) => {
     if (state.isRefusal) {
       return <p className="text-sm italic text-muted-foreground">{MSG_RECUSA}</p>
     }
@@ -1342,8 +1359,19 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       return <p className="text-sm italic text-muted-foreground">{MSG_INDISPONIVEL}</p>
     }
     if (state.text) {
+      const freeText =
+        typeof rawFallback?.free_text === 'string'
+          ? rawFallback.free_text.trim()
+          : typeof rawFallback?.structured_value?.free_text === 'string'
+            ? rawFallback.structured_value.free_text.trim()
+            : ''
       return (
-        <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{state.text}</p>
+        <div className="space-y-1">
+          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{state.text}</p>
+          {includeFreeText && freeText && !state.text.includes(freeText) && (
+            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{freeText}</p>
+          )}
+        </div>
       )
     }
     if (Array.isArray(state.labels) && state.labels.length > 0) {
@@ -1860,7 +1888,7 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
               <h3 className="font-serif font-semibold text-foreground text-sm sm:text-base">
                 Recursos que ajudam você a recuperar espaço interno
               </h3>
-              {renderStateText(p12State, p12Raw)}
+              {renderStateText(p12State, p12Raw, false)}
             </div>
           </div>
         </section>
