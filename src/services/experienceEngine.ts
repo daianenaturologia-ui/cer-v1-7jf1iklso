@@ -417,6 +417,8 @@ export const enrollmentExperienceService = {
       const { SENTIDO_CONEXAO_EXPERIENCE } = await import('./build07fPrompts')
       const { INTEGRACAO_CONSCIENCIA_EXPERIENCE } = await import('./build07gPrompts')
 
+      const isQaActive = demoAdapter.isConscienciaQaScenarioActive()
+
       const exps = [
         CORPO_FISIOLOGIA_EXPERIENCE,
         MENTE_EMOCOES_EXPERIENCE,
@@ -429,16 +431,22 @@ export const enrollmentExperienceService = {
 
       return exps.map((exp) => {
         const prog = demoAdapter.getEnrollmentExperienceProgress(enrollmentId, exp.id)
+        const isQaCompleted = isQaActive
+
         return {
           id: `demo-enr-exp-${exp.id}`,
           enrollment_id: enrollmentId,
           experience_id: exp.id,
-          release_status: prog?.release_status || 'available',
-          progress_status: prog?.progress_status || 'not_started',
-          current_step_order: prog?.current_step_order || 1,
+          release_status: isQaCompleted ? 'completed' : prog?.release_status || 'available',
+          progress_status: isQaCompleted ? 'completed' : prog?.progress_status || 'not_started',
+          current_step_order: isQaCompleted
+            ? prog?.current_step_order || 1
+            : prog?.current_step_order || 1,
           version: 1,
           started_at: prog?.started_at,
-          completed_at: prog?.completed_at,
+          completed_at: isQaCompleted
+            ? prog?.completed_at || '2025-01-10T10:00:00.000Z'
+            : prog?.completed_at,
           last_interaction_at: prog?.last_interaction_at || '2025-01-10T10:00:00.000Z',
           created: '2025-01-10T10:00:00.000Z',
           updated: prog?.last_interaction_at || '2025-01-10T10:00:00.000Z',

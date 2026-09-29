@@ -1552,7 +1552,7 @@ class DemoAdapter {
           {
             id: 'demo-qa-map-item-2',
             map_id: `demo-map-qa-${enrollmentId || DEMO_ENROLLMENT_ID}`,
-            section: 'desafios_atuais',
+            section: 'quando_saio_do_meu_eixo',
             item_text: 'Oscilações de energia digestiva e tendência a carregar tensões no corpo.',
             position: 2,
             created_by_user_id: DEMO_USER_DAIANE.id,
@@ -1562,7 +1562,7 @@ class DemoAdapter {
           {
             id: 'demo-qa-map-item-3',
             map_id: `demo-map-qa-${enrollmentId || DEMO_ENROLLMENT_ID}`,
-            section: 'caminhos_equilibrio',
+            section: 'quando_estou_no_meu_eixo',
             item_text: 'Espaços de quietude, alimento aquecido e conversas transparentes.',
             position: 3,
             created_by_user_id: DEMO_USER_DAIANE.id,

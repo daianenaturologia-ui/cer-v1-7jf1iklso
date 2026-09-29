@@ -161,14 +161,18 @@ export const InteragenteHome: React.FC = () => {
     }
 
     try {
+      const isQaActive = demoAdapter.isConscienciaQaScenarioActive()
+
       const [activeEnr, isFlagActive, isCadernoActive] = await Promise.all([
         enrollmentService.getByPersonId(person.id),
         featureFlagService.isEnabled('experience_engine'),
         featureFlagService.isEnabled(CER_FEATURE_FLAGS.CADERNO_JOURNAL),
       ])
 
+      const effectiveEngineEnabled = isQaActive || isFlagActive
+
       setEnrollment(activeEnr)
-      setEngineEnabled(isFlagActive)
+      setEngineEnabled(effectiveEngineEnabled)
       setCadernoEnabled(isCadernoActive)
 
       if (activeEnr?.id) {
@@ -225,13 +229,15 @@ export const InteragenteHome: React.FC = () => {
         }
       }
 
-      if (activeEnr?.id && isFlagActive) {
+      if (activeEnr?.id && effectiveEngineEnabled) {
         const [exps, kiList, myRecogs, presList, mapData, resps] = await Promise.all([
           enrollmentExperienceService.listByEnrollment(activeEnr.id),
           cerKnowledgeItemService.listByEnrollment(activeEnr.id),
           cerParticipantRecognitionService.listByEnrollment(activeEnr.id),
           cerKnowledgePresentationService.listPresentedByEnrollment(activeEnr.id),
-          cerMapService.getCurrentPublishedMap(activeEnr.id),
+          demoAdapter.isEnabled()
+            ? Promise.resolve(demoAdapter.getCurrentPublishedMap(activeEnr.id))
+            : cerMapService.getCurrentPublishedMap(activeEnr.id),
           demoAdapter.isEnabled()
             ? Promise.resolve(demoAdapter.listExperienceResponses(activeEnr.id))
             : pb

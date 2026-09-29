@@ -1,9 +1,34 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { ParticipantIntegrativeMapView } from '@/components/experience/ParticipantIntegrativeMapView'
+import { ProfessionalConscienciaSection } from '@/components/ProfessionalConscienciaSection'
+import { InteragenteHome } from '@/pages/InteragenteHome'
 import { buildConscienciaQaFixture } from '@/services/conscienciaQaFixture'
-import { demoAdapter, DEMO_ENROLLMENT_ID } from '@/services/demoAdapter'
+import { demoAdapter, DEMO_ENROLLMENT_ID, DEMO_ENROLLMENT } from '@/services/demoAdapter'
+
+// Mock useAuth para montagens completas de telas de Interagente
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: {
+      id: 'usr_mariana_01',
+      email: 'mariana@cer.local',
+      role: 'interagente',
+      person_id: 'demo-person-mariana',
+    },
+    person: {
+      id: 'demo-person-mariana',
+      full_name: 'Mariana Silva',
+      preferred_name: 'Mariana',
+      email: 'mariana@cer.local',
+      treatment_preference: 'feminino',
+    },
+    persona: 'mariana',
+    setPersona: vi.fn(),
+    logout: vi.fn(),
+  }),
+}))
 
 describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidade)', () => {
   const enrollmentId = 'enr-participant-test-123'
@@ -141,29 +166,83 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
 
   describe('Sequência interperfil explícita com demoAdapter compartilhado', () => {
     beforeEach(() => {
-      demoAdapter.enableDemo()
+      localStorage.clear()
+      demoAdapter.enableDemo('mariana')
       demoAdapter.setActiveScenario('default')
     })
 
     afterEach(() => {
+      localStorage.clear()
       demoAdapter.setActiveScenario('default')
     })
 
-    it('transita deterministicamente entre perfis: QA off (0/6) -> profissional ativa QA (6/6) -> profissional desativa QA (0/6) com asserts de privacidade', () => {
-      // 1. QA off -> participante vê 0/6
+    it('transita deterministicamente entre perfis com unmount/remount real: profissional ativa QA -> Mariana monta do zero e vê 6/6 no Meu Mapa CER -> desativa -> Mariana remonta e vê 0/6', async () => {
+      // (a) Montar visão profissional com QA off
       expect(demoAdapter.getActiveScenario()).toBe('default')
-      const responsesOff = demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID)
-      const { rerender } = render(
-        <ParticipantIntegrativeMapView
-          responses={responsesOff}
+      const { unmount: unmountProf } = render(
+        <ProfessionalConscienciaSection
+          enrollment={DEMO_ENROLLMENT}
           participantName={participantName}
         />,
       )
 
-      expect(screen.getByTestId('participant-integrative-map-empty')).toBeInTheDocument()
-      expect(screen.getByText(/Cobertura das dimensões \(0 de 6\)/i)).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByTestId('toggle-qa-scenario-btn')).toBeInTheDocument()
+      })
+      expect(screen.getByText('Ativar Cenário QA (6 Dimensões)')).toBeInTheDocument()
 
-      // Asserts de AUSÊNCIA de strings profissionais no estado 0/6
+      // (b) Ativar QA como profissional (demoAdapter.setActiveScenario('qa_consciencia_completa'))
+      fireEvent.click(screen.getByTestId('toggle-qa-scenario-btn'))
+      await waitFor(() => {
+        expect(screen.getByText('Cenário QA Consciência Ativo')).toBeInTheDocument()
+      })
+      expect(demoAdapter.getActiveScenario()).toBe('qa_consciencia_completa')
+
+      // (c) DESMONTAR a visão profissional
+      unmountProf()
+
+      // (d) Montar InteragenteHome do zero APÓS a ativação
+      const { unmount: unmountInteragente } = render(
+        <MemoryRouter>
+          <InteragenteHome />
+        </MemoryRouter>,
+      )
+
+      // Ir para a fase de Consciência
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /2\. Consciência/i })).toBeInTheDocument()
+      })
+      fireEvent.click(screen.getByRole('button', { name: /2\. Consciência/i }))
+
+      // Rótulo central do "Meu Mapa CER" derivado da cobertura/mapa publicado:
+      // com 6/6 e mapa publicado, NÃO mostrar apenas "em construção"
+      await waitFor(() => {
+        expect(screen.getByTestId('ser-integral-map-center')).toBeInTheDocument()
+      })
+      expect(screen.queryAllByText('Meu Mapa CER — em construção')).toHaveLength(0)
+      expect(screen.getAllByText('Abrir Meu Mapa CER').length).toBeGreaterThan(0)
+
+      // (e) Abrir Meu Mapa CER
+      fireEvent.click(screen.getByTestId('ser-integral-map-center'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('participant-integrative-map-complete')).toBeInTheDocument()
+      })
+      expect(screen.getByText(/Cobertura: 6\/6 dimensões/i)).toBeInTheDocument()
+
+      // As duas tabs devem existir
+      expect(screen.getByTestId('tab-trigger-essencial')).toBeInTheDocument()
+      expect(screen.getByText('Meu mapa essencial')).toBeInTheDocument()
+
+      const deepTabTrigger = screen.getByTestId('tab-trigger-profundidade')
+      expect(deepTabTrigger).toBeInTheDocument()
+      expect(screen.getByText('Compreender em profundidade')).toBeInTheDocument()
+
+      // Clicar e verificar profundidade
+      fireEvent.click(deepTabTrigger)
+      expect(screen.getByTestId('participant-map-profundidade-view')).toBeInTheDocument()
+
+      // Gate de privacidade: ausência de strings profissionais em ambas as tabs
       let bodyText = document.body.textContent || ''
       expect(bodyText).not.toContain('Prioridades para a escuta')
       expect(bodyText).not.toContain('Prioridades Possíveis para a Escuta Profissional')
@@ -174,52 +253,54 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
       expect(bodyText).not.toContain('Área Exclusiva da Profissional')
       expect(bodyText).not.toContain('Confiança geral:')
 
-      // 2. Profissional ativa o cenário QA via demoAdapter
-      demoAdapter.setActiveScenario('qa_consciencia_completa')
-      expect(demoAdapter.getActiveScenario()).toBe('qa_consciencia_completa')
+      // (f) Desmontar Mariana, desativar QA como profissional, remontar Mariana: verificar 0/6
+      unmountInteragente()
 
-      const responsesOn = demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID)
-      rerender(
-        <ParticipantIntegrativeMapView responses={responsesOn} participantName={participantName} />,
-      )
-
-      expect(screen.getByTestId('participant-integrative-map-complete')).toBeInTheDocument()
-      expect(screen.getByText(/Cobertura: 6\/6 dimensões/i)).toBeInTheDocument()
-
-      // "Meu mapa essencial" disponível
-      expect(screen.getByTestId('participant-map-essencial-view')).toBeInTheDocument()
-      expect(screen.getByText('Meu mapa essencial')).toBeInTheDocument()
-
-      // "Compreender em profundidade" disponível
-      const deepTabTrigger = screen.getByTestId('tab-trigger-profundidade')
-      expect(deepTabTrigger).toBeInTheDocument()
-      fireEvent.click(deepTabTrigger)
-      expect(screen.getByTestId('participant-map-profundidade-view')).toBeInTheDocument()
-
-      // Asserts de AUSÊNCIA de strings profissionais no estado 6/6 (essencial e profundidade)
-      bodyText = document.body.textContent || ''
-      expect(bodyText).not.toContain('Prioridades para a escuta')
-      expect(bodyText).not.toContain('Prioridades Possíveis para a Escuta Profissional')
-      expect(bodyText).not.toContain('perguntas para a sessão')
-      expect(bodyText).not.toContain('Perguntas Clínicas')
-      expect(bodyText).not.toContain('hipótese de trabalho')
-      expect(bodyText).not.toContain('Hipótese de Trabalho')
-      expect(bodyText).not.toContain('Área Exclusiva da Profissional')
-      expect(bodyText).not.toContain('Confiança geral:')
-
-      // 3. Profissional desativa o cenário QA -> participante volta a 0/6
-      demoAdapter.setActiveScenario('default')
-      expect(demoAdapter.getActiveScenario()).toBe('default')
-
-      const responsesBackOff = demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID)
-      rerender(
-        <ParticipantIntegrativeMapView
-          responses={responsesBackOff}
+      // Montar profissional para desativar QA
+      const { unmount: unmountProf2 } = render(
+        <ProfessionalConscienciaSection
+          enrollment={DEMO_ENROLLMENT}
           participantName={participantName}
         />,
       )
 
-      expect(screen.getByTestId('participant-integrative-map-empty')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByTestId('toggle-qa-scenario-btn')).toBeInTheDocument()
+      })
+      expect(screen.getByText('Cenário QA Consciência Ativo')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByTestId('toggle-qa-scenario-btn'))
+      await waitFor(() => {
+        expect(screen.getByText('Ativar Cenário QA (6 Dimensões)')).toBeInTheDocument()
+      })
+      expect(demoAdapter.getActiveScenario()).toBe('default')
+
+      unmountProf2()
+
+      // Remontar Mariana do zero
+      const { unmount: unmountInteragente2 } = render(
+        <MemoryRouter>
+          <InteragenteHome />
+        </MemoryRouter>,
+      )
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /2\. Consciência/i })).toBeInTheDocument()
+      })
+      fireEvent.click(screen.getByRole('button', { name: /2\. Consciência/i }))
+
+      // Agora sem QA: rótulo volta a "em construção"
+      await waitFor(() => {
+        expect(screen.getByTestId('ser-integral-map-center')).toBeInTheDocument()
+      })
+      expect(screen.getAllByText('Meu Mapa CER — em construção').length).toBeGreaterThan(0)
+
+      // Abrir Meu Mapa CER e verificar estado vazio 0/6
+      fireEvent.click(screen.getByTestId('ser-integral-map-center'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('participant-integrative-map-empty')).toBeInTheDocument()
+      })
       expect(screen.getByText(/Cobertura das dimensões \(0 de 6\)/i)).toBeInTheDocument()
 
       bodyText = document.body.textContent || ''
@@ -231,6 +312,8 @@ describe('ParticipantIntegrativeMapView (Duas Profundidades e Gate de Privacidad
       expect(bodyText).not.toContain('Hipótese de Trabalho')
       expect(bodyText).not.toContain('Área Exclusiva da Profissional')
       expect(bodyText).not.toContain('Confiança geral:')
+
+      unmountInteragente2()
     })
   })
 })
