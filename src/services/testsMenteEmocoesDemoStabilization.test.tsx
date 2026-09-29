@@ -118,7 +118,7 @@ describe('Estabilização dos Dados de Mente & Emoções no Modo Demonstração 
     localStorage.setItem('cer_demo_mode_state_v3', JSON.stringify(parsedState))
 
     // 3. Reinstanciar / higienizar chamando sanitização
-    const sanitized = demoAdapter.sanitizeStateStore(parsedState)
+    const sanitized = demoAdapter.migrateIncompatibleMenteEmocoes(parsedState)
 
     // 4. Afirmar que as mensagens da pré-consulta permanecem rigorosamente idênticas
     expect(sanitized.messages).toHaveLength(2)
@@ -180,7 +180,7 @@ describe('Estabilização dos Dados de Mente & Emoções no Modo Demonstração 
       },
     ]
 
-    const sanitized = demoAdapter.sanitizeStateStore(state)
+    const sanitized = demoAdapter.migrateIncompatibleMenteEmocoes(state)
 
     // Apenas a resposta incompatível foi removida; corpoResponse permaneceu intacta
     expect(sanitized.experienceResponses).toHaveLength(1)
@@ -219,16 +219,16 @@ describe('Estabilização dos Dados de Mente & Emoções no Modo Demonstração 
     }
 
     // Rodada 1
-    const pass1 = demoAdapter.sanitizeStateStore(rawState)
+    const pass1 = demoAdapter.migrateIncompatibleMenteEmocoes(rawState)
     expect(pass1.experienceResponses).toHaveLength(0)
-    expect(pass1.incompatibleLegacyResponses).toHaveLength(1)
+    expect(pass1.retiredExperienceResponses).toHaveLength(1)
     const archivedJson1 = localStorage.getItem(DEMO_ARCHIVED_INCOMPATIBLE_KEY)
     expect(archivedJson1).toBeTruthy()
 
     // Rodada 2 com o resultado da rodada 1
-    const pass2 = demoAdapter.sanitizeStateStore(pass1)
+    const pass2 = demoAdapter.migrateIncompatibleMenteEmocoes(pass1)
     expect(pass2.experienceResponses).toHaveLength(0)
-    expect(pass2.incompatibleLegacyResponses).toHaveLength(1)
+    expect(pass2.retiredExperienceResponses).toHaveLength(1)
     const archivedJson2 = localStorage.getItem(DEMO_ARCHIVED_INCOMPATIBLE_KEY)
     expect(archivedJson2).toBe(archivedJson1)
   })

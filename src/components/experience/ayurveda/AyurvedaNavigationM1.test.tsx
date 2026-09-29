@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react'
 import React from 'react'
 import { AyurvedaChaptersNavigator } from '@/components/experience/ayurveda/AyurvedaChaptersNavigator'
 import {
@@ -125,7 +125,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       AYV_C2_PROMPTS.P12_HISTORICAL_CONFIDENCE,
     ]
     for (const p of prompts) {
-      const val = p.id === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id ? ['sharp_hunger'] : 'opt_a'
+      const val = p.id === AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id ? ['sudden_intense'] : 'opt_a'
       await experienceResponseService.saveResponse({
         enrollmentId: DEMO_ENROLLMENT_ID,
         experienceId: 'exp-corpo-fisiologia-07b',
@@ -191,7 +191,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // C1 concluído clicado a partir do Hub entra no fluxo
-    const reviewC1Btn = screen.getByRole('button', { name: /Rever Capítulo 1/i })
+    const reviewC1Btn = await screen.findByRole('button', { name: /Rever Capítulo 1/i })
     fireEvent.click(reviewC1Btn)
 
     // Voltar ao encerramento
@@ -204,7 +204,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     await waitFor(() => {
       expect(screen.getByText(/Capítulo 1 Concluído/i)).toBeInTheDocument()
     })
-    const backToHubBtn = screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i })
+    const backToHubBtn = screen.getByRole('button', { name: /Voltar aos capítulos/i })
     fireEvent.click(backToHubBtn)
 
     // Deve retornar ao Hub
@@ -229,7 +229,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 1/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 1/i }))
 
     await waitFor(() => {
       expect(screen.getByTestId('banner-review-mode')).toBeInTheDocument()
@@ -241,7 +241,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText(/Capítulo 1 Concluído/i)).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Voltar aos capítulos/i }))
 
     await waitFor(() => {
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
@@ -264,7 +264,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 2/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 2/i }))
 
     await waitFor(() => {
       expect(screen.getByTestId('banner-c2-review-mode')).toBeInTheDocument()
@@ -301,7 +301,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 2/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 2/i }))
 
     await waitFor(() => {
       expect(screen.getByTestId('banner-c2-review-mode')).toBeInTheDocument()
@@ -338,7 +338,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // Botão Rever Capítulo 1
-    const reviewC1Btn = screen.getByRole('button', { name: /Rever Capítulo 1/i })
+    const reviewC1Btn = await screen.findByRole('button', { name: /Rever Capítulo 1/i })
     fireEvent.click(reviewC1Btn)
 
     // Deve abrir em modo somente-leitura do C1 com banner explícito de C1
@@ -357,7 +357,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // Voltar ao hub
-    const backToHubBtn = screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i })
+    const backToHubBtn = screen.getByRole('button', { name: /Voltar aos capítulos/i })
     fireEvent.click(backToHubBtn)
 
     // Confirma que retornou ao Hub
@@ -383,7 +383,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // Botão Rever Capítulo 2
-    const reviewC2Btn = screen.getByRole('button', { name: /Rever Capítulo 2/i })
+    const reviewC2Btn = await screen.findByRole('button', { name: /Rever Capítulo 2/i })
     fireEvent.click(reviewC2Btn)
 
     // Deve abrir somente-leitura do C2 com banner explícito de C2
@@ -402,7 +402,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // Voltar ao hub
-    const backToHubBtn = screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i })
+    const backToHubBtn = screen.getByRole('button', { name: /Voltar aos capítulos/i })
     fireEvent.click(backToHubBtn)
 
     // Retornou ao Hub
@@ -447,7 +447,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // 1. Entra em Rever Capítulo 2 (modo 'review')
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 2/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 2/i }))
     await waitFor(() => {
       expect(screen.getByTestId('banner-c2-review-mode')).toBeInTheDocument()
       expect(screen.getByText(/Modo somente-leitura/i)).toBeInTheDocument()
@@ -481,7 +481,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
 
     // 5. aguardar explicitamente todas as promessas de criação, persistência e loadResponses (waitFor)
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeInTheDocument()
     })
 
     // Aguarda acomodação completa de microtarefas/promessas assíncronas remanescentes
@@ -496,28 +496,39 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     const buttons = screen.getAllByRole('button')
     const hungerOption = buttons.find(
       (btn) =>
-        btn.textContent?.includes('Fome pontual') || btn.textContent?.includes('Fome intensa'),
+        btn.textContent?.includes('Surge de repente') ||
+        btn.textContent?.includes('Surge de repente'),
     )
     expect(hungerOption).toBeDefined()
     expect(hungerOption).not.toBeDisabled()
 
     // CLIQUE REAL (interação real com verificação de mudança visual e persistência):
-    // Na semente foi 'sharp_hunger' ("Fome intensa"). Clicamos em uma opção não selecionada ("Fome moderada e previsível")
+    // Na semente foi 'sudden_intense' ("Fome intensa"). Clicamos em uma opção não selecionada ("Fome moderada e previsível")
     const unselectedOption = buttons.find((btn) =>
-      btn.textContent?.includes('Fome moderada e previsível'),
+      btn.textContent?.includes('Aparece em horários relativamente previsíveis'),
     )
     expect(unselectedOption).toBeDefined()
     expect(unselectedOption).toHaveAttribute('aria-pressed', 'false')
 
     // Verificar contador antes do clique real: "Até 2 escolhas • 1/2"
-    expect(screen.getByText(/Até 2 escolhas • 1\/2/i)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(
+          screen.getByText(/1\. Como a sua fome costuma funcionar\?/i).parentElement!,
+        ).getByText(/Até 2 escolhas • 1\/2/i),
+      ).toBeInTheDocument()
+    })
 
     // Realizar o clique real
     fireEvent.click(unselectedOption!)
 
     // Asserção obrigatória: contador de escolhas muda VISUALMENTE
     await waitFor(() => {
-      expect(screen.getByText(/Até 2 escolhas • 2\/2/i)).toBeInTheDocument()
+      expect(
+        within(
+          screen.getByText(/1\. Como a sua fome costuma funcionar\?/i).parentElement!,
+        ).getByText(/Até 2 escolhas • 2\/2/i),
+      ).toBeInTheDocument()
       expect(unselectedOption).toHaveAttribute('aria-pressed', 'true')
     })
 
@@ -526,7 +537,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     expect(screen.queryByText(/Capítulo 2 Concluído/i)).toBeNull()
 
     // - a rotina de salvamento recebe a revisão N+1 (2);
-    // Verificar que a resposta de hunger_pattern para a revisão 2 agora inclui 'moderate_hunger'
+    // Verificar que a resposta de hunger_pattern para a revisão 2 agora inclui 'regular_hours'
     const all = demoAdapter.listExperienceResponses(DEMO_ENROLLMENT_ID, 'exp-corpo-fisiologia-07b')
     const rev2Responses = all.filter(
       (r) => (r as any).revision_number === 2 || (r.structured_value as any)?.revision_number === 2,
@@ -542,8 +553,8 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     const rev2HungerVal =
       (rev2Hunger?.structured_value as any)?.value ||
       (rev2Hunger?.structured_value as any)?.selectedOptionIds
-    expect(rev2HungerVal).toContain('moderate_hunger')
-    expect(rev2HungerVal).toContain('sharp_hunger')
+    expect(rev2HungerVal).toContain('regular_hours')
+    expect(rev2HungerVal).toContain('sudden_intense')
 
     // - a revisão anterior permanece preservada (imutável)
     const rev1Responses = all.filter(
@@ -562,7 +573,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     const rev1HungerVal =
       (rev1Hunger?.structured_value as any)?.value ||
       (rev1Hunger?.structured_value as any)?.selectedOptionIds
-    expect(rev1HungerVal).not.toContain('moderate_hunger')
+    expect(rev1HungerVal).not.toContain('regular_hours')
 
     // - voltar ao hub funciona
     // Primeiro avançamos ou vamos até o encerramento para clicar em Voltar ao hub
@@ -585,11 +596,9 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
     fireEvent.click(screen.getByRole('button', { name: /Ir para Encerramento/i }))
     await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i }),
-      ).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Salvar e continuar depois/i })).toBeInTheDocument()
     })
-    fireEvent.click(screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Salvar e continuar depois/i }))
     await waitFor(() => {
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
@@ -622,17 +631,16 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
+    const correctBtns = await screen.findAllByRole('button', { name: /Corrigir minhas respostas/i })
     const correctC1Btn = correctBtns[0]
     fireEvent.click(correctC1Btn)
+    fireEvent.click(await screen.findByRole('button', { name: /Confirmar e corrigir/i }))
 
     // Deve abrir o fluxo do C1 na Tela 1 sem banner de revisão
     await waitFor(() => {
       expect(screen.queryByTestId('banner-review-mode')).toBeNull()
       expect(
-        screen.getByText(
-          /Qual das opções abaixo mais se aproxima da sua estrutura corporal habitual\?/i,
-        ),
+        screen.getByText(/qual estrutura mais se aproxima do seu corpo\?/i),
       ).toBeInTheDocument()
     })
   })
@@ -658,7 +666,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
+    const correctBtns = await screen.findAllByRole('button', { name: /Corrigir minhas respostas/i })
     fireEvent.click(correctBtns[1] || correctBtns[0])
 
     // Diálogo aberto
@@ -672,7 +680,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
 
     // Permanece no encerramento de C2 sem navegar para a tela editável
     await waitFor(() => {
-      expect(screen.getByText(/Capítulo 2 Concluído/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 2/i })).toBeInTheDocument()
     })
 
     const responsesAfter = demoAdapter.listExperienceResponses(
@@ -699,7 +707,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // 1. Entra em Rever C1
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 1/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 1/i }))
     await waitFor(() => {
       expect(screen.getByTestId('banner-review-mode')).toBeInTheDocument()
       expect(screen.getByText(/Capítulo 1 — Revisão das suas respostas/i)).toBeInTheDocument()
@@ -711,7 +719,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     await waitFor(() => {
       expect(screen.getByText(/Capítulo 1 Concluído/i)).toBeInTheDocument()
     })
-    fireEvent.click(screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Voltar aos capítulos/i }))
 
     // 3. Chegou no Hub
     await waitFor(() => {
@@ -721,7 +729,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // 4. Entra em Rever C2
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 2/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 2/i }))
     await waitFor(() => {
       expect(screen.getByTestId('banner-c2-review-mode')).toBeInTheDocument()
       expect(screen.getByText(/Capítulo 2 — Revisão das suas respostas/i)).toBeInTheDocument()
@@ -733,13 +741,13 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     await waitFor(() => {
       expect(screen.getByText(/Capítulo 2 Concluído/i)).toBeInTheDocument()
     })
-    fireEvent.click(screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Voltar aos capítulos/i }))
 
     // 6. De volta ao Hub -> entra de novo em C1
     await waitFor(() => {
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 1/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 1/i }))
     await waitFor(() => {
       expect(screen.getByTestId('banner-review-mode')).toBeInTheDocument()
       expect(screen.getByText(/Capítulo 1 — Revisão das suas respostas/i)).toBeInTheDocument()
@@ -781,7 +789,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(
         screen.queryByText(/Qual das opções abaixo mais se aproxima da sua estrutura/i),
       ).toBeNull()
-      expect(screen.queryByText(/Padrão habitual da sua fome/i)).toBeNull()
+      expect(screen.queryByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeNull()
     })
   })
 
@@ -842,7 +850,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // Navega para Rever C1
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 1/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 1/i }))
     await waitFor(() => {
       expect(screen.getByTestId('banner-review-mode')).toBeInTheDocument()
     })
@@ -854,7 +862,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // Volta ao Hub
-    fireEvent.click(screen.getByRole('button', { name: /Voltar ao percurso dos capítulos/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Voltar aos capítulos/i }))
     await waitFor(() => {
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
@@ -889,7 +897,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Capítulo 1 — Estrutura Corporal & Características Habituais/i),
+        screen.getByRole('heading', { name: /qual estrutura mais se aproxima do seu corpo\?/i }),
       ).toBeInTheDocument()
     })
 
@@ -922,7 +930,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // No hub, clica em "Corrigir minhas respostas" do C2
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
+    const correctBtns = await screen.findAllByRole('button', { name: /Corrigir minhas respostas/i })
     const correctC2Btn = correctBtns[1] || correctBtns[0]
     fireEvent.click(correctC2Btn)
 
@@ -935,7 +943,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
 
     // Momento 1 abre e a nova revisão 2 fica ativa
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeInTheDocument()
     })
 
     // Verifica persistência da revisão 2
@@ -962,7 +970,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
+    const correctBtns = await screen.findAllByRole('button', { name: /Corrigir minhas respostas/i })
     fireEvent.click(correctBtns[1] || correctBtns[0])
 
     await waitFor(() => {
@@ -972,27 +980,37 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     fireEvent.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeInTheDocument()
     })
 
     // Verifica se os botões/cards estão interativos (não desabilitados)
     const options = screen.getAllByRole('button')
     const unselectedOption = options.find((btn) =>
-      btn.textContent?.includes('Fome moderada e previsível'),
+      btn.textContent?.includes('Aparece em horários relativamente previsíveis'),
     )
     expect(unselectedOption).toBeDefined()
     expect(unselectedOption).not.toBeDisabled()
     expect(unselectedOption).toHaveAttribute('aria-pressed', 'false')
 
     // Contador antes do clique: 1/2
-    expect(screen.getByText(/Até 2 escolhas • 1\/2/i)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(
+          screen.getByText(/1\. Como a sua fome costuma funcionar\?/i).parentElement!,
+        ).getByText(/Até 2 escolhas • 1\/2/i),
+      ).toBeInTheDocument()
+    })
 
     // Clique real para alterar a seleção
     fireEvent.click(unselectedOption!)
 
     // Asserções reais de interação:
     await waitFor(() => {
-      expect(screen.getByText(/Até 2 escolhas • 2\/2/i)).toBeInTheDocument()
+      expect(
+        within(
+          screen.getByText(/1\. Como a sua fome costuma funcionar\?/i).parentElement!,
+        ).getByText(/Até 2 escolhas • 2\/2/i),
+      ).toBeInTheDocument()
       expect(unselectedOption).toHaveAttribute('aria-pressed', 'true')
     })
   })
@@ -1014,17 +1032,17 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // Entra em Rever Capítulo 2 (mode: 'review')
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 2/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 2/i }))
 
     await waitFor(() => {
       expect(screen.getByTestId('banner-c2-review-mode')).toBeInTheDocument()
       expect(screen.getByText(/Modo somente-leitura/i)).toBeInTheDocument()
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeInTheDocument()
     })
 
     const buttons = screen.getAllByRole('button')
     const unselectedOption = buttons.find((btn) =>
-      btn.textContent?.includes('Fome moderada e previsível'),
+      btn.textContent?.includes('Aparece em horários relativamente previsíveis'),
     )
     expect(unselectedOption).toBeDefined()
     expect(unselectedOption).toHaveAttribute('aria-pressed', 'false')
@@ -1040,7 +1058,13 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
 
     // Asserção: a opção NÃO foi marcada e o contador NÃO mudou
     expect(unselectedOption).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByText(/Até 2 escolhas • 1\/2/i)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(
+          screen.getByText(/1\. Como a sua fome costuma funcionar\?/i).parentElement!,
+        ).getByText(/Até 2 escolhas • 1\/2/i),
+      ).toBeInTheDocument()
+    })
 
     const responsesCountAfter = demoAdapter.listExperienceResponses(
       DEMO_ENROLLMENT_ID,
@@ -1065,7 +1089,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
+    const correctBtns = await screen.findAllByRole('button', { name: /Corrigir minhas respostas/i })
     fireEvent.click(correctBtns[1] || correctBtns[0])
 
     await waitFor(() => {
@@ -1075,7 +1099,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     fireEvent.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeInTheDocument()
     })
 
     expect(screen.queryByText(/Modo somente-leitura/i)).toBeNull()
@@ -1099,7 +1123,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
+    const correctBtns = await screen.findAllByRole('button', { name: /Corrigir minhas respostas/i })
     fireEvent.click(correctBtns[1] || correctBtns[0])
 
     await waitFor(() => {
@@ -1109,14 +1133,16 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     fireEvent.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeInTheDocument()
     })
 
-    // Na semente foi seeded 'sharp_hunger' ("Fome intensa")
+    // Na semente foi seeded 'sudden_intense' ("Fome intensa")
     // O card preenchido deve conter a indicação de selecionado (ex: aria-pressed ou classe de selecionado)
-    const cardSelected = screen.getByText(/Fome intensa e pontual/i).closest('button')
+    const cardSelected = screen
+      .getByText(/Surge de repente e pode ficar muito intensa/i)
+      .closest('button')
     expect(cardSelected).toBeDefined()
-    expect(cardSelected).toHaveAttribute('aria-pressed', 'true')
+    await waitFor(() => expect(cardSelected).toHaveAttribute('aria-pressed', 'true'))
   })
 
   // 9. a conclusão anterior não conclui automaticamente a nova revisão
@@ -1135,7 +1161,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
+    const correctBtns = await screen.findAllByRole('button', { name: /Corrigir minhas respostas/i })
     fireEvent.click(correctBtns[1] || correctBtns[0])
 
     await waitFor(() => {
@@ -1145,7 +1171,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     fireEvent.click(screen.getByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/Padrão habitual da sua fome/i)).toBeInTheDocument()
+      expect(screen.getByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeInTheDocument()
     })
 
     // Não deve renderizar a tela de encerramento de imediato
@@ -1185,7 +1211,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
+    const correctBtns = await screen.findAllByRole('button', { name: /Corrigir minhas respostas/i })
     fireEvent.click(correctBtns[1] || correctBtns[0])
 
     await waitFor(() => {
@@ -1195,7 +1221,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     fireEvent.click(screen.getByRole('button', { name: /Cancelar/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/Capítulo 2 Concluído/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Rever Capítulo 2/i })).toBeInTheDocument()
     })
 
     const responsesAfter = demoAdapter.listExperienceResponses(
@@ -1227,7 +1253,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // Entra em Rever Capítulo 2 -> Encerramento -> Corrigir minhas respostas
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 2/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 2/i }))
     await waitFor(() => {
       expect(screen.getByTestId('banner-c2-review-mode')).toBeInTheDocument()
     })
@@ -1252,7 +1278,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(
         screen.getByText(/Não foi possível abrir a correção agora. Tente novamente./i),
       ).toBeInTheDocument()
-      expect(screen.queryByText(/Padrão habitual da sua fome/i)).toBeNull()
+      expect(screen.queryByText(/1\. Como a sua fome costuma funcionar\?/i)).toBeNull()
       expect(screen.queryByTestId('banner-c2-review-mode')).toBeNull()
     })
 
@@ -1275,15 +1301,14 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
       expect(screen.getByText('Percurso de Avaliação Corporal')).toBeInTheDocument()
     })
 
-    const correctBtns = screen.getAllByRole('button', { name: /Corrigir minhas respostas/i })
+    const correctBtns = await screen.findAllByRole('button', { name: /Corrigir minhas respostas/i })
     fireEvent.click(correctBtns[0])
+    fireEvent.click(await screen.findByRole('button', { name: /Confirmar e corrigir/i }))
 
     await waitFor(() => {
       expect(screen.queryByTestId('banner-review-mode')).toBeNull()
       expect(
-        screen.getByText(
-          /Qual das opções abaixo mais se aproxima da sua estrutura corporal habitual\?/i,
-        ),
+        screen.getByText(/qual estrutura mais se aproxima do seu corpo\?/i),
       ).toBeInTheDocument()
     })
   })
@@ -1310,7 +1335,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // Navega para Rever C2
-    fireEvent.click(screen.getByRole('button', { name: /Rever Capítulo 2/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rever Capítulo 2/i }))
     await waitFor(() => {
       expect(screen.getByTestId('banner-c2-review-mode')).toBeInTheDocument()
     })
@@ -1351,8 +1376,8 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
 
     // O status canônico deve identificar C1 e C2 concluídos mesmo a partir de fixture legada
-    expect(screen.getByText('Capítulo 1 Concluído')).toBeInTheDocument()
-    expect(screen.getByText('Capítulo 2 Concluído')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Rever Capítulo 1/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Rever Capítulo 2/i })).toBeInTheDocument()
   })
 
   // 15. zero chamadas ao PocketBase no modo demonstração
@@ -1376,7 +1401,7 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Capítulo 1 — Estrutura Corporal & Características Habituais/i),
+        screen.getByRole('heading', { name: /qual estrutura mais se aproxima do seu corpo\?/i }),
       ).toBeInTheDocument()
     })
 

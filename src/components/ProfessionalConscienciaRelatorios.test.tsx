@@ -165,7 +165,7 @@ describe('Telas Profissionais da Dimensão Consciência', () => {
     expect(
       screen.getByText(/Relatório Profissional — Regulação & Padrões de Resposta/i),
     ).toBeInTheDocument()
-    expect(screen.getByText(/Síntese Simples/i)).toBeInTheDocument()
+    expect(screen.getByText('Síntese Simples', { exact: true })).toBeInTheDocument()
     expect(screen.getByText(/Síntese Profunda & Convergências/i)).toBeInTheDocument()
     expect(screen.getByText(/Evidências Observadas/i)).toBeInTheDocument()
     expect(screen.getByText(/Recursos Percebidos/i)).toBeInTheDocument()

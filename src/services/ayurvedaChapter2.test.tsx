@@ -33,10 +33,14 @@ import { AyurvedaChapter2Closing } from '@/components/experience/ayurveda/Ayurve
 import { AyurvedaC2Momento1Hunger } from '@/components/experience/ayurveda/AyurvedaC2Momento1Hunger'
 import { AyurvedaC2Momento2Digestion } from '@/components/experience/ayurveda/AyurvedaC2Momento2Digestion'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
+import { demoAdapter } from '@/services/demoAdapter'
 
 describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    localStorage.clear()
+    demoAdapter.resetToDefaultState()
+    demoAdapter.enableDemo('mariana')
   })
 
   // -------------------------------------------------------------------------
@@ -55,7 +59,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
       expect(
         screen.getByText('Conclua o Capítulo 1 para liberar este capítulo.'),
       ).toBeInTheDocument()
-      expect(screen.getByText('Bloqueado (aguarda Capítulo 1)')).toBeInTheDocument()
+      expect(screen.getAllByText('Bloqueado', { exact: true })[0]).toBeInTheDocument()
       expect(screen.queryByText('Começar Capítulo 2')).not.toBeInTheDocument()
     })
 
@@ -168,8 +172,8 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
       )
 
       const optRegular = screen.getByText(AYV_C2_P1_HUNGER_OPTIONS[0].label)
-      const optUnsure = screen.getByText('Não sei identificar.')
-      const optRefusal = screen.getByText('Prefiro não responder.')
+      const optUnsure = screen.getAllByText('Não sei identificar.', { exact: true })[0]
+      const optRefusal = screen.getAllByText('Prefiro não responder.', { exact: true })[0]
 
       // Seleciona uma opção comum
       fireEvent.click(optRegular)
@@ -373,6 +377,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
           experienceId="exp-corpo-fisiologia-07b"
           respondentUserId="usr-1"
           initialStage="review"
+          mode="review"
           onBackToHub={vi.fn()}
         />,
       )
@@ -545,7 +550,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
 
       // Inicialmente está concluído (v1) e exibe o encerramento com título de conclusão
       await waitFor(() => {
-        expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+        expect(screen.getByText(/Capítulo 2 concluído/i)).toBeInTheDocument()
       })
       expect(screen.getByText('Corrigir minhas respostas')).toBeInTheDocument()
 
@@ -572,7 +577,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
       fireEvent.click(optSudden)
 
       // Avançar pelos momentos até o encerramento para concluir a nova versão
-      fireEvent.click(screen.getByText('Avançar para Digestão'))
+      fireEvent.click(await screen.findByRole('button', { name: 'Avançar para Digestão' }))
       await waitFor(() => {
         expect(screen.getByText('Momento 2 de 5 — Digestão')).toBeInTheDocument()
       })
@@ -603,7 +608,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
 
       // 6. Novo resumo exibe a resposta alterada ("Surge de repente e pode ficar muito intensa.")
       await waitFor(() => {
-        expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+        expect(screen.getByText(/Capítulo 2 concluído/i)).toBeInTheDocument()
       })
       expect(screen.getByText('Surge de repente e pode ficar muito intensa.')).toBeInTheDocument()
 
@@ -673,7 +678,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+        expect(screen.getByText(/Capítulo 2 concluído/i)).toBeInTheDocument()
       })
 
       fireEvent.click(screen.getByText('Corrigir minhas respostas'))
@@ -686,7 +691,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
       expect(
         screen.queryByText('Confirmar abertura de correção do Capítulo 2'),
       ).not.toBeInTheDocument()
-      expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+      expect(screen.getByText(/Capítulo 2 concluído/i)).toBeInTheDocument()
       expect(saveSpy).not.toHaveBeenCalled()
     })
 
@@ -965,7 +970,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
 
         // 1. App inicializa e detecta estado concluído da revisão 1
         await waitFor(() => {
-          expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+          expect(screen.getByText(/Capítulo 2 concluído/i)).toBeInTheDocument()
         })
         expect(
           screen.getByText('Aparece em horários relativamente previsíveis.'),
@@ -1001,7 +1006,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
         fireEvent.click(newOption)
 
         // 8. Avançar momentos até o encerramento
-        fireEvent.click(screen.getByText('Avançar para Digestão'))
+        fireEvent.click(await screen.findByRole('button', { name: 'Avançar para Digestão' }))
         await waitFor(() =>
           expect(screen.getByText(/Momento 2 de 5 — Digestão/i)).toBeInTheDocument(),
         )
@@ -1026,7 +1031,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
         fireEvent.click(screen.getByText('Concluir Capítulo 2'))
 
         await waitFor(() => {
-          expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+          expect(screen.getByText(/Capítulo 2 concluído/i)).toBeInTheDocument()
         })
         expect(onBackToHub).toHaveBeenCalledTimes(1)
 
@@ -1059,7 +1064,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
         )
 
         await waitFor(() => {
-          expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+          expect(screen.getByText(/Capítulo 2 concluído/i)).toBeInTheDocument()
         })
 
         fireEvent.click(screen.getByText('Corrigir minhas respostas'))
@@ -1072,7 +1077,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
           ).toBeInTheDocument()
         })
 
-        expect(screen.getByText('Capítulo 2 concluído')).toBeInTheDocument()
+        expect(screen.getByText(/Capítulo 2 concluído/i)).toBeInTheDocument()
         expect(screen.getByText('Tentar novamente')).toBeInTheDocument()
         expect(screen.queryByText(/Momento 1 de 5 — Fome/i)).not.toBeInTheDocument()
       })
