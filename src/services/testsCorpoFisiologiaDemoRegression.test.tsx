@@ -67,8 +67,8 @@ describe('Regressão Direcionada — Entrada em Corpo & Fisiologia no Modo Demo'
 
     // Deve renderizar os 4 capítulos do hub de Ayurveda
     await waitFor(() => {
-      expect(screen.getByText('Quatro Capítulos de Observação')).toBeTruthy()
-      expect(screen.getByText('Capítulo 1: Estrutura & Características')).toBeTruthy()
+      expect(screen.getByRole('heading', { name: 'Percurso de Avaliação Corporal' })).toBeTruthy()
+      expect(screen.getByText('Estrutura e características')).toBeTruthy()
     })
   })
 
@@ -98,7 +98,7 @@ describe('Regressão Direcionada — Entrada em Corpo & Fisiologia no Modo Demo'
 
     // Abre o hub diretamente
     await waitFor(() => {
-      expect(screen.getByText('Quatro Capítulos de Observação')).toBeTruthy()
+      expect(screen.getByRole('heading', { name: 'Percurso de Avaliação Corporal' })).toBeTruthy()
     })
 
     const person = demoAdapter.getCurrentPerson()
@@ -144,7 +144,7 @@ describe('Regressão Direcionada — Entrada em Corpo & Fisiologia no Modo Demo'
     // Não deve ficar preso e não deve cair na tela legada de encerramento
     await waitFor(() => {
       expect(screen.queryByText('Preparando sua experiência...')).toBeNull()
-      expect(screen.getByText('Quatro Capítulos de Observação')).toBeTruthy()
+      expect(screen.getByRole('heading', { name: 'Percurso de Avaliação Corporal' })).toBeTruthy()
     })
 
     // Verifica que o progresso legado permanece preservado no armazenamento
@@ -171,11 +171,11 @@ describe('Regressão Direcionada — Entrada em Corpo & Fisiologia no Modo Demo'
       promptVersion: 1,
       promptKey: AYV_C1_PROMPTS.P1_STRUCTURE.key,
       structuredValue: {
-        value: 'figura_a',
-        choice: 'figura_a',
+        value: 'narrow_long',
+        choice: 'narrow_long',
         metadata: {
           prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key,
-          option_ids: ['figura_a'],
+          option_ids: ['narrow_long'],
           chapter_id: 'capitulo-1-estrutura-caracteristicas',
         },
       },
@@ -193,18 +193,18 @@ describe('Regressão Direcionada — Entrada em Corpo & Fisiologia no Modo Demo'
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Quatro Capítulos de Observação')).toBeTruthy()
+      expect(screen.getByRole('heading', { name: 'Percurso de Avaliação Corporal' })).toBeTruthy()
     })
 
-    // Clica para iniciar o Capítulo 1
-    const startC1Btn = screen.getByRole('button', { name: /Iniciar Capítulo 1/i })
+    // Clica para retomar o Capítulo 1 já iniciado.
+    const startC1Btn = await waitFor(() =>
+      screen.getByRole('button', { name: /Retomar Capítulo 1/i }),
+    )
     fireEvent.click(startC1Btn)
 
-    // Abre a tela de abertura do Capítulo 1
+    // O progresso parcial retoma a primeira etapa respondível do Capítulo 1.
     await waitFor(() => {
-      expect(
-        screen.getByText('Capítulo 1 — Estrutura Corporal & Características Habituais'),
-      ).toBeTruthy()
+      expect(screen.getByText('Tela 2 de 5 • Pele habitual')).toBeTruthy()
     })
   })
 
@@ -245,7 +245,7 @@ describe('Regressão Direcionada — Entrada em Corpo & Fisiologia no Modo Demo'
 
     await waitFor(() => {
       expect(screen.queryByText('Preparando sua experiência...')).toBeNull()
-      expect(screen.getByText('Quatro Capítulos de Observação')).toBeTruthy()
+      expect(screen.getByRole('heading', { name: 'Percurso de Avaliação Corporal' })).toBeTruthy()
     })
   })
 
@@ -273,7 +273,7 @@ describe('Regressão Direcionada — Entrada em Corpo & Fisiologia no Modo Demo'
     // Não deve quebrar nem travar; deve abrir o hub com catálogo resiliente
     await waitFor(() => {
       expect(screen.queryByText('Preparando sua experiência...')).toBeNull()
-      expect(screen.getByText('Quatro Capítulos de Observação')).toBeTruthy()
+      expect(screen.getByRole('heading', { name: 'Percurso de Avaliação Corporal' })).toBeTruthy()
     })
   })
 
@@ -391,6 +391,10 @@ describe('Regressão Direcionada — Entrada em Corpo & Fisiologia no Modo Demo'
       promptVersion: 1,
       structuredValue: originalValue,
     })
+    const savedBeforeOpening = demoAdapter
+      .listExperienceResponses(DEMO_ENROLLMENT_ID, 'exp-corpo-fisiologia-07b')
+      .find((r) => r.prompt_id === 'p-antiga-01')
+    expect(savedBeforeOpening).toBeTruthy()
 
     demoAdapter.updatePerson(DEMO_PERSON_MARIANA.id, {
       avatar_customization_status: 'completed',
@@ -408,7 +412,7 @@ describe('Regressão Direcionada — Entrada em Corpo & Fisiologia no Modo Demo'
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Quatro Capítulos de Observação')).toBeTruthy()
+      expect(screen.getByRole('heading', { name: 'Percurso de Avaliação Corporal' })).toBeTruthy()
     })
 
     const responses = demoAdapter.listExperienceResponses(
@@ -417,6 +421,6 @@ describe('Regressão Direcionada — Entrada em Corpo & Fisiologia no Modo Demo'
     )
     const found = responses.find((r) => r.prompt_id === 'p-antiga-01')
     expect(found).toBeTruthy()
-    expect(found?.structured_value).toEqual(originalValue)
+    expect(found?.structured_value).toEqual(savedBeforeOpening?.structured_value)
   })
 })

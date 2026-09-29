@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -94,6 +94,19 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
     if (initialSecondary) list.push(initialSecondary)
     return list.slice(0, 2)
   })
+
+  // A revisão é carregada depois que a tela monta. Refletir as respostas persistidas
+  // sem exigir que a interagente selecione novamente uma figura já respondida.
+  useEffect(() => {
+    setSelectedStructure(initialStructure)
+    setSelectedSecondary(initialSecondary)
+    setSelectedDuration(initialDuration)
+    setTwoSelectedStructures(
+      [initialStructure !== 'two_figures' ? initialStructure : undefined, initialSecondary]
+        .filter((choice): choice is string => Boolean(choice))
+        .slice(0, 2),
+    )
+  }, [initialStructure, initialSecondary, initialDuration])
 
   // Figuras mostradas inicialmente conforme a apresentação do avatar, com opção de ver as outras
   const currentPresentationFigures =

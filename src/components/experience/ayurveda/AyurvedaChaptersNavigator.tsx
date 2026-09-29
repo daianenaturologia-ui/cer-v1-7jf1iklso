@@ -272,8 +272,16 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   const handleStartChapter1FromHub = useCallback(() => {
     const currentPersisted = getPersistedActiveChapter1Revision(enrollmentId)
     const effectiveRev = currentPersisted ?? derivedC1.activeRevisionNumber ?? 1
-    // Se há revisão ativa > 1 incompleta (sem conclusão), retoma em correcting preenchido
-    if (
+    // Todas as telas já respondidas levam à confirmação da revisão ativa.
+    if (isC1ReadyToComplete) {
+      setNavState({
+        chapterId: 'c1',
+        mode: 'ready_to_complete',
+        currentStep: 5,
+        activeRevision: effectiveRev,
+      })
+    } else if (
+      // Se há revisão ativa > 1 incompleta (sem conclusão), retoma em correcting preenchido.
       (currentPersisted && currentPersisted > 1 && !isC1Completed) ||
       (derivedC1.activeRevisionNumber > 1 && !isC1Completed)
     ) {
@@ -288,13 +296,6 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
         chapterId: 'c1',
         mode: 'review',
         currentStep: 1,
-        activeRevision: effectiveRev,
-      })
-    } else if (isC1ReadyToComplete) {
-      setNavState({
-        chapterId: 'c1',
-        mode: 'ready_to_complete',
-        currentStep: 5,
         activeRevision: effectiveRev,
       })
     } else if (chapter1Status === 'in_progress') {
