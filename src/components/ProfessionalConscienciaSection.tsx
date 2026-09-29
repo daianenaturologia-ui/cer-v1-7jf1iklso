@@ -134,6 +134,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
   // Painéis expansíveis do Nível 3
   const [expandedDimensions, setExpandedDimensions] = useState<Record<string, boolean>>({})
   const [corpoActiveTab, setCorpoActiveTab] = useState<'factual' | 'interpretacao'>('factual')
+  const [isDemoQaScenarioActive, setIsDemoQaScenarioActive] = useState(false)
 
   const loadData = async () => {
     setLoading(true)
@@ -141,6 +142,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
     try {
       const { demoAdapter } = await import('@/services/demoAdapter')
       if (demoAdapter.isEnabled()) {
+        setIsDemoQaScenarioActive(demoAdapter.getActiveScenario() === 'qa_consciencia_completa')
         const demoResponses = demoAdapter.listExperienceResponses(enrollment.id)
         const demoVersions = demoAdapter.listExperienceResponseVersions(enrollment.id)
         setEnrollmentExps([])
@@ -230,6 +232,23 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
   const integracaoExp = getEnrollmentExpForDim(INTEGRACAO_EXPERIENCE_ID)
   const integracaoResponses = getResponsesForDim(INTEGRACAO_EXPERIENCE_ID)
 
+  const handleToggleQaScenario = async () => {
+    try {
+      const { demoAdapter } = await import('@/services/demoAdapter')
+      if (demoAdapter.isEnabled()) {
+        const nextScenario =
+          demoAdapter.getActiveScenario() === 'qa_consciencia_completa'
+            ? 'default'
+            : 'qa_consciencia_completa'
+        demoAdapter.setActiveScenario(nextScenario)
+        setIsDemoQaScenarioActive(nextScenario === 'qa_consciencia_completa')
+        await loadData()
+      }
+    } catch (e) {
+      console.error('Erro ao alternar cenário de demonstração:', e)
+    }
+  }
+
   return (
     <div className="space-y-10">
       {/* ═══════════════════════════════════════════════════════════════════
@@ -245,15 +264,31 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
               Escolha uma dimensão para ler as respostas.
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadData}
-            disabled={loading}
-            className="gap-1.5 text-xs"
-          >
-            <RefreshCw className="w-3.5 h-3.5" /> Atualizar respostas
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={isDemoQaScenarioActive ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={handleToggleQaScenario}
+              className="text-xs border-dashed gap-1"
+              data-testid="toggle-qa-scenario-btn"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span>
+                {isDemoQaScenarioActive
+                  ? 'Cenário QA Consciência Ativo'
+                  : 'Ativar Cenário QA (6 Dimensões)'}
+              </span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadData}
+              disabled={loading}
+              className="gap-1.5 text-xs"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Atualizar respostas
+            </Button>
+          </div>
         </div>
         {loadError && (
           <p role="alert" className="p-3 rounded-lg border border-destructive/40 text-sm">

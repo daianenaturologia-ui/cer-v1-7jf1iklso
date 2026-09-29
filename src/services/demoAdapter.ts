@@ -37,6 +37,7 @@ import type {
   SessionPreparationData,
 } from '@/types/cer'
 import { BUILD_07C_MENTE_PROMPTS } from './build07cPrompts'
+import { buildConscienciaQaFixture } from './conscienciaQaFixture'
 
 export interface DemoUserAccount {
   id: string
@@ -187,9 +188,12 @@ function getInitialState(): DemoStateStore {
   }
 }
 
+export type DemoScenarioMode = 'default' | 'qa_consciencia_completa'
+
 class DemoAdapter {
   private state: DemoStateStore
   private isDemoEnabled: boolean = false
+  private activeScenario: DemoScenarioMode = 'default'
   private listeners: Set<() => void> = new Set()
 
   constructor() {
@@ -1728,11 +1732,28 @@ class DemoAdapter {
   }
 
   // Respostas de Experiências da Consciência (Demo)
+  public getActiveScenario(): DemoScenarioMode {
+    return this.activeScenario
+  }
+
+  public setActiveScenario(scenario: DemoScenarioMode): void {
+    if (this.activeScenario !== scenario) {
+      this.activeScenario = scenario
+      this.notify()
+    }
+  }
+
+  // Respostas de Experiências da Consciência (Demo)
   public listExperienceResponses(
     enrollmentId?: string,
     experienceId?: string,
   ): ExperienceResponseRecord[] {
-    return this.state.experienceResponses.filter((r) => {
+    const sourceResponses =
+      this.activeScenario === 'qa_consciencia_completa'
+        ? buildConscienciaQaFixture(enrollmentId || DEMO_ENROLLMENT_ID).responses
+        : this.state.experienceResponses
+
+    return sourceResponses.filter((r) => {
       if (enrollmentId && r.enrollment_id !== enrollmentId) return false
       if (experienceId && r.experience_id !== experienceId) return false
       return true
@@ -1740,7 +1761,12 @@ class DemoAdapter {
   }
 
   public listExperienceResponseVersions(enrollmentId?: string): ExperienceResponseVersionRecord[] {
-    return (this.state.experienceResponseVersions || []).filter(
+    const sourceVersions =
+      this.activeScenario === 'qa_consciencia_completa'
+        ? buildConscienciaQaFixture(enrollmentId || DEMO_ENROLLMENT_ID).responseVersions
+        : this.state.experienceResponseVersions || []
+
+    return sourceVersions.filter(
       (version) => !enrollmentId || version.enrollment_id === enrollmentId,
     )
   }
