@@ -175,6 +175,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     if (engineStage === 'moments') momentHeadingRef.current?.scrollIntoView?.({ block: 'start' })
   }, [currentStepIndex, engineStage])
   const closingSaveQueue = useRef<Promise<void>>(Promise.resolve())
+  const closingSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const closingSaveGeneration = useRef(0)
   const [closingSaving, setClosingSaving] = useState(false)
   const [closingSaveError, setClosingSaveError] = useState<string | null>(null)
 
@@ -1630,17 +1632,23 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       setClosingReflection(text)
       setClosingSaving(true)
       setClosingSaveError(null)
-      const pending = closingSaveQueue.current
-        .then(() => persistClosingReflection(text))
-        .catch(() => {
-          setClosingSaveError(
-            'Não foi possível salvar sua anotação. Ela continua nesta tela; tente novamente.',
-          )
+      const generation = ++closingSaveGeneration.current
+      if (closingSaveTimer.current) clearTimeout(closingSaveTimer.current)
+      closingSaveTimer.current = setTimeout(() => {
+        const pending = closingSaveQueue.current
+          .then(() => persistClosingReflection(text))
+          .catch(() => {
+            if (closingSaveGeneration.current === generation) {
+              setClosingSaveError(
+                'Não foi possível salvar sua anotação. Ela continua nesta tela; tente novamente.',
+              )
+            }
+          })
+        closingSaveQueue.current = pending
+        void pending.finally(() => {
+          if (closingSaveGeneration.current === generation) setClosingSaving(false)
         })
-      closingSaveQueue.current = pending
-      void pending.finally(() => {
-        if (closingSaveQueue.current === pending) setClosingSaving(false)
-      })
+      }, 350)
     }
 
     return (
