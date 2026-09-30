@@ -640,7 +640,7 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
     helper_text:
       'Todos nós desenvolvemos maneiras de enfrentar pressão, insegurança, frustração e dor emocional.\n\nMuitas dessas estratégias possuem um lado que ajuda: podem trazer organização, proteção, realização, cuidado, rapidez ou segurança. Porém, quando se tornam rígidas ou intensas demais, também podem consumir energia e dificultar nossas escolhas.\n\nAs próximas situações não definem sua personalidade. Queremos apenas observar quais movimentos costumam se repetir.\n\nSelecione a intensidade que melhor descreve seu funcionamento para estes cinco primeiros movimentos.',
     is_required: true,
-    version: 2,
+    version: 3,
     schema_config: {
       prompt_key: 'movimentos_automaticos_frequencia_p1',
       concept_key: 'automatic_movement_frequency_set1',
@@ -688,6 +688,15 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
       orchestration: {
         path_role: 'essential',
         requires_branch_open: false,
+        routes: [
+          {
+            id: 'r_pm3_p1_interferencia',
+            when: {
+              any_of: [{ field: 'frequent_movement_count_gte', operator: 'equals', value: 1 }],
+            },
+            then: { action: 'open_branch', target_prompt_key: 'movimentos_interferencia_atual' },
+          },
+        ],
       },
     },
     created: new Date().toISOString(),
@@ -708,7 +717,7 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
     helper_text:
       'Estes são os outros cinco movimentos. Selecione a intensidade que melhor descreve seu funcionamento habitual.',
     is_required: true,
-    version: 2,
+    version: 3,
     schema_config: {
       prompt_key: 'movimentos_automaticos_frequencia_p2',
       concept_key: 'automatic_movement_frequency_set2',
@@ -760,7 +769,7 @@ export const BUILD_07C_MENTE_PROMPTS: CerPromptRecord[] = [
           {
             id: 'r_pm3_adaptive_interferencia',
             when: {
-              any_of: [{ field: 'selected_count_gte', operator: 'equals', value: 1 }],
+              any_of: [{ field: 'frequent_movement_count_gte', operator: 'equals', value: 1 }],
             },
             then: {
               action: 'open_branch',

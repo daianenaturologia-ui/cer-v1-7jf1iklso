@@ -1,3 +1,4 @@
+import { frequentMovementCount } from './movementFrequency'
 /**
  * ADAPTADOR DE DEMONSTRAÇÃO (CER V1 DEMO MODE)
  *
@@ -1022,6 +1023,20 @@ class DemoAdapter {
         )
       })
 
+      if (
+        !resp &&
+        req.key === 'movimentos_interferencia_atual' &&
+        !responses.some(
+          (r) =>
+            (r.prompt_id === 'p-07c-pm3-p7a-movimentos-1-5' ||
+              r.prompt_id === 'p-07c-pm3-p7b-movimentos-6-10') &&
+            frequentMovementCount(r.structured_value) > 0,
+        )
+      ) {
+        details[req.key] = { status: 'optional_empty', reason: 'adaptive_branch_not_open' }
+        answeredCount++
+        continue
+      }
       if (!resp) {
         details[req.key] = { status: 'missing_or_incompatible', reason: 'not_found' }
         missingKeys.push(req.key)
@@ -1043,6 +1058,15 @@ class DemoAdapter {
           reason: sVal?.skip_reason || 'legitimate_skip',
         }
         answeredCount++
+        continue
+      }
+
+      if (sVal?.frequency_complete === false) {
+        details[req.key] = {
+          status: 'missing_or_incompatible',
+          reason: 'frequency_draft_incomplete',
+        }
+        missingKeys.push(req.key)
         continue
       }
 

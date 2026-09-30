@@ -180,12 +180,13 @@ export const ProtectionPatternsChart: React.FC<ProtectionPatternsChartProps> = (
 
     // Normalizações tolerantes sem inventar dados
     const lower = trimmed.toLowerCase()
+    if (lower.includes('ainda não sei')) return 'Não sei identificar'
     if (lower.includes('quase nunca')) return 'Quase nunca'
     if (lower.includes('algumas')) return 'Em algumas situações'
     if (
       lower.includes('frequentemente') ||
       lower.includes('frequente') ||
-      lower.includes('frequência')
+      lower.includes('repete-se com frequência')
     )
       return 'Frequentemente'
     if (lower.includes('pressão') || lower.includes('pressao')) return 'Com força sob pressão'

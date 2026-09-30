@@ -60,6 +60,7 @@ export const MultiSelectCards: React.FC<MultiSelectCardsProps> = ({
             <button
               key={opt.id}
               type="button"
+              aria-pressed={isSelected}
               disabled={disabled || isLimitReached}
               onClick={() => toggleOption(opt.id)}
               className={cn(

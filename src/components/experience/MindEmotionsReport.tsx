@@ -1,3 +1,4 @@
+import { movementReportValues } from '@/services/movementFrequency'
 import React, { useState } from 'react'
 import { BUILD_07C_MENTE_PROMPTS } from '../../services/build07cPrompts'
 import { ProtectionPatternsChart } from './ProtectionPatternsChart'
@@ -1106,51 +1107,9 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
 
   const consolidatedP7Responses: Record<string, string> = {}
   const extractP7Values = (resp: any) => {
-    if (!resp) return
-    let sVal = resp.structured_value !== undefined ? resp.structured_value : resp
-    if (!sVal) return
-
-    // Desempacotar { ratings: { ... } } se presente
-    if (sVal && typeof sVal === 'object' && sVal.ratings && typeof sVal.ratings === 'object') {
-      sVal = sVal.ratings
-    }
-
-    if (typeof sVal === 'object' && !Array.isArray(sVal)) {
-      for (const [k, v] of Object.entries(sVal)) {
-        if (
-          k === 'metadata' ||
-          k === 'collection_origin' ||
-          k === 'naming_origin' ||
-          k === 'prompt_key' ||
-          k === 'canonical_prompt_id' ||
-          k === 'step_order'
-        ) {
-          continue
-        }
-        const canonKey = mapProtectionKey(k)
-        if (typeof v === 'string') {
-          consolidatedP7Responses[k] = v
-          consolidatedP7Responses[canonKey] = v
-        } else if (v && typeof v === 'object' && (v as any).value) {
-          const valStr = String((v as any).value)
-          consolidatedP7Responses[k] = valStr
-          consolidatedP7Responses[canonKey] = valStr
-        }
-      }
-    } else if (Array.isArray(sVal)) {
-      for (const item of sVal) {
-        if (typeof item === 'string') {
-          consolidatedP7Responses[item] = 'Frequentemente'
-          consolidatedP7Responses[mapProtectionKey(item)] = 'Frequentemente'
-        } else if (item && typeof item === 'object') {
-          const key = item.id || item.pattern_id || item.card_id
-          const val = item.intensity || item.value || item.choice || 'Frequentemente'
-          if (key) {
-            consolidatedP7Responses[key] = String(val)
-            consolidatedP7Responses[mapProtectionKey(key)] = String(val)
-          }
-        }
-      }
+    for (const [key, value] of Object.entries(movementReportValues(resp))) {
+      consolidatedP7Responses[key] = value
+      consolidatedP7Responses[mapProtectionKey(key)] = value
     }
   }
 
