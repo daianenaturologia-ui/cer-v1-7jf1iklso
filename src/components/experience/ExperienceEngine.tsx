@@ -1,3 +1,4 @@
+import { formatPromptResponse, readOrbitItems } from './formatPromptResponse'
 import { MovementFrequencyCards } from './MovementFrequencyCards'
 import {
   movementFrequencyComplete,
@@ -504,8 +505,16 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             const pointerIndex = promptList.findIndex(
               (p) => p.step_order === enrExp?.current_step_order,
             )
+            const canResumeSavedPointer =
+              enrExp?.progress_status === 'in_progress' &&
+              pointerIndex >= 0 &&
+              orchResult.eligiblePrompts.some((p) => p.id === promptList[pointerIndex].id)
+            const nextPrompt = orchResult.nextPrompt || orchResult.eligiblePrompts.at(-1)
+            const nextIndex = nextPrompt ? promptList.findIndex((p) => p.id === nextPrompt.id) : 0
             setCurrentStepIndex(
-              resumingCorrection && pointerIndex >= 0 ? pointerIndex : orchResult.currentStepIndex,
+              (resumingCorrection || canResumeSavedPointer) && pointerIndex >= 0
+                ? pointerIndex
+                : Math.max(0, nextIndex),
             )
           }
         }
@@ -2255,7 +2264,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         return (
           <RelationalOrbitMap
             config={renderedPromptConfig as any}
-            value={Array.isArray(currentDraftValue) ? (currentDraftValue as any) : []}
+            value={readOrbitItems(currentDraftValue)}
             onChange={(val) => setCurrentDraftValue(val as any)}
           />
         )
@@ -2479,15 +2488,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
                   (pr) => (pr.schema_config as any)?.prompt_key === st.prompt_ref,
                 )
                 const resp = targetPrompt ? responsesMap[targetPrompt.id] : null
-                const sVal = resp?.structured_value as any
-                let displayVal = 'Não registrado'
-                if (sVal) {
-                  displayVal =
-                    sVal.choice ||
-                    sVal.value ||
-                    sVal.selectedOptionId ||
-                    (typeof sVal === 'string' ? sVal : JSON.stringify(sVal))
-                }
+                const displayVal = formatPromptResponse(targetPrompt, resp)
                 return (
                   <div
                     key={sIdx}
