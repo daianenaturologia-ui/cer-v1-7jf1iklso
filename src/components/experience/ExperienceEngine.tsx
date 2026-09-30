@@ -532,7 +532,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       isMounted = false
       if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [experienceId, enrollmentId, respondentUserId, personId, reloadAttempt])
+  }, [experienceId, enrollmentId, respondentUserId, personId, reloadAttempt, correctionStorageKey])
 
   // Inicializar o rascunho antes de exibir a nova pergunta, sem mostrar escolhas da anterior.
   useLayoutEffect(() => {
