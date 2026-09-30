@@ -5,7 +5,7 @@ import {
   movementReportValues,
   readSelectedIds,
 } from '@/services/movementFrequency'
-import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   experienceCatalogService,
   enrollmentExperienceService,
@@ -170,6 +170,13 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const [reloadAttempt, setReloadAttempt] = useState(0)
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null)
   const [closingReflection, setClosingReflection] = useState('')
+  const momentHeadingRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    if (engineStage === 'moments') momentHeadingRef.current?.scrollIntoView?.({ block: 'start' })
+  }, [currentStepIndex, engineStage])
+  const closingSaveQueue = useRef<Promise<void>>(Promise.resolve())
+  const [closingSaving, setClosingSaving] = useState(false)
+  const [closingSaveError, setClosingSaveError] = useState<string | null>(null)
 
   // Build 07A — Estado de Orquestração, Fail-Safe e Open-First
   const [orchestrationFailed, setOrchestrationFailed] = useState(false)
@@ -1001,6 +1008,9 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       }))
       await handleNextStep(enrichedSaved)
     } catch (err) {
+      setSaveError(
+        'Não foi possível salvar agora. Sua resposta continua nesta tela; tente novamente.',
+      )
       console.error('Falha ao registrar recusa legítima:', err)
     } finally {
       setSaving(false)
@@ -1008,8 +1018,17 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   }
 
   const handlePreviousStep = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1)
+    const current = prompts[currentStepIndex]
+    const orchestration = resolveExperienceOrchestration({
+      prompts,
+      responses: Object.values(responsesMap),
+      currentStepOrder: current?.step_order,
+    })
+    const eligible = orchestration.status === 'AVAILABLE' ? orchestration.eligiblePrompts : prompts
+    const position = eligible.findIndex((p) => p.id === current?.id)
+    const previous = eligible[position - 1]
+    if (previous) {
+      setCurrentStepIndex(prompts.findIndex((p) => p.id === previous.id))
       return
     }
     if (isReviewOnly) {
@@ -1528,8 +1547,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       return []
     })()
 
-    const handleSaveClosingReflection = async (text: string) => {
-      setClosingReflection(text)
+    const persistClosingReflection = async (text: string) => {
       if (!isClosingMenteEmocoes) {
         const lastPrompt = prompts.at(-1)
         if (!lastPrompt) return
@@ -1608,6 +1626,23 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       }
     }
 
+    const handleSaveClosingReflection = (text: string) => {
+      setClosingReflection(text)
+      setClosingSaving(true)
+      setClosingSaveError(null)
+      const pending = closingSaveQueue.current
+        .then(() => persistClosingReflection(text))
+        .catch(() => {
+          setClosingSaveError(
+            'Não foi possível salvar sua anotação. Ela continua nesta tela; tente novamente.',
+          )
+        })
+      closingSaveQueue.current = pending
+      void pending.finally(() => {
+        if (closingSaveQueue.current === pending) setClosingSaving(false)
+      })
+    }
+
     return (
       <div className="max-w-xl mx-auto py-10 px-4 space-y-6 text-center">
         <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
@@ -1636,11 +1671,30 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           <textarea
             value={closingReflection}
             onChange={(e) => handleSaveClosingReflection(e.target.value)}
+            aria-label="Anotação opcional de encerramento"
             placeholder="Escreva livremente aqui se quiser complementar..."
             rows={3}
             className="w-full text-xs p-3 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
           />
         </div>
+
+        {closingSaving && (
+          <p role="status" className="text-xs text-muted-foreground">
+            Salvando anotação...
+          </p>
+        )}
+        {closingSaveError && (
+          <div role="alert" className="space-y-2 text-xs text-destructive">
+            <p>{closingSaveError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSaveClosingReflection(closingReflection)}
+            >
+              Tentar salvar novamente
+            </Button>
+          </div>
+        )}
 
         {/* Botão e Retrato de Mente & Emoções (Somente Mente & Emoções) */}
         {isClosingMenteEmocoes && (
@@ -1729,11 +1783,16 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         )}
 
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Button onClick={onClose} className="w-full sm:w-auto text-xs px-6 h-9">
+          <Button
+            onClick={onClose}
+            disabled={closingSaving || Boolean(closingSaveError)}
+            className="w-full sm:w-auto text-xs px-6 h-9"
+          >
             Concluir e Voltar ao Início
           </Button>
           <Button
             variant="outline"
+            disabled={closingSaving || Boolean(closingSaveError)}
             onClick={() => {
               setIsReviewOnly(true)
               setCurrentStepIndex(0)
@@ -1747,6 +1806,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           {isClosingMenteEmocoes && (
             <Button
               variant="outline"
+              disabled={closingSaving || Boolean(closingSaveError)}
               onClick={() => {
                 setCorrectionError(null)
                 setShowCorrectionConfirmation(true)
@@ -2293,6 +2353,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           <RelationalOrbitMap
             config={renderedPromptConfig as any}
             value={readOrbitItems(currentDraftValue)}
+            disabled={isReviewOnly || saving}
             onChange={(val) => setCurrentDraftValue(val as any)}
           />
         )
@@ -2417,13 +2478,13 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
       {/* Indicador sutil de posição (sem percentual nem barras competitivas) */}
       <div className="w-full flex gap-1.5 h-1">
-        {prompts.map((p, idx) => (
+        {eligibleList.map((p, idx) => (
           <div
             key={p.id}
             className={`flex-1 rounded-full transition-all duration-300 ${
-              idx === currentStepIndex
+              idx === currentEligibleIndex
                 ? 'bg-primary'
-                : idx < currentStepIndex
+                : idx < currentEligibleIndex
                   ? 'bg-primary/40'
                   : 'bg-muted'
             }`}
@@ -2462,7 +2523,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
                     </span>
                   </div>
                 )}
-                <h2 className="text-xl sm:text-2xl font-serif font-medium text-foreground leading-snug">
+                <h2
+                  ref={momentHeadingRef}
+                  className="scroll-mt-16 text-xl sm:text-2xl font-serif font-medium text-foreground leading-snug"
+                >
                   {interpolateEmotionsMarker(currentPrompt.prompt_text)}
                 </h2>{' '}
                 {momentSubtitle && (
@@ -2535,9 +2599,12 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       </div>
 
       {/* Renderização do Componente de Interação */}
-      <div className={`py-2 ${isReviewOnly ? 'pointer-events-none select-text opacity-95' : ''}`}>
+      <fieldset
+        disabled={isReviewOnly || saving}
+        className={`min-w-0 py-2 ${isReviewOnly ? 'pointer-events-none select-text opacity-95' : ''}`}
+      >
         {renderDynamicComponent()}
-      </div>
+      </fieldset>
 
       {saveError && (
         <Alert variant="destructive">
@@ -2550,7 +2617,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         <Button
           variant="outline"
           size="sm"
-          disabled={!isReviewOnly && isFirstStep}
+          disabled={saving || (!isReviewOnly && isFirstStep)}
           onClick={handlePreviousStep}
           className="text-xs gap-1.5 h-9 shrink-0 whitespace-normal text-left"
         >

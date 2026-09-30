@@ -196,7 +196,13 @@ export const InteragenteHome: React.FC = () => {
           }
 
           // Se tiver rascunho salvo mas não aprovado, carregar rascunho se campos locais estiverem vazios
-          const draftMsgs = myMsgs.filter((m) => m.status === 'draft')
+          const latestSentAt = Math.max(
+            0,
+            ...approvedMsgs.map((m) => new Date(m.approved_at || m.created).getTime()),
+          )
+          const draftMsgs = myMsgs.filter(
+            (m) => m.status === 'draft' && new Date(m.created).getTime() > latestSentAt,
+          )
           if (draftMsgs.length > 0) {
             const latestDraft = [...draftMsgs].sort(
               (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime(),
@@ -229,6 +235,9 @@ export const InteragenteHome: React.FC = () => {
         }
       }
 
+      if (activeEnr?.id && demoAdapter.isEnabled() && !effectiveEngineEnabled) {
+        setAvailableExperiences(await enrollmentExperienceService.listByEnrollment(activeEnr.id))
+      }
       if (activeEnr?.id && effectiveEngineEnabled) {
         const [exps, kiList, myRecogs, presList, mapData, resps] = await Promise.all([
           enrollmentExperienceService.listByEnrollment(activeEnr.id),

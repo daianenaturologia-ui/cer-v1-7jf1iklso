@@ -156,8 +156,10 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
         e.experience_id === experienceId ||
         (e.expand?.experience_id && (e.expand.experience_id as any).id === experienceId),
     )
-    if (found?.release_status === 'completed') return 'completed'
-    if (found?.release_status === 'in_progress') return 'in_progress'
+    if (found?.progress_status === 'completed' || found?.release_status === 'completed')
+      return 'completed'
+    if (found?.progress_status === 'in_progress' || found?.release_status === 'in_progress')
+      return 'in_progress'
     return 'available'
   }
 
@@ -207,6 +209,12 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
     }
   }
 
+  const suggestedDimension =
+    CANONICAL_DIMENSIONS.find((d) => getReleaseStatus(d.experienceId) === 'in_progress') ||
+    CANONICAL_DIMENSIONS.find((d) => getReleaseStatus(d.experienceId) !== 'completed')
+  const isResuming =
+    suggestedDimension && getReleaseStatus(suggestedDimension.experienceId) === 'in_progress'
+
   // Integração 07G não é uma 7ª dimensão, mas uma experiência integrativa
   const integracaoExp = availableExperiences.find(
     (e) =>
@@ -235,13 +243,23 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
         </div>
 
         <div className="mb-4 rounded-xl border border-primary/20 bg-background/80 p-3 text-center space-y-2">
-          <p className="text-sm font-medium">Comece por Corpo &amp; Fisiologia</p>
+          <p className="text-sm font-medium">
+            {suggestedDimension
+              ? `${isResuming ? 'Retome' : 'Próximo passo sugerido:'} ${suggestedDimension.name}`
+              : 'As seis dimensões estão concluídas'}
+          </p>
           <p className="text-xs text-muted-foreground">
             Siga a numeração como percurso sugerido. Você também pode escolher qualquer esfera.
           </p>
-          <Button size="sm" onClick={() => onSelectExperience('exp-corpo-fisiologia-07b')}>
-            Abrir Corpo &amp; Fisiologia
-          </Button>
+          {suggestedDimension ? (
+            <Button size="sm" onClick={() => onSelectExperience(suggestedDimension.experienceId)}>
+              {isResuming ? 'Retomar' : 'Abrir'} {suggestedDimension.name}
+            </Button>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Você pode rever suas respostas nas esferas abaixo.
+            </p>
+          )}
         </div>
 
         {/* ÁREA DA IMAGEM RESPONSIVA DO SER INTEGRAL COM CAMADA DE INTERAÇÃO ACESSÍVEL */}
