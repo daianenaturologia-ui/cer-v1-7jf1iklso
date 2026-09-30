@@ -237,12 +237,12 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
                       : 'border-border/70 hover:border-border hover:bg-muted/30 bg-card'
                 }`}
               >
-                <div className="relative w-full aspect-2/3 max-h-56 overflow-hidden rounded-lg bg-muted/20 flex items-center justify-center mb-2">
+                <div className="relative w-full aspect-[2/3] max-h-56 overflow-hidden rounded-lg bg-muted/20 flex items-center justify-center mb-2">
                   <img
                     src={fig.file}
                     alt={fig.alt}
                     className="w-full h-full object-contain pointer-events-none opacity-100"
-                    loading="lazy"
+                    loading="eager"
                   />
                   {isSelected && (
                     <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-sm z-10">
