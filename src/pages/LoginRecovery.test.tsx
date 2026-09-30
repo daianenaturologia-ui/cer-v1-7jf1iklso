@@ -16,13 +16,13 @@ it('traduz falhas de acesso, limpa o erro ao recuperar e orienta a verificar spa
   )
   fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'teste@example.com' } })
   fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'test-only' } })
-  fireEvent.click(screen.getByRole('button', { name: 'Entrar', exact: true }))
+  fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
   await screen.findByText('Não foi possível entrar. Confira seu e-mail e senha e tente novamente.')
   expect(screen.queryByText('Failed to authenticate')).not.toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: 'Esqueceu a senha?', exact: true }))
+  fireEvent.click(screen.getByRole('button', { name: 'Esqueceu a senha?' }))
   expect(
     screen.queryByText('Não foi possível entrar. Confira seu e-mail e senha e tente novamente.'),
   ).not.toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: 'Enviar Solicitação', exact: true }))
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar Solicitação' }))
   expect(await screen.findByText(/Confira também Spam e Lixo eletrônico/)).toBeInTheDocument()
 })
