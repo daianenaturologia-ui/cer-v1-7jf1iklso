@@ -79,6 +79,24 @@ it('mostra o espelho com vínculos e rótulos legíveis, conclui e reabre sem te
   view.unmount()
   render(<ExperienceEngine {...props} />)
   await screen.findByText('Momento Concluído')
+  expect(screen.getByRole('textbox')).toHaveValue('')
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: 'Anotação fictícia de encerramento' },
+  })
+  await waitFor(() =>
+    expect(
+      demoAdapter
+        .listExperienceResponses(props.enrollmentId, exp)
+        .find((r) => r.prompt_id === BUILD_07D_RELACOES_PROMPTS.at(-1)!.id)?.structured_value,
+    ).toMatchObject({
+      choice: 'faz_muito_sentido',
+      closing_reflection: 'Anotação fictícia de encerramento',
+    }),
+  )
+  cleanup()
+  render(<ExperienceEngine {...props} />)
+  await screen.findByText('Momento Concluído')
+  expect(screen.getByRole('textbox')).toHaveValue('Anotação fictícia de encerramento')
 })
 it('reabre o mapa salvo e mantém os vínculos após mover, pausar e retomar', async () => {
   await save(BUILD_07D_RELACOES_PROMPTS[0], { value: orbit })

@@ -420,19 +420,17 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
         // Inicializar reflexão de fechamento a partir da P13 caso já preenchida
         const p13Existing =
-          map['p-07c-pm5-p13-campo-final-opcional'] ||
-          map['campo_final_opcional'] ||
-          map['p13'] ||
-          map['p14']
+          canonicalId === 'exp-mente-emocoes-07c'
+            ? map['p-07c-pm5-p13-campo-final-opcional'] || map['campo_final_opcional']
+            : map[promptList.at(-1)?.id || '']
         if (p13Existing) {
           const sVal = p13Existing.structured_value as any
           const txt =
-            p13Existing.free_text ||
-            (typeof sVal === 'object' && sVal !== null ? sVal.value || sVal.text : sVal) ||
-            ''
-          if (typeof txt === 'string' && txt.trim()) {
-            setClosingReflection(txt.trim())
-          }
+            canonicalId === 'exp-mente-emocoes-07c'
+              ? p13Existing.free_text ||
+                (typeof sVal === 'object' && sVal !== null ? sVal.value || sVal.text : sVal)
+              : sVal?.closing_reflection
+          if (typeof txt === 'string') setClosingReflection(txt)
         }
 
         // Para o fluxo canônico de Corpo & Fisiologia (Capítulo 1), o hub e catálogo do Capítulo 1
@@ -1532,6 +1530,36 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
     const handleSaveClosingReflection = async (text: string) => {
       setClosingReflection(text)
+      if (!isClosingMenteEmocoes) {
+        const lastPrompt = prompts.at(-1)
+        if (!lastPrompt) return
+        const existing = responsesMap[lastPrompt.id]
+        const value = existing?.structured_value
+        const structuredValue =
+          value && typeof value === 'object' && !Array.isArray(value)
+            ? { ...value, closing_reflection: text }
+            : { value, closing_reflection: text }
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          respondentUserId,
+          promptId: lastPrompt.id,
+          promptVersion: lastPrompt.version,
+          responseType: lastPrompt.component_type,
+          structuredValue,
+          freeText: existing?.free_text,
+          accessClass:
+            existing?.access_class ||
+            (lastPrompt.schema_config as any)?.access_destination ||
+            'participant_shared',
+          promptKey: (lastPrompt.schema_config as any)?.prompt_key,
+          canonicalPromptId: lastPrompt.id,
+          stepOrder: lastPrompt.step_order,
+          changeReason: 'Anotação espontânea no encerramento da experiência',
+        })
+        setResponsesMap((prev) => ({ ...prev, [lastPrompt.id]: saved }))
+        return
+      }
       const p13Prompt = prompts.find(
         (p) => (p.schema_config as any)?.prompt_key === 'campo_final_opcional',
       )
