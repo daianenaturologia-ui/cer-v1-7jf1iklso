@@ -52,10 +52,8 @@ export const Login: React.FC = () => {
         return
       }
       navigate(from, { replace: true })
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : 'Credenciais inválidas. Verifique seu e-mail e senha.'
-      setError(msg)
+    } catch {
+      setError('Não foi possível entrar. Confira seu e-mail e senha e tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -73,9 +71,8 @@ export const Login: React.FC = () => {
     try {
       await requestPasswordReset(email.trim())
       setResetSent(true)
-      // Item 10: Copy honesta sobre SMTP como gate operacional externo
       setSuccessMsg(
-        'Caso sua conta esteja ativa e o canal de e-mail esteja habilitado, as orientações foram enviadas. Se não receber em alguns minutos ou se estiver no piloto, fale diretamente com sua profissional para redefinir seu acesso com credencial provisória.',
+        'Se houver uma conta cadastrada com este e-mail, você receberá as orientações para criar uma nova senha. Confira também Spam e Lixo eletrônico. Se não chegar em alguns minutos, fale com sua profissional.',
       )
     } catch {
       setError('Não foi possível processar a recuperação de senha no momento.')
@@ -237,7 +234,12 @@ export const Login: React.FC = () => {
                         </Label>
                         <button
                           type="button"
-                          onClick={() => setShowForgot(true)}
+                          onClick={() => {
+                            setError(null)
+                            setSuccessMsg(null)
+                            setResetSent(false)
+                            setShowForgot(true)
+                          }}
                           className="text-[11px] text-muted-foreground hover:text-primary transition-colors"
                         >
                           Esqueceu a senha?

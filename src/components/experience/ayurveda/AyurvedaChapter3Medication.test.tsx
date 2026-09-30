@@ -69,6 +69,46 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
     expect(screen.getByText(/Medicamento informado/)).toBeTruthy()
   })
 
+  it('salva a mudança de início do uso antes de sair do seletor e preserva ao reabrir', async () => {
+    const user = userEvent.setup()
+    const props = {
+      enrollmentId: 'enrollment-demo',
+      experienceId: 'exp-corpo-fisiologia-07b',
+      respondentUserId: 'participant-demo',
+      onBackToHub: () => {},
+      initialStep: 5,
+    }
+    const view = render(<AyurvedaChapter3Flow {...props} />)
+    await screen.findByText('Medicamentos e suplementos')
+    await user.click(screen.getByRole('button', { name: 'Uso atualmente' }))
+    await user.type(
+      screen.getByPlaceholderText('Nome do medicamento ou suplemento'),
+      'Item informado',
+    )
+    const select = screen.getByLabelText('Como está esse uso?')
+    await user.selectOptions(select, 'started_recently')
+    const save = vi.mocked(experienceResponseService.saveResponse)
+    await waitFor(() =>
+      expect(
+        save.mock.calls.some(
+          ([input]) =>
+            input.promptId === 'ayv_c3_medication_details' &&
+            (input.structuredValue as any).value[0]?.timing === 'started_recently',
+        ),
+      ).toBe(true),
+    )
+    const saved = await Promise.all(save.mock.results.map((result) => result.value))
+    vi.mocked(experienceResponseService.listResponsesByExperience).mockResolvedValue(saved)
+    view.unmount()
+    render(<AyurvedaChapter3Flow {...props} />)
+    await waitFor(() =>
+      expect(screen.getByLabelText('Como está esse uso?')).toHaveValue('started_recently'),
+    )
+    expect(screen.getByPlaceholderText('Nome do medicamento ou suplemento')).toHaveValue(
+      'Item informado',
+    )
+  })
+
   it('preserva a versão concluída enquanto a correção está em rascunho e publica só ao concluir', async () => {
     const completedResponses = [
       {

@@ -756,13 +756,11 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   if (nullState.mode === 'post_avatar_transition') {
     return (
       <AyurvedaPostAvatarTransition
+        hasSavedResponses={answeredStepsCountC1 > 0}
         onStartChapter1={() => {
-          setNavState({
-            chapterId: 'c1',
-            mode: 'intro',
-            currentStep: null,
-            activeRevision: null,
-          })
+          if (answeredStepsCountC1 > 0) handleStartChapter1FromHub()
+          else
+            setNavState({ chapterId: 'c1', mode: 'intro', currentStep: null, activeRevision: null })
         }}
       />
     )
