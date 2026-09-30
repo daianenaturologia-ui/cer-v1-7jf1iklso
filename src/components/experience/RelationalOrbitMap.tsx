@@ -189,15 +189,15 @@ export const RelationalOrbitMap: React.FC<RelationalOrbitMapProps> = ({
                 cx="0"
                 cy="0"
                 r={ring.radius}
-                className="fill-none stroke-border/70"
-                strokeWidth="1.5"
-                strokeDasharray="4 4"
+                className="fill-none stroke-muted-foreground/70"
+                strokeWidth="2"
+                strokeDasharray="6 4"
               />
               <text
                 x="0"
                 y={-ring.radius + 12}
                 textAnchor="middle"
-                className="fill-muted-foreground text-[8px] font-sans select-none tracking-wider opacity-60"
+                className="fill-foreground text-[10px] font-medium font-sans select-none"
               >
                 {ring.label}
               </text>
@@ -234,7 +234,7 @@ export const RelationalOrbitMap: React.FC<RelationalOrbitMapProps> = ({
                     cy={y}
                     r="14"
                     className="fill-card stroke-primary/70 shadow-sm"
-                    strokeWidth="1.5"
+                    strokeWidth="2"
                   />
                   <text
                     x={x}
