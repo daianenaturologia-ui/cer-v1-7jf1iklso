@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import { MovementFrequencyCards } from './MovementFrequencyCards'
+import {
+  movementFrequencyComplete,
+  movementReportValues,
+  readSelectedIds,
+} from '@/services/movementFrequency'
+import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react'
 import {
   experienceCatalogService,
   enrollmentExperienceService,
@@ -153,6 +159,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   const [engineStage, setEngineStage] = useState<EngineStage>('opening')
   const [isReviewOnly, setIsReviewOnly] = useState(false)
   const [isCorrectionMode, setIsCorrectionMode] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const correctionStorageKey = `cer:mente:correction:${enrollmentId}:${resolveExperienceId(experienceId)}`
   const [showCorrectionConfirmation, setShowCorrectionConfirmation] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -366,6 +374,16 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           throw new Error('EXPERIENCE_RECORD_UNAVAILABLE')
         }
 
+        if (canonicalId === 'exp-mente-emocoes-07c') {
+          const { BUILD_07C_MENTE_PROMPTS } = await import('@/services/build07cPrompts')
+          promptList = promptList.map((p) => {
+            const canonical = BUILD_07C_MENTE_PROMPTS.find((c) => c.id === p.id)
+            return (canonical?.schema_config as any)?.movement_scale_options
+              ? { ...p, schema_config: canonical!.schema_config, version: canonical!.version }
+              : p
+          })
+        }
+
         setExperience(exp)
         setMoments(momentList)
         setPrompts(promptList)
@@ -475,7 +493,20 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           if (isSafelyCompleted) {
             setEngineStage('closing')
           } else {
-            setCurrentStepIndex(orchResult.currentStepIndex)
+            const resumingCorrection =
+              isMenteExp &&
+              (localStorage.getItem(correctionStorageKey) === 'true' ||
+                existingResponses.some(
+                  (r) =>
+                    (r.structured_value as any)?.collection_origin === 'participant_correction',
+                ))
+            setIsCorrectionMode(resumingCorrection)
+            const pointerIndex = promptList.findIndex(
+              (p) => p.step_order === enrExp?.current_step_order,
+            )
+            setCurrentStepIndex(
+              resumingCorrection && pointerIndex >= 0 ? pointerIndex : orchResult.currentStepIndex,
+            )
           }
         }
       }
@@ -501,10 +532,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       isMounted = false
       if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [experienceId, enrollmentId, respondentUserId, personId, reloadAttempt])
+  }, [experienceId, enrollmentId, respondentUserId, personId, reloadAttempt, correctionStorageKey])
 
-  // Atualizar rascunho sempre que o prompt atual mudar
-  useEffect(() => {
+  // Inicializar o rascunho antes de exibir a nova pergunta, sem mostrar escolhas da anterior.
+  useLayoutEffect(() => {
     const currentPrompt = prompts[currentStepIndex]
     setShowOpenFirstSuggestions(false)
     setCurrentNamingOrigin('spontaneous')
@@ -545,7 +576,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       if (existing) {
         const sVal = existing.structured_value as any
         setCurrentDraftValue(existing.structured_value)
-        setCurrentDraftText(existing.free_text || '')
+        setCurrentDraftText(typeof existing.free_text === 'string' ? existing.free_text : '')
         if (sVal && sVal.naming_origin) {
           setCurrentNamingOrigin(sVal.naming_origin)
         }
@@ -601,6 +632,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         setEnrollmentExp(updated)
       }
       setIsReviewOnly(false)
+      localStorage.setItem(correctionStorageKey, 'true')
       setIsCorrectionMode(true)
       setShowCorrectionConfirmation(false)
       setCurrentStepIndex(0)
@@ -614,14 +646,15 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   }
 
   const saveCurrentStepResponse = async () => {
-    if (isReviewOnly) return
+    if (isReviewOnly) return null
     const currentPrompt = prompts[currentStepIndex]
-    if (!currentPrompt) return
+    if (!currentPrompt) return null
 
     // Se SimpleScale não teve valor selecionado e não é required, salvar null
     // Se for Ordering e o usuário não interagiu, preserva apenas se já salvo
     const valToSave = currentDraftValue
 
+    setSaveError(null)
     setSaving(true)
     try {
       // Build 07A: Usar SEMPRE a configuração versionada access_destination do prompt (default seguro: shared_care)
@@ -728,7 +761,11 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       // se share_private_text_with_professional for falso, o freeText NÃO é enviado ao campo compartilhado
       let effectiveFreeText =
         currentPrompt.component_type === 'FreeReflection'
-          ? (currentDraftValue as string) || currentDraftText
+          ? typeof currentDraftValue === 'string'
+            ? currentDraftValue
+            : typeof (currentDraftValue as any)?.value === 'string'
+              ? (currentDraftValue as any).value
+              : currentDraftText
           : currentDraftText
 
       if (pSchema.privacy_split?.enabled) {
@@ -805,14 +842,19 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         })
         setEnrollmentExp(updated)
       }
+      return saved
     } catch (err) {
+      setSaveError(
+        'Não foi possível salvar agora. Sua resposta continua nesta tela; tente novamente.',
+      )
       console.error('Falha ao salvar resposta do prompt:', err)
+      return null
     } finally {
       setSaving(false)
     }
   }
 
-  const handleNextStep = async () => {
+  const handleNextStep = async (savedOverride?: ExperienceResponseRecord) => {
     if (isReviewOnly) {
       if (isLastStep) {
         handleReturnToClosingFromReview()
@@ -840,7 +882,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       return
     }
 
-    await saveCurrentStepResponse()
+    const saved = savedOverride || (await saveCurrentStepResponse())
+    if (!saved) return
 
     // Recalcular orquestração com as respostas atualizadas
     const currentResponses = Object.values(responsesMap)
@@ -850,23 +893,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     const pKey = pSchema.prompt_key
     const updatedResponses = [...currentResponses.filter((r) => r.prompt_id !== currentPrompt.id)]
     updatedResponses.push({
-      id: 'temp_resp',
-      enrollment_id: enrollmentId,
-      experience_id: experienceId,
-      prompt_id: currentPrompt.id,
-      respondent_user_id: respondentUserId,
-      response_type: currentPrompt.component_type,
-      access_class: pSchema.access_destination || 'shared_care',
-      structured_value: currentDraftValue,
-      free_text: currentDraftText,
-      prompt_version: currentPrompt.version,
-      version: 1,
-      status: 'saved',
-      created: new Date().toISOString(),
-      updated: new Date().toISOString(),
-      ...(pKey ? { prompt_key: pKey } : {}),
-      ...(currentPrompt.id ? { canonical_prompt_id: currentPrompt.id } : {}),
-      ...(currentPrompt.step_order ? { step_order: currentPrompt.step_order } : {}),
+      ...saved,
+      prompt_key: pKey,
+      canonical_prompt_id: currentPrompt.id,
+      step_order: currentPrompt.step_order,
     } as any)
 
     const orch = resolveExperienceOrchestration({
@@ -887,15 +917,22 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       return
     }
 
-    if (isLastStep || orch.isCompleted || !orch.nextPrompt) {
+    const eligible = orch.eligiblePrompts
+    const currentIndex = eligible.findIndex((p) => p.id === currentPrompt.id)
+    const next = isCorrectionMode ? eligible[currentIndex + 1] : orch.nextPrompt
+    if (!next) {
       await handleCompleteExperience()
     } else {
-      const nextIdx = prompts.findIndex((p) => p.id === orch.nextPrompt!.id)
-      if (nextIdx >= 0) {
-        setCurrentStepIndex(nextIdx)
-      } else {
-        await handleCompleteExperience()
+      if (enrollmentExp) {
+        const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
+          stepOrder: next.step_order,
+          progressStatus: 'in_progress',
+          enrollmentId,
+        })
+        setEnrollmentExp(updated)
       }
+      const nextIdx = prompts.findIndex((p) => p.id === next.id)
+      if (nextIdx >= 0) setCurrentStepIndex(nextIdx)
     }
   }
 
@@ -955,7 +992,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         [currentPrompt.id]: enrichedSaved,
         ...(pKey ? { [pKey]: enrichedSaved } : {}),
       }))
-      handleNextStep()
+      await handleNextStep(enrichedSaved)
     } catch (err) {
       console.error('Falha ao registrar recusa legítima:', err)
     } finally {
@@ -1012,6 +1049,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
       })
       setEnrollmentExp(updated)
     }
+    localStorage.removeItem(correctionStorageKey)
     setIsCorrectionMode(false)
     setEngineStage('closing')
     onCompleted?.()
@@ -1307,9 +1345,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2 text-primary">
               <Clock className="w-4 h-4" />
-              <span>
-                Você já iniciou esta experiência (Momento {enrollmentExp?.current_step_order}).
-              </span>
+              <span>Você já iniciou esta experiência. Suas respostas estão salvas.</span>
             </div>
           </div>
         )}
@@ -1441,39 +1477,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
     const consolidatedP7Responses: Record<string, string> = {}
     const extractP7Values = (resp: ExperienceResponseRecord | undefined) => {
-      if (!resp) return
-      let sVal = resp.structured_value as any
-      if (!sVal) return
-      if (sVal && typeof sVal === 'object' && sVal.ratings && typeof sVal.ratings === 'object') {
-        sVal = sVal.ratings
-      }
-      if (typeof sVal === 'object' && !Array.isArray(sVal)) {
-        for (const [k, v] of Object.entries(sVal)) {
-          if (
-            k === 'metadata' ||
-            k === 'collection_origin' ||
-            k === 'naming_origin' ||
-            k === 'prompt_key' ||
-            k === 'canonical_prompt_id'
-          )
-            continue
-          if (typeof v === 'string') {
-            consolidatedP7Responses[k] = v
-          } else if (v && typeof v === 'object' && (v as any).value) {
-            consolidatedP7Responses[k] = String((v as any).value)
-          }
-        }
-      } else if (Array.isArray(sVal)) {
-        for (const item of sVal) {
-          if (typeof item === 'string') {
-            consolidatedP7Responses[item] = 'Frequentemente'
-          } else if (item && typeof item === 'object') {
-            const key = item.id || item.pattern_id || item.card_id
-            const val = item.intensity || item.value || item.choice || 'Frequentemente'
-            if (key) consolidatedP7Responses[key] = String(val)
-          }
-        }
-      }
+      Object.assign(consolidatedP7Responses, movementReportValues(resp))
     }
 
     extractP7Values(p7aResp)
@@ -1756,9 +1760,6 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
   // Etapas dentro do momento atual (excluindo adaptive da contagem total fixa para não inflar)
   const promptsInCurrentMoment = prompts.filter((p) => p.moment_id === currentPrompt.moment_id)
-  const currentPromptInMomentIndex = promptsInCurrentMoment.findIndex(
-    (p) => p.id === currentPrompt.id,
-  )
   const isAdaptivePrompt =
     (currentPrompt.schema_config as any)?.orchestration?.path_role === 'adaptive'
   const essentialPromptsInMoment = promptsInCurrentMoment.filter(
@@ -1766,7 +1767,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   )
   const momentStepNumber = isAdaptivePrompt
     ? essentialPromptsInMoment.length
-    : currentPromptInMomentIndex + 1
+    : essentialPromptsInMoment.findIndex((p) => p.id === currentPrompt.id) + 1
   const momentTotalSteps = essentialPromptsInMoment.length || promptsInCurrentMoment.length
 
   const pSchema = (currentPrompt.schema_config || {}) as any
@@ -1895,7 +1896,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
     const schema = (currentPrompt.schema_config || {}) as Record<string, any>
 
     // Interpolação dinâmica de emoções selecionadas para qualquer prompt com template
-    let renderedPromptConfig = { ...schema }
+    let renderedPromptConfig: Record<string, any> = {
+      ...schema,
+      maxSelect: schema.maxSelect ?? schema.max_selections,
+    }
     if (schema.dynamic_text_template) {
       renderedPromptConfig = {
         ...renderedPromptConfig,
@@ -2160,11 +2164,41 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         )
       }
       case 'MultiSelectCards':
+        if (schema.movement_scale_options) {
+          return (
+            <div className="space-y-4">
+              <MovementFrequencyCards
+                config={renderedPromptConfig as any}
+                value={currentDraftValue}
+                onChange={setCurrentDraftValue}
+                disabled={isReviewOnly || saving}
+              />
+              {!isReviewOnly && (
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    disabled={saving}
+                    onClick={() => handleLegitimateSkip('nao_sei')}
+                  >
+                    Não sei dizer agora
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={saving}
+                    onClick={() => handleLegitimateSkip('prefiro_nao_responder')}
+                  >
+                    Prefiro não responder
+                  </Button>
+                </div>
+              )}
+            </div>
+          )
+        }
         return (
           <div className="space-y-4">
             <MultiSelectCards
               config={renderedPromptConfig as any}
-              value={Array.isArray(currentDraftValue) ? (currentDraftValue as string[]) : []}
+              value={readSelectedIds(currentDraftValue)}
               onChange={(val) => setCurrentDraftValue(val)}
             />
 
@@ -2305,7 +2339,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onClose}
+              disabled={saving}
+              onClick={async () => {
+                if (await saveCurrentStepResponse()) onClose?.()
+              }}
               className="text-xs text-muted-foreground hover:text-foreground h-8 px-2 gap-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -2318,7 +2355,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             role="status"
           >
             {isMenteEmocoes
-              ? `Momento ${momentOrder} de ${totalMomentsCount} — ${currentMomentData?.title || 'Momento'} • Etapa ${momentStepNumber} de ${momentTotalSteps}`
+              ? `Momento ${momentOrder} de ${totalMomentsCount} — ${currentMomentData?.title || 'Momento'} • ${isAdaptivePrompt ? 'Pergunta complementar' : `Etapa ${momentStepNumber} de ${momentTotalSteps}`}`
               : `Momento ${displayStepNumber} de ${displayTotalCount}`}
           </span>
         </div>
@@ -2473,6 +2510,12 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         {renderDynamicComponent()}
       </div>
 
+      {saveError && (
+        <Alert variant="destructive">
+          <AlertDescription>{saveError}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Barra de Ações de Navegação */}
       <div className="flex flex-wrap items-center justify-between pt-6 border-t border-border/50 gap-2 sm:gap-3">
         <Button
@@ -2506,7 +2549,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             !isLastStep ? (
               <Button
                 size="sm"
-                onClick={handleNextStep}
+                onClick={() => void handleNextStep()}
                 className="text-xs gap-1.5 h-9 px-3 sm:px-4 whitespace-normal text-left shrink-0"
               >
                 <span>Próxima pergunta</span>
@@ -2526,8 +2569,16 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           ) : (
             <Button
               size="sm"
-              disabled={saving}
-              onClick={handleNextStep}
+              disabled={
+                saving ||
+                (Boolean(pSchema.movement_scale_options) &&
+                  !movementFrequencyComplete(
+                    currentDraftValue,
+                    pSchema.options || [],
+                    pSchema.movement_scale_options,
+                  ))
+              }
+              onClick={() => void handleNextStep()}
               className="text-xs gap-1.5 h-9 px-3 sm:px-4 whitespace-normal text-left shrink-0"
             >
               <span>{isLastStep ? 'Concluir momento' : 'Avançar'}</span>

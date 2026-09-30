@@ -1,3 +1,4 @@
+import { frequentMovementCount } from './movementFrequency'
 /**
  * Build 07A — Experience Orchestration Resolver
  * Serviço puro, determinístico e testável para orquestração experiencial no CER V1.
@@ -127,6 +128,10 @@ export function evaluateCondition(
   // Operador equals (default)
   const op = cond.operator || 'equals'
   if (op === 'equals') {
+    if (cond.field === 'frequent_movement_count_gte') {
+      return frequentMovementCount(structVal) >= Number(cond.value)
+    }
+
     if (cond.field === 'selected_count_gte') {
       const arr = Array.isArray(extractedVal)
         ? extractedVal
@@ -747,12 +752,21 @@ export function resolveExperienceOrchestration(params: {
 
   // Encontrar o primeiro prompt elegível com step_order >= currentStepOrder que NÃO esteja respondido
   // Se o currentStepOrder apontar para um órfão (não elegível), avançar automaticamente
-  const pendingPrompts = eligiblePrompts.filter((p) => !responseByPromptKey.has(getPromptKey(p)))
+  const pendingPrompts = eligiblePrompts.filter((p) => {
+    const response = responseByPromptKey.get(getPromptKey(p))
+    return !response || (response.structured_value as any)?.frequency_complete === false
+  })
 
   if (pendingPrompts.length > 0) {
     // Buscar o primeiro pendente com step_order >= currentStepOrder
     const forwardPending = pendingPrompts.find((p) => p.step_order >= currentStepOrder)
-    nextPrompt = forwardPending || pendingPrompts[0]
+    const currentMoment = sortedPrompts.find(
+      (p) => p.step_order === currentStepOrder - 1,
+    )?.moment_id
+    const momentPending = pendingPrompts.find(
+      (p) => p.experience_id === 'exp-mente-emocoes-07c' && p.moment_id === currentMoment,
+    )
+    nextPrompt = momentPending || forwardPending || pendingPrompts[0]
   } else {
     nextPrompt = null
   }
