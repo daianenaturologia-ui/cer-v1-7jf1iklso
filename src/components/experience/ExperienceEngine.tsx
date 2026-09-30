@@ -99,6 +99,9 @@ export function formatSelectedEmotionsNatural(selectedLabels: string[]): string 
   return `${initial} e ${last}`
 }
 
+// Keep the lazy component identity stable across parent data refreshes.
+const AyurvedaChaptersNavigator = React.lazy(() => import('./ayurveda/AyurvedaChaptersNavigator'))
+
 type EngineStage = 'opening' | 'moments' | 'closing'
 
 export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
@@ -1188,24 +1191,21 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             </div>
           }
         >
-          {React.createElement(
-            React.lazy(() => import('./ayurveda/AyurvedaChaptersNavigator')),
-            {
-              enrollmentId,
-              experienceId: 'exp-corpo-fisiologia-07b',
-              respondentUserId,
-              userPresentation: personAvatarData?.avatar_presentation || 'feminine',
-              avatarDeferred: personAvatarData?.avatar_customization_status === 'deferred',
-              initialShowPostAvatarTransition: justConfirmedAvatar,
-              onClose,
-              onCompleted: () => {
-                onCompleted?.()
-              },
-              onOpenAvatarCustomization: () => {
-                setIsAvatarCustomizing(true)
-              },
+          {React.createElement(AyurvedaChaptersNavigator, {
+            enrollmentId,
+            experienceId: 'exp-corpo-fisiologia-07b',
+            respondentUserId,
+            userPresentation: personAvatarData?.avatar_presentation || 'feminine',
+            avatarDeferred: personAvatarData?.avatar_customization_status === 'deferred',
+            initialShowPostAvatarTransition: justConfirmedAvatar,
+            onClose,
+            onCompleted: () => {
+              onCompleted?.()
             },
-          )}
+            onOpenAvatarCustomization: () => {
+              setIsAvatarCustomizing(true)
+            },
+          })}
         </React.Suspense>
       </div>
     )

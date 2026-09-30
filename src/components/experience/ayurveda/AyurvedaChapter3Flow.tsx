@@ -241,13 +241,12 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   }
 
   const updateMedicationItem = (id: string, patch: Partial<AyurvedaMedicationItem>) => {
-    setState((previous) => {
-      const items = (previous.medication_items || []).map((item) =>
-        item.id === id ? { ...item, ...patch } : item,
-      )
-      medicationItemsRef.current = items
-      return { ...previous, medication_items: items }
-    })
+    const items = medicationItemsRef.current.map((item) =>
+      item.id === id ? { ...item, ...patch } : item,
+    )
+    medicationItemsRef.current = items
+    setState((previous) => ({ ...previous, medication_items: items }))
+    return items
   }
 
   const medicationDetailsRequired =
@@ -722,9 +721,10 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                           className="h-9 w-full rounded-md border border-input bg-background px-3"
                           value={item.timing || 'dont_know'}
                           onChange={(event) =>
-                            updateMedicationItem(item.id, { timing: event.target.value })
+                            void persistMedicationItems(
+                              updateMedicationItem(item.id, { timing: event.target.value }),
+                            )
                           }
-                          onBlur={() => void persistMedicationItems(medicationItemsRef.current)}
                         >
                           {AYV_C3_MEDICATION_TIMING_OPTIONS.map((option) => (
                             <option key={option.id} value={option.id}>
