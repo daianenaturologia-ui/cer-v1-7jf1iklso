@@ -7,10 +7,12 @@ import { AYV_TEXTS } from '@/services/ayurvedaChapter1'
 
 export interface AyurvedaPostAvatarTransitionProps {
   onStartChapter1: () => void
+  hasSavedResponses?: boolean
 }
 
 export const AyurvedaPostAvatarTransition: React.FC<AyurvedaPostAvatarTransitionProps> = ({
   onStartChapter1,
+  hasSavedResponses = false,
 }) => {
   return (
     <div className="max-w-xl mx-auto py-10 px-4 space-y-6 text-center">
@@ -30,13 +32,18 @@ export const AyurvedaPostAvatarTransition: React.FC<AyurvedaPostAvatarTransition
         </p>
       </div>
 
+      {hasSavedResponses && (
+        <p className="text-sm text-muted-foreground">
+          Você está retomando respostas já salvas. Elas continuam disponíveis para revisão.
+        </p>
+      )}
       <div className="pt-4 flex justify-center">
         <Button
           type="button"
           onClick={onStartChapter1}
           className="text-xs h-10 px-6 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          <span>{AYV_TEXTS.START_CHAPTER_1_BTN}</span>
+          <span>{hasSavedResponses ? 'Retomar Capítulo 1' : AYV_TEXTS.START_CHAPTER_1_BTN}</span>
           <ArrowRight className="w-4 h-4" />
         </Button>
       </div>

@@ -234,8 +234,18 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
           </p>
         </div>
 
+        <div className="mb-4 rounded-xl border border-primary/20 bg-background/80 p-3 text-center space-y-2">
+          <p className="text-sm font-medium">Comece por Corpo &amp; Fisiologia</p>
+          <p className="text-xs text-muted-foreground">
+            Siga a numeração como percurso sugerido. Você também pode escolher qualquer esfera.
+          </p>
+          <Button size="sm" onClick={() => onSelectExperience('exp-corpo-fisiologia-07b')}>
+            Abrir Corpo &amp; Fisiologia
+          </Button>
+        </div>
+
         {/* ÁREA DA IMAGEM RESPONSIVA DO SER INTEGRAL COM CAMADA DE INTERAÇÃO ACESSÍVEL */}
-        <div className="relative max-w-2xl mx-auto my-2 aspect-4/3 w-full rounded-2xl overflow-hidden bg-[#faf7f2] dark:bg-[#1a1916] flex items-center justify-center border border-amber-200/40 shadow-inner">
+        <div className="relative max-w-2xl mx-auto my-2 aspect-[3/4] sm:aspect-4/3 w-full rounded-2xl overflow-hidden bg-[#faf7f2] dark:bg-[#1a1916] flex items-center justify-center border border-amber-200/40 shadow-inner">
           {/* Imagem aprovada ou Fallback Neutro (sem simular ilustração própria) */}
           {!imageError ? (
             <img
@@ -271,7 +281,7 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
             className="absolute inset-0 pointer-events-auto"
           >
             {/* 1. AS SEIS ESFERAS */}
-            {CANONICAL_DIMENSIONS.map((dim) => {
+            {CANONICAL_DIMENSIONS.map((dim, index) => {
               const status = getReleaseStatus(dim.experienceId)
               const statusLabel = getStatusLabel(status)
               const isHovered = hoveredDimension === dim.id
@@ -280,7 +290,7 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
                 <div
                   key={dim.id}
                   style={{
-                    left: `${dim.xPercent}%`,
+                    left: `clamp(54px, ${dim.xPercent}%, calc(100% - 54px))`,
                     top: `${dim.yPercent}%`,
                     transform: 'translate(-50%, -50%)',
                   }}
@@ -303,6 +313,12 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
                     aria-label={`${dim.name} (${dim.colorName}) — ${statusLabel}. Pressione para abrir a experiência.`}
                     className={`group relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border-2 backdrop-blur-xs transition-all duration-200 cursor-pointer shadow-md hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary ${dim.ringColor}`}
                   >
+                    <span
+                      aria-hidden="true"
+                      className="absolute -top-1 -right-1 rounded-full bg-background border border-primary/30 w-5 h-5 text-[11px] font-bold flex items-center justify-center"
+                    >
+                      {index + 1}
+                    </span>
                     {/* Efeito de pulso suave na esfera */}
                     <span className="sr-only">
                       {dim.name} — {statusLabel}
@@ -312,11 +328,11 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
 
                   {/* Nome e estado visíveis no computador próximos à esfera (sem cobrir o centro) */}
                   <div
-                    className={`hidden sm:flex flex-col items-center mt-1 pointer-events-none transition-all duration-200 ${
+                    className={`absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center mt-1 w-[108px] sm:w-[170px] text-center pointer-events-none transition-all duration-200 ${
                       isHovered ? 'scale-105 opacity-100' : 'opacity-90'
                     }`}
                   >
-                    <span className="text-[11px] md:text-xs font-serif font-semibold text-foreground bg-background/90 backdrop-blur-xs px-2 py-0.5 rounded-md shadow-xs border border-border/40 whitespace-nowrap">
+                    <span className="text-[9px] sm:text-[11px] md:text-xs font-serif font-semibold text-foreground bg-background/90 backdrop-blur-xs px-2 py-0.5 rounded-md shadow-xs border border-border/40 leading-tight">
                       {dim.name}
                     </span>
                     <span className="text-[9px] md:text-[10px] text-muted-foreground font-medium mt-0.5 bg-background/70 px-1.5 rounded">
@@ -418,7 +434,7 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
             aria-label="Lista de dimensões da Consciência"
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"
           >
-            {CANONICAL_DIMENSIONS.map((dim) => {
+            {CANONICAL_DIMENSIONS.map((dim, index) => {
               const status = getReleaseStatus(dim.experienceId)
               const statusLabel = getStatusLabel(status)
 
@@ -445,8 +461,8 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
                         {dim.icon}
                       </div>
                       <div className="min-w-0">
-                        <span className="font-serif font-semibold text-xs sm:text-sm text-foreground block truncate">
-                          {dim.name}
+                        <span className="font-serif font-semibold text-xs sm:text-sm text-foreground block">
+                          {index + 1}. {dim.name}
                         </span>
                         <span className="text-[10px] text-muted-foreground block capitalize">
                           Esfera {dim.colorName}

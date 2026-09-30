@@ -143,6 +143,7 @@ describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 
         enrollmentId={DEMO_ENROLLMENT_ID}
         experienceId={EXPERIENCE_ID}
         respondentUserId={DEMO_USER_MARIANA.id}
+        onBackToHub={() => {}}
         mode="correcting"
         revisionNumber={2}
       />,
@@ -179,6 +180,7 @@ describe('M2B - Recuperação idempotente das revisões existentes do Capítulo 
         enrollmentId={DEMO_ENROLLMENT_ID}
         experienceId={EXPERIENCE_ID}
         respondentUserId={DEMO_USER_MARIANA.id}
+        onBackToHub={() => {}}
         mode="correcting"
         revisionNumber={2}
       />,
