@@ -13,3 +13,7 @@ O rascunho profissional do Mapa carrega somente fontes compartilhadas. A versão
 Na demonstração, novos acontecimentos do passado e registros de presente/futuro são persistidos no navegador. Nenhuma resposta da usuária foi substituída por cenário QA. Dados de demonstração de navegadores diferentes não são compartilhados.
 
 Verificação específica: 12 testes novos em três arquivos passaram (8 de interface/gravação e 4 de fontes do mapa). Typecheck do aplicativo e build Vite passaram; há avisos anteriores sobre imports dinâmicos. Não foi reexecutada a bateria anterior nem o percurso completo. A experiência real autenticada será validada pela usuária, como combinado.
+
+## Conferência após sincronização
+
+A sincronização inicial preservou a etapa profissional e restaurou a página antiga de Mariana. O commit 3413f8a reaplicou exclusivamente a integração da página, sem refazer os testes. A segunda sincronização preservou o blob 8ef841ee na main fd4afd99. O preview confirmou o bloco presente/futuro em Equilíbrio & Realização e em Evolução na visão de Mariana; a visão profissional também foi confirmada. Migração 0070 e gatilho on_cer_life_direction aparecem instalados no Skip Cloud. O ciclo autenticado completo permanece para o teste da usuária. Não foi ativada a fixture QA nem foram substituídas respostas.
