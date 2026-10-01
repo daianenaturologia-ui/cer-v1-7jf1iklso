@@ -394,6 +394,41 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           })
         }
 
+        // Keep these authored UX corrections available for stored PocketBase prompts too.
+        if (canonicalId === 'exp-regulacao-respostas-07c' || canonicalId === 'exp-relacoes-07d') {
+          const regulation = await import('@/services/build07cPrompts')
+          const relations = await import('@/services/build07dPrompts')
+          const authored =
+            canonicalId === 'exp-regulacao-respostas-07c'
+              ? regulation.BUILD_07C_REGULACAO_PROMPTS
+              : relations.BUILD_07D_RELACOES_PROMPTS
+          promptList = promptList.map((prompt) => {
+            const canonical = authored.find(
+              (item) =>
+                item.id === prompt.id ||
+                (item.schema_config as any)?.prompt_key ===
+                  (prompt.schema_config as any)?.prompt_key,
+            )
+            const schema = canonical?.schema_config as any
+            return schema?.max_selections === 2 ||
+              [
+                'funcao_percebida',
+                'sequence_recognition',
+                'resource_access_under_stress_layer',
+              ].includes(schema?.prompt_key)
+              ? { ...prompt, ...canonical, id: prompt.id, moment_id: prompt.moment_id }
+              : prompt
+          })
+          if (canonicalId === 'exp-regulacao-respostas-07c') {
+            exp = { ...exp, subtitle: regulation.REGULACAO_RESPOSTAS_EXPERIENCE.subtitle }
+            momentList = momentList.map((moment) =>
+              moment.moment_key === 'o_que_acontece_comigo'
+                ? { ...moment, subtitle: regulation.REGULACAO_RESPOSTAS_MOMENTS[1].subtitle }
+                : moment,
+            )
+          }
+        }
+
         setExperience(exp)
         setMoments(momentList)
         setPrompts(promptList)
@@ -2125,10 +2160,12 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
         )
       }
       case 'ChoiceCards': {
-        const choiceVal =
-          typeof currentDraftValue === 'object' && currentDraftValue !== null
+        const choiceVal = Array.isArray(currentDraftValue)
+          ? currentDraftValue
+          : typeof currentDraftValue === 'object' && currentDraftValue !== null
             ? (currentDraftValue as any).choice ||
               (currentDraftValue as any).value ||
+              (currentDraftValue as any).selectedOptionIds ||
               (currentDraftValue as any).selectedOptionId
             : (currentDraftValue as string)
 
@@ -2155,6 +2192,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             <ChoiceCards
               config={renderedPromptConfig as any}
               value={choiceVal}
+              onMultiChange={setCurrentDraftValue}
               onChange={(val) => {
                 if (isPrivacySplitActive) {
                   setCurrentDraftValue({
@@ -2675,6 +2713,10 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
               size="sm"
               disabled={
                 saving ||
+                (pSchema.max_selections === 2 &&
+                  currentPrompt.is_required &&
+                  (currentDraftValue == null ||
+                    (Array.isArray(currentDraftValue) && currentDraftValue.length === 0))) ||
                 (Boolean(pSchema.movement_scale_options) &&
                   !movementFrequencyComplete(
                     currentDraftValue,

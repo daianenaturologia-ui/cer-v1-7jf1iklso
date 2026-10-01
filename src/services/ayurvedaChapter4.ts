@@ -33,7 +33,7 @@ import {
 } from './ayurvedaChapter2'
 import {
   AYV_C3_CONTEXT_OPTIONS,
-  AYV_C3_DIRECTION_OPTIONS,
+  chapter3DirectionOptions,
   AYV_C3_DOMAIN_OPTIONS,
   AYV_C3_MEDICATION_STATUS_OPTIONS,
   AYV_C3_MEDICATION_TIMING_OPTIONS,
@@ -203,7 +203,7 @@ export function buildChapter4Synthesis(responses: ExperienceResponseRecord[]): C
     current.push({
       title: chapter3Label(AYV_C3_DOMAIN_OPTIONS, domain),
       value: direction
-        ? chapter3Label(AYV_C3_DIRECTION_OPTIONS, direction)
+        ? chapter3Label(chapter3DirectionOptions(domain), direction)
         : chapter3Label(AYV_C3_DOMAIN_OPTIONS, domain),
     })
   }

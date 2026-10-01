@@ -180,4 +180,53 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
       ),
     )
   })
+  it('contextualiza pele e cabelo, conserva a escolha salva e a recupera ao reabrir', async () => {
+    const user = userEvent.setup()
+    const domain = {
+      id: 'domain-response',
+      prompt_id: 'ayv_c3_changed_domains',
+      structured_value: { value: ['skin_hair'] },
+    } as any
+    vi.mocked(experienceResponseService.listResponsesByExperience).mockResolvedValue([domain])
+    const props = {
+      enrollmentId: 'enrollment-demo',
+      experienceId: 'exp-corpo-fisiologia-07b',
+      respondentUserId: 'participant-demo',
+      initialStep: 2,
+      onBackToHub: () => {},
+    }
+    const view = render(<AyurvedaChapter3Flow {...props} />)
+    const choice = await screen.findByRole('button', {
+      name: 'Uma característica da pele ou do cabelo diminuiu',
+    })
+    expect(
+      screen.getByText(/ressecamento, oleosidade, sensibilidade, textura ou queda de cabelo/),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Diminuiu ou ficou mais fraco' })).toBeNull()
+    await user.click(choice)
+    await waitFor(() =>
+      expect(experienceResponseService.saveResponse).toHaveBeenCalledWith(
+        expect.objectContaining({
+          promptId: 'ayv_c3_change_directions',
+          structuredValue: expect.objectContaining({ value: { skin_hair: 'decreased' } }),
+        }),
+      ),
+    )
+    const results = await Promise.all(
+      vi.mocked(experienceResponseService.saveResponse).mock.results.map((r) => r.value),
+    )
+    view.unmount()
+    vi.mocked(experienceResponseService.listResponsesByExperience).mockResolvedValue([
+      domain,
+      ...results,
+    ])
+    render(<AyurvedaChapter3Flow {...props} />)
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', {
+          name: 'Uma característica da pele ou do cabelo diminuiu',
+        }),
+      ).toHaveAttribute('aria-pressed', 'true'),
+    )
+  })
 })

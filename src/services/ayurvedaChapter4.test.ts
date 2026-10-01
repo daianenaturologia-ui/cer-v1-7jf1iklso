@@ -138,4 +138,15 @@ describe('Capítulo 4 — síntese descritiva', () => {
     })
     expect(JSON.stringify(synthesis).toLowerCase()).not.toContain('efeito colateral confirmado')
   })
+  it('apresenta a mudança de pele ou cabelo na síntese sem inventar qual sintoma mudou', () => {
+    const synthesis = buildChapter4Synthesis([
+      response(AYV_C3_PROMPTS.DOMAINS.key, { value: ['skin_hair'] }),
+      response(AYV_C3_PROMPTS.DIRECTIONS.key, { value: { skin_hair: 'decreased' } }),
+    ])
+    expect(synthesis.current).toContainEqual({
+      title: 'Pele ou cabelo',
+      value: 'Uma característica da pele ou do cabelo diminuiu',
+    })
+    expect(JSON.stringify(synthesis.current)).not.toMatch(/ressecamento|oleosidade|queda/)
+  })
 })

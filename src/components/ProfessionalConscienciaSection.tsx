@@ -543,8 +543,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
               Mapa e interpretação profissional
             </h2>
             <p className="text-xs text-muted-foreground">
-              Síntese transversal determinística das seis dimensões humanas. Somente leitura
-              clínica.
+              Prepare, revise e compartilhe as versões resumida e aprofundada das seis dimensões.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -560,12 +559,8 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
           </div>
         </div>
 
-        {/* Mapa Integrativo Profissional da Consciência (8 Blocos Determinísticos) */}
-        <ProfessionalIntegrativeMapView
-          responses={allResponses}
-          participantName={participantName}
-          onSelectDimension={expandAndScrollTo}
-        />
+        <ProfessionalIntegrativeMapView responses={allResponses} participantName={participantName} onSelectDimension={expandAndScrollTo} />
+        <ProfessionalMapEditor enrollmentId={enrollment.id} participantName={participantName} professionalUserId={pb.authStore.record?.id || ''} responses={allResponses} />
 
         {showProfessionalMap && (
           <div className="space-y-4 pt-4 border-t border-border/40">
@@ -575,12 +570,6 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
               </span>
               Espaço reservado para anotações manuais de sessão e edição de mapa legado.
             </div>
-            <ProfessionalMapEditor
-              enrollmentId={enrollment.id}
-              participantName={participantName}
-              professionalUserId={pb.authStore.record?.id || ''}
-            />
-
             {/* Conhecimento, Hipóteses e Provenance Clínica */}
             <ProfessionalKnowledgeBuilding
               enrollmentId={enrollment.id}

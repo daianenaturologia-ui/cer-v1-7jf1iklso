@@ -17,6 +17,8 @@
  */
 
 import pb from '@/lib/pocketbase/client'
+import type { CerMapReadingSnapshot } from '@/types/cerMapReadings'
+import { isCerMapReadingSnapshot, unreviewedMapReadings } from './cerMapReadings'
 import {
   CerMapRecord,
   CerMapItemRecord,
@@ -43,6 +45,22 @@ export interface LinkSourceInput {
 }
 
 export const cerMapService = {
+  async saveReadingSnapshot(mapId: string, enrollmentId: string, snapshot: CerMapReadingSnapshot, review = false): Promise<CerMapRecord> {
+    if (!isCerMapReadingSnapshot(snapshot) || snapshot.enrollmentId !== enrollmentId) throw new Error('Leitura inválida para esta interagente.')
+    const { demoAdapter, DEMO_USER_DAIANE } = await import('@/services/demoAdapter')
+    const map = demoAdapter.isEnabled() ? demoAdapter.getDraftMap(enrollmentId) : await pb.collection('cer_maps').getOne<CerMapRecord>(mapId)
+    if (!map || map.id !== mapId || map.enrollment_id !== enrollmentId || map.status !== 'draft') throw new Error('Somente o rascunho desta interagente pode ser editado.')
+    const saved = unreviewedMapReadings(snapshot)
+    if (review) {
+      const reviewer = demoAdapter.isEnabled() ? DEMO_USER_DAIANE.id : pb.authStore.record?.id
+      if (!reviewer) throw new Error('Entre como profissional para registrar a revisão.')
+      saved.reviewedBy = reviewer
+      saved.reviewedAt = new Date().toISOString()
+    }
+    const result = demoAdapter.isEnabled() ? demoAdapter.saveMapReadingSnapshot(mapId, saved) : await pb.collection('cer_maps').update<CerMapRecord>(mapId, { reading_snapshot: saved })
+    if (!isCerMapReadingSnapshot(result.reading_snapshot)) throw new Error('Não foi possível salvar as duas versões. Verifique a atualização do servidor antes de publicar.')
+    return result
+  },
   /**
    * Obtém o Mapa publicado ativo da interagente (Participante Display)
    */
@@ -197,6 +215,7 @@ export const cerMapService = {
       created_by_user_id: userId,
     })
 
+    if (isCerMapReadingSnapshot(pubMap.reading_snapshot)) await this.saveReadingSnapshot(newDraft.id, pubMap.enrollment_id, unreviewedMapReadings(pubMap.reading_snapshot))
     // 2. Copiar items do mapa publicado
     const oldItems = await pb.collection('cer_map_items').getFullList<CerMapItemRecord>({
       filter: `map_id = "${pubMap.id}"`,
@@ -366,6 +385,9 @@ export const cerMapService = {
       )
     }
 
+    const draft = demoAdapter.isEnabled() ? demoAdapter.getDraftMap(targetEnrollmentId) : await pb.collection('cer_maps').getOne<CerMapRecord>(mapId)
+    if (!draft || draft.id !== mapId || draft.enrollment_id !== targetEnrollmentId || draft.status !== 'draft') throw new Error('Rascunho incompatível com esta interagente.')
+    if (draft.reading_snapshot && (!isCerMapReadingSnapshot(draft.reading_snapshot) || !draft.reading_snapshot.reviewedBy || !draft.reading_snapshot.reviewedAt)) throw new Error('Revise e salve as duas versões antes de publicar.')
     // TRAVA REAL DE PUBLICAÇÃO: Fail-Closed
     const gateCheck = await this.canPublishMap(targetEnrollmentId)
     if (!gateCheck.allowed) {

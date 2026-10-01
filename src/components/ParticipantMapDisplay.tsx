@@ -12,6 +12,8 @@
  */
 
 import React from 'react'
+import { isCerMapReadingSnapshot } from '@/services/cerMapReadings'
+import { CerMapReadingsView } from './experience/CerMapReadingsView'
 import {
   CerMapRecord,
   CerMapItemRecord,
@@ -38,6 +40,8 @@ const SECTION_ICONS: Partial<Record<CerMapSection, React.ReactNode>> = {
 }
 
 export const ParticipantMapDisplay: React.FC<ParticipantMapDisplayProps> = ({ map }) => {
+  if (isCerMapReadingSnapshot(map.reading_snapshot)) return <CerMapReadingsView snapshot={map.reading_snapshot} />
+  // Legacy publications remain literal; no synthesis is generated from current responses.
   // Agrupar items por seção
   const itemsBySection = new Map<CerMapSection, CerMapItemRecord[]>()
   for (const it of map.items) {
