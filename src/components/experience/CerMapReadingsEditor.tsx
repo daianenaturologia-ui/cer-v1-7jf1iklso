@@ -1,3 +1,4 @@
+import { lifeDirectionsService, sharedLifeDirections } from '@/services/lifeDirections'
 import { LifeConnectionsEditor } from './LifeConnectionsEditor'
 import { lifeTimelineService, sharedLifeEvents, lifeTimeLabel } from '@/services/lifeTimeline'
 import React, { useState } from 'react'
@@ -41,6 +42,10 @@ export function CerMapReadingsEditor({
         await lifeTimelineService.list(enrollmentId),
         enrollmentId,
       )
+      const lifeDirections = sharedLifeDirections(
+        await lifeDirectionsService.list(enrollmentId),
+        enrollmentId,
+      )
       const updated = buildCerMapReadings(responses, enrollmentId, participantName)
       change(
         refresh && snapshot
@@ -49,6 +54,7 @@ export function CerMapReadingsEditor({
               generatedAt: updated.generatedAt,
               sourceResponseIds: updated.sourceResponseIds,
               lifeEvents,
+              lifeDirections,
               lifeConnections: [],
               dimensions: updated.dimensions.map((d) => ({
                 ...d,
@@ -59,11 +65,11 @@ export function CerMapReadingsEditor({
                   '',
               })),
             }
-          : { ...updated, lifeEvents },
+          : { ...updated, lifeEvents, lifeDirections },
       )
     } catch {
       setError(
-        'Não foi possível carregar as histórias compartilhadas. O rascunho anterior foi preservado. Tente novamente.',
+        'Não foi possível carregar as histórias e direções compartilhadas. O rascunho anterior foi preservado. Tente novamente.',
       )
     } finally {
       setBusy(false)

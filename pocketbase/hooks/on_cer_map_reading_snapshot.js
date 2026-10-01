@@ -99,6 +99,46 @@ onRecordUpdateRequest((e) => {
         throw new BadRequestError('As emoções da história mudaram. Atualize e revise o rascunho.')
     }
   }
+  if (
+    (!original || original.getString('status') === 'draft') &&
+    snapshot.lifeDirections !== undefined
+  ) {
+    if (!Array.isArray(snapshot.lifeDirections))
+      throw new BadRequestError('Registros de presente e futuro inválidos.')
+    const ids = new Set()
+    for (const value of snapshot.lifeDirections) {
+      if (!value || typeof value.id !== 'string' || ids.has(value.id))
+        throw new BadRequestError('Fonte de presente ou futuro inválida.')
+      ids.add(value.id)
+      const source = e.app.findRecordById('cer_life_directions', value.id)
+      if (
+        source.getString('enrollment_id') !== snapshot.enrollmentId ||
+        source.getString('access_class') !== 'participant_shared' ||
+        value.enrollment_id !== snapshot.enrollmentId ||
+        value.access_class !== 'participant_shared'
+      )
+        throw new BadRequestError(
+          'Somente registros compartilhados desta pessoa podem entrar no mapa.',
+        )
+      for (const field of [
+        'kind',
+        'horizon',
+        'title',
+        'narrative',
+        'meaning',
+        'resources',
+        'limits',
+        'first_step',
+        'created',
+        'updated',
+      ]) {
+        if (value[field] !== source.getString(field))
+          throw new BadRequestError(
+            'Um registro de presente ou futuro mudou. Atualize as fontes e revise novamente.',
+          )
+      }
+    }
+  }
   if (snapshot.lifeConnections !== undefined) {
     if (!Array.isArray(snapshot.lifeConnections)) throw new BadRequestError('Hipóteses inválidas.')
     for (const connection of snapshot.lifeConnections) {
@@ -268,6 +308,46 @@ onRecordCreateRequest((e) => {
       } catch (_) {}
       if (JSON.stringify(event.emotions) !== JSON.stringify(emotions))
         throw new BadRequestError('As emoções da história mudaram. Atualize e revise o rascunho.')
+    }
+  }
+  if (
+    (!original || original.getString('status') === 'draft') &&
+    snapshot.lifeDirections !== undefined
+  ) {
+    if (!Array.isArray(snapshot.lifeDirections))
+      throw new BadRequestError('Registros de presente e futuro inválidos.')
+    const ids = new Set()
+    for (const value of snapshot.lifeDirections) {
+      if (!value || typeof value.id !== 'string' || ids.has(value.id))
+        throw new BadRequestError('Fonte de presente ou futuro inválida.')
+      ids.add(value.id)
+      const source = e.app.findRecordById('cer_life_directions', value.id)
+      if (
+        source.getString('enrollment_id') !== snapshot.enrollmentId ||
+        source.getString('access_class') !== 'participant_shared' ||
+        value.enrollment_id !== snapshot.enrollmentId ||
+        value.access_class !== 'participant_shared'
+      )
+        throw new BadRequestError(
+          'Somente registros compartilhados desta pessoa podem entrar no mapa.',
+        )
+      for (const field of [
+        'kind',
+        'horizon',
+        'title',
+        'narrative',
+        'meaning',
+        'resources',
+        'limits',
+        'first_step',
+        'created',
+        'updated',
+      ]) {
+        if (value[field] !== source.getString(field))
+          throw new BadRequestError(
+            'Um registro de presente ou futuro mudou. Atualize as fontes e revise novamente.',
+          )
+      }
     }
   }
   if (snapshot.lifeConnections !== undefined) {

@@ -1,3 +1,4 @@
+import { LIFE_HORIZONS } from '@/services/lifeDirections'
 import { lifeTimeLabel } from '@/services/lifeTimeline'
 import React, { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -104,6 +105,58 @@ export function CerMapReadingsView({ snapshot }: { snapshot: CerMapReadingSnapsh
           </CardHeader>
           <CardContent>
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{snapshot.integration}</p>
+          </CardContent>
+        </Card>
+      )}
+      {!!snapshot.lifeDirections?.length && (
+        <Card className="shadow-none">
+          <CardHeader>
+            <CardTitle className="text-base font-serif">Presente e direções futuras</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Registros compartilhados para esta versão. Desejos e horizontes podem mudar ao longo
+              do cuidado.
+            </p>
+            {snapshot.lifeDirections.map((value) => (
+              <div key={value.id} className="space-y-1">
+                <p className="text-sm font-medium">
+                  {value.title} · {LIFE_HORIZONS[value.horizon]}
+                </p>
+                {!deep && value.first_step && (
+                  <p className="text-sm whitespace-pre-wrap">
+                    Pequeno passo possível: {value.first_step}
+                  </p>
+                )}
+                {deep && (
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      Registro de{' '}
+                      {value.created
+                        ? new Date(value.created).toLocaleDateString('pt-BR')
+                        : 'data não informada'}
+                    </p>
+                    <p className="text-sm whitespace-pre-wrap">{value.narrative}</p>
+                    {(
+                      [
+                        ['meaning', 'Sentido e propósito'],
+                        ['resources', 'Recursos e apoios'],
+                        ['limits', 'Limites e necessidades'],
+                        ['first_step', 'Pequeno passo possível'],
+                      ] as const
+                    ).map(
+                      ([field, label]) =>
+                        value[field] && (
+                          <p key={field} className="text-sm whitespace-pre-wrap">
+                            <strong>{label}: </strong>
+                            {value[field]}
+                          </p>
+                        ),
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}

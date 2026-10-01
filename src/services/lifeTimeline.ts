@@ -68,7 +68,20 @@ export function sharedLifeEvents(events: LifeEvent[], enrollmentId: string) {
 export const demoLifeEvents = new Map<string, LifeEvent[]>()
 export const lifeTimelineService = {
   async list(enrollmentId: string): Promise<LifeEvent[]> {
-    if (demoAdapter.isEnabled()) return demoLifeEvents.get(enrollmentId) || []
+    if (demoAdapter.isEnabled()) {
+      const stored = localStorage.getItem(`cer-demo-life-events-v1:${enrollmentId}`)
+      const values: LifeEvent[] = stored
+        ? JSON.parse(stored)
+        : demoLifeEvents.get(enrollmentId) || []
+      if (!Array.isArray(values)) throw new Error('Não foi possível ler os acontecimentos salvos.')
+      for (const value of values) {
+        validateLifeEvent(value)
+        if (value.enrollment_id !== enrollmentId || typeof value.id !== 'string')
+          throw new Error('Acontecimento inválido.')
+      }
+      demoLifeEvents.set(enrollmentId, values)
+      return values
+    }
     return pb.collection('cer_life_events').getFullList<LifeEvent>({
       filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
       sort: 'created',
@@ -81,6 +94,20 @@ export const lifeTimelineService = {
       ...event,
       title: event.title.trim(),
       time_value: event.time_kind === 'unknown' ? '' : event.time_value,
+    }
+    if (demoAdapter.isEnabled()) {
+      const values = await this.list(event.enrollment_id)
+      if (id && !values.some((v) => v.id === id))
+        throw new Error('Acontecimento não encontrado. Recarregue e tente novamente.')
+      const record = {
+        ...data,
+        id: id || `demo-life-${crypto.randomUUID()}`,
+        updated: new Date().toISOString(),
+      }
+      const next = id ? values.map((v) => (v.id === id ? record : v)) : [...values, record]
+      localStorage.setItem(`cer-demo-life-events-v1:${event.enrollment_id}`, JSON.stringify(next))
+      demoLifeEvents.set(event.enrollment_id, next)
+      return record
     }
     return id
       ? pb.collection('cer_life_events').update<LifeEvent>(id, data)

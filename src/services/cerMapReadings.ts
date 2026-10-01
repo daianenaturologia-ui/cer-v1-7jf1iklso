@@ -1,3 +1,4 @@
+import { validateLifeDirection } from '@/services/lifeDirections'
 import type {
   CerPromptRecord,
   EnrollmentExperienceRecord,
@@ -319,6 +320,22 @@ export function isCerMapReadingSnapshot(value: unknown): value is CerMapReadingS
             s.lifeEvents?.some((e) => e.id === c.eventId) &&
             s.sourceResponseIds?.includes(c.responseId),
         ))) &&
+    (s.lifeDirections === undefined ||
+      (Array.isArray(s.lifeDirections) &&
+        new Set(s.lifeDirections.map((v) => v?.id)).size === s.lifeDirections.length &&
+        s.lifeDirections.every((v) => {
+          try {
+            validateLifeDirection(v)
+            return (
+              typeof v.id === 'string' &&
+              typeof v.updated === 'string' &&
+              v.enrollment_id === s.enrollmentId &&
+              v.access_class === 'participant_shared'
+            )
+          } catch {
+            return false
+          }
+        }))) &&
     (s.lifeEvents === undefined ||
       (Array.isArray(s.lifeEvents) &&
         s.lifeEvents.every(

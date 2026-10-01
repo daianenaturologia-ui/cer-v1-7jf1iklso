@@ -1,3 +1,4 @@
+import { LifeDirections } from '@/components/experience/LifeDirections'
 import { LifeTimeline } from '@/components/experience/LifeTimeline'
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
@@ -493,6 +494,7 @@ export const ParticipantWorkspace: React.FC = () => {
       {/* EQUILÍBRIO & REALIZAÇÃO */}
       {currentTab === 'equilibrio' && (
         <div className="space-y-6">
+          <LifeDirections enrollmentId={enrollment.id} readOnly />
           <div className="flex flex-wrap gap-2 border-b border-border/50 pb-3">
             {(['plano', 'biblioteca', 'mandala', 'planner'] as const).map((tool) => (
               <Button
@@ -570,6 +572,7 @@ export const ParticipantWorkspace: React.FC = () => {
       {currentTab === 'evolucao' && (
         <div className="space-y-5">
           <LifeTimeline enrollmentId={enrollment.id} readOnly />
+          <LifeDirections enrollmentId={enrollment.id} readOnly />
           <ResponseDigest enrollmentId={enrollment.id} participantName={participantName} />
         </div>
       )}
