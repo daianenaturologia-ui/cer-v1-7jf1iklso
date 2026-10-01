@@ -9,6 +9,58 @@ import type {
   CerKnowledgeItemRecord,
 } from '@/types/cer'
 import { cerCycleReviewService } from './cerCycleReviewService'
+import { demoAdapter } from './demoAdapter'
+
+export type MandalaAudience = 'participant' | 'professional'
+
+/** Demonstração lê registros existentes; não cria respostas nem consulta o servidor. */
+export function getDemoMandalaProjection(
+  enrollmentId: string,
+  audience: MandalaAudience,
+): MandalaReadModel {
+  if (audience === 'professional' && demoAdapter.getActivePersona() !== 'daiane') {
+    throw new Error('Esta leitura está disponível na visão profissional.')
+  }
+  const plans = demoAdapter.listPlans(enrollmentId)
+  const plan = plans.find((value) => value.status === 'active') || plans[0]
+  const presentation = demoAdapter.listPresentedForParticipant(enrollmentId).find(
+    (value) => value.status === 'presented' && (!plan || value.plan_id === plan.id),
+  )
+  // A interagente recebe somente o snapshot explicitamente compartilhado.
+  // Títulos, descrições e fundamentos internos de prioridades não são uma devolutiva.
+  const priorities = audience === 'professional' && plan
+    ? demoAdapter.listPriorities(plan.id).filter((value) =>
+      value.status === 'active' || value.status === 'active_pending_adaptation',
+    )
+    : []
+  const statement = audience === 'professional'
+    ? plan?.direction_statement
+    : presentation?.participant_summary || presentation?.participant_title
+  return {
+    enrollment_id: enrollmentId,
+    direction: statement
+      ? { mode: audience === 'professional' ? plan!.direction_mode : 'contextualized', statement }
+      : undefined,
+    active_priorities: priorities.map((value) => ({
+      id: value.id,
+      title: value.title,
+      description: value.description,
+      is_therapeutic_priority: value.is_therapeutic_priority,
+      is_possible_now: value.is_possible_now,
+    })),
+    active_experiments: [],
+    recognized_resources: [],
+    current_capacity: { summary: 'Ainda não há capacidade registrada para os experimentos deste ciclo.' },
+    recent_movement: {
+      total_recorded_responses: 0,
+      descriptive_digest: 'Ainda não há registros de resposta neste ciclo.',
+      recent_responses: [],
+    },
+    evolution_highlights: presentation?.practical_invitation
+      ? [presentation.practical_invitation]
+      : [],
+  }
+}
 
 /**
  * MANDALA = READ-MODEL.
@@ -18,7 +70,11 @@ import { cerCycleReviewService } from './cerCycleReviewService'
  * capacidade percebida e respostas operacionais do participante.
  */
 export const cerMandalaReadModelService = {
-  async getMandalaProjection(enrollmentId: string): Promise<MandalaReadModel> {
+  async getMandalaProjection(
+    enrollmentId: string,
+    audience: MandalaAudience = 'participant',
+  ): Promise<MandalaReadModel> {
+    if (demoAdapter.isEnabled()) return getDemoMandalaProjection(enrollmentId, audience)
     // 1. Buscar plano ativo e ciclo
     let careCycle: CerCareCycleRecord | undefined
     let carePlan: CerCarePlanRecord | undefined

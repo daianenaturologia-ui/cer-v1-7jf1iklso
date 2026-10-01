@@ -555,15 +555,9 @@ export const ParticipantWorkspace: React.FC = () => {
               />
             </div>
           )}
-          {careTool === 'mandala' &&
-            (demoAdapter.isEnabled() ? (
-              <p className="text-sm text-muted-foreground">
-                A Mandala da demonstração ainda não tem projeção profissional. Nenhum dado real foi
-                consultado.
-              </p>
-            ) : (
-              <MandalaStructuredView enrollmentId={enrollment.id} audience="professional" />
-            ))}
+          {careTool === 'mandala' && (
+            <MandalaStructuredView enrollmentId={enrollment.id} audience="professional" />
+          )}
           {careTool === 'planner' && <ProfessionalPlannerView enrollmentId={enrollment.id} />}
         </div>
       )}

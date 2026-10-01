@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,24 +29,34 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
 }) => {
   const [mandala, setMandala] = useState<MandalaReadModel | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [loadedAudience, setLoadedAudience] = useState<typeof audience | null>(null)
+  const requestVersion = useRef(0)
 
   const loadMandala = async () => {
+    const version = ++requestVersion.current
     setLoading(true)
+    setMandala(null)
+    setError(false)
     try {
-      const data = await cerMandalaReadModelService.getMandalaProjection(enrollmentId)
-      setMandala(data)
+      const data = await cerMandalaReadModelService.getMandalaProjection(enrollmentId, audience)
+      if (version === requestVersion.current) {
+        setMandala(data)
+        setLoadedAudience(audience)
+      }
     } catch (err) {
-      console.error('Erro ao projetar Mandala:', err)
+      if (version === requestVersion.current) setError(true)
     } finally {
-      setLoading(false)
+      if (version === requestVersion.current) setLoading(false)
     }
   }
 
   useEffect(() => {
     loadMandala()
-  }, [enrollmentId])
+    return () => { requestVersion.current++ }
+  }, [enrollmentId, audience])
 
-  if (loading) {
+  if (loading || (mandala && (mandala.enrollment_id !== enrollmentId || loadedAudience !== audience))) {
     return (
       <div className="p-12 text-center text-xs text-muted-foreground flex flex-col items-center justify-center gap-2">
         <RefreshCw className="w-4 h-4 animate-spin text-primary" />
@@ -58,7 +68,10 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
   if (!mandala) {
     return (
       <div className="p-8 text-center text-xs text-muted-foreground">
-        Nenhum dado disponível para organizar a Mandala neste momento.
+        {error ? 'Não foi possível carregar a Mandala agora.' : 'Nenhum dado disponível para organizar a Mandala neste momento.'}
+        <Button variant="outline" size="sm" onClick={loadMandala} className="block mx-auto mt-3">
+          Tentar novamente
+        </Button>
       </div>
     )
   }
