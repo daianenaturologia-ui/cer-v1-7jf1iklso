@@ -40,3 +40,21 @@ it('não oferece gravação ao profissional e impede início antes da conclusão
   expect(screen.getByText(/Conclua as seis dimensões/)).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Clique na linha/ })).toBeNull()
 })
+
+it('filtra relatos privados também na demonstração profissional', async () => {
+  vi.spyOn(lifeTimelineService, 'list').mockResolvedValue([
+    {
+      id: 'private',
+      enrollment_id: 'enr',
+      title: 'Relato reservado',
+      time_kind: 'unknown',
+      time_value: '',
+      emotions: [],
+      narrative: 'Texto reservado',
+      access_class: 'participant_private',
+    },
+  ])
+  render(<LifeTimeline enrollmentId="enr" readOnly />)
+  await screen.findByText('Ainda não há histórias compartilhadas.')
+  expect(screen.queryByText('Relato reservado')).toBeNull()
+})
