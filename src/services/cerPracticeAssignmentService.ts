@@ -1,3 +1,5 @@
+import { demoAdapter } from './demoAdapter'
+import { demoPracticeFlow } from './demoPracticeFlow'
 /**
  * Serviço do Build 08D — Practice Assignment & Lifecycle Control
  * Ancoragem estrita, verificação de gates, dose/bounds e confirmação.
@@ -69,6 +71,7 @@ export const cerPracticeAssignmentService = {
    * Listar assignments por enrollment
    */
   async listByEnrollment(enrollmentId: string): Promise<CerPracticeAssignmentRecord[]> {
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.list(enrollmentId)
     return await pb
       .collection('cer_practice_assignments')
       .getFullList<CerPracticeAssignmentRecord>({
@@ -83,6 +86,7 @@ export const cerPracticeAssignmentService = {
    * Obter assignment por ID
    */
   async getById(id: string): Promise<CerPracticeAssignmentRecord> {
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.get(id)
     return await pb.collection('cer_practice_assignments').getOne<CerPracticeAssignmentRecord>(id, {
       expand:
         'practice_version_id,variant_id,care_plan_priority_id,care_cycle_id,safety_check_id,consent_id,operational_acceptance_id,assigned_by_user_id',
@@ -93,6 +97,8 @@ export const cerPracticeAssignmentService = {
    * Criar novo Assignment (draft ou active)
    */
   async createAssignment(input: CreateAssignmentInput): Promise<CerPracticeAssignmentRecord> {
+    if (demoAdapter.isEnabled())
+      throw new Error('Prepare a proposta pelo acervo fictício, com suas checagens explícitas.')
     const payload = {
       ...input,
       status: input.status || 'draft',
@@ -107,6 +113,7 @@ export const cerPracticeAssignmentService = {
    * Ativar Assignment (passa pelos 4 gates de validação no hook do servidor)
    */
   async activateAssignment(id: string): Promise<CerPracticeAssignmentRecord> {
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.activate(id)
     return await pb.collection('cer_practice_assignments').update<CerPracticeAssignmentRecord>(id, {
       status: 'active',
     })
@@ -116,6 +123,7 @@ export const cerPracticeAssignmentService = {
    * Pausar Assignment
    */
   async pauseAssignment(id: string): Promise<CerPracticeAssignmentRecord> {
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.pause(id)
     return await pb.collection('cer_practice_assignments').update<CerPracticeAssignmentRecord>(id, {
       status: 'paused',
     })
@@ -125,6 +133,7 @@ export const cerPracticeAssignmentService = {
    * Retomar Assignment (resume de paused para active)
    */
   async resumeAssignment(id: string): Promise<CerPracticeAssignmentRecord> {
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.activate(id)
     return await pb.collection('cer_practice_assignments').update<CerPracticeAssignmentRecord>(id, {
       status: 'active',
     })
@@ -134,6 +143,7 @@ export const cerPracticeAssignmentService = {
    * Interromper Assignment antes do planejado (stopped)
    */
   async stopAssignment(id: string, stopReasonCode: string): Promise<CerPracticeAssignmentRecord> {
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.pause(id, true)
     return await pb.collection('cer_practice_assignments').update<CerPracticeAssignmentRecord>(id, {
       status: 'stopped',
       stop_reason_code: stopReasonCode,
@@ -145,6 +155,7 @@ export const cerPracticeAssignmentService = {
    * NUNCA inferir completion por fim de ciclo.
    */
   async completeAssignment(id: string): Promise<CerPracticeAssignmentRecord> {
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.complete(id)
     return await pb.collection('cer_practice_assignments').update<CerPracticeAssignmentRecord>(id, {
       status: 'completed',
     })
@@ -157,6 +168,8 @@ export const cerPracticeAssignmentService = {
     id: string,
     input: ConfirmAssignmentInput,
   ): Promise<CerPracticeAssignmentRecord> {
+    if (demoAdapter.isEnabled())
+      return demoPracticeFlow.confirm(id, input.capacity_response || 'ainda_nao_sei')
     return await pb.collection('cer_practice_assignments').update<CerPracticeAssignmentRecord>(id, {
       participant_response_type: input.participant_response_type,
       capacity_response: input.capacity_response,
@@ -170,6 +183,8 @@ export const cerPracticeAssignmentService = {
    * O hook do servidor automaticamente marca a anterior como 'superseded'.
    */
   async adaptMaterially(input: MaterialAdaptationInput): Promise<CerPracticeAssignmentRecord> {
+    if (demoAdapter.isEnabled())
+      throw new Error('Esta operação ainda não está disponível na demonstração.')
     const prev = await this.getById(input.previous_assignment_id)
     const payload: Partial<CerPracticeAssignmentRecord> = {
       enrollment_id: prev.enrollment_id,
@@ -212,6 +227,8 @@ export const cerPracticeAssignmentService = {
     newPriorityId: string,
     assignedByUserId: string,
   ): Promise<CerPracticeAssignmentRecord> {
+    if (demoAdapter.isEnabled())
+      throw new Error('Esta operação ainda não está disponível na demonstração.')
     const prev = await this.getById(previousAssignmentId)
     const payload = {
       enrollment_id: prev.enrollment_id,

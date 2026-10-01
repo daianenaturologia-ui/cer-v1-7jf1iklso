@@ -1,3 +1,5 @@
+import { demoAdapter } from '@/services/demoAdapter'
+import { DemoExperimentCard } from './DemoExperimentCard'
 import React, { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -32,7 +34,7 @@ interface ExperimentCardProps {
   readOnly?: boolean
 }
 
-export const ExperimentCard: React.FC<ExperimentCardProps> = ({
+const LiveExperimentCard: React.FC<ExperimentCardProps> = ({
   assignment,
   onConfirm,
   onResponseRecorded,
@@ -599,3 +601,14 @@ export const ExperimentCard: React.FC<ExperimentCardProps> = ({
     </>
   )
 }
+
+export const ExperimentCard: React.FC<ExperimentCardProps> = (props) =>
+  demoAdapter.isEnabled() ? (
+    <DemoExperimentCard
+      assignment={props.assignment}
+      onUpdated={props.onResponseRecorded}
+      readOnly={props.readOnly}
+    />
+  ) : (
+    <LiveExperimentCard {...props} />
+  )

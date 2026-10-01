@@ -1,3 +1,4 @@
+import { demoPracticeFlow } from './demoPracticeFlow'
 /**
  * Serviço do Build 08D — Minimal Planner & Operational Window Projection
  * Projeta ocorrências na janela corrente, preserva histórico imutável, gerencia timezone e contextual resources.
@@ -90,7 +91,7 @@ export const cerPlannerService = {
   async createItem(input: CreatePlannerItemInput): Promise<CerPlannerItemRecord> {
     if (demoAdapter.isEnabled())
       throw new Error(
-        'A atribuição de práticas com checagem de segurança ainda não está disponível na demonstração.',
+        'Na demonstração, os momentos são projetados a partir de um experimento validado.',
       )
     const payload = {
       ...input,
@@ -107,8 +108,7 @@ export const cerPlannerService = {
     id: string,
     input: ReschedulePlannerItemInput,
   ): Promise<CerPlannerItemRecord> {
-    if (demoAdapter.isEnabled())
-      throw new Error('Reagendamento indisponível na demonstração até a atribuição da prática.')
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.reschedule(id, input.scheduled_at || '')
     return await pb.collection('cer_planner_items').update<CerPlannerItemRecord>(id, input)
   },
 
@@ -117,25 +117,7 @@ export const cerPlannerService = {
    * Apenas reflete a ocorrência conforme registro (não adesão/score).
    */
   async completeItem(id: string): Promise<CerPlannerItemRecord> {
-    if (demoAdapter.isEnabled()) {
-      const store = demoAdapter.readCareStore()
-      const item = store.plannerItems.find(
-        (i) =>
-          i.id === id &&
-          i.enrollment_id === DEMO_ENROLLMENT_ID &&
-          i.participant_user_id === DEMO_USER_MARIANA.id,
-      )
-      if (
-        demoAdapter.getActivePersona() !== 'mariana' ||
-        !item ||
-        !['planned', 'active'].includes(item.status)
-      )
-        throw new Error('Item indisponível para registro.')
-      item.status = 'completed'
-      item.updated = new Date().toISOString()
-      demoAdapter.writeCareStore(store)
-      return item
-    }
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.completeMoment(id)
     return await pb.collection('cer_planner_items').update<CerPlannerItemRecord>(id, {
       status: 'completed',
     })
@@ -145,8 +127,7 @@ export const cerPlannerService = {
    * Cancelar item individual futuro
    */
   async cancelItem(id: string): Promise<CerPlannerItemRecord> {
-    if (demoAdapter.isEnabled())
-      throw new Error('Cancelamento individual indisponível na demonstração.')
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.cancel(id)
     return await pb.collection('cer_planner_items').update<CerPlannerItemRecord>(id, {
       status: 'cancelled',
     })
@@ -171,8 +152,7 @@ export const cerPlannerService = {
     userId: string
     windowDays?: number // default ~7 dias da janela operacional
   }): Promise<CerPlannerItemRecord[]> {
-    if (demoAdapter.isEnabled())
-      throw new Error('A projeção depende de uma atribuição validada da prática.')
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.project(params.assignmentId)
     const {
       assignmentId,
       enrollmentId,

@@ -1,3 +1,5 @@
+import { demoAdapter } from '@/services/demoAdapter'
+import { cerCareCycleService } from '@/services/cerCareCycleService'
 import React, { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -64,20 +66,13 @@ export const ResponseDigest: React.FC<ResponseDigestProps> = ({
     setLoading(true)
     try {
       // 1. Carregar respostas
-      const resps = await pb
-        .collection('cer_practice_responses')
-        .getFullList<CerPracticeResponseRecord>({
-          filter: `enrollment_id = "${enrollmentId}" && record_status = "current"`,
-          sort: '-created',
-          expand: 'assignment_id,practice_version_id',
-        })
+      const resps = await cerPracticeResponseService.listByEnrollment(enrollmentId)
       setResponses(resps)
 
       // 2. Carregar ciclo ativo se houver
-      const cycles = await pb.collection('cer_care_cycles').getFullList<CerCareCycleRecord>({
-        filter: `enrollment_id = "${enrollmentId}" && status = "active"`,
-        sort: '-cycle_number',
-      })
+      const cycles = (await cerCareCycleService.list(enrollmentId)).filter(
+        (c) => c.status === 'active',
+      )
       const cycle = cycles[0] || null
       setActiveCycle(cycle)
 
@@ -103,7 +98,7 @@ export const ResponseDigest: React.FC<ResponseDigestProps> = ({
     if (!activeCycle) return
     setActionLoading(true)
     try {
-      const authUser = pb.authStore.record
+      const authUser = demoAdapter.isEnabled() ? demoAdapter.getCurrentUser() : pb.authStore.record
       await cerCycleReviewService.createReview({
         care_cycle_id: activeCycle.id,
         enrollment_id: enrollmentId,

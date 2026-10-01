@@ -1,3 +1,5 @@
+import { demoAdapter } from './demoAdapter'
+import { demoPracticeFlow } from './demoPracticeFlow'
 import pb from '@/lib/pocketbase/client'
 import type {
   CerPracticeResponseRecord,
@@ -34,6 +36,7 @@ export interface CreatePracticeResponseInput {
 
 export const cerPracticeResponseService = {
   async listByEnrollment(enrollmentId: string): Promise<CerPracticeResponseRecord[]> {
+    if (demoAdapter.isEnabled()) return demoPracticeFlow.responses(enrollmentId)
     return await pb.collection('cer_practice_responses').getFullList<CerPracticeResponseRecord>({
       filter: `enrollment_id = "${enrollmentId}" && record_status = "current"`,
       sort: '-created',
@@ -42,6 +45,10 @@ export const cerPracticeResponseService = {
   },
 
   async listByAssignment(assignmentId: string): Promise<CerPracticeResponseRecord[]> {
+    if (demoAdapter.isEnabled())
+      return demoPracticeFlow
+        .responses(demoPracticeFlow.get(assignmentId).enrollment_id)
+        .filter((r) => r.assignment_id === assignmentId)
     return await pb.collection('cer_practice_responses').getFullList<CerPracticeResponseRecord>({
       filter: `assignment_id = "${assignmentId}" && record_status = "current"`,
       sort: '-created',
@@ -50,6 +57,11 @@ export const cerPracticeResponseService = {
   },
 
   async getById(id: string): Promise<CerPracticeResponseRecord> {
+    if (demoAdapter.isEnabled()) {
+      const item = demoPracticeFlow.responses('demo-enr-01').find((r) => r.id === id)
+      if (!item) throw new Error('Resposta não encontrada.')
+      return item
+    }
     return await pb.collection('cer_practice_responses').getOne<CerPracticeResponseRecord>(id, {
       expand: 'assignment_id,practice_version_id',
     })
@@ -59,6 +71,10 @@ export const cerPracticeResponseService = {
     response: CerPracticeResponseRecord
     privateNote?: CerPracticeResponsePrivateNoteRecord
   }> {
+    if (demoAdapter.isEnabled())
+      return demoPracticeFlow.recordResponse(
+        input as Parameters<typeof demoPracticeFlow.recordResponse>[0],
+      )
     // 1. Determinar safety_flag canônica
     let sFlag: PracticeResponseSafetyFlag = input.safety_flag || 'none'
     if (input.response_type === 'was_too_much' && sFlag === 'none') {
@@ -152,6 +168,8 @@ export const cerPracticeResponseService = {
     enrollmentId: string,
     participantUserId: string,
   ): Promise<CerPracticeResponsePrivateNoteRecord[]> {
+    if (demoAdapter.isEnabled())
+      return demoPracticeFlow.privateNotes(enrollmentId, participantUserId)
     return await pb
       .collection('cer_practice_response_private_notes')
       .getFullList<CerPracticeResponsePrivateNoteRecord>({

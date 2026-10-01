@@ -119,10 +119,10 @@ describe('Ciclos e convites da demonstração', () => {
     expect(
       JSON.stringify(await planner.listForParticipant(enrollment, 'demo-user-mariana')),
     ).not.toContain('Segredo')
-    await planner.completeItem('item')
+    await expect(planner.completeItem('item')).rejects.toThrow('Experimento não encontrado')
     expect((await planner.listForParticipant(enrollment, 'demo-user-mariana'))[0].status).toBe(
-      'completed',
+      'planned',
     )
-    await expect(planner.createItem({} as any)).rejects.toThrow('segurança')
+    await expect(planner.createItem({} as any)).rejects.toThrow('projetados')
   })
 })

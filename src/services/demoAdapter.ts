@@ -128,6 +128,7 @@ export const DEMO_ENROLLMENT: EnrollmentRecord = {
 }
 
 export interface DemoCareStore {
+  practiceData?: import('./demoPracticeFlow').DemoPracticeStore
   cycles: import('@/types/cer').CerCareCycleRecord[]
   reviews: import('@/types/cer').CerCycleReviewRecord[]
   invitations: import('./cerCycleInvitationService').CycleInvitation[]
@@ -1451,6 +1452,38 @@ class DemoAdapter {
       .sort((a, b) => a.order_index - b.order_index)
   }
 
+  public updateDemoPriorityStatus(
+    priorityId: string,
+    status: import('@/types/cer').CarePlanPriorityStatus,
+  ): CerCarePlanPriorityRecord {
+    if (!this.isDemoEnabled || this.state.activePersona !== 'daiane')
+      throw new Error('Esta ação requer a profissional responsável.')
+    const priority = this.state.priorities.find((p) => p.id === priorityId)
+    const plan = this.state.plans.find(
+      (p) => p.id === priority?.plan_id && p.enrollment_id === DEMO_ENROLLMENT_ID,
+    )
+    if (!priority || !plan) throw new Error('Prioridade não encontrada.')
+    if (
+      ![
+        'candidate',
+        'active',
+        'active_pending_adaptation',
+        'deferred',
+        'superseded',
+        'archived',
+      ].includes(status)
+    )
+      throw new Error('Estado de prioridade inválido.')
+    const next = JSON.parse(JSON.stringify(this.state)) as DemoStateStore
+    const changed = next.priorities.find((p) => p.id === priorityId)!
+    changed.status = status
+    changed.updated = new Date().toISOString()
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    this.state = next
+    this.notify()
+    return { ...changed }
+  }
+
   public addPriority(input: {
     plan_id: string
     title: string
@@ -1539,8 +1572,15 @@ class DemoAdapter {
     private_note?: string
   }): CerOperationalAcceptanceRecord {
     const pres = this.state.presentations.find((p) => p.id === input.presentation_id)
+    if (
+      !this.isDemoEnabled ||
+      this.state.activePersona !== 'mariana' ||
+      !pres ||
+      pres.status !== 'presented'
+    )
+      throw new Error('O aceite requer uma apresentação disponível para Mariana.')
     const newAcc: CerOperationalAcceptanceRecord = {
-      id: `demo-acc-${Date.now()}`,
+      id: `demo-acc-${crypto.randomUUID()}`,
       presentation_id: input.presentation_id,
       plan_id: pres?.plan_id || '',
       priority_id: pres?.priority_id || '',
@@ -1553,8 +1593,16 @@ class DemoAdapter {
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
     }
-    this.state.acceptances.unshift(newAcc)
-    this.saveState()
+    const next = JSON.parse(JSON.stringify(this.state)) as DemoStateStore
+    next.acceptances
+      .filter((a) => a.presentation_id === input.presentation_id && a.record_status === 'current')
+      .forEach((a) => {
+        a.record_status = 'superseded'
+      })
+    next.acceptances.unshift(newAcc)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    this.state = next
+    this.notify()
     return newAcc
   }
 
