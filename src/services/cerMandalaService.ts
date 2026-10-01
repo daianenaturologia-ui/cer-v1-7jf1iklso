@@ -1,3 +1,4 @@
+import { readDemoPracticeStore, safeDemoAssignment } from './demoPracticeFlow'
 import pb from '@/lib/pocketbase/client'
 import type {
   MandalaReadModel,
@@ -40,8 +41,53 @@ export function getDemoMandalaProjection(
     audience === 'professional'
       ? plan?.direction_statement
       : presentation?.participant_summary || presentation?.participant_title
+  const store = demoAdapter.readCareStore()
+  const data = readDemoPracticeStore(store)
+  const cycle = store.cycles
+    .filter((c) => c.enrollment_id === enrollmentId && (!plan || c.plan_id === plan.id))
+    .sort((a, b) => b.cycle_number - a.cycle_number)[0]
+  const shared = data.assignments.filter(
+    (a) => a.enrollment_id === enrollmentId && data.sharedAssignmentIds.includes(a.id),
+  )
+  const experiments = (audience === 'professional' ? data.assignments : shared)
+    .filter(
+      (a) =>
+        a.enrollment_id === enrollmentId &&
+        a.status === 'active' &&
+        (!cycle || a.care_cycle_id === cycle.id),
+    )
+    .map(safeDemoAssignment)
+  const responses = data.responses
+    .filter(
+      (r) =>
+        r.enrollment_id === enrollmentId &&
+        r.record_status === 'current' &&
+        (!cycle || r.care_cycle_id === cycle.id),
+    )
+    .sort((a, b) => b.created.localeCompare(a.created))
+  const lastCapacity = shared
+    .filter((a) => a.capacity_response && (!cycle || a.care_cycle_id === cycle.id))
+    .sort((a, b) =>
+      (b.confirmed_at || '').localeCompare(a.confirmed_at || ''),
+    )[0]?.capacity_response
+  const capacitySummary = {
+    cabe_bem: 'A interagente informou que o experimento cabe bem neste momento.',
+    cabe_se_adaptar: 'A interagente pediu adaptações para o experimento caber.',
+    parece_demais: 'A interagente informou que o experimento parece demais agora.',
+    nao_cabe_agora: 'A interagente informou que o experimento não cabe agora.',
+    ainda_nao_sei: 'A interagente ainda está percebendo o que cabe neste momento.',
+  }
+  const digest = cerCycleReviewService.generateDescriptiveDigest(responses)
   return {
     enrollment_id: enrollmentId,
+    care_cycle: cycle
+      ? {
+          id: cycle.id,
+          cycle_number: cycle.cycle_number,
+          status: cycle.status,
+          focus_summary: audience === 'professional' ? cycle.focus_summary : undefined,
+        }
+      : undefined,
     direction: statement
       ? { mode: audience === 'professional' ? plan!.direction_mode : 'contextualized', statement }
       : undefined,
@@ -52,15 +98,34 @@ export function getDemoMandalaProjection(
       is_therapeutic_priority: value.is_therapeutic_priority,
       is_possible_now: value.is_possible_now,
     })),
-    active_experiments: [],
+    active_experiments: experiments.map((a) => ({
+      assignment_id: a.id,
+      safe_title: a.participant_safe_title,
+      safe_summary: a.participant_safe_summary,
+      frequency: a.assigned_frequency,
+      duration: a.assigned_duration,
+      status: a.status,
+    })),
     recognized_resources: [],
     current_capacity: {
-      summary: 'Ainda não há capacidade registrada para os experimentos deste ciclo.',
+      last_response: lastCapacity,
+      summary: lastCapacity
+        ? capacitySummary[lastCapacity]
+        : 'Ainda não há capacidade registrada para os experimentos deste ciclo.',
     },
     recent_movement: {
-      total_recorded_responses: 0,
-      descriptive_digest: 'Ainda não há registros de resposta neste ciclo.',
-      recent_responses: [],
+      total_recorded_responses: responses.length,
+      descriptive_digest: digest.summary_text,
+      recent_responses: responses
+        .slice(0, 5)
+        .map((r) => ({
+          id: r.id,
+          safe_title:
+            shared.find((a) => a.id === r.assignment_id)?.participant_safe_title ||
+            'Experimento de cuidado',
+          response_type: r.response_type,
+          date: r.created,
+        })),
     },
     evolution_highlights: presentation?.practical_invitation
       ? [presentation.practical_invitation]

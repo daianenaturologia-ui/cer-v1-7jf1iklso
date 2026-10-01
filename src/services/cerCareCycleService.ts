@@ -85,10 +85,23 @@ export const cerCareCycleService = {
       cycle.status = 'active'
       cycle.start_date ||= new Date().toISOString()
     }
-    if (action === 'pause') cycle.status = 'paused'
+    if (action === 'pause') {
+      cycle.status = 'paused'
+      store.plannerItems.forEach((i) => {
+        if (i.care_cycle_id === id && ['planned', 'active'].includes(i.status))
+          i.status = 'cancelled'
+      })
+    }
     if (action === 'close') {
       cycle.status = 'closed'
       cycle.closed_at = new Date().toISOString()
+      store.practiceData?.assignments.forEach((a) => {
+        if (a.care_cycle_id === id && ['draft', 'active', 'paused'].includes(a.status)) {
+          a.status = 'stopped'
+          a.stop_reason_code = 'cycle_closed'
+          a.updated = new Date().toISOString()
+        }
+      })
       store.plannerItems.forEach((item) => {
         if (item.care_cycle_id === id && ['planned', 'active'].includes(item.status))
           item.status = 'cancelled'

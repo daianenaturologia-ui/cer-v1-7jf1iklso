@@ -67,6 +67,9 @@ export const ProfessionalPlannerView: React.FC<{ enrollmentId: string }> = ({ en
           {items.map((item) => (
             <li key={item.id} className="rounded-lg border border-border/70 p-3 text-sm">
               <strong>{item.safe_title}</strong>
+              {item.safe_summary && (
+                <p className="text-xs text-muted-foreground">{item.safe_summary}</p>
+              )}
               <span className="block text-xs text-muted-foreground">
                 {item.scheduled_at
                   ? new Date(item.scheduled_at).toLocaleString('pt-BR')

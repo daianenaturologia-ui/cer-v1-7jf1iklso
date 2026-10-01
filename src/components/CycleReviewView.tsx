@@ -68,9 +68,7 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
     try {
       const [existingReview, respList] = await Promise.all([
         cerCycleReviewService.getByCycleId(cycleId),
-        demoAdapter.isEnabled()
-          ? Promise.resolve([])
-          : cerPracticeResponseService.listByEnrollment(enrollmentId),
+        cerPracticeResponseService.listByEnrollment(enrollmentId),
       ])
 
       if (version !== requestVersion.current) return

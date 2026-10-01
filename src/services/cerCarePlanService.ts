@@ -221,6 +221,8 @@ class CerCarePlanService {
     status: CarePlanPriorityStatus,
     deferralReason?: string,
   ): Promise<CerCarePlanPriorityRecord> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) return demoAdapter.updateDemoPriorityStatus(priorityId, status)
     const updatePayload: Record<string, any> = { status }
     if (deferralReason !== undefined) {
       updatePayload.deferral_reason = deferralReason

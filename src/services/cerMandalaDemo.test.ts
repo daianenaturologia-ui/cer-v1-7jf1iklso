@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   listPlans: vi.fn(),
   listPriorities: vi.fn(),
   listPresentedForParticipant: vi.fn(),
+  readCareStore: vi.fn(() => ({ cycles: [], plannerItems: [], reviews: [], invitations: [] })),
 }))
 vi.mock('@/lib/pocketbase/client', () => ({ default: { collection: mocks.collection } }))
 vi.mock('./demoAdapter', () => ({ demoAdapter: mocks }))

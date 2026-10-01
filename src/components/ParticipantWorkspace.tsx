@@ -1,3 +1,4 @@
+import { DemoPracticeWorkspace } from '@/components/DemoPracticeWorkspace'
 import { CareCycleManager } from '@/components/CareCycleManager'
 import { LifeDirections } from '@/components/experience/LifeDirections'
 import { LifeTimeline } from '@/components/experience/LifeTimeline'
@@ -527,39 +528,42 @@ export const ParticipantWorkspace: React.FC = () => {
             />
           )}
 
-          {careTool === 'biblioteca' && (
-            <div className="space-y-5">
-              <div className="space-y-1">
-                <h2 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span>Práticas, Recursos e Experimentos</span>
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Atribua experimentos do acervo alinhados às prioridades combinadas com{' '}
-                  {participantName}.
-                </p>
+          {careTool === 'biblioteca' &&
+            (demoAdapter.isEnabled() ? (
+              <DemoPracticeWorkspace enrollmentId={enrollment.id} />
+            ) : (
+              <div className="space-y-5">
+                <div className="space-y-1">
+                  <h2 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span>Práticas, Recursos e Experimentos</span>
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Atribua experimentos do acervo alinhados às prioridades combinadas com{' '}
+                    {participantName}.
+                  </p>
+                </div>
+
+                <AssignmentEditor
+                  enrollmentId={enrollment.id}
+                  participantName={participantName}
+                  selectedPractice={selectedPractice}
+                  selectedVersion={selectedVersion}
+                  onAssignmentCreated={() => {
+                    setSelectedPractice(null)
+                    setSelectedVersion(null)
+                  }}
+                />
+
+                <PracticeSelector
+                  selectedPracticeId={selectedPractice?.id}
+                  onSelectPractice={(pr, ver) => {
+                    setSelectedPractice(pr)
+                    setSelectedVersion(ver)
+                  }}
+                />
               </div>
-
-              <AssignmentEditor
-                enrollmentId={enrollment.id}
-                participantName={participantName}
-                selectedPractice={selectedPractice}
-                selectedVersion={selectedVersion}
-                onAssignmentCreated={() => {
-                  setSelectedPractice(null)
-                  setSelectedVersion(null)
-                }}
-              />
-
-              <PracticeSelector
-                selectedPracticeId={selectedPractice?.id}
-                onSelectPractice={(pr, ver) => {
-                  setSelectedPractice(pr)
-                  setSelectedVersion(ver)
-                }}
-              />
-            </div>
-          )}
+            ))}
           {careTool === 'mandala' && (
             <MandalaStructuredView enrollmentId={enrollment.id} audience="professional" />
           )}
