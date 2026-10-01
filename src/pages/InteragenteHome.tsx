@@ -1,3 +1,5 @@
+import { LifeTimeline } from '@/components/experience/LifeTimeline'
+import { consciousnessCoverage } from '@/services/cerMapReadings'
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
@@ -1576,6 +1578,20 @@ export const InteragenteHome: React.FC = () => {
                   onOpenMap={() => setShowMapModal(true)}
                 />
 
+                {consciousnessCoverage(participantResponses, availableExperiences).every(
+                  (d) => d.completed,
+                ) && (
+                  <div className="rounded-xl border p-4 space-y-2">
+                    <p className="text-sm">
+                      Você concluiu as seis dimensões. Agora podemos olhar para os acontecimentos da
+                      sua história.
+                    </p>
+                    <Button onClick={() => setActivePhase('evolucao')}>
+                      Começar minha Linha da Vida
+                    </Button>
+                  </div>
+                )}
+
                 {/* Modal / Dialog do Meu Mapa CER para a Interagente */}
                 <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
                   <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -2228,23 +2244,15 @@ export const InteragenteHome: React.FC = () => {
             </Card>
 
             {/* Direções Futuras & Recursos em Construção */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card className="border-dashed border-border/70 bg-muted/10">
-                <CardContent className="p-4 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-serif font-semibold text-sm text-foreground">
-                      Linha da Vida & Minha História
-                    </span>
-                    <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                      Quando disponível
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    A reconstituição longitudinal da sua história de vida e dos marcos biográficos
-                    será integrada aqui quando o recurso estiver disponível na plataforma.
-                  </p>
-                </CardContent>
-              </Card>
+            <div className="space-y-4">
+              {enrollment && (
+                <LifeTimeline
+                  enrollmentId={enrollment.id}
+                  unlocked={consciousnessCoverage(participantResponses, availableExperiences).every(
+                    (d) => d.completed,
+                  )}
+                />
+              )}
 
               <Card className="border-dashed border-border/70 bg-muted/10">
                 <CardContent className="p-4 space-y-1.5">

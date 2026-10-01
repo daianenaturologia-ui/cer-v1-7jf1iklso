@@ -1,3 +1,4 @@
+import { LifeTimeline } from '@/components/experience/LifeTimeline'
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
@@ -568,6 +569,7 @@ export const ParticipantWorkspace: React.FC = () => {
       {/* EVOLUÇÃO */}
       {currentTab === 'evolucao' && (
         <div className="space-y-5">
+          <LifeTimeline enrollmentId={enrollment.id} readOnly />
           <ResponseDigest enrollmentId={enrollment.id} participantName={participantName} />
         </div>
       )}
