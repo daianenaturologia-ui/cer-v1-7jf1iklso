@@ -1,3 +1,4 @@
+import { lifeTimeLabel } from '@/services/lifeTimeline'
 import React, { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -106,7 +107,70 @@ export function CerMapReadingsView({ snapshot }: { snapshot: CerMapReadingSnapsh
           </CardContent>
         </Card>
       )}
-      {deep && (
+      {!!snapshot.lifeEvents?.length && (
+        <Card className="shadow-none">
+          <CardHeader>
+            <CardTitle className="text-base font-serif">Acontecimentos da sua história</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              São os relatos que você compartilhou para esta versão. Uma experiência pode participar
+              do seu funcionamento sem ser sua única causa.
+            </p>
+            {snapshot.lifeEvents.map((event) => (
+              <div key={event.id}>
+                <p className="text-sm font-medium">
+                  {event.title} · {lifeTimeLabel(event)}
+                </p>
+                {deep && (
+                  <>
+                    <p className="text-sm text-muted-foreground">{event.emotions.join(' · ')}</p>
+                    <p className="text-sm whitespace-pre-wrap">{event.narrative}</p>
+                  </>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+      {!!snapshot.lifeConnections?.length && (
+        <Card className="shadow-none">
+          <CardHeader>
+            <CardTitle className="text-base font-serif">
+              Relações exploradas com sua profissional
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              São hipóteses revisadas para compreender sua experiência, sem afirmar uma causa única
+              ou definir quem você é.
+            </p>
+            {snapshot.lifeConnections.map((connection, index) => (
+              <div key={index} className="space-y-2">
+                <p className="text-sm whitespace-pre-wrap">{connection.text}</p>
+                {deep && (
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      História:{' '}
+                      {snapshot.lifeEvents?.find((e) => e.id === connection.eventId)?.title} ·
+                      Resposta:{' '}
+                      {
+                        snapshot.dimensions
+                          .flatMap((d) => d.detailedRows)
+                          .find((row) => row.sourceResponseId === connection.responseId)?.label
+                      }
+                    </p>
+                    {connection.question && (
+                      <p className="text-sm">Para investigar em conversa: {connection.question}</p>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+      {(deep || snapshot.history) && (
         <Card className="shadow-none">
           <CardHeader>
             <CardTitle className="text-base font-serif">

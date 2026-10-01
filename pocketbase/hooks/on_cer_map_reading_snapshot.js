@@ -64,6 +64,61 @@ onRecordUpdateRequest((e) => {
     throw new BadRequestError(
       'As duas versões precisam de uma estrutura válida com seis dimensões.',
     )
+  // Recheck at save AND publication. A revised/private source needs a fresh draft review.
+  if (
+    (!original || original.getString('status') === 'draft') &&
+    snapshot.lifeEvents !== undefined
+  ) {
+    if (!Array.isArray(snapshot.lifeEvents)) throw new BadRequestError('Histórias inválidas.')
+    const ids = new Set()
+    for (const event of snapshot.lifeEvents) {
+      if (!event || typeof event.id !== 'string' || ids.has(event.id))
+        throw new BadRequestError('Fonte de história inválida.')
+      ids.add(event.id)
+      const source = e.app.findRecordById('cer_life_events', event.id)
+      if (
+        source.getString('enrollment_id') !== snapshot.enrollmentId ||
+        source.getString('access_class') !== 'participant_shared' ||
+        event.enrollment_id !== snapshot.enrollmentId ||
+        event.access_class !== 'participant_shared'
+      )
+        throw new BadRequestError(
+          'Somente histórias compartilhadas desta pessoa podem entrar no mapa.',
+        )
+      for (const field of ['title', 'time_kind', 'time_value', 'narrative', 'updated']) {
+        if (event[field] !== source.getString(field))
+          throw new BadRequestError(
+            'Uma história mudou. Atualize as fontes do rascunho e revise novamente.',
+          )
+      }
+      let emotions = []
+      try {
+        emotions = JSON.parse(source.getString('emotions') || '[]')
+      } catch (_) {}
+      if (JSON.stringify(event.emotions) !== JSON.stringify(emotions))
+        throw new BadRequestError('As emoções da história mudaram. Atualize e revise o rascunho.')
+    }
+  }
+  if (snapshot.lifeConnections !== undefined) {
+    if (!Array.isArray(snapshot.lifeConnections)) throw new BadRequestError('Hipóteses inválidas.')
+    for (const connection of snapshot.lifeConnections) {
+      if (
+        !connection ||
+        !strings([
+          connection.eventId,
+          connection.responseId,
+          connection.text,
+          connection.question,
+        ]) ||
+        !connection.text.trim() ||
+        !snapshot.lifeEvents?.some((event) => event.id === connection.eventId) ||
+        !snapshot.sourceResponseIds.includes(connection.responseId)
+      )
+        throw new BadRequestError(
+          'Cada hipótese precisa de uma história compartilhada e de uma resposta atual identificadas.',
+        )
+    }
+  }
   const changed = !original || text !== original.getString('reading_snapshot')
   if (changed) {
     const auth = e.requestInfo().auth
@@ -180,6 +235,61 @@ onRecordCreateRequest((e) => {
     throw new BadRequestError(
       'As duas versões precisam de uma estrutura válida com seis dimensões.',
     )
+  // Recheck at save AND publication. A revised/private source needs a fresh draft review.
+  if (
+    (!original || original.getString('status') === 'draft') &&
+    snapshot.lifeEvents !== undefined
+  ) {
+    if (!Array.isArray(snapshot.lifeEvents)) throw new BadRequestError('Histórias inválidas.')
+    const ids = new Set()
+    for (const event of snapshot.lifeEvents) {
+      if (!event || typeof event.id !== 'string' || ids.has(event.id))
+        throw new BadRequestError('Fonte de história inválida.')
+      ids.add(event.id)
+      const source = e.app.findRecordById('cer_life_events', event.id)
+      if (
+        source.getString('enrollment_id') !== snapshot.enrollmentId ||
+        source.getString('access_class') !== 'participant_shared' ||
+        event.enrollment_id !== snapshot.enrollmentId ||
+        event.access_class !== 'participant_shared'
+      )
+        throw new BadRequestError(
+          'Somente histórias compartilhadas desta pessoa podem entrar no mapa.',
+        )
+      for (const field of ['title', 'time_kind', 'time_value', 'narrative', 'updated']) {
+        if (event[field] !== source.getString(field))
+          throw new BadRequestError(
+            'Uma história mudou. Atualize as fontes do rascunho e revise novamente.',
+          )
+      }
+      let emotions = []
+      try {
+        emotions = JSON.parse(source.getString('emotions') || '[]')
+      } catch (_) {}
+      if (JSON.stringify(event.emotions) !== JSON.stringify(emotions))
+        throw new BadRequestError('As emoções da história mudaram. Atualize e revise o rascunho.')
+    }
+  }
+  if (snapshot.lifeConnections !== undefined) {
+    if (!Array.isArray(snapshot.lifeConnections)) throw new BadRequestError('Hipóteses inválidas.')
+    for (const connection of snapshot.lifeConnections) {
+      if (
+        !connection ||
+        !strings([
+          connection.eventId,
+          connection.responseId,
+          connection.text,
+          connection.question,
+        ]) ||
+        !connection.text.trim() ||
+        !snapshot.lifeEvents?.some((event) => event.id === connection.eventId) ||
+        !snapshot.sourceResponseIds.includes(connection.responseId)
+      )
+        throw new BadRequestError(
+          'Cada hipótese precisa de uma história compartilhada e de uma resposta atual identificadas.',
+        )
+    }
+  }
   const changed = !original || text !== original.getString('reading_snapshot')
   if (changed) {
     const auth = e.requestInfo().auth

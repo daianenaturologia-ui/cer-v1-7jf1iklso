@@ -1,3 +1,4 @@
+import type { LifeEvent } from '@/services/lifeTimeline'
 export interface CerMapReference {
   id: string
   citation: string
@@ -34,6 +35,8 @@ export interface CerMapReadingSnapshot {
   overview: string
   integration: string
   history: string
+  lifeEvents?: LifeEvent[]
+  lifeConnections?: { eventId: string; responseId: string; text: string; question: string }[]
   dimensions: CerMapReadingDimension[]
   references: CerMapReference[]
   reviewedBy?: string

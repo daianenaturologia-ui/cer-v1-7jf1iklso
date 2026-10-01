@@ -1,3 +1,5 @@
+import { LifeConnectionsEditor } from './LifeConnectionsEditor'
+import { lifeTimelineService, sharedLifeEvents, lifeTimeLabel } from '@/services/lifeTimeline'
 import React, { useState } from 'react'
 import type { CerMapReadingSnapshot } from '@/types/cerMapReadings'
 import type { ExperienceResponseRecord } from '@/types/cer'
@@ -31,6 +33,42 @@ export function CerMapReadingsEditor({
     setReviewed(false)
     onDirty(true)
   }
+  async function prepare(refresh = false) {
+    setBusy(true)
+    setError('')
+    try {
+      const lifeEvents = sharedLifeEvents(
+        await lifeTimelineService.list(enrollmentId),
+        enrollmentId,
+      )
+      const updated = buildCerMapReadings(responses, enrollmentId, participantName)
+      change(
+        refresh && snapshot
+          ? {
+              ...snapshot,
+              generatedAt: updated.generatedAt,
+              sourceResponseIds: updated.sourceResponseIds,
+              lifeEvents,
+              lifeConnections: [],
+              dimensions: updated.dimensions.map((d) => ({
+                ...d,
+                summary:
+                  snapshot.dimensions.find((previous) => previous.id === d.id)?.summary || '',
+                interpretation:
+                  snapshot.dimensions.find((previous) => previous.id === d.id)?.interpretation ||
+                  '',
+              })),
+            }
+          : { ...updated, lifeEvents },
+      )
+    } catch {
+      setError(
+        'Não foi possível carregar as histórias compartilhadas. O rascunho anterior foi preservado. Tente novamente.',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
   async function save() {
     if (!snapshot) return
     setBusy(true)
@@ -54,33 +92,13 @@ export function CerMapReadingsEditor({
         </p>
       </div>
       {!snapshot ? (
-        <Button
-          onClick={() => change(buildCerMapReadings(responses, enrollmentId, participantName))}
-        >
+        <Button disabled={busy} onClick={() => void prepare()}>
           Preparar as duas versões
         </Button>
       ) : (
         <>
-          <Button
-            variant="outline"
-            onClick={() => {
-              const updated = buildCerMapReadings(responses, enrollmentId, participantName)
-              change({
-                ...snapshot,
-                generatedAt: updated.generatedAt,
-                sourceResponseIds: updated.sourceResponseIds,
-                dimensions: updated.dimensions.map((d) => ({
-                  ...d,
-                  summary:
-                    snapshot.dimensions.find((previous) => previous.id === d.id)?.summary || '',
-                  interpretation:
-                    snapshot.dimensions.find((previous) => previous.id === d.id)?.interpretation ||
-                    '',
-                })),
-              })
-            }}
-          >
-            Atualizar respostas do rascunho
+          <Button variant="outline" disabled={busy} onClick={() => void prepare(true)}>
+            Atualizar respostas e histórias do rascunho
           </Button>
           <label className="block text-sm space-y-2">
             <span>Apresentação do mapa</span>
@@ -129,9 +147,33 @@ export function CerMapReadingsEditor({
               onChange={(e) => change({ ...snapshot, integration: e.target.value })}
             />
           </label>
+          <section className="border rounded-lg p-3 space-y-3">
+            <h4 className="font-medium">Histórias compartilhadas que sustentam esta versão</h4>
+            <p className="text-sm text-muted-foreground">
+              Relatos da pessoa, sem interpretação automática. Atualizar as fontes retira as
+              hipóteses com fontes selecionadas para nova revisão. Confira também o texto sobre a
+              história: ele pode precisar mudar.
+            </p>
+            {snapshot.lifeEvents?.map((event) => (
+              <details key={event.id}>
+                <summary>
+                  {event.title} · {lifeTimeLabel(event)}
+                </summary>
+                <p className="text-sm">{event.emotions.join(' · ')}</p>
+                <p className="text-sm whitespace-pre-wrap">{event.narrative}</p>
+              </details>
+            ))}
+            {!snapshot.lifeEvents?.length && (
+              <p className="text-sm">Nenhuma história compartilhada nesta versão.</p>
+            )}
+          </section>
+          <LifeConnectionsEditor snapshot={snapshot} onChange={change} />
           <label className="block text-sm space-y-1">
-            <span>História de vida · apenas relações exploradas em conversa</span>
+            <span>
+              História de vida · relações exploradas em conversa, recursos e perguntas em aberto
+            </span>
             <Textarea
+              placeholder="Cite o acontecimento e a resposta atual que sustentam cada hipótese. Explique o que a pessoa reconhece, outras explicações possíveis e o que ainda precisa ser investigado. Evite afirmar uma causa única."
               value={snapshot.history}
               onChange={(e) => change({ ...snapshot, history: e.target.value })}
             />

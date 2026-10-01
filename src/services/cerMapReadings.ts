@@ -309,6 +309,36 @@ export function isCerMapReadingSnapshot(value: unknown): value is CerMapReadingS
       s.integration,
       s.history,
     ]) &&
+    (s.lifeConnections === undefined ||
+      (Array.isArray(s.lifeConnections) &&
+        s.lifeConnections.every(
+          (c) =>
+            c &&
+            strings([c.eventId, c.responseId, c.text, c.question]) &&
+            c.text.trim() &&
+            s.lifeEvents?.some((e) => e.id === c.eventId) &&
+            s.sourceResponseIds?.includes(c.responseId),
+        ))) &&
+    (s.lifeEvents === undefined ||
+      (Array.isArray(s.lifeEvents) &&
+        s.lifeEvents.every(
+          (e) =>
+            e &&
+            strings([
+              e.id,
+              e.enrollment_id,
+              e.title,
+              e.time_kind,
+              e.time_value,
+              e.narrative,
+              e.updated,
+            ]) &&
+            e.enrollment_id === s.enrollmentId &&
+            e.access_class === 'participant_shared' &&
+            ['date', 'year', 'age', 'unknown'].includes(e.time_kind) &&
+            Array.isArray(e.emotions) &&
+            strings(e.emotions),
+        ))) &&
     Array.isArray(s.sourceResponseIds) &&
     strings(s.sourceResponseIds) &&
     Array.isArray(s.dimensions) &&

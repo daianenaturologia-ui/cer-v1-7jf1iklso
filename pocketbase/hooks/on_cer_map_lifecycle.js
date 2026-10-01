@@ -349,6 +349,33 @@ onRecordUpdateRequest((e) => {
             !snapshot.reviewedAt
           )
             throw new BadRequestError('Revise e salve as duas versões antes de publicar.')
+          if (snapshot.lifeEvents !== undefined) {
+            if (!Array.isArray(snapshot.lifeEvents))
+              throw new BadRequestError('Histórias inválidas.')
+            for (const event of snapshot.lifeEvents) {
+              const source = e.app.findRecordById('cer_life_events', event.id)
+              if (
+                source.getString('enrollment_id') !== enrollmentId ||
+                source.getString('access_class') !== 'participant_shared'
+              )
+                throw new BadRequestError(
+                  'Uma história deixou de estar compartilhada. Atualize e revise o rascunho.',
+                )
+              for (const field of ['title', 'time_kind', 'time_value', 'narrative', 'updated']) {
+                if (event[field] !== source.getString(field))
+                  throw new BadRequestError(
+                    'Uma história mudou. Atualize as fontes e revise novamente antes de publicar.',
+                  )
+              }
+              if (
+                JSON.stringify(event.emotions) !==
+                JSON.stringify(JSON.parse(source.getString('emotions') || '[]'))
+              )
+                throw new BadRequestError(
+                  'As emoções de uma história mudaram. Atualize e revise o rascunho.',
+                )
+            }
+          }
         }
         // Validação completa dos items e sources do mapa antes de autorizar o publish
         const items = $app.findRecordsByFilter(
