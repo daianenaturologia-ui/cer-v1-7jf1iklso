@@ -23,15 +23,15 @@
 // 6. DELETE físico proibido para todos (inclusive superuser / profissional).
 // 7. Auditoria mínima e técnica (MAP_CREATED, MAP_PUBLISHED, MAP_SUPERSEDED, MAP_DRAFT_DISCARDED).
 
-onRecordCreate((e) => {
+onRecordCreateRequest((e) => {
   const map = e.record
   const enrollmentId = map.getString('enrollment_id')
   const status = map.getString('status') || 'draft'
   const verNum = map.getInt('version_number')
 
-  // Preencher created_by_user_id se ausente e vier de e.auth
-  if (!map.getString('created_by_user_id') && e.auth) {
-    map.set('created_by_user_id', e.auth.id)
+  // Preencher created_by_user_id se ausente e vier de e.requestInfo().auth
+  if (!map.getString('created_by_user_id') && e.requestInfo().auth) {
+    map.set('created_by_user_id', e.requestInfo().auth.id)
   }
 
   // 1. Validar enrollment existente
@@ -48,8 +48,8 @@ onRecordCreate((e) => {
   }
 
   // 3. Validar autorização do profissional criador
-  if (e.auth) {
-    const authId = e.auth.id
+  if (e.requestInfo().auth) {
+    const authId = e.requestInfo().auth.id
 
     // Verificar se não é o próprio participante
     const personId = enrollment.getString('person_id')
@@ -86,7 +86,7 @@ onRecordCreate((e) => {
     }
 
     // Gate estrutural humano: person_id + user_roles profissional
-    const authPersonId = e.auth.getString('person_id')
+    const authPersonId = e.requestInfo().auth.getString('person_id')
     if (!authPersonId) {
       throw new BadRequestError('Contas de sistema ou automações não podem criar Mapa CER.')
     }
@@ -196,7 +196,7 @@ onRecordAfterCreateSuccess((e) => {
   } catch (_) {}
 }, 'cer_maps')
 
-onRecordUpdate((e) => {
+onRecordUpdateRequest((e) => {
   const map = e.record
   const orig = map.original()
   if (!orig) {
@@ -256,12 +256,12 @@ onRecordUpdate((e) => {
     // Se estiver transitando de estado (para published ou discarded):
     if (newStatus === 'published' || newStatus === 'discarded') {
       // Exige profissional humano autenticado com gate estrutural Build 05
-      if (!e.auth) {
+      if (!e.requestInfo().auth) {
         throw new BadRequestError('Transição de status exige profissional humano autenticado.')
       }
 
-      const authId = e.auth.id
-      const authPersonId = e.auth.getString('person_id')
+      const authId = e.requestInfo().auth.id
+      const authPersonId = e.requestInfo().auth.getString('person_id')
       if (!authPersonId) {
         throw new BadRequestError(
           'Contas de sistema ou automações sem person_id não podem alterar status do Mapa CER.',
@@ -322,6 +322,14 @@ onRecordUpdate((e) => {
 
       // Se for transição para 'published':
       if (newStatus === 'published') {
+        const sessions = e.app.findRecordsByFilter('cer_sessions', 'enrollment_id = {:enrollment}', '', 1, 0, { enrollment: enrollmentId })
+        if (!sessions.length) throw new BadRequestError('Registre o primeiro encontro antes de compartilhar o Mapa CER.')
+        const snapshotText = map.getString('reading_snapshot')
+        if (snapshotText && snapshotText !== 'null') {
+          let snapshot
+          try { snapshot = JSON.parse(snapshotText) } catch (_) { throw new BadRequestError('Leitura do mapa inválida.') }
+          if (!snapshot || snapshot.enrollmentId !== enrollmentId || !snapshot.reviewedBy || !snapshot.reviewedAt) throw new BadRequestError('Revise e salve as duas versões antes de publicar.')
+        }
         // Validação completa dos items e sources do mapa antes de autorizar o publish
         const items = $app.findRecordsByFilter(
           'cer_map_items',
@@ -467,7 +475,8 @@ onRecordUpdate((e) => {
 
         // Superar atomicamente qualquer mapa publicado anteriormente para o mesmo enrollment
         // Usar $app.runInTransaction para atomicidade estrita
-        $app.runInTransaction((txApp) => {
+        e.app.runInTransaction((txApp) => {
+          e.app = txApp
           const currentPubs = txApp.findRecordsByFilter(
             'cer_maps',
             'enrollment_id = "' +
@@ -508,7 +517,10 @@ onRecordUpdate((e) => {
               txApp.save(aRec)
             } catch (_) {}
           }
+          // Persist the new publication in the same transaction as superseding the old one.
+          e.next()
         })
+        return
       }
     }
   }

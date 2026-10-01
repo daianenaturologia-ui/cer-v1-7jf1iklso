@@ -298,13 +298,11 @@ describe('Regressão dos 6 Estados do Mapa CER e Proteção de Listas Vazias/Und
       )
 
       await waitFor(() => {
-        expect(screen.getByText('Resumo essencial')).toBeTruthy()
+        expect(screen.getByTestId('professional-integrative-map-empty')).toBeTruthy()
       })
 
       // Deve mostrar o texto canônico de estado vazio sem dados inventados
-      const emptyTexts = screen.getAllByText(
-        'Ainda não há informações suficientes para uma síntese.',
-      )
+      const emptyTexts = screen.getAllByText('Não iniciada')
       expect(emptyTexts.length).toBe(6) // Todas as 6 dimensões
     })
   })

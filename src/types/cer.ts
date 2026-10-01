@@ -413,6 +413,7 @@ export interface CerMapRecord {
   created_by_user_id: string
   published_by_user_id?: string
   published_at?: string
+  reading_snapshot?: import('./cerMapReadings').CerMapReadingSnapshot | null
   created: string
   updated: string
   expand?: {

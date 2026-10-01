@@ -1705,9 +1705,20 @@ class DemoAdapter {
     return src
   }
 
+  public saveMapReadingSnapshot(mapId: string, snapshot: import('@/types/cerMapReadings').CerMapReadingSnapshot): CerMapRecord {
+    const map = this.state.maps.find(m => m.id === mapId)
+    if (!map || map.status !== 'draft' || map.enrollment_id !== snapshot.enrollmentId) throw new Error('Somente um rascunho da mesma interagente pode ser editado.')
+    map.reading_snapshot = structuredClone(snapshot)
+    map.updated = new Date().toISOString()
+    this.saveState()
+    return structuredClone(map)
+  }
+
   public publishDraft(mapId: string): CerMapRecord {
     const map = this.state.maps.find((m) => m.id === mapId)
     if (!map) throw new Error('Mapa não encontrado no modo demo')
+    if (map.status !== 'draft') throw new Error('Somente rascunhos podem ser publicados.')
+    if (map.reading_snapshot && (!map.reading_snapshot.reviewedAt || !map.reading_snapshot.reviewedBy)) throw new Error('Revise as duas versões antes de publicar.')
     // Supersede outros publicados
     for (const m of this.state.maps) {
       if (m.id !== mapId && m.enrollment_id === map.enrollment_id && m.status === 'published') {
@@ -1749,6 +1760,11 @@ class DemoAdapter {
         id: `demo-map-item-${Date.now()}-${Math.random()}`,
         map_id: `demo-map-${Date.now()}`,
       })),
+    }
+    if (pub.reading_snapshot) {
+      newDraft.reading_snapshot = structuredClone(pub.reading_snapshot)
+      delete newDraft.reading_snapshot.reviewedAt
+      delete newDraft.reading_snapshot.reviewedBy
     }
     this.state.maps.unshift(newDraft)
     this.saveState()

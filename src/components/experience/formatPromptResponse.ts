@@ -50,8 +50,9 @@ export function formatPromptResponse(
     ? value.map(labelFor).filter(Boolean).join('; ')
     : labelFor(value)
   const text = typeof response.free_text === 'string' ? response.free_text.trim() : ''
+  const normalize = (text: string) => text.normalize('NFKC').replace(/\s+/g, ' ').trim()
   return (
-    [choice, text && text !== choice ? text : ''].filter(Boolean).join(' — ') ||
+    [choice, text && normalize(text) !== normalize(choice) ? text : ''].filter(Boolean).join(' — ') ||
     'Resposta registrada'
   )
 }

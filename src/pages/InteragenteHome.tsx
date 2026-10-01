@@ -235,8 +235,15 @@ export const InteragenteHome: React.FC = () => {
         }
       }
 
-      if (activeEnr?.id && demoAdapter.isEnabled() && !effectiveEngineEnabled) {
-        setAvailableExperiences(await enrollmentExperienceService.listByEnrollment(activeEnr.id))
+      if (activeEnr?.id && !effectiveEngineEnabled) {
+        const [progress, responses, map] = await Promise.all([
+          enrollmentExperienceService.listByEnrollment(activeEnr.id),
+          demoAdapter.isEnabled() ? Promise.resolve(demoAdapter.listExperienceResponses(activeEnr.id)) : pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({ filter: `enrollment_id = "${activeEnr.id}"`, sort: 'created' }),
+          cerMapService.getCurrentPublishedMap(activeEnr.id),
+        ])
+        setAvailableExperiences(progress)
+        setParticipantResponses(responses)
+        setCurrentMap(map)
       }
       if (activeEnr?.id && effectiveEngineEnabled) {
         const [exps, kiList, myRecogs, presList, mapData, resps] = await Promise.all([
@@ -1569,6 +1576,7 @@ export const InteragenteHome: React.FC = () => {
                       responses={participantResponses}
                       participantName={person?.preferred_name || person?.full_name || 'você'}
                       currentMap={currentMap}
+                      progress={availableExperiences}
                       onClose={() => setShowMapModal(false)}
                     />
                   </DialogContent>
