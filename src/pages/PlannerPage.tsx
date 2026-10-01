@@ -1,3 +1,4 @@
+import { cerCycleInvitationService } from '@/services/cerCycleInvitationService'
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
@@ -11,7 +12,6 @@ import { Calendar, ArrowLeft, CheckCircle2, ArrowRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
 import { EmptyState } from '@/components/EmptyState'
-import pb from '@/lib/pocketbase/client'
 
 export const PlannerPage: React.FC = () => {
   const { user } = useAuth()
@@ -20,38 +20,33 @@ export const PlannerPage: React.FC = () => {
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [plannerItems, setPlannerItems] = useState<CerPlannerItemRecord[]>([])
   const [activeReviewInvite, setActiveReviewInvite] = useState<{ cycleId: string } | null>(null)
+  const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const loadData = async () => {
     if (!user?.id) return
+    setPlannerItems([])
+    setActiveReviewInvite(null)
+    setError(false)
     setLoading(true)
     try {
       const activeEnrollment = await enrollmentService.getActiveForUser(user.id)
       setEnrollment(activeEnrollment)
       if (activeEnrollment) {
-        const items = await cerPlannerService.listByEnrollment(activeEnrollment.id)
+        const items = await cerPlannerService.listForParticipant(activeEnrollment.id, user.id)
         setPlannerItems(items)
 
         // CTA de Cycle Review quando participant_review_invited_at ativo
-        if (!demoAdapter.isEnabled()) {
-          try {
-            const reviews = await pb.collection('cer_cycle_reviews').getFullList({
-              filter: `enrollment_id = "${activeEnrollment.id}" && participant_review_invited_at != "" && participant_review_completed_at = ""`,
-              sort: '-created',
-            })
-            if (reviews.length > 0 && reviews[0].care_cycle_id) {
-              setActiveReviewInvite({ cycleId: reviews[0].care_cycle_id })
-            } else {
-              setActiveReviewInvite(null)
-            }
-          } catch {
-            /* intentionally ignored */
-          }
-        } else {
+        try {
+          const invitations = await cerCycleInvitationService.list(activeEnrollment.id)
+          const invitation = invitations.find((i) => !i.completed_at)
+          setActiveReviewInvite(invitation ? { cycleId: invitation.care_cycle_id } : null)
+        } catch {
           setActiveReviewInvite(null)
         }
       }
     } catch (err) {
+      setError(true)
       console.error(err)
     } finally {
       setLoading(false)
@@ -162,7 +157,15 @@ export const PlannerPage: React.FC = () => {
           <p className="text-xs text-muted-foreground text-center py-12">
             Carregando itens do planner...
           </p>
-        ) : plannerItems.filter((p) => p.status !== 'cancelled').length === 0 ? (
+        ) : error ? (
+          <p role="alert">
+            Não foi possível carregar o planner.{' '}
+            <Button variant="outline" onClick={loadData}>
+              Tentar novamente
+            </Button>
+          </p>
+        ) : plannerItems.filter((p) => p.status !== 'cancelled' && p.status !== 'superseded')
+            .length === 0 ? (
           <EmptyState
             variant="planner"
             title="Janela de práticas"
@@ -173,7 +176,7 @@ export const PlannerPage: React.FC = () => {
         ) : (
           <div className="space-y-2.5">
             {plannerItems
-              .filter((p) => p.status !== 'cancelled')
+              .filter((p) => p.status !== 'cancelled' && p.status !== 'superseded')
               .map((item) => {
                 const isContextual = item.item_type === 'contextual_resource'
                 const isCompleted = item.status === 'completed'
@@ -204,7 +207,7 @@ export const PlannerPage: React.FC = () => {
                         )}
                       </div>
 
-                      {!isCompleted && !isContextual && (
+                      {['planned', 'active'].includes(item.status) && !isContextual && (
                         <Button
                           size="sm"
                           variant="ghost"

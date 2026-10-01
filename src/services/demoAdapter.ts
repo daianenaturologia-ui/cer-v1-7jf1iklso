@@ -127,7 +127,15 @@ export const DEMO_ENROLLMENT: EnrollmentRecord = {
   },
 }
 
+export interface DemoCareStore {
+  cycles: import('@/types/cer').CerCareCycleRecord[]
+  reviews: import('@/types/cer').CerCycleReviewRecord[]
+  invitations: import('./cerCycleInvitationService').CycleInvitation[]
+  plannerItems: import('@/types/cer').CerPlannerItemRecord[]
+}
+
 interface DemoStateStore {
+  care?: DemoCareStore
   activePersona: 'mariana' | 'daiane'
   marianaPersonOverride?: Partial<PersonRecord>
   messages: (CerNextSessionMessageRecord & { summary_source?: 'participant' | 'system' })[]
@@ -751,6 +759,29 @@ class DemoAdapter {
     } catch (e) {
       console.warn('Falha ao persistir estado de demonstração:', e)
     }
+  }
+
+  /** New care records share the existing demo reset and preserve all questionnaire data. */
+  public readCareStore(): DemoCareStore {
+    return JSON.parse(
+      JSON.stringify(
+        this.state.care || {
+          cycles: [],
+          reviews: [],
+          invitations: [],
+          plannerItems: [],
+        },
+      ),
+    )
+  }
+
+  public writeCareStore(care: DemoCareStore): void {
+    if (!this.isDemoEnabled) throw new Error('Demonstração inativa.')
+    const next = { ...this.state, care }
+    // Persist before changing memory: storage failures must be visible to the caller.
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    this.state = next
+    this.notify()
   }
 
   public subscribe(listener: () => void): () => void {

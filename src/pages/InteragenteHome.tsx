@@ -1,3 +1,4 @@
+import { cerCycleInvitationService } from '@/services/cerCycleInvitationService'
 import { LifeDirections } from '@/components/experience/LifeDirections'
 import { LifeTimeline } from '@/components/experience/LifeTimeline'
 import { consciousnessCoverage } from '@/services/cerMapReadings'
@@ -355,21 +356,11 @@ export const InteragenteHome: React.FC = () => {
         }
 
         // Item 22: Verificar convite ativo de Cycle Review (participant_review_invited_at)
-        if (!demoAdapter.isEnabled()) {
-          try {
-            const reviews = await pb.collection('cer_cycle_reviews').getFullList({
-              filter: `enrollment_id = "${activeEnr.id}" && participant_review_invited_at != "" && participant_review_completed_at = ""`,
-              sort: '-created',
-            })
-            if (reviews.length > 0 && reviews[0].care_cycle_id) {
-              setActiveReviewInvite({ cycleId: reviews[0].care_cycle_id })
-            } else {
-              setActiveReviewInvite(null)
-            }
-          } catch {
-            /* intentionally ignored */
-          }
-        } else {
+        try {
+          const invitations = await cerCycleInvitationService.list(activeEnr.id)
+          const invitation = invitations.find((i) => !i.completed_at)
+          setActiveReviewInvite(invitation ? { cycleId: invitation.care_cycle_id } : null)
+        } catch {
           setActiveReviewInvite(null)
         }
 
