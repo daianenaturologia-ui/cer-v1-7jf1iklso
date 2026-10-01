@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cerPlannerService } from '@/services/cerPlannerService'
-import { demoAdapter } from '@/services/demoAdapter'
 import type { CerPlannerItemRecord } from '@/types/cer'
 
 const statusLabels: Record<CerPlannerItemRecord['status'], string> = {
@@ -21,15 +20,9 @@ export const ProfessionalPlannerView: React.FC<{ enrollmentId: string }> = ({ en
 
   useEffect(() => {
     let active = true
+    setItems([])
     setLoading(true)
     setError(false)
-    if (demoAdapter.isEnabled()) {
-      setItems([])
-      setLoading(false)
-      return () => {
-        active = false
-      }
-    }
     cerPlannerService
       .listByEnrollment(enrollmentId)
       .then((result) => {
@@ -64,10 +57,6 @@ export const ProfessionalPlannerView: React.FC<{ enrollmentId: string }> = ({ en
       ) : error ? (
         <p role="alert" className="text-sm">
           Não foi possível carregar o planner agora.
-        </p>
-      ) : demoAdapter.isEnabled() ? (
-        <p className="text-sm text-muted-foreground">
-          O planner profissional não tem itens na demonstração.
         </p>
       ) : items.length === 0 ? (
         <p className="text-sm text-muted-foreground">

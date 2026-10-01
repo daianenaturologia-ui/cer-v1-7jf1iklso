@@ -3,6 +3,7 @@
  * Projeta ocorrências na janela corrente, preserva histórico imutável, gerencia timezone e contextual resources.
  */
 
+import { demoAdapter, DEMO_ENROLLMENT_ID, DEMO_USER_MARIANA } from './demoAdapter'
 import pb from '@/lib/pocketbase/client'
 import type {
   CerPlannerItemRecord,
@@ -42,6 +43,13 @@ export const cerPlannerService = {
    * Listar itens do planner por enrollment
    */
   async listByEnrollment(enrollmentId: string): Promise<CerPlannerItemRecord[]> {
+    if (demoAdapter.isEnabled()) {
+      if (demoAdapter.getActivePersona() !== 'daiane' || enrollmentId !== DEMO_ENROLLMENT_ID)
+        throw new Error('Acesso profissional necessário.')
+      return demoAdapter
+        .readCareStore()
+        .plannerItems.filter((i) => i.enrollment_id === enrollmentId)
+    }
     return await pb.collection('cer_planner_items').getFullList<CerPlannerItemRecord>({
       filter: `enrollment_id = "${enrollmentId}"`,
       sort: 'scheduled_at,created',
@@ -56,10 +64,23 @@ export const cerPlannerService = {
     enrollmentId: string,
     participantUserId: string,
   ): Promise<CerPlannerItemRecord[]> {
+    if (demoAdapter.isEnabled()) {
+      if (
+        demoAdapter.getActivePersona() !== 'mariana' ||
+        enrollmentId !== DEMO_ENROLLMENT_ID ||
+        participantUserId !== DEMO_USER_MARIANA.id
+      )
+        throw new Error('Acesso da interagente necessário.')
+      return demoAdapter
+        .readCareStore()
+        .plannerItems.filter(
+          (i) => i.enrollment_id === enrollmentId && i.participant_user_id === participantUserId,
+        )
+        .map(({ expand, ...safe }) => safe)
+    }
     return await pb.collection('cer_planner_items').getFullList<CerPlannerItemRecord>({
       filter: `enrollment_id = "${enrollmentId}" && participant_user_id = "${participantUserId}"`,
       sort: 'scheduled_at,created',
-      expand: 'assignment_id',
     })
   },
 
@@ -67,6 +88,10 @@ export const cerPlannerService = {
    * Criar item no planner
    */
   async createItem(input: CreatePlannerItemInput): Promise<CerPlannerItemRecord> {
+    if (demoAdapter.isEnabled())
+      throw new Error(
+        'A atribuição de práticas com checagem de segurança ainda não está disponível na demonstração.',
+      )
     const payload = {
       ...input,
       status: input.status || 'planned',
@@ -82,6 +107,8 @@ export const cerPlannerService = {
     id: string,
     input: ReschedulePlannerItemInput,
   ): Promise<CerPlannerItemRecord> {
+    if (demoAdapter.isEnabled())
+      throw new Error('Reagendamento indisponível na demonstração até a atribuição da prática.')
     return await pb.collection('cer_planner_items').update<CerPlannerItemRecord>(id, input)
   },
 
@@ -90,6 +117,25 @@ export const cerPlannerService = {
    * Apenas reflete a ocorrência conforme registro (não adesão/score).
    */
   async completeItem(id: string): Promise<CerPlannerItemRecord> {
+    if (demoAdapter.isEnabled()) {
+      const store = demoAdapter.readCareStore()
+      const item = store.plannerItems.find(
+        (i) =>
+          i.id === id &&
+          i.enrollment_id === DEMO_ENROLLMENT_ID &&
+          i.participant_user_id === DEMO_USER_MARIANA.id,
+      )
+      if (
+        demoAdapter.getActivePersona() !== 'mariana' ||
+        !item ||
+        !['planned', 'active'].includes(item.status)
+      )
+        throw new Error('Item indisponível para registro.')
+      item.status = 'completed'
+      item.updated = new Date().toISOString()
+      demoAdapter.writeCareStore(store)
+      return item
+    }
     return await pb.collection('cer_planner_items').update<CerPlannerItemRecord>(id, {
       status: 'completed',
     })
@@ -99,6 +145,8 @@ export const cerPlannerService = {
    * Cancelar item individual futuro
    */
   async cancelItem(id: string): Promise<CerPlannerItemRecord> {
+    if (demoAdapter.isEnabled())
+      throw new Error('Cancelamento individual indisponível na demonstração.')
     return await pb.collection('cer_planner_items').update<CerPlannerItemRecord>(id, {
       status: 'cancelled',
     })
@@ -123,6 +171,8 @@ export const cerPlannerService = {
     userId: string
     windowDays?: number // default ~7 dias da janela operacional
   }): Promise<CerPlannerItemRecord[]> {
+    if (demoAdapter.isEnabled())
+      throw new Error('A projeção depende de uma atribuição validada da prática.')
     const {
       assignmentId,
       enrollmentId,

@@ -1,3 +1,4 @@
+import { CareCycleManager } from '@/components/CareCycleManager'
 import { LifeDirections } from '@/components/experience/LifeDirections'
 import { LifeTimeline } from '@/components/experience/LifeTimeline'
 import React, { useState, useEffect } from 'react'
@@ -62,7 +63,10 @@ export const ParticipantWorkspace: React.FC = () => {
   const rawTab = searchParams.get('tab') as WorkspaceTab | null
   const requestedTool = searchParams.get('tool')
   const careTool =
-    requestedTool === 'biblioteca' || requestedTool === 'mandala' || requestedTool === 'planner'
+    requestedTool === 'biblioteca' ||
+    requestedTool === 'mandala' ||
+    requestedTool === 'planner' ||
+    requestedTool === 'ciclos'
       ? requestedTool
       : 'plano'
   // Normalização para a arquitetura aprovada (4 fases + sessões)
@@ -153,7 +157,7 @@ export const ParticipantWorkspace: React.FC = () => {
   const setTab = (tab: WorkspaceTab) => {
     setSearchParams({ tab })
   }
-  const openCareTool = (tool: 'plano' | 'biblioteca' | 'mandala' | 'planner') => {
+  const openCareTool = (tool: 'plano' | 'biblioteca' | 'mandala' | 'planner' | 'ciclos') => {
     setSearchParams({ tab: 'equilibrio', tool })
   }
 
@@ -496,7 +500,7 @@ export const ParticipantWorkspace: React.FC = () => {
         <div className="space-y-6">
           <LifeDirections enrollmentId={enrollment.id} readOnly />
           <div className="flex flex-wrap gap-2 border-b border-border/50 pb-3">
-            {(['plano', 'biblioteca', 'mandala', 'planner'] as const).map((tool) => (
+            {(['plano', 'biblioteca', 'mandala', 'planner', 'ciclos'] as const).map((tool) => (
               <Button
                 key={tool}
                 size="sm"
@@ -509,6 +513,7 @@ export const ParticipantWorkspace: React.FC = () => {
                     biblioteca: 'Biblioteca de práticas',
                     mandala: 'Mandala',
                     planner: 'Planner',
+                    ciclos: 'Ciclos de cuidado',
                   }[tool]
                 }
               </Button>
@@ -559,6 +564,7 @@ export const ParticipantWorkspace: React.FC = () => {
             <MandalaStructuredView enrollmentId={enrollment.id} audience="professional" />
           )}
           {careTool === 'planner' && <ProfessionalPlannerView enrollmentId={enrollment.id} />}
+          {careTool === 'ciclos' && <CareCycleManager enrollmentId={enrollment.id} />}
         </div>
       )}
 

@@ -1,3 +1,4 @@
+import { demoAdapter, DEMO_ENROLLMENT_ID } from './demoAdapter'
 import pb from '@/lib/pocketbase/client'
 import type {
   CerCycleReviewRecord,
@@ -28,8 +29,16 @@ export interface DescriptiveCycleDigest {
   }
 }
 
+function demoProfessional() {
+  if (demoAdapter.getActivePersona() !== 'daiane')
+    throw new Error('Revisão interna disponível somente para a profissional.')
+}
 export const cerCycleReviewService = {
   async listByEnrollment(enrollmentId: string): Promise<CerCycleReviewRecord[]> {
+    if (demoAdapter.isEnabled()) {
+      demoProfessional()
+      return demoAdapter.readCareStore().reviews.filter((r) => r.enrollment_id === enrollmentId)
+    }
     return await pb.collection('cer_cycle_reviews').getFullList<CerCycleReviewRecord>({
       filter: `enrollment_id = "${enrollmentId}"`,
       sort: '-created',
@@ -38,6 +47,10 @@ export const cerCycleReviewService = {
   },
 
   async getByCycleId(cycleId: string): Promise<CerCycleReviewRecord | null> {
+    if (demoAdapter.isEnabled()) {
+      demoProfessional()
+      return demoAdapter.readCareStore().reviews.find((r) => r.care_cycle_id === cycleId) || null
+    }
     try {
       const records = await pb.collection('cer_cycle_reviews').getList<CerCycleReviewRecord>(1, 1, {
         filter: `care_cycle_id = "${cycleId}"`,
@@ -45,12 +58,38 @@ export const cerCycleReviewService = {
         expand: 'care_cycle_id,created_by_user_id',
       })
       return records.items[0] || null
-    } catch {
-      return null
+    } catch (error) {
+      throw error
     }
   },
 
   async createReview(input: CreateCycleReviewInput): Promise<CerCycleReviewRecord> {
+    if (demoAdapter.isEnabled()) {
+      demoProfessional()
+      const store = demoAdapter.readCareStore()
+      const cycle = store.cycles.find(
+        (c) => c.id === input.care_cycle_id && c.enrollment_id === input.enrollment_id,
+      )
+      if (
+        !cycle ||
+        cycle.status === 'planned' ||
+        input.enrollment_id !== DEMO_ENROLLMENT_ID ||
+        input.created_by_user_id !== demoAdapter.getCurrentUser().id
+      )
+        throw new Error('Inicie um ciclo válido antes de registrar a revisão.')
+      if (store.reviews.some((r) => r.care_cycle_id === cycle.id))
+        throw new Error('Este ciclo já tem uma revisão.')
+      const now = new Date().toISOString()
+      const review: CerCycleReviewRecord = {
+        ...input,
+        id: `demo-review-${crypto.randomUUID()}`,
+        created: now,
+        updated: now,
+      }
+      store.reviews.push(review)
+      demoAdapter.writeCareStore(store)
+      return review
+    }
     return await pb.collection('cer_cycle_reviews').create<CerCycleReviewRecord>(input)
   },
 
@@ -68,6 +107,15 @@ export const cerCycleReviewService = {
       >
     >,
   ): Promise<CerCycleReviewRecord> {
+    if (demoAdapter.isEnabled()) {
+      demoProfessional()
+      const store = demoAdapter.readCareStore()
+      const review = store.reviews.find((r) => r.id === reviewId)
+      if (!review) throw new Error('Revisão não encontrada.')
+      Object.assign(review, patch, { updated: new Date().toISOString() })
+      demoAdapter.writeCareStore(store)
+      return review
+    }
     return await pb.collection('cer_cycle_reviews').update<CerCycleReviewRecord>(reviewId, patch)
   },
 

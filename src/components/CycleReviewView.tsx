@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import { ParticipantCycleReflection } from './ParticipantCycleReflection'
+import { demoAdapter } from '@/services/demoAdapter'
+import React, { useState, useEffect, useRef } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -39,9 +41,11 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
   isProfessional = false,
   onUpdated,
 }) => {
+  const requestVersion = useRef(0)
   const [review, setReview] = useState<CerCycleReviewRecord | null>(null)
   const [responses, setResponses] = useState<CerPracticeResponseRecord[]>([])
   const [digest, setDigest] = useState<DescriptiveCycleDigest | null>(null)
+  const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [selectedDecision, setSelectedDecision] = useState<CycleReviewDecision | ''>('')
@@ -50,13 +54,26 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
   const { toast } = useToast()
 
   const loadData = async () => {
+    const version = ++requestVersion.current
+    if (!isProfessional) {
+      setLoading(false)
+      return
+    }
+    setError(false)
+    setReview(null)
+    setSelectedDecision('')
+    setProfessionalSummary('')
+    setParticipantHighlights('')
     setLoading(true)
     try {
       const [existingReview, respList] = await Promise.all([
         cerCycleReviewService.getByCycleId(cycleId),
-        cerPracticeResponseService.listByEnrollment(enrollmentId),
+        demoAdapter.isEnabled()
+          ? Promise.resolve([])
+          : cerPracticeResponseService.listByEnrollment(enrollmentId),
       ])
 
+      if (version !== requestVersion.current) return
       const cycleResponses = respList.filter((r) => r.care_cycle_id === cycleId)
       setResponses(cycleResponses)
       setDigest(cerCycleReviewService.generateDescriptiveDigest(cycleResponses))
@@ -68,17 +85,23 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
         setParticipantHighlights(existingReview.participant_highlights || '')
       }
     } catch (err) {
+      if (version !== requestVersion.current) return
+      setError(true)
       console.error('Erro ao carregar Cycle Review:', err)
     } finally {
-      setLoading(false)
+      if (version === requestVersion.current) setLoading(false)
     }
   }
 
   useEffect(() => {
     loadData()
-  }, [cycleId])
+    return () => {
+      requestVersion.current++
+    }
+  }, [cycleId, enrollmentId, isProfessional])
 
   const handleSaveReview = async (completed: boolean = false) => {
+    if (!isProfessional) return
     setSubmitting(true)
     try {
       if (!review) {
@@ -160,6 +183,9 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
     },
   ]
 
+  if (!isProfessional)
+    return <ParticipantCycleReflection cycleId={cycleId} enrollmentId={enrollmentId} />
+
   if (loading) {
     return (
       <div className="p-8 text-center text-xs text-muted-foreground">
@@ -168,13 +194,20 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
     )
   }
 
+  if (error)
+    return (
+      <p role="alert">
+        Não foi possível carregar a revisão. <Button onClick={loadData}>Tentar novamente</Button>
+      </p>
+    )
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-[10px] uppercase font-mono">
-            Cycle Review (Build 08E)
+            Revisão do ciclo
           </Badge>
           {review?.status && (
             <Badge
@@ -236,7 +269,7 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
           </CardTitle>
           <CardDescription className="text-xs">
             A decisão humana orienta os próximos passos. A revisão não altera o ciclo
-            automaticamente — o lifecycle é executado pela ação subsequente correspondente.
+            automaticamente — pause, retome ou encerre pela ação correspondente na gestão do ciclo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -267,7 +300,7 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
           {/* Destaques do Interagente */}
           <div className="space-y-1.5 pt-2 border-t border-border/40">
             <span className="text-xs font-medium text-foreground block">
-              Destaques e Percepções Compartilhadas pelo Interagente:
+              Registro profissional das percepções conversadas em sessão:
             </span>
             <Textarea
               value={participantHighlights}
