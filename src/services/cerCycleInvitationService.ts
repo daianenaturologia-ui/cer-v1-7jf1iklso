@@ -22,12 +22,10 @@ export const cerCycleInvitationService = {
         throw new Error('Matrícula não disponível na demonstração.')
       return demoAdapter.readCareStore().invitations.filter((i) => i.enrollment_id === enrollmentId)
     }
-    return pb
-      .collection(collection)
-      .getFullList({
-        filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
-        sort: '-created',
-      })
+    return pb.collection(collection).getFullList({
+      filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
+      sort: '-created',
+    })
   },
   async invite(
     enrollmentId: string,
@@ -60,14 +58,12 @@ export const cerCycleInvitationService = {
       demoAdapter.writeCareStore(store)
       return invitation
     }
-    return pb
-      .collection(collection)
-      .create({
-        enrollment_id: enrollmentId,
-        care_cycle_id: cycleId,
-        invited_by_user_id: pb.authStore.record?.id,
-        shared_prompt: sharedPrompt.trim(),
-      })
+    return pb.collection(collection).create({
+      enrollment_id: enrollmentId,
+      care_cycle_id: cycleId,
+      invited_by_user_id: pb.authStore.record?.id,
+      shared_prompt: sharedPrompt.trim(),
+    })
   },
   async respond(invitationId: string, reflection: string): Promise<CycleInvitation> {
     if (!reflection.trim()) throw new Error('Escreva sua percepção antes de compartilhar.')
@@ -85,11 +81,9 @@ export const cerCycleInvitationService = {
       demoAdapter.writeCareStore(store)
       return invitation
     }
-    return pb
-      .collection(collection)
-      .update(invitationId, {
-        participant_reflection: reflection.trim(),
-        completed_at: new Date().toISOString(),
-      })
+    return pb.collection(collection).update(invitationId, {
+      participant_reflection: reflection.trim(),
+      completed_at: new Date().toISOString(),
+    })
   },
 }
