@@ -12,12 +12,15 @@ export interface ChoiceOption {
 
 export interface ChoiceCardsConfig {
   options: ChoiceOption[]
+  maxSelect?: number
+  exclusive_options?: string[]
 }
 
 export interface ChoiceCardsProps {
   config: ChoiceCardsConfig
-  value?: string | null
+  value?: string | string[] | null
   onChange: (value: string) => void
+  onMultiChange?: (value: string[]) => void
   disabled?: boolean
   allowSkip?: boolean
   onSkip?: (reason: 'nao_sei' | 'prefiro_nao_responder') => void
@@ -28,28 +31,57 @@ export const ChoiceCards: React.FC<ChoiceCardsProps> = ({
   config,
   value,
   onChange,
+  onMultiChange,
   disabled = false,
   allowSkip = false,
   onSkip,
   isReadOnly = false,
 }) => {
   const options = config?.options || []
+  const multiple = (config.maxSelect || 1) > 1 && Boolean(onMultiChange)
+  const selected = Array.isArray(value) ? value : value ? [value] : []
+  const exclusive = config.exclusive_options || []
+  const choose = (id: string) => {
+    if (!multiple) return onChange(id)
+    if (selected.includes(id)) return onMultiChange!(selected.filter((item) => item !== id))
+    const next = exclusive.includes(id) ? [] : selected.filter((item) => !exclusive.includes(item))
+    if (next.length < config.maxSelect!) onMultiChange!([...next, id])
+  }
 
   return (
-    <div className="space-y-3" role="radiogroup" aria-label="Opções de escolha">
+    <div
+      className="space-y-3"
+      role={multiple ? 'group' : 'radiogroup'}
+      aria-label="Opções de escolha"
+    >
+      {multiple && (
+        <p className="text-xs text-muted-foreground" aria-live="polite">
+          Escolha até {config.maxSelect} opções. Uma só também está bem. {selected.length}/
+          {config.maxSelect} selecionadas.
+          {selected.length >= config.maxSelect! &&
+            ' Para trocar uma opção, desmarque uma das selecionadas.'}
+        </p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {options.map((opt) => {
-          const isSelected = value === opt.id
+          const isSelected = selected.includes(opt.id)
 
           return (
             <button
               key={opt.id}
               type="button"
-              role="radio"
+              role={multiple ? 'checkbox' : 'radio'}
               aria-checked={isSelected}
               aria-label={`${opt.title}${opt.description ? ': ' + opt.description : ''}`}
-              disabled={disabled || isReadOnly}
-              onClick={() => !isReadOnly && onChange(opt.id)}
+              disabled={
+                disabled ||
+                isReadOnly ||
+                (multiple &&
+                  !isSelected &&
+                  selected.length >= config.maxSelect! &&
+                  !exclusive.includes(opt.id))
+              }
+              onClick={() => !isReadOnly && choose(opt.id)}
               className={cn(
                 'text-left transition-all duration-200 rounded-xl p-4 border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                 isSelected

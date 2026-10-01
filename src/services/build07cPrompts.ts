@@ -56,7 +56,7 @@ export const REGULACAO_RESPOSTAS_EXPERIENCE: CerExperienceRecord = {
   code: 'regulacao_respostas_cer',
   title: 'Regulação & Padrões de Resposta',
   subtitle:
-    'Como você reage quando algo mexe com você, o que suas respostas tentam cuidar e seus caminhos de retorno.',
+    'Como você reage quando algo mexe com você, o que gostaria que mudasse nesses momentos e o que ajuda você a se recuperar.',
   order_index: 4,
   is_pilot: false,
   opening_text:
@@ -157,7 +157,7 @@ export const REGULACAO_RESPOSTAS_MOMENTS: CerExperienceMomentRecord[] = [
     experience_id: REGULACAO_RESPOSTAS_EXPERIENCE_ID,
     moment_key: 'o_que_acontece_comigo',
     title: 'O Que Acontece Comigo',
-    subtitle: 'Sua tendência de resposta e o que ela tenta cuidar naquele momento.',
+    subtitle: 'Como você costuma reagir e o que gostaria que mudasse naquele momento.',
     order_index: 2,
     is_active: true,
     version: 1,
@@ -1449,11 +1449,13 @@ export const BUILD_07C_REGULACAO_PROMPTS: CerPromptRecord[] = [
     component_type: 'ChoiceCards',
     prompt_text:
       'Quando isso acontece, o que você percebe vontade de fazer — ou acaba fazendo quase sem perceber?',
-    helper_text: 'Tendência descritiva observada no seu comportamento.',
+    helper_text: 'Você pode reconhecer até duas reações, juntas ou em momentos diferentes.',
     is_required: true,
-    version: 1,
+    version: 2,
     schema_config: {
       prompt_key: 'resposta_tendencia',
+      max_selections: 2,
+      exclusive_options: [],
       concept_key: 'regulation_response_tendency',
       temporality: 'recurring',
       access_destination: 'participant_shared',
@@ -1556,14 +1558,15 @@ export const BUILD_07C_REGULACAO_PROMPTS: CerPromptRecord[] = [
     moment_id: 'mom-reg-2',
     step_order: 6,
     prompt_order: 3,
-    step_title: 'O que essa resposta tenta cuidar',
-    step_subtitle: 'A intenção protetiva percebida no calor da hora.',
+    step_title: 'O que você gostaria que mudasse',
+    step_subtitle: 'O que você gostaria de conseguir ou evitar naquela situação.',
     component_type: 'FreeReflection',
     prompt_text:
-      'No instante em que essa resposta acontece, você percebe o que ela tenta resolver ou proteger?',
-    helper_text: 'Não existe certo ou errado. Pode ser "não sei" ou uma percepção espontânea.',
+      'Quando você reage desse jeito, o que gostaria que mudasse ou deixasse de acontecer naquele momento?',
+    helper_text:
+      'Pode ser diminuir a tensão, evitar uma discussão, ter espaço ou ser ouvida ou ouvido. Conte com suas palavras. Se não souber, tudo bem dizer isso.',
     is_required: true,
-    version: 1,
+    version: 2,
     schema_config: {
       prompt_key: 'funcao_percebida',
       concept_key: 'perceived_response_function',
@@ -1577,16 +1580,22 @@ export const BUILD_07C_REGULACAO_PROMPTS: CerPromptRecord[] = [
       option_set: {
         id: 'opt_funcao_percebida_apoio',
         items: [
-          { id: 'evitar_conflito_maior', label: 'Tenta evitar um conflito ainda mais desgastante' },
+          {
+            id: 'evitar_conflito_maior',
+            label: 'Gostaria de evitar uma discussão ou um conflito maior',
+          },
           {
             id: 'garantir_seguranca_controle',
-            label: 'Tenta garantir segurança e recuperar o controle rápido',
+            label: 'Gostaria de me sentir em segurança e ter mais controle da situação',
           },
           {
             id: 'diminuir_exposicao',
-            label: 'Tenta reduzir minha exposição ou me proteger de julgamentos',
+            label: 'Gostaria de evitar exposição, críticas ou julgamentos',
           },
-          { id: 'manter_vinculo', label: 'Tenta manter a harmonia e o vínculo com a outra pessoa' },
+          {
+            id: 'manter_vinculo',
+            label: 'Gostaria de ficar bem com a outra pessoa e manter a relação',
+          },
           { id: 'nao_sei', label: 'Não sei / Nunca tinha pensado nisso sob essa perspectiva' },
         ],
       },
@@ -1612,11 +1621,13 @@ export const BUILD_07C_REGULACAO_PROMPTS: CerPromptRecord[] = [
     step_subtitle: 'A repercussão e o estado que fica no corpo e na mente.',
     component_type: 'ChoiceCards',
     prompt_text: 'Passada a situação, o que costuma ficar com você?',
-    helper_text: 'O custo posterior ou a facilidade de restabelecimento.',
+    helper_text: 'Você pode marcar até duas coisas que costumam ficar com você depois.',
     is_required: true,
-    version: 1,
+    version: 2,
     schema_config: {
       prompt_key: 'custo_posterior',
+      max_selections: 2,
+      exclusive_options: ['volto_rapido', 'depende_nada_especial'],
       concept_key: 'perceived_later_cost',
       temporality: 'recurring',
       access_destination: 'participant_shared',
@@ -1671,11 +1682,13 @@ export const BUILD_07C_REGULACAO_PROMPTS: CerPromptRecord[] = [
     component_type: 'ChoiceCards',
     prompt_text:
       'Quando você precisa se restabelecer e reencontrar o seu eixo, o que costuma ajudar?',
-    helper_text: 'Camada 1: Recurso conhecido.',
+    helper_text: 'Escolha até dois recursos que costumam ajudar você a se recuperar.',
     is_required: true,
-    version: 1,
+    version: 2,
     schema_config: {
       prompt_key: 'known_return_resource',
+      max_selections: 2,
+      exclusive_options: ['as_vezes_nao_sei'],
       concept_key: 'known_return_resource',
       temporality: 'recurring',
       access_destination: 'participant_shared',
@@ -1740,8 +1753,7 @@ export const BUILD_07C_REGULACAO_PROMPTS: CerPromptRecord[] = [
     step_title: 'O acesso ao recurso sob estresse real',
     step_subtitle: 'Saber que ajuda vs Conseguir usar na hora em que precisa.',
     component_type: 'ChoiceCards',
-    prompt_text:
-      'Quando você realmente precisa, esse recurso costuma estar disponível e acessível para você?',
+    prompt_text: 'Na prática, você consegue usar o que ajuda a se recuperar quando precisa?',
     helper_text: 'Informação compartilhada para orientar os combinados do seu cuidado.',
     is_required: false,
     version: 1,
@@ -1814,7 +1826,7 @@ export const BUILD_07C_REGULACAO_PROMPTS: CerPromptRecord[] = [
           { label: 'QUANDO ALGO MEXE COMIGO', prompt_ref: 'contexto_mobilizacao' },
           { label: 'EU PERCEBO', prompt_ref: 'primeiros_sinais_mobilizacao' },
           { label: 'EU TENHO TENDÊNCIA A', prompt_ref: 'resposta_tendencia' },
-          { label: 'NA HORA ISSO...', prompt_ref: 'funcao_percebida' },
+          { label: 'O QUE EU GOSTARIA QUE MUDASSE', prompt_ref: 'funcao_percebida' },
           { label: 'ÀS VEZES DEPOIS...', prompt_ref: 'custo_posterior' },
           { label: 'O QUE ME AJUDA A VOLTAR', prompt_ref: 'known_return_resource' },
         ],

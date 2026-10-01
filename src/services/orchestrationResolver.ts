@@ -549,7 +549,8 @@ export function resolveExperienceOrchestration(params: {
       sVal?.value ||
       sVal?.selectedOptionId ||
       (typeof sVal === 'string' ? sVal : '')
-    if (ch && ch !== 'as_vezes_nao_sei' && ch !== 'nao_sei') {
+    const choices = Array.isArray(ch) ? ch : ch ? [ch] : []
+    if (choices.some((choice) => choice !== 'as_vezes_nao_sei' && choice !== 'nao_sei')) {
       openSet.add('resource_access_under_stress_layer')
     }
   }

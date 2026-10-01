@@ -18,6 +18,8 @@
 
 import type { ExperienceResponseRecord } from '@/types/cer'
 import { CER_PROTECTION_PATTERNS } from '@/services/cerProtectionPatterns'
+import { BUILD_07C_REGULACAO_PROMPTS } from './build07cPrompts'
+import { BUILD_07D_RELACOES_PROMPTS } from './build07dPrompts'
 
 export interface InterpretiveLens {
   id: string
@@ -75,6 +77,22 @@ function extractDisplayValue(resp?: ExperienceResponseRecord): {
   }
   if (sVal === 'prefiro_nao_responder' || sVal?.value === 'prefiro_nao_responder') {
     return { text: 'Preferiu não responder neste momento', isUnsure: false, isRefusal: true }
+  }
+
+  const authored = [...BUILD_07C_REGULACAO_PROMPTS, ...BUILD_07D_RELACOES_PROMPTS].find(
+    (prompt) =>
+      prompt.id === resp.prompt_id ||
+      prompt.id === (resp as any).canonical_prompt_id ||
+      (prompt.schema_config as any)?.prompt_key === ((resp as any).prompt_key || sVal?.prompt_key),
+  )
+  const options = (authored?.schema_config as any)?.options
+  const rawChoices = Array.isArray(sVal)
+    ? sVal
+    : (sVal?.choice ?? sVal?.value ?? sVal?.selectedOptionIds ?? sVal?.selectedOptionId ?? sVal)
+  if (options && (typeof rawChoices === 'string' || Array.isArray(rawChoices))) {
+    const choices = Array.isArray(rawChoices) ? rawChoices : [rawChoices]
+    const labels = choices.map((id) => options.find((option: any) => option.id === id)?.title || id)
+    return { text: labels.join('; '), isUnsure: false, isRefusal: false }
   }
 
   if (resp.free_text && !sVal) {
@@ -432,7 +450,7 @@ export function buildRegulacaoInterpretation(
     dimensionName: 'Regulação & Padrões de Resposta',
     hasResponses: true,
     simpleSynthesis: `A curva de estresse de ${participantName} é disparada predominantemente por "${contextoText}", com o primeiro aviso manifesto em "${sinaisText}".`,
-    deepSynthesis: `Sob mobilização autonômica, a resposta imediata tende para "${respostaText}", cuja função protetiva primordial busca "${funcaoText}". O custo posterior identificado envolve "${custoText}", enquanto a via mais consistente de regulação se apoia em "${recursoText}". Observa-se que a percepção do timing do estresse ("${timingText}") oferece uma janela crucial de intervenção antes do esgotamento.`,
+    deepSynthesis: `Sob mobilização autonômica, a resposta imediata tende para "${respostaText}", e a pessoa relata sobre o que gostaria de conseguir ou evitar: "${funcaoText}". O custo posterior identificado envolve "${custoText}", enquanto a via mais consistente de regulação se apoia em "${recursoText}". Observa-se que a percepção do timing do estresse ("${timingText}") oferece uma janela crucial de intervenção antes do esgotamento.`,
     observedEvidences: [
       `Gatilho de mobilização mais recorrente: "${contextoText}"`,
       `Sinais corporais precoces: "${sinaisText}"`,
@@ -443,7 +461,7 @@ export function buildRegulacaoInterpretation(
     perceivedResources: [
       'Capacidade de rastrear o caminho de volta ao equilíbrio',
       `Recurso efetivo de autorregulação reportado: "${recursoText}"`,
-      'Compreensão da intenção protetiva por trás de suas reações automáticas',
+      'Relato sobre o que gostaria de conseguir ou evitar nesses momentos',
     ],
     attentionPoints: [
       'Atraso na percepção do cansaço físico acumulado durante a fase de hiperativação',
