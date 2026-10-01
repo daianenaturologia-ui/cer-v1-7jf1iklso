@@ -69,13 +69,11 @@ export const demoLifeEvents = new Map<string, LifeEvent[]>()
 export const lifeTimelineService = {
   async list(enrollmentId: string): Promise<LifeEvent[]> {
     if (demoAdapter.isEnabled()) return demoLifeEvents.get(enrollmentId) || []
-    return pb
-      .collection('cer_life_events')
-      .getFullList<LifeEvent>({
-        filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
-        sort: 'created',
-        requestKey: null,
-      })
+    return pb.collection('cer_life_events').getFullList<LifeEvent>({
+      filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
+      sort: 'created',
+      requestKey: null,
+    })
   },
   async save(event: LifeEventInput, id?: string): Promise<LifeEvent> {
     validateLifeEvent(event)

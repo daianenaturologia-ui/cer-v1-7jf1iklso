@@ -2,16 +2,16 @@
 
 A implementação preserva as correções anteriores e acrescenta as mudanças confirmadas nos vídeos finais. Não contém transcrições ou dados pessoais dos testes gravados.
 
-| Dimensão ou etapa | Correção mantida ou concluída |
-| --- | --- |
-| Entrada na Consciência | Nomes e sequência das esferas; indicação da próxima dimensão; progresso preservado ao retornar. |
-| Corpo & Fisiologia | Revisão do capítulo 2, retorno e persistência; distinção de histórico, habitual e atual; opções de pele/cabelo contextualizadas no capítulo 3 e seus resumos. |
-| Mente & Emoções | Frequências dos movimentos preservadas; relatos e nomes dos movimentos apresentados sem inventar frequência para registros antigos. |
-| Regulação | Até duas escolhas nas perguntas pertinentes, exclusividade das respostas incompatíveis, rotas que consideram a segunda escolha e pergunta mais concreta sobre o resultado desejado. |
-| Relações | Até duas escolhas nas perguntas pertinentes; órbitas e nomes mais visíveis; representação legível dos vínculos; encerramento e navegação preservados. |
-| Sexualidade | Texto livre equivalente não aparece duplicado; respostas privadas excluídas do documento compartilhado. O vídeo final percorre as etapas até o panorama. |
-| Sentido & Conexão | O vídeo final percorre as etapas até o panorama; a leitura não pressupõe religião ou espiritualidade específica. |
-| Mapa CER | Cobertura usa respostas e progresso, inclusive com o engine desativado; conclusão das dimensões não equivale a publicação profissional. |
+| Dimensão ou etapa      | Correção mantida ou concluída                                                                                                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entrada na Consciência | Nomes e sequência das esferas; indicação da próxima dimensão; progresso preservado ao retornar.                                                                                     |
+| Corpo & Fisiologia     | Revisão do capítulo 2, retorno e persistência; distinção de histórico, habitual e atual; opções de pele/cabelo contextualizadas no capítulo 3 e seus resumos.                       |
+| Mente & Emoções        | Frequências dos movimentos preservadas; relatos e nomes dos movimentos apresentados sem inventar frequência para registros antigos.                                                 |
+| Regulação              | Até duas escolhas nas perguntas pertinentes, exclusividade das respostas incompatíveis, rotas que consideram a segunda escolha e pergunta mais concreta sobre o resultado desejado. |
+| Relações               | Até duas escolhas nas perguntas pertinentes; órbitas e nomes mais visíveis; representação legível dos vínculos; encerramento e navegação preservados.                               |
+| Sexualidade            | Texto livre equivalente não aparece duplicado; respostas privadas excluídas do documento compartilhado. O vídeo final percorre as etapas até o panorama.                            |
+| Sentido & Conexão      | O vídeo final percorre as etapas até o panorama; a leitura não pressupõe religião ou espiritualidade específica.                                                                    |
+| Mapa CER               | Cobertura usa respostas e progresso, inclusive com o engine desativado; conclusão das dimensões não equivale a publicação profissional.                                             |
 
 ## Duas versões do Mapa
 
