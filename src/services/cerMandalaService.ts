@@ -116,16 +116,14 @@ export function getDemoMandalaProjection(
     recent_movement: {
       total_recorded_responses: responses.length,
       descriptive_digest: digest.summary_text,
-      recent_responses: responses
-        .slice(0, 5)
-        .map((r) => ({
-          id: r.id,
-          safe_title:
-            shared.find((a) => a.id === r.assignment_id)?.participant_safe_title ||
-            'Experimento de cuidado',
-          response_type: r.response_type,
-          date: r.created,
-        })),
+      recent_responses: responses.slice(0, 5).map((r) => ({
+        id: r.id,
+        safe_title:
+          shared.find((a) => a.id === r.assignment_id)?.participant_safe_title ||
+          'Experimento de cuidado',
+        response_type: r.response_type,
+        date: r.created,
+      })),
     },
     evolution_highlights: presentation?.practical_invitation
       ? [presentation.practical_invitation]
