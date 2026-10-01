@@ -238,7 +238,14 @@ export const InteragenteHome: React.FC = () => {
       if (activeEnr?.id && !effectiveEngineEnabled) {
         const [progress, responses, map] = await Promise.all([
           enrollmentExperienceService.listByEnrollment(activeEnr.id),
-          demoAdapter.isEnabled() ? Promise.resolve(demoAdapter.listExperienceResponses(activeEnr.id)) : pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({ filter: `enrollment_id = "${activeEnr.id}"`, sort: 'created' }),
+          demoAdapter.isEnabled()
+            ? Promise.resolve(demoAdapter.listExperienceResponses(activeEnr.id))
+            : pb
+                .collection('experience_responses')
+                .getFullList<ExperienceResponseRecord>({
+                  filter: `enrollment_id = "${activeEnr.id}"`,
+                  sort: 'created',
+                }),
           cerMapService.getCurrentPublishedMap(activeEnr.id),
         ])
         setAvailableExperiences(progress)

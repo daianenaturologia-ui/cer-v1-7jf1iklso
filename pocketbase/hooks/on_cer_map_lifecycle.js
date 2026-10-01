@@ -322,13 +322,33 @@ onRecordUpdateRequest((e) => {
 
       // Se for transição para 'published':
       if (newStatus === 'published') {
-        const sessions = e.app.findRecordsByFilter('cer_sessions', 'enrollment_id = {:enrollment}', '', 1, 0, { enrollment: enrollmentId })
-        if (!sessions.length) throw new BadRequestError('Registre o primeiro encontro antes de compartilhar o Mapa CER.')
+        const sessions = e.app.findRecordsByFilter(
+          'cer_sessions',
+          'enrollment_id = {:enrollment}',
+          '',
+          1,
+          0,
+          { enrollment: enrollmentId },
+        )
+        if (!sessions.length)
+          throw new BadRequestError(
+            'Registre o primeiro encontro antes de compartilhar o Mapa CER.',
+          )
         const snapshotText = map.getString('reading_snapshot')
         if (snapshotText && snapshotText !== 'null') {
           let snapshot
-          try { snapshot = JSON.parse(snapshotText) } catch (_) { throw new BadRequestError('Leitura do mapa inválida.') }
-          if (!snapshot || snapshot.enrollmentId !== enrollmentId || !snapshot.reviewedBy || !snapshot.reviewedAt) throw new BadRequestError('Revise e salve as duas versões antes de publicar.')
+          try {
+            snapshot = JSON.parse(snapshotText)
+          } catch (_) {
+            throw new BadRequestError('Leitura do mapa inválida.')
+          }
+          if (
+            !snapshot ||
+            snapshot.enrollmentId !== enrollmentId ||
+            !snapshot.reviewedBy ||
+            !snapshot.reviewedAt
+          )
+            throw new BadRequestError('Revise e salve as duas versões antes de publicar.')
         }
         // Validação completa dos items e sources do mapa antes de autorizar o publish
         const items = $app.findRecordsByFilter(

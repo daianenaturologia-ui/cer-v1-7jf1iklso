@@ -333,7 +333,10 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
   // Publicar o draft
   const handlePublish = async (forceAfterWarning = false) => {
     if (!activeDraft) return
-    if (readingDirty) { setErrorMessage('Salve e revise as duas versões antes de publicar.'); return }
+    if (readingDirty) {
+      setErrorMessage('Salve e revise as duas versões antes de publicar.')
+      return
+    }
 
     if (!forceAfterWarning) {
       const balanced = checkResourcesBalance()
@@ -382,7 +385,8 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
               )}
             </div>
             <CardDescription className="text-xs text-muted-foreground">
-              Acompanhamento de {participantName}. Prepare as duas versões e revise antes de compartilhar.
+              Acompanhamento de {participantName}. Prepare as duas versões e revise antes de
+              compartilhar.
             </CardDescription>
           </div>
 
@@ -391,7 +395,10 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { setPreviewPublished(true); setPreviewOpen(true) }}
+                onClick={() => {
+                  setPreviewPublished(true)
+                  setPreviewOpen(true)
+                }}
                 className="text-xs h-8 gap-1.5"
               >
                 <Eye className="w-3.5 h-3.5" />
@@ -458,12 +465,33 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
         {/* ÁREA DE TRABALHO DO RASCUNHO ATIVO */}
         {activeDraft ? (
           <div className="space-y-6">
-            <CerMapReadingsEditor key={`${activeDraft.id}:${activeDraft.updated}`} initial={isCerMapReadingSnapshot(activeDraft.reading_snapshot) ? activeDraft.reading_snapshot : null} responses={responses} enrollmentId={enrollmentId} participantName={participantName} onDirty={setReadingDirty} onSave={async (snapshot, reviewed) => {
-              await cerMapService.saveReadingSnapshot(activeDraft.id, enrollmentId, snapshot, reviewed)
-              setReadingDirty(false)
-              await loadAll()
-              setSuccessMessage(reviewed ? 'As duas versões foram revisadas e salvas.' : 'As duas versões foram salvas como rascunho.')
-            }} />
+            <CerMapReadingsEditor
+              key={`${activeDraft.id}:${activeDraft.updated}`}
+              initial={
+                isCerMapReadingSnapshot(activeDraft.reading_snapshot)
+                  ? activeDraft.reading_snapshot
+                  : null
+              }
+              responses={responses}
+              enrollmentId={enrollmentId}
+              participantName={participantName}
+              onDirty={setReadingDirty}
+              onSave={async (snapshot, reviewed) => {
+                await cerMapService.saveReadingSnapshot(
+                  activeDraft.id,
+                  enrollmentId,
+                  snapshot,
+                  reviewed,
+                )
+                setReadingDirty(false)
+                await loadAll()
+                setSuccessMessage(
+                  reviewed
+                    ? 'As duas versões foram revisadas e salvas.'
+                    : 'As duas versões foram salvas como rascunho.',
+                )
+              }}
+            />
             <div className="p-4 bg-muted/20 border border-border/60 rounded-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -492,7 +520,12 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                   <Button
                     size="sm"
                     onClick={() => handlePublish(false)}
-                    disabled={publishing || readingDirty || !publishEligibility.allowed || (!!activeDraft.reading_snapshot && !activeDraft.reading_snapshot.reviewedAt)}
+                    disabled={
+                      publishing ||
+                      readingDirty ||
+                      !publishEligibility.allowed ||
+                      (!!activeDraft.reading_snapshot && !activeDraft.reading_snapshot.reviewedAt)
+                    }
                     className="text-xs h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     title={!publishEligibility.allowed ? publishEligibility.reason : undefined}
                   >

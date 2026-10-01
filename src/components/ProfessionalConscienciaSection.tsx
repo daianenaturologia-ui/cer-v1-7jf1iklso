@@ -559,8 +559,17 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
           </div>
         </div>
 
-        <ProfessionalIntegrativeMapView responses={allResponses} participantName={participantName} onSelectDimension={expandAndScrollTo} />
-        <ProfessionalMapEditor enrollmentId={enrollment.id} participantName={participantName} professionalUserId={pb.authStore.record?.id || ''} responses={allResponses} />
+        <ProfessionalIntegrativeMapView
+          responses={allResponses}
+          participantName={participantName}
+          onSelectDimension={expandAndScrollTo}
+        />
+        <ProfessionalMapEditor
+          enrollmentId={enrollment.id}
+          participantName={participantName}
+          professionalUserId={pb.authStore.record?.id || ''}
+          responses={allResponses}
+        />
 
         {showProfessionalMap && (
           <div className="space-y-4 pt-4 border-t border-border/40">
