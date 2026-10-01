@@ -5,14 +5,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import {
   validateLifeEvent,
-  demoLifeEvents,
   lifeTimelineService,
   lifeTimeLabel,
   LIFE_EMOTIONS,
   type LifeEvent,
   type LifeEventInput,
 } from '@/services/lifeTimeline'
-import { demoAdapter } from '@/services/demoAdapter'
 
 export function LifeTimeline({
   enrollmentId,
@@ -34,9 +32,7 @@ export function LifeTimeline({
   const load = () => {
     setLoading(true)
     setError('')
-    const request = demoAdapter.isEnabled()
-      ? Promise.resolve(demoLifeEvents.get(enrollmentId) || [])
-      : lifeTimelineService.list(enrollmentId)
+    const request = lifeTimelineService.list(enrollmentId)
     return request
       .then((data) =>
         setEvents(readOnly ? data.filter((e) => e.access_class === 'participant_shared') : data),
@@ -50,9 +46,7 @@ export function LifeTimeline({
     setLoading(true)
     setError('')
     setEvents([])
-    const request = demoAdapter.isEnabled()
-      ? Promise.resolve(demoLifeEvents.get(enrollmentId) || [])
-      : lifeTimelineService.list(enrollmentId)
+    const request = lifeTimelineService.list(enrollmentId)
     request
       .then((data) => {
         if (active)
@@ -90,17 +84,10 @@ export function LifeTimeline({
     setError('')
     try {
       validateLifeEvent(editing)
-      const event = demoAdapter.isEnabled()
-        ? {
-            ...editing,
-            id: editingId || `demo-life-${crypto.randomUUID()}`,
-            updated: new Date().toISOString(),
-          }
-        : await lifeTimelineService.save(editing, editingId)
+      const event = await lifeTimelineService.save(editing, editingId)
       const next = editingId
         ? events.map((e) => (e.id === editingId ? event : e))
         : [...events, event]
-      if (demoAdapter.isEnabled()) demoLifeEvents.set(enrollmentId, next)
       setEvents(next)
       setEditing(null)
       setVoice(false)
