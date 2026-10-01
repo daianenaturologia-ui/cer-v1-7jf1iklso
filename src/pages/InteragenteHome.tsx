@@ -240,12 +240,10 @@ export const InteragenteHome: React.FC = () => {
           enrollmentExperienceService.listByEnrollment(activeEnr.id),
           demoAdapter.isEnabled()
             ? Promise.resolve(demoAdapter.listExperienceResponses(activeEnr.id))
-            : pb
-                .collection('experience_responses')
-                .getFullList<ExperienceResponseRecord>({
-                  filter: `enrollment_id = "${activeEnr.id}"`,
-                  sort: 'created',
-                }),
+            : pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
+                filter: `enrollment_id = "${activeEnr.id}"`,
+                sort: 'created',
+              }),
           cerMapService.getCurrentPublishedMap(activeEnr.id),
         ])
         setAvailableExperiences(progress)
