@@ -174,6 +174,8 @@ function validate(
     )
   if (consent && data.understandingRequests?.[a.id])
     throw new Error('Mariana pediu esclarecimentos antes de prosseguir.')
+  if (consent && a.previous_assignment_id && a.consent_id !== latest?.id)
+    throw new Error('Mariana precisa confirmar este novo convite antes da ativação.')
   return latest
 }
 function cancelFuture(store: DemoCareStore, assignmentId: string) {
@@ -255,6 +257,8 @@ export function safeDemoAssignment(a: CerPracticeAssignmentRecord): CerPracticeA
     care_cycle_id: a.care_cycle_id,
     practice_version_id: a.practice_version_id,
     safety_check_id: a.safety_check_id,
+    previous_assignment_id: a.previous_assignment_id,
+    consent_id: a.consent_id,
     operational_acceptance_id: a.operational_acceptance_id,
     assigned_by_user_id: a.assigned_by_user_id,
     internal_title: a.participant_safe_title,
@@ -372,15 +376,38 @@ export const demoPracticeFlow = {
       validate(data, store, a, false)
       if (input.previousAssignmentId) {
         const previous = assignment(data, input.previousAssignmentId)
-        if (
-          !['draft', 'active', 'paused'].includes(previous.status) ||
-          previous.care_cycle_id !== a.care_cycle_id
-        )
-          throw new Error('Adapte um experimento disponível deste mesmo ciclo.')
+        if (previous.care_cycle_id !== a.care_cycle_id) {
+          const sourceCycle = store.cycles.find((c) => c.id === previous.care_cycle_id)
+          const targetCycle = store.cycles.find((c) => c.id === a.care_cycle_id)
+          if (
+            sourceCycle?.status !== 'closed' ||
+            !(
+              previous.status === 'completed' ||
+              (previous.status === 'stopped' && previous.stop_reason_code === 'cycle_closed')
+            )
+          )
+            throw new Error('Continue um experimento preservado de um ciclo encerrado.')
+          if (!targetCycle || targetCycle.cycle_number <= sourceCycle.cycle_number)
+            throw new Error('Escolha um ciclo posterior ao experimento de origem.')
+          if (previous.practice_version_id !== a.practice_version_id)
+            throw new Error('Para outra versão, prepare uma proposta independente.')
+          if (
+            data.assignments.some(
+              (x) =>
+                x.previous_assignment_id === previous.id &&
+                x.care_cycle_id === a.care_cycle_id &&
+                ['draft', 'active', 'paused'].includes(x.status),
+            )
+          )
+            throw new Error('Já existe uma proposta de continuidade neste ciclo.')
+        } else {
+          if (!['draft', 'active', 'paused'].includes(previous.status))
+            throw new Error('Adapte um experimento disponível deste mesmo ciclo.')
+          previous.status = 'superseded'
+          previous.updated = now
+          cancelFuture(store, previous.id)
+        }
         a.previous_assignment_id = previous.id
-        previous.status = 'superseded'
-        previous.updated = now
-        cancelFuture(store, previous.id)
       }
       data.assignments.push(a)
       data.sharedAssignmentIds.push(a.id)
@@ -465,6 +492,7 @@ export const demoPracticeFlow = {
         updated: now,
       }
       data.consents.unshift(consent)
+      a.consent_id = consent.id
       if (decision === 'accepted' && understanding === 'understood' && data.understandingRequests)
         delete data.understandingRequests[a.id]
       // Refusal/questions cancel future moments without pretending they were performed.
@@ -504,7 +532,10 @@ export const demoPracticeFlow = {
     const a = this.get(assignmentId)
     return (
       readDemoPracticeStore().consents.find(
-        (c) => c.practice_version_id === a.practice_version_id && c.record_status !== 'superseded',
+        (c) =>
+          c.practice_version_id === a.practice_version_id &&
+          c.record_status !== 'superseded' &&
+          (!a.previous_assignment_id || a.consent_id === c.id),
       ) || null
     )
   },

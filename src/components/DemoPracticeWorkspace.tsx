@@ -17,6 +17,7 @@ const states = {
 }
 export function DemoPracticeWorkspace({ enrollmentId }: { enrollmentId: string }) {
   const [previousAssignmentId, setPreviousAssignmentId] = useState<string | undefined>()
+  const [continuing, setContinuing] = useState(false)
   const [revision, setRevision] = useState(0)
   const [assignments, setAssignments] = useState<CerPracticeAssignmentRecord[]>([])
   const [priorityId, setPriorityId] = useState('')
@@ -66,15 +67,27 @@ export function DemoPracticeWorkspace({ enrollmentId }: { enrollmentId: string }
       <h2 className="font-serif text-xl">Práticas, recursos e experimentos</h2>
       {previousAssignmentId && (
         <p className="text-sm">
-          Adaptação de uma proposta existente. Confira novamente as orientações e a checagem.{' '}
-          <Button variant="ghost" onClick={() => setPreviousAssignmentId(undefined)}>
-            Cancelar adaptação
+          {continuing
+            ? 'Continuidade em um novo ciclo. O histórico anterior será preservado; Mariana confirmará este novo convite.'
+            : 'Adaptação de uma proposta existente. Confira novamente as orientações e a checagem.'}{' '}
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setPreviousAssignmentId(undefined)
+              setContinuing(false)
+            }}
+          >
+            Cancelar alteração
           </Button>
         </p>
       )}
       <p className="text-sm text-muted-foreground">
         Acervo fictício para experimentar o fluxo de cuidado. A checagem, o aceite do foco e o
         consentimento são registrados em etapas distintas.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Ao continuar um experimento em outro ciclo, o histórico fica preservado. A nova proposta
+        passa por revisão profissional e Mariana confirma novamente o convite e sua capacidade.
       </p>
       {error && (
         <p role="alert" className="text-sm text-destructive">
@@ -265,6 +278,7 @@ export function DemoPracticeWorkspace({ enrollmentId }: { enrollmentId: string }
                   previousAssignmentId,
                 })
                 setPreviousAssignmentId(undefined)
+                setContinuing(false)
                 setOutcome('insufficient_information')
                 setRationale('')
                 return proposed
@@ -282,6 +296,14 @@ export function DemoPracticeWorkspace({ enrollmentId }: { enrollmentId: string }
               {a.participant_safe_title} · {states[a.status]}
             </h3>
             <p className="text-sm">{a.participant_safe_summary}</p>
+            <p className="text-xs text-muted-foreground">
+              Ciclo{' '}
+              {
+                demoAdapter.readCareStore().cycles.find((c) => c.id === a.care_cycle_id)
+                  ?.cycle_number
+              }
+              {a.previous_assignment_id ? ' · Proposta vinculada ao histórico anterior' : ''}
+            </p>
             {demoPracticeFlow.pendingQuestion(a.id) && (
               <p className="text-sm">Mariana pediu esclarecimentos antes de prosseguir.</p>
             )}
@@ -337,6 +359,7 @@ export function DemoPracticeWorkspace({ enrollmentId }: { enrollmentId: string }
                   variant="outline"
                   disabled={busy}
                   onClick={() => {
+                    setContinuing(false)
                     setPreviousAssignmentId(a.id)
                     setPriorityId(a.care_plan_priority_id)
                     setCycleId(a.care_cycle_id)
@@ -356,6 +379,36 @@ export function DemoPracticeWorkspace({ enrollmentId }: { enrollmentId: string }
                   Adaptar proposta
                 </Button>
               )}
+              {cycles.length > 0 &&
+                demoAdapter
+                  .readCareStore()
+                  .cycles.some((c) => c.id === a.care_cycle_id && c.status === 'closed') &&
+                (a.status === 'completed' ||
+                  (a.status === 'stopped' && a.stop_reason_code === 'cycle_closed')) && (
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => {
+                      setContinuing(true)
+                      setPreviousAssignmentId(a.id)
+                      setCycleId(cycles[0].id)
+                      setPriorityId('')
+                      setVersionId(a.practice_version_id)
+                      setTitle(a.participant_safe_title)
+                      setSummary(a.participant_safe_summary || '')
+                      setDuration(a.assigned_duration || '')
+                      setFrequency(a.assigned_frequency || 'daily')
+                      setOutcome('insufficient_information')
+                      setRationale('')
+                      setCautions('')
+                      setMessage(
+                        'Confira o foco, as orientações e a nova checagem no formulário acima.',
+                      )
+                    }}
+                  >
+                    Continuar em novo ciclo
+                  </Button>
+                )}
               {['active', 'paused'].includes(a.status) && (
                 <Button
                   variant="outline"

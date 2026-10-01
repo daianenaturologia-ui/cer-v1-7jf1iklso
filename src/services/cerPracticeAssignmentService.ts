@@ -1,4 +1,4 @@
-import { demoAdapter } from './demoAdapter'
+import { demoAdapter, DEMO_USER_DAIANE } from './demoAdapter'
 import { demoPracticeFlow } from './demoPracticeFlow'
 /**
  * Serviço do Build 08D — Practice Assignment & Lifecycle Control
@@ -226,9 +226,30 @@ export const cerPracticeAssignmentService = {
     newCycleId: string,
     newPriorityId: string,
     assignedByUserId: string,
+    demoReview?: Pick<
+      Parameters<typeof demoPracticeFlow.prepare>[0],
+      | 'safeTitle'
+      | 'safeSummary'
+      | 'duration'
+      | 'frequency'
+      | 'safetyOutcome'
+      | 'rationale'
+      | 'sharedCautions'
+    >,
   ): Promise<CerPracticeAssignmentRecord> {
-    if (demoAdapter.isEnabled())
-      throw new Error('Esta operação ainda não está disponível na demonstração.')
+    if (demoAdapter.isEnabled()) {
+      if (!demoReview || assignedByUserId !== DEMO_USER_DAIANE.id)
+        throw new Error('Confira as orientações e registre uma nova checagem profissional.')
+      const previous = demoPracticeFlow.get(previousAssignmentId)
+      return demoPracticeFlow.prepare({
+        ...demoReview,
+        enrollmentId: previous.enrollment_id,
+        priorityId: newPriorityId,
+        cycleId: newCycleId,
+        versionId: previous.practice_version_id,
+        previousAssignmentId,
+      })
+    }
     const prev = await this.getById(previousAssignmentId)
     const payload = {
       enrollment_id: prev.enrollment_id,
