@@ -1576,20 +1576,6 @@ export const InteragenteHome: React.FC = () => {
                   onOpenMap={() => setShowMapModal(true)}
                 />
 
-                {consciousnessCoverage(participantResponses, availableExperiences).every(
-                  (d) => d.completed,
-                ) && (
-                  <div className="rounded-xl border p-4 space-y-2">
-                    <p className="text-sm">
-                      Você concluiu as seis dimensões. Agora podemos olhar para os acontecimentos da
-                      sua história.
-                    </p>
-                    <Button onClick={() => setActivePhase('evolucao')}>
-                      Começar minha Linha da Vida
-                    </Button>
-                  </div>
-                )}
-
                 {/* Modal / Dialog do Meu Mapa CER para a Interagente */}
                 <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
                   <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -1603,6 +1589,19 @@ export const InteragenteHome: React.FC = () => {
                   </DialogContent>
                 </Dialog>
               </>
+            )}
+            {consciousnessCoverage(participantResponses, availableExperiences).every(
+              (d) => d.completed,
+            ) && (
+              <div className="rounded-xl border p-4 space-y-2">
+                <p className="text-sm">
+                  Você concluiu as seis dimensões. Agora podemos olhar para os acontecimentos da sua
+                  história.
+                </p>
+                <Button onClick={() => setActivePhase('evolucao')}>
+                  Começar minha Linha da Vida
+                </Button>
+              </div>
             )}
             {/* Transição clara Pós-Consciência / Waiting State */}
             {hasCompletedConsciousness && assignments.length === 0 && (
@@ -1621,18 +1620,19 @@ export const InteragenteHome: React.FC = () => {
                       dos momentos de percepção.
                     </p>
                     <div className="p-3 rounded-lg bg-card border border-border/60 text-foreground italic">
-                      “Na próxima etapa, vocês vão escolher juntas o que faz sentido cuidar agora.”
+                      “Agora, podemos conhecer os acontecimentos da sua história e os recursos que
+                      você construiu.”
                     </div>
                   </div>
                   <div className="flex items-center gap-3 pt-1">
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setActivePhase('equilibrio')}
+                      onClick={() => setActivePhase('evolucao')}
                       className="text-xs h-8 gap-1.5"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Ir para Equilíbrio & Realização</span>
+                      <span>Ir para minha Linha da Vida</span>
                     </Button>
                     <p className="text-[11px] text-muted-foreground">
                       Precisa de ajuda? Fale com sua profissional.
