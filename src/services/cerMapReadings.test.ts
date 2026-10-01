@@ -87,3 +87,25 @@ describe('Documento das duas versões: respostas literais, privacidade e revisã
     ).toBe('Texto\n de teste')
   })
 })
+
+it('preserva o texto de relatos antigos e seus nomes salvos sem expor IDs', () => {
+  expect(
+    formatPromptResponse(
+      undefined,
+      response({
+        structured_value: { title: 'Texto salvo anteriormente', prompt_key: 'chave_interna' },
+      }),
+    ),
+  ).toBe('Texto salvo anteriormente')
+  expect(
+    formatPromptResponse(
+      prompt,
+      response({
+        structured_value: {
+          selectedOptionIds: ['opcao_antiga'],
+          selected: ['Nome salvo da resposta'],
+        },
+      }),
+    ),
+  ).toBe('Nome salvo da resposta')
+})

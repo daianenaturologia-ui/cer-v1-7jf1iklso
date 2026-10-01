@@ -40,11 +40,19 @@ export function formatPromptResponse(
     source?.value ??
     source?.selectedOptionId ??
     source?.selectedOptionIds ??
+    (typeof source?.title === 'string' ? source.title : undefined) ??
     source
   const labelFor = (item: unknown): string => {
     if (typeof item !== 'string' && typeof item !== 'number' && typeof item !== 'boolean') return ''
     const option = config?.options?.find((option: any) => option.id === item)
-    return option?.title || option?.label || String(item)
+    const legacyIndex = Array.isArray(value) ? value.indexOf(item) : -1
+    const storedLabel =
+      legacyIndex >= 0 &&
+      Array.isArray(source?.selected) &&
+      typeof source.selected[legacyIndex] === 'string'
+        ? source.selected[legacyIndex]
+        : undefined
+    return option?.title || option?.label || storedLabel || String(item)
   }
   const choice = Array.isArray(value)
     ? value.map(labelFor).filter(Boolean).join('; ')
@@ -52,7 +60,8 @@ export function formatPromptResponse(
   const text = typeof response.free_text === 'string' ? response.free_text.trim() : ''
   const normalize = (text: string) => text.normalize('NFKC').replace(/\s+/g, ' ').trim()
   return (
-    [choice, text && normalize(text) !== normalize(choice) ? text : ''].filter(Boolean).join(' — ') ||
-    'Resposta registrada'
+    [choice, text && normalize(text) !== normalize(choice) ? text : '']
+      .filter(Boolean)
+      .join(' — ') || 'Resposta registrada'
   )
 }
