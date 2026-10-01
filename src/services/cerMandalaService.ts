@@ -23,19 +23,23 @@ export function getDemoMandalaProjection(
   }
   const plans = demoAdapter.listPlans(enrollmentId)
   const plan = plans.find((value) => value.status === 'active') || plans[0]
-  const presentation = demoAdapter.listPresentedForParticipant(enrollmentId).find(
-    (value) => value.status === 'presented' && (!plan || value.plan_id === plan.id),
-  )
+  const presentation = demoAdapter
+    .listPresentedForParticipant(enrollmentId)
+    .find((value) => value.status === 'presented' && (!plan || value.plan_id === plan.id))
   // A interagente recebe somente o snapshot explicitamente compartilhado.
   // Títulos, descrições e fundamentos internos de prioridades não são uma devolutiva.
-  const priorities = audience === 'professional' && plan
-    ? demoAdapter.listPriorities(plan.id).filter((value) =>
-      value.status === 'active' || value.status === 'active_pending_adaptation',
-    )
-    : []
-  const statement = audience === 'professional'
-    ? plan?.direction_statement
-    : presentation?.participant_summary || presentation?.participant_title
+  const priorities =
+    audience === 'professional' && plan
+      ? demoAdapter
+          .listPriorities(plan.id)
+          .filter(
+            (value) => value.status === 'active' || value.status === 'active_pending_adaptation',
+          )
+      : []
+  const statement =
+    audience === 'professional'
+      ? plan?.direction_statement
+      : presentation?.participant_summary || presentation?.participant_title
   return {
     enrollment_id: enrollmentId,
     direction: statement
@@ -50,7 +54,9 @@ export function getDemoMandalaProjection(
     })),
     active_experiments: [],
     recognized_resources: [],
-    current_capacity: { summary: 'Ainda não há capacidade registrada para os experimentos deste ciclo.' },
+    current_capacity: {
+      summary: 'Ainda não há capacidade registrada para os experimentos deste ciclo.',
+    },
     recent_movement: {
       total_recorded_responses: 0,
       descriptive_digest: 'Ainda não há registros de resposta neste ciclo.',

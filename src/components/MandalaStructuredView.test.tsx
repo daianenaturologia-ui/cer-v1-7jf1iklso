@@ -8,10 +8,17 @@ vi.mock('@/services/cerMandalaService', () => ({
   cerMandalaReadModelService: { getMandalaProjection: vi.fn() },
 }))
 const projection = (id: string, statement: string) => ({
-  enrollment_id: id, direction: { mode: 'reused' as const, statement },
-  active_priorities: [], active_experiments: [], recognized_resources: [],
+  enrollment_id: id,
+  direction: { mode: 'reused' as const, statement },
+  active_priorities: [],
+  active_experiments: [],
+  recognized_resources: [],
   current_capacity: { summary: 'Sem registro de capacidade' },
-  recent_movement: { total_recorded_responses: 0, descriptive_digest: 'Sem retornos', recent_responses: [] },
+  recent_movement: {
+    total_recorded_responses: 0,
+    descriptive_digest: 'Sem retornos',
+    recent_responses: [],
+  },
   evolution_highlights: [],
 })
 beforeEach(() => vi.clearAllMocks())
@@ -20,7 +27,12 @@ describe('Mandala: pessoa, papel e falha de carregamento', () => {
   it('uma resposta atrasada da pessoa anterior não substitui a pessoa atual', async () => {
     let resolveOld!: (value: ReturnType<typeof projection>) => void
     vi.mocked(cerMandalaReadModelService.getMandalaProjection)
-      .mockImplementationOnce(() => new Promise((resolve) => { resolveOld = resolve }))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveOld = resolve
+          }),
+      )
       .mockResolvedValueOnce(projection('b', 'Direção da nova pessoa'))
     const view = render(<MandalaStructuredView enrollmentId="a" audience="professional" />)
     view.rerender(<MandalaStructuredView enrollmentId="b" audience="professional" />)
@@ -38,7 +50,10 @@ describe('Mandala: pessoa, papel e falha de carregamento', () => {
     view.rerender(<MandalaStructuredView enrollmentId="a" audience="participant" />)
     expect(screen.queryByText('Direção profissional')).toBeNull()
     await screen.findByText('Texto compartilhado')
-    expect(cerMandalaReadModelService.getMandalaProjection).toHaveBeenLastCalledWith('a', 'participant')
+    expect(cerMandalaReadModelService.getMandalaProjection).toHaveBeenLastCalledWith(
+      'a',
+      'participant',
+    )
   })
   it('mostra a falha e permite tentar novamente sem mascará-la como vazio', async () => {
     vi.mocked(cerMandalaReadModelService.getMandalaProjection)

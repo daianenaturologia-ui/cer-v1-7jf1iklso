@@ -13,20 +13,28 @@ vi.mock('./demoAdapter', () => ({ demoAdapter: mocks }))
 import { cerMandalaReadModelService } from './cerMandalaService'
 
 const draft = {
-  id: 'plan-a', enrollment_id: 'a', status: 'draft', direction_mode: 'reused',
-  direction_statement: 'Direção interna', professional_rationale: 'Fundamento privado',
+  id: 'plan-a',
+  enrollment_id: 'a',
+  status: 'draft',
+  direction_mode: 'reused',
+  direction_statement: 'Direção interna',
+  professional_rationale: 'Fundamento privado',
 }
 const shared = {
-  id: 'presentation-a', enrollment_id: 'a', plan_id: 'plan-a', status: 'presented',
-  participant_title: 'Nosso cuidado', participant_summary: 'Texto conferido e compartilhado',
+  id: 'presentation-a',
+  enrollment_id: 'a',
+  plan_id: 'plan-a',
+  status: 'presented',
+  participant_title: 'Nosso cuidado',
+  participant_summary: 'Texto conferido e compartilhado',
   practical_invitation: 'Conversar sobre o próximo passo',
 }
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.isEnabled.mockReturnValue(true)
   mocks.getActivePersona.mockReturnValue('daiane')
-  mocks.listPlans.mockImplementation((id) => id === 'a' ? [draft] : [])
-  mocks.listPresentedForParticipant.mockImplementation((id) => id === 'a' ? [shared] : [])
+  mocks.listPlans.mockImplementation((id) => (id === 'a' ? [draft] : []))
+  mocks.listPresentedForParticipant.mockImplementation((id) => (id === 'a' ? [shared] : []))
   mocks.listPriorities.mockReturnValue([
     { id: 'p1', status: 'active', title: 'Prioridade interna', professional_rationale: 'Segredo' },
     { id: 'p2', status: 'candidate', title: 'Ainda em discussão' },
@@ -60,7 +68,8 @@ describe('Mandala de demonstração com registros existentes', () => {
   })
   it('não usa apresentações retiradas ou de outra revisão do plano', async () => {
     mocks.listPresentedForParticipant.mockReturnValue([
-      { ...shared, status: 'withdrawn' }, { ...shared, plan_id: 'plan-anterior' },
+      { ...shared, status: 'withdrawn' },
+      { ...shared, plan_id: 'plan-anterior' },
     ])
     const result = await cerMandalaReadModelService.getMandalaProjection('a')
     expect(result.direction).toBeUndefined()
@@ -75,7 +84,9 @@ describe('Mandala de demonstração com registros existentes', () => {
   })
   it('interagente não pode pedir projeção profissional na demonstração', async () => {
     mocks.getActivePersona.mockReturnValue('mariana')
-    await expect(cerMandalaReadModelService.getMandalaProjection('a', 'professional')).rejects.toThrow('visão profissional')
+    await expect(
+      cerMandalaReadModelService.getMandalaProjection('a', 'professional'),
+    ).rejects.toThrow('visão profissional')
     expect(mocks.listPlans).not.toHaveBeenCalled()
     expect(mocks.collection).not.toHaveBeenCalled()
   })

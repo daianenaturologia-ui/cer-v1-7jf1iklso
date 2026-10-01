@@ -53,10 +53,15 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
 
   useEffect(() => {
     loadMandala()
-    return () => { requestVersion.current++ }
+    return () => {
+      requestVersion.current++
+    }
   }, [enrollmentId, audience])
 
-  if (loading || (mandala && (mandala.enrollment_id !== enrollmentId || loadedAudience !== audience))) {
+  if (
+    loading ||
+    (mandala && (mandala.enrollment_id !== enrollmentId || loadedAudience !== audience))
+  ) {
     return (
       <div className="p-12 text-center text-xs text-muted-foreground flex flex-col items-center justify-center gap-2">
         <RefreshCw className="w-4 h-4 animate-spin text-primary" />
@@ -68,7 +73,9 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
   if (!mandala) {
     return (
       <div className="p-8 text-center text-xs text-muted-foreground">
-        {error ? 'Não foi possível carregar a Mandala agora.' : 'Nenhum dado disponível para organizar a Mandala neste momento.'}
+        {error
+          ? 'Não foi possível carregar a Mandala agora.'
+          : 'Nenhum dado disponível para organizar a Mandala neste momento.'}
         <Button variant="outline" size="sm" onClick={loadMandala} className="block mx-auto mt-3">
           Tentar novamente
         </Button>
