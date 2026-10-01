@@ -80,6 +80,27 @@ export const AYV_C3_DIRECTION_OPTIONS = [
   { id: 'dont_know', label: 'Não sei identificar' },
 ] as const
 
+// Same direction identifiers, expressed in the area the participant is observing.
+// Examples guide recognition without asserting a symptom or interpreting old responses.
+const SKIN_HAIR_DIRECTION_LABELS: Record<string, string> = {
+  increased: 'Uma característica da pele ou do cabelo ficou mais intensa',
+  decreased: 'Uma característica da pele ou do cabelo diminuiu',
+  irregular: 'As características da pele ou do cabelo variam mais',
+  different: 'Percebo outra mudança na pele ou no cabelo',
+  improved: 'Minha pele ou meu cabelo melhoraram em relação ao habitual',
+}
+
+export const AYV_C3_SKIN_HAIR_HELP =
+  'Pense no que mudou, como ressecamento, oleosidade, sensibilidade, textura ou queda de cabelo. Escolha a opção que mais se aproxima dessa mudança.'
+
+export function chapter3DirectionOptions(domain: string) {
+  return AYV_C3_DIRECTION_OPTIONS.map((option) => ({
+    ...option,
+    label:
+      domain === 'skin_hair' ? SKIN_HAIR_DIRECTION_LABELS[option.id] || option.label : option.label,
+  }))
+}
+
 export const AYV_C3_STARTED_OPTIONS = [
   { id: 'last_week', label: 'Na última semana' },
   { id: 'last_month', label: 'Nas últimas semanas' },

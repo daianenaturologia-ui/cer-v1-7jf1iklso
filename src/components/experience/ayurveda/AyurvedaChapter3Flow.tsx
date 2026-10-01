@@ -19,8 +19,9 @@ import { experienceResponseService } from '@/services/experienceEngine'
 import type { ExperienceResponseRecord } from '@/types/cer'
 import {
   AYV_C3_CONTEXT_OPTIONS,
-  AYV_C3_DIRECTION_OPTIONS,
+  chapter3DirectionOptions,
   AYV_C3_DOMAIN_OPTIONS,
+  AYV_C3_SKIN_HAIR_HELP,
   AYV_C3_MEDICATION_STATUS_OPTIONS,
   AYV_C3_MEDICATION_TIMING_OPTIONS,
   AYV_C3_PROMPTS,
@@ -406,7 +407,10 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                   {(state.changed_domains || []).map((domain) => (
                     <p key={domain} className="mt-1 text-muted-foreground">
                       {chapter3Label(AYV_C3_DOMAIN_OPTIONS, domain)}:{' '}
-                      {chapter3Label(AYV_C3_DIRECTION_OPTIONS, state.change_directions?.[domain])}
+                      {chapter3Label(
+                        chapter3DirectionOptions(domain),
+                        state.change_directions?.[domain],
+                      )}
                     </p>
                   ))}
                 </div>
@@ -559,8 +563,13 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           {(state.changed_domains || []).map((domain) => (
             <div key={domain} className="space-y-2 rounded-xl border p-3">
               <p className="text-xs font-medium">{chapter3Label(AYV_C3_DOMAIN_OPTIONS, domain)}</p>
+              {domain === 'skin_hair' && (
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {AYV_C3_SKIN_HAIR_HELP}
+                </p>
+              )}
               <div className="grid gap-2 sm:grid-cols-2">
-                {AYV_C3_DIRECTION_OPTIONS.map((option) => (
+                {chapter3DirectionOptions(domain).map((option) => (
                   <React.Fragment key={option.id}>
                     {optionButton(
                       state.change_directions?.[domain] === option.id,

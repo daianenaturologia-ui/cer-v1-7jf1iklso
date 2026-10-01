@@ -58,7 +58,7 @@ import {
 } from '@/services/ayurvedaChapter2'
 import {
   AYV_C3_CONTEXT_OPTIONS,
-  AYV_C3_DIRECTION_OPTIONS,
+  chapter3DirectionOptions,
   AYV_C3_DOMAIN_OPTIONS,
   AYV_C3_MEDICATION_STATUS_OPTIONS,
   AYV_C3_MEDICATION_TIMING_OPTIONS,
@@ -1426,7 +1426,7 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
                       <p key={domain} className="mt-1">
                         <strong>{chapter3Label(AYV_C3_DOMAIN_OPTIONS, domain)}:</strong>{' '}
                         {chapter3Label(
-                          AYV_C3_DIRECTION_OPTIONS,
+                          chapter3DirectionOptions(domain),
                           c3DerivedStatus.state.change_directions?.[domain],
                         )}
                       </p>
