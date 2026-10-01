@@ -50,3 +50,11 @@ Estado conferido por leitura do repositório e dos registros existentes, sem exe
 Pendência já documentada: verificar o ciclo real de salvar → revisar → publicar → leitura da interagente com uma conta fictícia no servidor PocketBase, distinguindo-o dos testes simulados. Confirmar também no ambiente a aplicação da migração de histórias e os hooks correspondentes, sem reaplicar uma migração já instalada.
 
 A sessão de navegador disponível nesta retomada contém apenas uma aba vazia, sem editor ou preview do Skip. O link do projeto é necessário para acessar novamente esse ambiente. Até restabelecer o acesso, não declarar sincronização posterior a `06edbee`, publicação nem validação do ciclo real como concluídas.
+
+## Acesso ao ambiente restabelecido nesta retomada
+
+O endereço do builder fornecido pela usuária permitiu abrir o CER V1 no Skip. O Inspetor de Build mostra a execução **0.0.214**, commit **6101af5**, como concluída com sucesso e ativa no Preview às 12:16 de 1/10/2026. Essa informação do ambiente atualiza a versão 0.0.211 anteriormente conferida no repositório.
+
+No Skip Cloud, a coleção `cer_life_events` está instalada (zero registros no momento da leitura). A lista de APIs e Gatilhos mostra `on_cer_life_event`, `on_cer_map_reading_snapshot` e `on_cer_map_lifecycle`. A coleção `cer_maps` também mostrava zero registros. A presença desses componentes não comprova a execução de um ciclo autenticado de publicação.
+
+Nenhuma suíte, build, migração ou sincronização foi reexecutada. A entrada no Preview foi solicitada por formulário seguro; a aplicação retornou “Não foi possível entrar. Confira seu e-mail e senha e tente novamente.” Não houve confirmação de autenticação, salvamento, revisão nem publicação. A pendência agora é autenticar a conta profissional para executar o ciclo real exclusivamente com dados fictícios; o link do projeto já foi recuperado.
