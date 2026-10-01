@@ -35,3 +35,18 @@ Após autorização explícita, o bloco foi enviado à main do repositório `dai
 O editor e as duas leituras foram conferidos no preview com conta fictícia. A conferência identificou e corrigiu a apresentação de respostas legadas que guardavam o texto em `title` ou o nome da alternativa em `selected`. Mais 19 testes direcionados passaram após esse ajuste, assim como TypeScript e build. A demonstração contém fixtures antigas sem correspondência com alguns prompts atuais; o documento mantém ausência de dados explícita, sem inventar respostas.
 
 A verificação dos hooks em servidor com um ciclo real de salvamento, revisão e publicação permanece distinta dos testes simulados e da confirmação de sua instalação. Nenhum mapa de participante real foi publicado durante a auditoria.
+
+## Retomada após interrupção — 1 de outubro de 2026
+
+Estado conferido por leitura do repositório e dos registros existentes, sem executar novamente testes, TypeScript ou build.
+
+- A main está na versão 0.0.211. O último commit de implementação conferido é `06edbee1ad6c0f9ae871e12544abba107ce5719c` (15:16:30 UTC), posterior à sincronização do Skip.
+- A Linha da Vida já está implementada: acontecimentos editáveis, data/ano/idade aproximada ou época não informada, emoções, relato por texto ou captura de voz e escolha entre relato privado e compartilhado.
+- A visão profissional filtra histórias privadas também na demonstração; a migração `0069_create_cer_life_events.js` restringe o acesso profissional a histórias compartilhadas com vínculo ativo.
+- As histórias compartilhadas integram as fontes do Mapa. O editor permite relacionar acontecimento e resposta atual por uma hipótese profissional, explicações alternativas e pergunta para explorar em conversa. Não há inferência automática de causa a partir de um comportamento.
+- O convite após as seis dimensões e a entrada da Linha da Vida em Evolução estão preservados na main. Não reaplicar os commits locais `ccaf292`, `3611955` ou `8762c37`: essas alterações já foram integradas, inclusive com ajuste posterior à sincronização.
+- Os logs locais existentes registram os 50 testes do Mapa e os builds da Linha da Vida concluídos. Esta retomada não executou novos testes; não atribui o resultado desses logs a uma nova rodada nem declara a suíte completa aprovada.
+
+Pendência já documentada: verificar o ciclo real de salvar → revisar → publicar → leitura da interagente com uma conta fictícia no servidor PocketBase, distinguindo-o dos testes simulados. Confirmar também no ambiente a aplicação da migração de histórias e os hooks correspondentes, sem reaplicar uma migração já instalada.
+
+A sessão de navegador disponível nesta retomada contém apenas uma aba vazia, sem editor ou preview do Skip. O link do projeto é necessário para acessar novamente esse ambiente. Até restabelecer o acesso, não declarar sincronização posterior a `06edbee`, publicação nem validação do ciclo real como concluídas.
