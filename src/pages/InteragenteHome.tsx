@@ -1,3 +1,4 @@
+import { LifeDirections } from '@/components/experience/LifeDirections'
 import { LifeTimeline } from '@/components/experience/LifeTimeline'
 import { consciousnessCoverage } from '@/services/cerMapReadings'
 import React, { useState, useEffect } from 'react'
@@ -1787,6 +1788,14 @@ export const InteragenteHome: React.FC = () => {
            ======================================================== */}
         {activePhase === 'equilibrio' && (
           <div className="space-y-6">
+            {enrollment && (
+              <LifeDirections
+                enrollmentId={enrollment.id}
+                unlocked={consciousnessCoverage(participantResponses, availableExperiences).every(
+                  (d) => d.completed,
+                )}
+              />
+            )}
             {/* Esclarecimento conceitual importante: Mandala vs Mapa CER */}
             <div className="p-3.5 rounded-lg bg-primary/5 border border-primary/20 text-xs text-muted-foreground leading-relaxed">
               <span className="font-semibold text-foreground block mb-0.5">
@@ -2252,22 +2261,14 @@ export const InteragenteHome: React.FC = () => {
                 />
               )}
 
-              <Card className="border-dashed border-border/70 bg-muted/10">
-                <CardContent className="p-4 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-serif font-semibold text-sm text-foreground">
-                      Direções Futuras do Cuidado
-                    </span>
-                    <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                      Quando disponível
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Projeção e sustentação a longo prazo após consolidação dos ciclos de cuidado e
-                    da autonomia no cotidiano.
-                  </p>
-                </CardContent>
-              </Card>
+              {enrollment && (
+                <LifeDirections
+                  enrollmentId={enrollment.id}
+                  unlocked={consciousnessCoverage(participantResponses, availableExperiences).every(
+                    (d) => d.completed,
+                  )}
+                />
+              )}
             </div>
           </div>
         )}
