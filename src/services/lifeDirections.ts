@@ -69,13 +69,11 @@ export const lifeDirectionsService = {
       }
       return values
     }
-    return pb
-      .collection('cer_life_directions')
-      .getFullList<LifeDirection>({
-        filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
-        sort: 'created',
-        requestKey: null,
-      })
+    return pb.collection('cer_life_directions').getFullList<LifeDirection>({
+      filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
+      sort: 'created',
+      requestKey: null,
+    })
   },
   async save(value: LifeDirectionInput, id?: string): Promise<LifeDirection> {
     validateLifeDirection(value)
