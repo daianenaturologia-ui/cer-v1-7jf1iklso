@@ -1,3 +1,5 @@
+import { LifeTimeline } from '@/components/experience/LifeTimeline'
+import { consciousnessCoverage } from '@/services/cerMapReadings'
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
@@ -1588,6 +1590,19 @@ export const InteragenteHome: React.FC = () => {
                 </Dialog>
               </>
             )}
+            {consciousnessCoverage(participantResponses, availableExperiences).every(
+              (d) => d.completed,
+            ) && (
+              <div className="rounded-xl border p-4 space-y-2">
+                <p className="text-sm">
+                  Você concluiu as seis dimensões. Agora podemos olhar para os acontecimentos da sua
+                  história.
+                </p>
+                <Button onClick={() => setActivePhase('evolucao')}>
+                  Começar minha Linha da Vida
+                </Button>
+              </div>
+            )}
             {/* Transição clara Pós-Consciência / Waiting State */}
             {hasCompletedConsciousness && assignments.length === 0 && (
               <Card className="border-primary/40 bg-gradient-to-r from-primary/5 via-card to-card">
@@ -1605,18 +1620,19 @@ export const InteragenteHome: React.FC = () => {
                       dos momentos de percepção.
                     </p>
                     <div className="p-3 rounded-lg bg-card border border-border/60 text-foreground italic">
-                      “Na próxima etapa, vocês vão escolher juntas o que faz sentido cuidar agora.”
+                      “Agora, podemos conhecer os acontecimentos da sua história e os recursos que
+                      você construiu.”
                     </div>
                   </div>
                   <div className="flex items-center gap-3 pt-1">
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setActivePhase('equilibrio')}
+                      onClick={() => setActivePhase('evolucao')}
                       className="text-xs h-8 gap-1.5"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Ir para Equilíbrio & Realização</span>
+                      <span>Ir para minha Linha da Vida</span>
                     </Button>
                     <p className="text-[11px] text-muted-foreground">
                       Precisa de ajuda? Fale com sua profissional.
@@ -2226,23 +2242,15 @@ export const InteragenteHome: React.FC = () => {
             </Card>
 
             {/* Direções Futuras & Recursos em Construção */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card className="border-dashed border-border/70 bg-muted/10">
-                <CardContent className="p-4 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-serif font-semibold text-sm text-foreground">
-                      Linha da Vida & Minha História
-                    </span>
-                    <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                      Quando disponível
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    A reconstituição longitudinal da sua história de vida e dos marcos biográficos
-                    será integrada aqui quando o recurso estiver disponível na plataforma.
-                  </p>
-                </CardContent>
-              </Card>
+            <div className="space-y-4">
+              {enrollment && (
+                <LifeTimeline
+                  enrollmentId={enrollment.id}
+                  unlocked={consciousnessCoverage(participantResponses, availableExperiences).every(
+                    (d) => d.completed,
+                  )}
+                />
+              )}
 
               <Card className="border-dashed border-border/70 bg-muted/10">
                 <CardContent className="p-4 space-y-1.5">

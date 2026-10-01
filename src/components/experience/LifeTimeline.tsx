@@ -38,7 +38,9 @@ export function LifeTimeline({
       ? Promise.resolve(demoLifeEvents.get(enrollmentId) || [])
       : lifeTimelineService.list(enrollmentId)
     return request
-      .then(setEvents)
+      .then((data) =>
+        setEvents(readOnly ? data.filter((e) => e.access_class === 'participant_shared') : data),
+      )
       .catch(() => setError('Não foi possível carregar sua Linha da Vida. Tente novamente.'))
       .finally(() => setLoading(false))
   }
@@ -53,7 +55,8 @@ export function LifeTimeline({
       : lifeTimelineService.list(enrollmentId)
     request
       .then((data) => {
-        if (active) setEvents(data)
+        if (active)
+          setEvents(readOnly ? data.filter((e) => e.access_class === 'participant_shared') : data)
       })
       .catch(() => {
         if (active) setError('Não foi possível carregar sua Linha da Vida. Tente novamente.')
@@ -64,7 +67,7 @@ export function LifeTimeline({
     return () => {
       active = false
     }
-  }, [enrollmentId])
+  }, [enrollmentId, readOnly])
   function open(event?: LifeEvent) {
     setEditingId(event?.id)
     setVoice(false)
