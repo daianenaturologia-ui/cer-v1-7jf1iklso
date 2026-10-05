@@ -62,4 +62,17 @@ Fontes oficiais consultadas:
 
 Configuração isolada `scripts/weekly-agenda-vitest.config.ts`: matemática de semana e navegação entre anos, sobreposição/meia-noite, ICS com escaping/UTF-8/intervalo, persistência e restauração, privacidade, proteção de servidor e fluxo visual de agenda. Dois testes de componentes existentes foram ajustados à navegação nova e executados porque essas telas mudaram. Nenhuma suíte histórica completa foi repetida.
 
-Estado de publicação e conferência visual será registrado ao concluir a entrega. A homologação com usuários reais e autorização HTTP de PocketBase continua pendente; os testes de hooks usam simulação isolada.
+Resultado: **16 testes específicos aprovados**, typecheck do aplicativo e build de produção aprovados (último build 3,75s). A homologação com usuários reais e autorização HTTP de PocketBase continua pendente; os testes de hooks usam simulação isolada.
+
+## Publicação e conferência visual
+
+- Implementação remota: `9f944317de06b074ed30757a1d4467749bf41534`, 25 blobs conferidos contra os SHAs locais antes de atualizar main.
+- Ajuste de entrada de horários: `d301887acc374282ba100a62ff548ea7a945f3da`; campos capturam input imediatamente e mover início preserva duração. Conferido no navegador depois da sincronização: uma nota das 9h foi ajustada de 9h30 para 10h e a duração persistiu ao reabrir.
+- Versão observada no construtor: **0.0.245**. Sincronização GitHub concluída.
+- `cer_planner_notes` instalada com zero registros reais; `on_planner_notes` observado no painel de 50 APIs/gatilhos. Nenhum dado real foi criado.
+- Visão Mariana: grade de cinco dias, duas notas explicitamente fictícias criadas sem resetar dados. Edição e leitura da nota conferidas; preservação após troca de persona/recarregamento.
+- Visão Daiane: abas Plano, Linha da Vida, Agenda e Revisão acessíveis; nota livre privada ausente; aprendizado compartilhado da entrega anterior preservado na aba Aprendizados.
+- Formato móvel do construtor: largura 387px, conteúdo sem exceder a largura, seletor de um dia por vez. Prévia desktop restaurada ao final.
+- Opção Google Agenda e explicação de cópia manual conferidas. Geração e conteúdo do ICS têm testes automatizados; o capturador de download do navegador remoto excedeu o tempo de espera, sem erros de console. Importação em conta Google real não foi executada nem alegada como homologada.
+- Link conferido: https://cer-v1-1444e--preview.goskip.app/planner
+- Imagem da agenda entregue, com dados apenas fictícios.
