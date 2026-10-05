@@ -569,7 +569,7 @@ export const ParticipantWorkspace: React.FC = () => {
             ))}
           {careTool === 'mandala' && (
             <div className="space-y-4">
-              <DevelopmentLearningView key={enrollment.id} enrollmentId={enrollment.id} />
+              <DevelopmentLearningView key={enrollment.id} enrollmentId={enrollment.id} readOnly />
               <MandalaStructuredView enrollmentId={enrollment.id} audience="professional" />
             </div>
           )}

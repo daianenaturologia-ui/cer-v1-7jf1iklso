@@ -8,6 +8,8 @@ export default defineConfig({
       'src/services/selfDevelopment.test.ts',
       'src/services/selfDevelopmentServer.test.ts',
       'src/components/SelfDevelopmentJourney.test.tsx',
+      'src/components/SelfDevelopmentPlannerPage.test.tsx',
+      'src/services/developmentEnrollment.test.ts',
     ],
   },
 })

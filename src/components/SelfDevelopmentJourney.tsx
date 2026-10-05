@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   selfDevelopmentService,
+  visibleDevelopment,
   type DevelopmentExperiment,
   type DevelopmentInput,
 } from '@/services/selfDevelopment'
@@ -53,7 +54,7 @@ export function SelfDevelopmentJourney({
     selfDevelopmentService
       .list(enrollmentId)
       .then((values) => {
-        if (active) setRecords(values)
+        if (active) setRecords(visibleDevelopment(values, enrollmentId, readOnly))
       })
       .catch(() => {
         if (active)
@@ -120,6 +121,7 @@ export function SelfDevelopmentJourney({
       const saved = await selfDevelopmentService.save(value, id)
       setRecords((old) => (id ? old.map((r) => (r.id === id ? saved : r)) : [saved, ...old]))
       setEditing(null)
+      setShowCatalog(false)
       setReviewing(undefined)
       setMessage(text)
     } catch (e) {

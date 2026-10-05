@@ -23,10 +23,14 @@ export const ExperimentosPage: React.FC = () => {
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [assignments, setAssignments] = useState<CerPracticeAssignmentRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   const loadData = async () => {
     if (!user?.id) return
     setLoading(true)
+    setEnrollment(null)
+    setAssignments([])
+    setError(false)
     try {
       const activeEnrollment = await enrollmentService.getActiveForUser(user.id)
       setEnrollment(activeEnrollment)
@@ -35,6 +39,7 @@ export const ExperimentosPage: React.FC = () => {
         setAssignments(asgns)
       }
     } catch (err) {
+      setError(true)
       console.error(err)
     } finally {
       setLoading(false)
@@ -125,6 +130,13 @@ export const ExperimentosPage: React.FC = () => {
         {loading ? (
           <p className="text-xs text-muted-foreground text-center py-12">
             Carregando experimentos...
+          </p>
+        ) : error ? (
+          <p role="alert">
+            Não foi possível carregar seus experimentos.{' '}
+            <Button variant="outline" onClick={loadData}>
+              Tentar novamente
+            </Button>
           </p>
         ) : assignments.length === 0 ? (
           <EmptyState

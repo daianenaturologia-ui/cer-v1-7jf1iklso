@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, BookOpen } from 'lucide-react'
 
 export const BibliotecaPage: React.FC = () => {
-  const { isProfissional } = useAuth()
+  const { isProfissional, isDemo } = useAuth()
   if (!isProfissional) return <p className="p-6">Este espaço é da profissional.</p>
   return (
     <div className="container max-w-5xl mx-auto py-6 px-4 space-y-4">
@@ -30,7 +30,14 @@ export const BibliotecaPage: React.FC = () => {
       </div>
 
       <DevelopmentResourceEditor />
-      <PracticeSelector />
+      {isDemo ? (
+        <p className="text-sm text-muted-foreground">
+          As práticas clínicas fictícias são combinadas no acompanhamento de Mariana. O acervo
+          educativo acima pode ser explorado aqui.
+        </p>
+      ) : (
+        <PracticeSelector />
+      )}
     </div>
   )
 }
