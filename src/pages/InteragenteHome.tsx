@@ -4,7 +4,7 @@ import { CerWelcome } from '@/components/CerWelcome'
 import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
 import { cerCycleInvitationService } from '@/services/cerCycleInvitationService'
 import { LifeDirections } from '@/components/experience/LifeDirections'
-import { LifeTimeline } from '@/components/experience/LifeTimeline'
+import { LifeJourney } from '@/components/experience/LifeJourney'
 import { consciousnessCoverage } from '@/services/cerMapReadings'
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -1500,8 +1500,7 @@ export const InteragenteHome: React.FC = () => {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="cer-prose px-4 pb-5 sm:px-5 space-y-3 text-foreground/90 border-t border-border/40 pt-4">
                     <p>
-                      Nesta etapa, vamos olhar para você como{' '}
-                      <strong className="cer-emphasis">um ser inteiro.</strong> As seis dimensões
+                      Nesta etapa, vamos olhar para você como <strong className="cer-emphasis">um ser inteiro.</strong> As seis dimensões
                       representam diferentes aspectos da sua experiência, mas elas não funcionam
                       separadamente: corpo, pensamentos, emoções, padrões de resposta, relações,
                       intimidade, valores e sentido se influenciam continuamente.
@@ -1509,17 +1508,16 @@ export const InteragenteHome: React.FC = () => {
                     <p>
                       Clique em cada dimensão para acessar a experiência que estiver disponível. Não
                       existem respostas certas, e você não precisa concluir tudo de uma vez.
-                      <strong className="cer-emphasis">Responda no seu ritmo</strong> e registre
-                      apenas aquilo que fizer sentido compartilhar neste momento.
+                      <strong className="cer-emphasis">Responda no seu ritmo</strong> e registre apenas aquilo que fizer sentido compartilhar
+                      neste momento.
                     </p>
                     <p>
-                      No centro está o seu <strong className="cer-emphasis">Mapa CER</strong>: um
-                      retrato do seu momento, que reúne como seu corpo, sua mente, suas emoções e
-                      suas relações funcionam, seus recursos e o que pede cuidado. Ele se transforma
-                      com você e será construído aos poucos, a partir das suas respostas, dos nossos
-                      encontros e da minha leitura profissional. Você já pode consultar um mapa
-                      inicial com suas respostas. A leitura profissional será aprofundada, revisada
-                      e conversada com você ao longo das sessões.
+                      No centro está o seu <strong className="cer-emphasis">Mapa CER</strong>: um retrato
+                      do seu momento, que reúne como seu corpo, sua mente, suas emoções e suas
+                      relações funcionam, seus recursos e o que pede cuidado. Ele se transforma
+                      com você e será construído aos poucos, a partir das
+                      suas respostas, dos nossos encontros e da minha leitura profissional. Você já pode consultar um mapa inicial com suas respostas e os marcos da sua Linha da Vida. Ele se atualiza quando você acrescenta ou altera registros; histórias particulares ficam só na sua visão. A leitura profissional
+                      será aprofundada, revisada e conversada com você ao longo das sessões.
                     </p>
                     <p>
                       O objetivo não é colocar você dentro de uma definição. É ajudar você a
@@ -1537,12 +1535,7 @@ export const InteragenteHome: React.FC = () => {
                 <SerConscienciaMap
                   availableExperiences={availableExperiences}
                   hasPublishedMap={Boolean(currentMap)}
-                  hasInitialMap={participantResponses.some(
-                    (r) =>
-                      r.enrollment_id === enrollment?.id &&
-                      ['participant_shared', 'shared_care'].includes(r.access_class) &&
-                      !['draft', 'superseded', 'discarded'].includes(r.status),
-                  )}
+                  hasInitialMap={participantResponses.some((r) => r.enrollment_id === enrollment?.id && ['participant_shared', 'shared_care'].includes(r.access_class) && !['draft', 'superseded', 'discarded'].includes(r.status))}
                   onSelectExperience={(expId) => setActiveExperienceId(expId)}
                   onOpenMap={() => setShowMapModal(true)}
                 />
@@ -1860,9 +1853,9 @@ export const InteragenteHome: React.FC = () => {
         {activePhase === 'evolucao' && (
           <div className="space-y-6">
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
-              <h2 className="font-serif text-lg">Que vida quero construir?</h2>
+              <h2 className="font-serif text-lg">Minha trajetória</h2>
               <p className="text-sm">
-                Defina seu caminho, planeje um passo e leve-o para a sua agenda.
+                Conheça sua história, acolha seu presente e desenhe possibilidades para o futuro.
               </p>
               <Button variant="outline" onClick={() => setActivePhase('consciencia')}>
                 Rever meu Mapa CER
@@ -1872,7 +1865,7 @@ export const InteragenteHome: React.FC = () => {
               </Button>
             </div>
 
-            <Tabs defaultValue="planejar">
+            <Tabs defaultValue="caminho">
               <TabsList aria-label="Evolução" className="h-auto flex-wrap">
                 <TabsTrigger value="planejar">Planejar</TabsTrigger>
                 <TabsTrigger value="caminho">Linha da Vida</TabsTrigger>
@@ -1887,28 +1880,14 @@ export const InteragenteHome: React.FC = () => {
                 )}
               </TabsContent>
               <TabsContent value="caminho" className="space-y-4 mt-4">
-                {/* Direções Futuras & Recursos em Construção */}
-                <div className="space-y-4">
-                  {enrollment && (
-                    <LifeTimeline
-                      enrollmentId={enrollment.id}
-                      unlocked={consciousnessCoverage(
-                        participantResponses,
-                        availableExperiences,
-                      ).every((d) => d.completed)}
-                    />
-                  )}
-
-                  {enrollment && (
-                    <LifeDirections
-                      enrollmentId={enrollment.id}
-                      unlocked={consciousnessCoverage(
-                        participantResponses,
-                        availableExperiences,
-                      ).every((d) => d.completed)}
-                    />
-                  )}
-                </div>
+                {enrollment && (
+                  <LifeJourney
+                    key={`life-${enrollment.id}`}
+                    enrollmentId={enrollment.id}
+                    unlocked={consciousnessCoverage(participantResponses, availableExperiences).every((d) => d.completed)}
+                    objective={presentedCarePlans[0] ? { title: presentedCarePlans[0].participant_title || 'Nosso foco de cuidado', summary: presentedCarePlans[0].participant_summary || '' } : undefined}
+                  />
+                )}
               </TabsContent>
               <TabsContent value="cuidado" className="space-y-4 mt-4">
                 {/* Nosso plano de ação (Plano Compartilhado existente) */}
