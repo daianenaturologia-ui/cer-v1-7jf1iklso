@@ -106,6 +106,17 @@ export function CerMapReadingsView({
           </Card>
         ))}
       </div>
+      {!!snapshot.sessionUpdates?.length && (
+        <Card className="shadow-none">
+          <CardHeader><CardTitle className="text-base font-serif">O que construímos nos encontros</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            {snapshot.sessionUpdates.map((update) => <div key={update.sessionId} className="space-y-1">
+              <p className="text-xs text-muted-foreground">Encontro de {new Date(update.sessionDate).toLocaleDateString('pt-BR')}</p>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{update.summary}</p>
+            </div>)}
+          </CardContent>
+        </Card>
+      )}
       {snapshot.integration && (
         <Card className="shadow-none">
           <CardHeader>
