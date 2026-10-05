@@ -14,22 +14,27 @@ export const MandalaPage: React.FC = () => {
   const navigate = useNavigate()
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [revision, setRevision] = useState(0)
 
   useEffect(() => {
     const load = async () => {
       if (!user?.id) return
       setLoading(true)
+      setEnrollment(null)
+      setError(false)
       try {
         const active = await enrollmentService.getActiveForUser(user.id)
         setEnrollment(active)
       } catch (err) {
+        setError(true)
         console.error(err)
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [user?.id])
+  }, [user?.id, revision])
 
   return (
     <div className="min-h-screen bg-background text-foreground py-8 px-4 sm:px-6">
@@ -66,6 +71,13 @@ export const MandalaPage: React.FC = () => {
 
         {loading ? (
           <div className="p-8 text-center text-xs text-muted-foreground">Carregando Mandala...</div>
+        ) : error ? (
+          <p role="alert">
+            Não foi possível carregar seu acompanhamento.{' '}
+            <Button variant="outline" onClick={() => setRevision((value) => value + 1)}>
+              Tentar novamente
+            </Button>
+          </p>
         ) : !enrollment ? (
           <EmptyState
             variant="mandala"

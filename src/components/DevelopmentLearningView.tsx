@@ -1,7 +1,17 @@
 import React, { useEffect, useState } from 'react'
-import { selfDevelopmentService, type DevelopmentExperiment } from '@/services/selfDevelopment'
+import {
+  selfDevelopmentService,
+  visibleDevelopment,
+  type DevelopmentExperiment,
+} from '@/services/selfDevelopment'
 import { Button } from '@/components/ui/button'
-export function DevelopmentLearningView({ enrollmentId }: { enrollmentId: string }) {
+export function DevelopmentLearningView({
+  enrollmentId,
+  readOnly = false,
+}: {
+  enrollmentId: string
+  readOnly?: boolean
+}) {
   const [records, setRecords] = useState<DevelopmentExperiment[]>([])
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -14,7 +24,12 @@ export function DevelopmentLearningView({ enrollmentId }: { enrollmentId: string
     selfDevelopmentService
       .list(enrollmentId)
       .then((values) => {
-        if (active) setRecords(values.filter((r) => r.reflection.trim()).slice(0, 5))
+        if (active)
+          setRecords(
+            visibleDevelopment(values, enrollmentId, readOnly)
+              .filter((r) => r.reflection.trim())
+              .slice(0, 5),
+          )
       })
       .catch(() => {
         if (active) setError(true)
@@ -25,7 +40,7 @@ export function DevelopmentLearningView({ enrollmentId }: { enrollmentId: string
     return () => {
       active = false
     }
-  }, [enrollmentId, revision])
+  }, [enrollmentId, readOnly, revision])
   return (
     <section
       className="rounded-xl border p-4 space-y-3"

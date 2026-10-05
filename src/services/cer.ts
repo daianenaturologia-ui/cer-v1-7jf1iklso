@@ -364,16 +364,26 @@ export const enrollmentService = {
   },
 
   async getActiveForUser(userId: string): Promise<EnrollmentRecord | null> {
-    try {
-      const records = await pb.collection('enrollments').getList<EnrollmentRecord>(1, 1, {
-        filter: `person_id.user_account_id = "${userId}"`,
-        sort: '-created',
-        expand: 'product_id,person_id',
-      })
-      return records.items[0] || null
-    } catch {
-      return null
+    const { demoAdapter, DEMO_ENROLLMENT, DEMO_USER_MARIANA } =
+      await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      return demoAdapter.getActivePersona() === 'mariana' && userId === DEMO_USER_MARIANA.id
+        ? DEMO_ENROLLMENT
+        : null
     }
+    if (!userId || pb.authStore.record?.id !== userId)
+      throw new Error('Entre na sua conta para abrir seu acompanhamento.')
+    const account = await pb.collection('users').getOne(userId)
+    if (!account.person_id || account.status !== 'active') return null
+    const records = await pb.collection('enrollments').getList<EnrollmentRecord>(1, 1, {
+      filter: pb.filter('person_id = {:person} && (status = "active" || status = "onboarding")', {
+        person: account.person_id,
+      }),
+      sort: '-created',
+      expand: 'product_id,person_id',
+      requestKey: null,
+    })
+    return records.items[0] || null
   },
 
   /**

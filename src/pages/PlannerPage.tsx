@@ -30,6 +30,7 @@ export const PlannerPage: React.FC = () => {
 
   const loadData = async () => {
     if (!user?.id) return
+    setEnrollment(null)
     setPlannerItems([])
     setActiveReviewInvite(null)
     setError(false)
