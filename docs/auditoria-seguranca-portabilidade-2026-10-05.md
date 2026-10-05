@@ -1,5 +1,7 @@
 # CER — segurança, privacidade e independência
 
+Atualização posterior: cinco regras de identidade foram aplicadas diretamente no painel vivo, sem atendimento do suporte. A reconstrução de todas as migrações e inicialização dos hooks também foram verificadas localmente. Ver `continuacao-seguranca-sem-suporte-2026-10-05.md` para o alcance exato; o estado abaixo descreve a etapa inicial e não representa mais ausência total de aplicação.
+
 Revisão de 05/10/2026. Escopo: código disponível, snapshot de permissões de 01/10/2026, metadados do painel Skip e documentação pública. Não é certificação LGPD, teste de invasão, parecer jurídico ou auditoria exaustiva do ambiente em produção. Não foram consultados prontuários, enviados dados clínicos a IA, ativados serviços pagos ou alterados segredos. As correções abaixo estão preparadas no código; não foram instaladas no servidor vivo.
 
 ## Resultado e prioridade
