@@ -60,14 +60,25 @@ it('filtra relatos privados também na demonstração profissional', async () =>
 })
 
 it('começa no nascimento e abre cada marco sem mostrar todos os relatos na entrada', async () => {
-  vi.spyOn(lifeTimelineService, 'list').mockResolvedValue([{id:'one', enrollment_id:'enr', title:'Uma mudança', time_kind:'age', time_value:'8', emotions:[], narrative:'História do marco', access_class:'participant_private'}])
+  vi.spyOn(lifeTimelineService, 'list').mockResolvedValue([
+    {
+      id: 'one',
+      enrollment_id: 'enr',
+      title: 'Uma mudança',
+      time_kind: 'age',
+      time_value: '8',
+      emotions: [],
+      narrative: 'História do marco',
+      access_class: 'participant_private',
+    },
+  ])
   render(<LifeTimeline enrollmentId="enr" />)
   const user = userEvent.setup()
-  expect(await screen.findByRole('button', {name:/Nascimento/})).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: /Nascimento/ })).toBeInTheDocument()
   expect(screen.queryByText('História do marco')).toBeNull()
-  await user.click(screen.getByRole('button', {name:'Abrir marco: Uma mudança'}))
+  await user.click(screen.getByRole('button', { name: 'Abrir marco: Uma mudança' }))
   expect(screen.getByText('História do marco')).toBeInTheDocument()
-  await user.click(screen.getByRole('button', {name:/Nascimento/}))
+  await user.click(screen.getByRole('button', { name: /Nascimento/ }))
   expect(screen.getByLabelText('Nome do acontecimento')).toHaveValue('Nascimento')
   expect(screen.getByLabelText('Idade aproximada (anos)')).toHaveValue(0)
 })

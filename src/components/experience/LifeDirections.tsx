@@ -43,7 +43,11 @@ export function LifeDirections({
       .then((values) => {
         if (active)
           setRecords(
-            values.filter(v => v.enrollment_id === enrollmentId && (!readOnly || v.access_class === 'participant_shared')),
+            values.filter(
+              (v) =>
+                v.enrollment_id === enrollmentId &&
+                (!readOnly || v.access_class === 'participant_shared'),
+            ),
           )
       })
       .catch(() => {
@@ -56,7 +60,11 @@ export function LifeDirections({
       active = false
     }
   }, [enrollmentId, readOnly, retry])
-  function open(kind: LifeDirection['kind'], record?: LifeDirection, horizon?: LifeDirection['horizon']) {
+  function open(
+    kind: LifeDirection['kind'],
+    record?: LifeDirection,
+    horizon?: LifeDirection['horizon'],
+  ) {
     setEditingId(record?.id)
     setSaved('')
     setVoice(false)
@@ -86,9 +94,7 @@ export function LifeDirections({
       )
       setEditing(null)
       setVoice(false)
-      setSaved(
-        'Registro salvo. Seu mapa inicial acompanha suas direções e momentos de agora.',
-      )
+      setSaved('Registro salvo. Seu mapa inicial acompanha suas direções e momentos de agora.')
     } catch (e) {
       setError(
         e instanceof Error
@@ -104,7 +110,13 @@ export function LifeDirections({
       className="border rounded-xl p-5 space-y-5"
       aria-label="Linha da Vida: presente e futuro"
     >
-      <h2 className="font-serif text-xl">{perspective === 'present' ? 'Como estou vivendo agora' : perspective === 'future' ? 'O que desejo construir' : 'Linha da Vida · Presente e futuro'}</h2>
+      <h2 className="font-serif text-xl">
+        {perspective === 'present'
+          ? 'Como estou vivendo agora'
+          : perspective === 'future'
+            ? 'O que desejo construir'
+            : 'Linha da Vida · Presente e futuro'}
+      </h2>
       <p className="text-sm text-muted-foreground">
         Como estou agora? Que vida desejo construir? Registre como se sente, o que faz sentido, o
         que quer cultivar e o que prefere não repetir. Você pode preencher aos poucos. Ao
@@ -124,75 +136,98 @@ export function LifeDirections({
         <p role="status">Carregando registros…</p>
       ) : (
         <>
-          {perspective === 'future' && !readOnly && unlocked && !error && <div className="relative grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-4">
-            <div aria-hidden="true" className="absolute top-10 left-10 right-10 border-t-2 border-primary/30"/>
-            {(['short', 'medium', 'long'] as const).map(horizon => <button type="button" key={horizon} onClick={() => open('future', undefined, horizon)} className="relative flex flex-col items-center gap-2 text-center text-sm text-primary"><span className="rounded-full border border-primary/40 bg-background w-12 h-12 flex items-center justify-center text-xl">+</span><span>{LIFE_HORIZONS[horizon]}</span></button>)}
-          </div>}
-          {!readOnly && unlocked && !error && (
-            <div className="flex flex-wrap gap-2">
-              {perspective !== 'future' && <Button variant="outline" onClick={() => open('present')}>
-                ＋ Como estou agora?
-              </Button>}
-              {perspective !== 'present' && <Button variant="outline" onClick={() => open('future')}>
-                ＋ Uma direção para o futuro
-              </Button>}
+          {perspective === 'future' && !readOnly && unlocked && !error && (
+            <div className="relative grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-4">
+              <div
+                aria-hidden="true"
+                className="absolute top-10 left-10 right-10 border-t-2 border-primary/30"
+              />
+              {(['short', 'medium', 'long'] as const).map((horizon) => (
+                <button
+                  type="button"
+                  key={horizon}
+                  onClick={() => open('future', undefined, horizon)}
+                  className="relative flex flex-col items-center gap-2 text-center text-sm text-primary"
+                >
+                  <span className="rounded-full border border-primary/40 bg-background w-12 h-12 flex items-center justify-center text-xl">
+                    +
+                  </span>
+                  <span>{LIFE_HORIZONS[horizon]}</span>
+                </button>
+              ))}
             </div>
           )}
-          {(['present', 'future'] as const).filter(kind => !perspective || kind === perspective).map((kind) => (
-            <div key={kind} className="border-l-4 border-primary/60 pl-4 space-y-3">
-              <h3 className="font-medium">
-                {kind === 'present'
-                  ? 'Presente · meus momentos de agora'
-                  : 'Futuro · desejos e possibilidades'}
-              </h3>
-              {records
-                .filter((v) => v.kind === kind)
-                .map((record) => (
-                  <article key={record.id} className="border rounded-lg p-3 space-y-2">
-                    <h4 className="font-medium">{record.title}</h4>
-                    <p className="text-xs text-muted-foreground">
-                      {LIFE_HORIZONS[record.horizon]} ·{' '}
-                      {record.created
-                        ? new Date(record.created).toLocaleDateString('pt-BR')
-                        : 'Registro atual'}{' '}
-                      ·{' '}
-                      {record.access_class === 'participant_shared'
-                        ? 'Compartilhado com minha profissional'
-                        : 'Só para mim'}
-                    </p>
-                    <p className="text-sm whitespace-pre-wrap">{record.narrative}</p>
-                    {(
-                      [
-                        ['meaning', 'Sentido e propósito'],
-                        ['resources', 'Recursos e apoios'],
-                        ['limits', 'Limites e necessidades'],
-                        ['first_step', 'Pequeno passo possível'],
-                      ] as const
-                    ).map(
-                      ([field, label]) =>
-                        record[field] && (
-                          <p key={field} className="text-sm whitespace-pre-wrap">
-                            <strong>{label}: </strong>
-                            {record[field]}
-                          </p>
-                        ),
-                    )}
-                    {!readOnly && unlocked && (
-                      <Button size="sm" variant="outline" onClick={() => open(kind, record)}>
-                        Editar registro
-                      </Button>
-                    )}
-                  </article>
-                ))}
-              {!records.some((v) => v.kind === kind) && (
-                <p className="text-sm text-muted-foreground">
-                  {readOnly
-                    ? 'Ainda não há registros compartilhados deste momento.'
-                    : 'Este espaço pode ser preenchido no seu tempo.'}
-                </p>
+          {!readOnly && unlocked && !error && (
+            <div className="flex flex-wrap gap-2">
+              {perspective !== 'future' && (
+                <Button variant="outline" onClick={() => open('present')}>
+                  ＋ Como estou agora?
+                </Button>
+              )}
+              {perspective !== 'present' && (
+                <Button variant="outline" onClick={() => open('future')}>
+                  ＋ Uma direção para o futuro
+                </Button>
               )}
             </div>
-          ))}
+          )}
+          {(['present', 'future'] as const)
+            .filter((kind) => !perspective || kind === perspective)
+            .map((kind) => (
+              <div key={kind} className="border-l-4 border-primary/60 pl-4 space-y-3">
+                <h3 className="font-medium">
+                  {kind === 'present'
+                    ? 'Presente · meus momentos de agora'
+                    : 'Futuro · desejos e possibilidades'}
+                </h3>
+                {records
+                  .filter((v) => v.kind === kind)
+                  .map((record) => (
+                    <article key={record.id} className="border rounded-lg p-3 space-y-2">
+                      <h4 className="font-medium">{record.title}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {LIFE_HORIZONS[record.horizon]} ·{' '}
+                        {record.created
+                          ? new Date(record.created).toLocaleDateString('pt-BR')
+                          : 'Registro atual'}{' '}
+                        ·{' '}
+                        {record.access_class === 'participant_shared'
+                          ? 'Compartilhado com minha profissional'
+                          : 'Só para mim'}
+                      </p>
+                      <p className="text-sm whitespace-pre-wrap">{record.narrative}</p>
+                      {(
+                        [
+                          ['meaning', 'Sentido e propósito'],
+                          ['resources', 'Recursos e apoios'],
+                          ['limits', 'Limites e necessidades'],
+                          ['first_step', 'Pequeno passo possível'],
+                        ] as const
+                      ).map(
+                        ([field, label]) =>
+                          record[field] && (
+                            <p key={field} className="text-sm whitespace-pre-wrap">
+                              <strong>{label}: </strong>
+                              {record[field]}
+                            </p>
+                          ),
+                      )}
+                      {!readOnly && unlocked && (
+                        <Button size="sm" variant="outline" onClick={() => open(kind, record)}>
+                          Editar registro
+                        </Button>
+                      )}
+                    </article>
+                  ))}
+                {!records.some((v) => v.kind === kind) && (
+                  <p className="text-sm text-muted-foreground">
+                    {readOnly
+                      ? 'Ainda não há registros compartilhados deste momento.'
+                      : 'Este espaço pode ser preenchido no seu tempo.'}
+                  </p>
+                )}
+              </div>
+            ))}
         </>
       )}
       {error && (
