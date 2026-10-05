@@ -26,6 +26,9 @@ try:
         u.set('email',name+'@example.invalid');u.setPassword(PASSWORD);u.set('person_id',people[name].id);u.set('status','active');app.save(u);users[name]=u;
         save('user_roles',{user_id:u.id,role:['p','q'].includes(name)?'profissional':'interagente',is_active:true});
       }
+      const practice=save('cer_practices',{internal_name:'Reference resource',participant_facing_name_base:'Reference resource',family:'reference',governance_modes:['self_guided'],status:'draft',created_by_user_id:users.p.id,item_nature:'support_resource'});
+      const version=save('cer_practice_versions',{practice_id:practice.id,version_number:1,participant_title:'Reference resource',intensity:'low',consent_required:'not_required',author_user_id:users.p.id,status:'draft'});
+      save('cer_practice_version_assets',{practice_version_id:version.id,asset_type:'document',title:'Reference protected file'});
       for(const pair of [['a','p'],['b','q']]){
         const e=save('enrollments',{interagente:users[pair[0]].id,profissional:users[pair[1]].id,person_id:people[pair[0]].id,product:'Reference only',status:'active'});
         save('professional_enrollment_access',{enrollment_id:e.id,professional_user_id:users[pair[1]].id,access_role:'primary',is_active:true});
@@ -164,6 +167,52 @@ try:
         check('Revoked P cannot borrow still-active Q access to shared life',lambda:require(request(life_endpoint,tokens['p'])[0]==404 and request(life_endpoint,tokens['q'])[0]==200))
         check('Revoked P cannot borrow Q access to approved message',lambda:require(request('/api/collections/cer_next_session_messages/records/'+suspension_message['id'],tokens['p'])[0]==404 and request('/api/collections/cer_next_session_messages/records/'+suspension_message['id'],tokens['q'])[0]==200))
         record('cer_life_events',tokens['a'],'PATCH',{'access_class':'participant_private'},life['id'])
+        reset_endpoint='/backend/v1/cer/reset-participant-access'
+        reset_body={'target_user_id':actors['a']['record']['id']}
+        check('Revoked professional cannot reset participant access',lambda:require(request(reset_endpoint,tokens['p'],'POST',reset_body)[0]==403))
+        check('Patient and anonymous caller cannot reset participant access',lambda:require(request(reset_endpoint,tokens['b'],'POST',reset_body)[0]==403 and request(reset_endpoint,method='POST',body=reset_body)[0] in (401,403)))
+        reset_status,reset_value=request(reset_endpoint,tokens['q'],'POST',reset_body)
+        check('Active collaborator can reset access despite earlier revoked link',lambda:require(reset_status==200))
+        if reset_status==200:
+            credential=reset_value['temporaryCredential']
+            invited=ok('/api/collections/users/auth-with-password',method='POST',body={'identity':'a@example.invalid','password':credential})
+            check('Reset persists invited and invalidates old password',lambda:require(invited['record']['status']=='invited' and request('/api/collections/users/auth-with-password',method='POST',body={'identity':'a@example.invalid','password':password})[0]==400))
+            check('Invited account cannot read clinical journal',lambda:require(request('/api/collections/cer_journal_entries/records/'+journal['id'],invited['token'])[0]==404))
+            check('First login rejects mismatched confirmation',lambda:require(request('/backend/v1/cer/first-login',invited['token'],'POST',{'newPassword':password,'passwordConfirm':'mismatch'})[0]==400))
+            check('First login rejects short password',lambda:require(request('/backend/v1/cer/first-login',invited['token'],'POST',{'newPassword':'short','passwordConfirm':'short'})[0]==400))
+            activation=ok('/backend/v1/cer/first-login',invited['token'],'POST',{'newPassword':password,'passwordConfirm':password,'target_user_id':actors['b']['record']['id']})
+            activated=ok('/api/collections/users/auth-with-password',method='POST',body={'identity':'a@example.invalid','password':password})
+            check('First login activates only caller and persists new credential',lambda:require(activation['userId']==actors['a']['record']['id'] and activated['record']['status']=='active' and record('users',admin,id=actors['b']['record']['id'])['status']=='active'))
+            tokens['a']=activated['token']
+            check('Active account cannot repeat first-login activation',lambda:require(request('/backend/v1/cer/first-login',tokens['a'],'POST',{'newPassword':password,'passwordConfirm':password})[0]==400))
+            reset_audit=ok('/api/collections/audit_events/records?perPage=500',admin)['items']
+            check('Reset and first-login audit contain no passwords',lambda:require({'ACCESS_RESET_BY_PROFESSIONAL','FIRST_LOGIN_COMPLETED'}.issubset({v['action'] for v in reset_audit}) and credential not in json.dumps(reset_audit) and password not in json.dumps(reset_audit)))
+        asset=record('cer_practice_version_assets',admin)['items'][0]
+        boundary='cer-fixture-'+secrets.token_hex(8)
+        payload=('--'+boundary+'\r\nContent-Disposition: form-data; name="file"; filename="reference.txt"\r\nContent-Type: text/plain\r\n\r\nFICTIONAL_PROTECTED_FILE\r\n--'+boundary+'--\r\n').encode()
+        req=urllib.request.Request(base+'/api/collections/cer_practice_version_assets/records/'+asset['id'],data=payload,headers={'Authorization':admin,'Content-Type':'multipart/form-data; boundary='+boundary},method='PATCH')
+        with urllib.request.urlopen(req,timeout=8) as response:asset=json.loads(response.read())
+        from urllib.parse import urlencode
+        def download_asset(file_token=''):
+            url=base+'/api/files/'+asset['collectionId']+'/'+asset['id']+'/'+asset['file']+('?' + urlencode({'token':file_token}) if file_token else '')
+            try:
+                with urllib.request.urlopen(url,timeout=8) as res:return res.status,res.read()
+            except urllib.error.HTTPError as err:return err.code,b''
+        check('Protected file blocks anonymous and unassigned participant',lambda:require(download_asset()[0] in (403,404) and request('/api/collections/cer_practice_version_assets/records/'+asset['id'],tokens['b'])[0]==404))
+        b_file_token=ok('/api/files/token',tokens['b'],'POST',{})['token']
+        check('Unassigned participant file token cannot download asset',lambda:require(download_asset(b_file_token)[0] in (403,404)))
+        p_file_token=ok('/api/files/token',tokens['p'],'POST',{})['token']
+        check('Active professional can retrieve protected fixture file',lambda:require(download_asset(p_file_token)==(200,b'FICTIONAL_PROTECTED_FILE')))
+        record('users',admin,'PATCH',{'status':'suspended'},actors['p']['record']['id'])
+        check('Suspended professional cannot download with old file token',lambda:require(download_asset(p_file_token)[0] in (403,404)))
+        record('users',admin,'PATCH',{'status':'active'},actors['p']['record']['id'])
+        # P has a revoked care link but is an active library professional; suspension must still deny reset.
+        record('users',admin,'PATCH',{'status':'suspended'},actors['q']['record']['id'])
+        check('Suspended active collaborator cannot reset access',lambda:require(request(reset_endpoint,tokens['q'],'POST',{'target_user_id':actors['b']['record']['id']})[0]==403))
+        record('users',admin,'PATCH',{'status':'active'},actors['q']['record']['id'])
+        record('users',admin,'PATCH',{'status':'suspended'},actors['b']['record']['id'])
+        check('Active professional cannot reactivate suspended patient through reset',lambda:require(request(reset_endpoint,tokens['q'],'POST',{'target_user_id':actors['b']['record']['id']})[0]==403 and record('users',admin,id=actors['b']['record']['id'])['status']=='suspended'))
+        record('users',admin,'PATCH',{'status':'active'},actors['b']['record']['id'])
         check('Create complete fictional backend backup',lambda:require(request('/api/backups',admin,'POST',{'name':'reference.zip'})[0]==204))
         import zipfile
         archive=data/'backups'/'reference.zip'
@@ -193,6 +242,8 @@ try:
             restored_p=ok('/api/collections/users/auth-with-password',method='POST',body={'identity':'p@example.invalid','password':password})['token']
             check('Restored login and journal content preserved',lambda:require(record('cer_journal_entries',restored_a,id=journal['id'])['content']=='FICTIONAL_UPDATED_MARKER'))
             check('Restored private life remains inaccessible to professional',lambda:require(request(life_endpoint,restored_p)[0]==404 and request(life_endpoint,restored_a)[0]==200))
+            restored_file_token=ok('/api/files/token',restored_p,'POST',{})['token']
+            check('Restored protected file preserves content and anonymous denial',lambda:require(download_asset(restored_file_token)==(200,b'FICTIONAL_PROTECTED_FILE') and download_asset()[0] in (403,404)))
             check('Restored history preserved',lambda:require(any(v['content']=='FICTIONAL_PRIVATE_MARKER' for v in record('cer_journal_entry_versions',restored_a)['items'])))
             check('Restored revoked scope and withdrawal preserved',lambda:require(request('/api/collections/cer_sessions/records/'+session['id'],restored_p)[0]==404 and request(endpoint,restored_p)[0]==404))
             proc.terminate();proc.wait(timeout=5)
