@@ -36,6 +36,7 @@ export interface CerMapReadingSnapshot {
   overview: string
   integration: string
   history: string
+  sessionUpdates?: { sessionId: string; sessionDate: string; summary: string; preparedBy: string; preparedAt: string }[]
   lifeDirections?: LifeDirection[]
   lifeEvents?: LifeEvent[]
   lifeConnections?: { eventId: string; responseId: string; text: string; question: string }[]

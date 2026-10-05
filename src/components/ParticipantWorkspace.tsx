@@ -443,8 +443,10 @@ export const ParticipantWorkspace: React.FC = () => {
 
           {/* Gestor e Preparador de Sessões — Notas privadas e recados */}
           <ProfessionalSessionManager
+            key={enrollment.id}
             enrollmentId={enrollment.id}
             participantName={participantName}
+            onOpenMap={() => setTab('consciencia')}
           />
         </div>
       )}

@@ -49,6 +49,7 @@ export const cerSessionService = {
     if (demoAdapter.isEnabled()) {
       const s = demoAdapter.listSessions('').find((x) => x.id === sessionId)
       if (s) return s
+      throw new Error('Encontro não encontrado na demonstração.')
     }
     return await pb.collection('cer_sessions').getOne<CerSessionRecord>(sessionId, {
       expand: 'professional_user_id,enrollment_id',
@@ -115,6 +116,11 @@ export const cerSessionService = {
    * Atualiza data prevista de agendamento (somente se status = 'scheduled')
    */
   async updateScheduledDate(sessionId: string, scheduledAt: string): Promise<CerSessionRecord> {
+    if (!scheduledAt || !Number.isFinite(Date.parse(scheduledAt))) throw new Error('Informe uma data e horário válidos.')
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) return demoAdapter.updateSessionDate(sessionId, scheduledAt)
+    const session = await this.getById(sessionId)
+    if (session.status !== 'scheduled') throw new Error('Somente encontros agendados podem ser remarcados.')
     return await pb.collection('cer_sessions').update<CerSessionRecord>(sessionId, {
       scheduled_at: scheduledAt,
     })
@@ -139,7 +145,8 @@ export const cerSessionNoteService = {
         expand: 'author_user_id',
       })
       return records.items[0] || null
-    } catch {
+    } catch (error) {
+      if ((error as { status?: number }).status !== 404) throw error
       return null
     }
   },
@@ -169,7 +176,7 @@ export const cerSessionNoteService = {
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {
       // No demo mode, localizamos a nota pelo noteId ou atualizamos
-      return demoAdapter.createOrUpdateNote('', text)
+      return demoAdapter.updateSessionNote(noteId, text)
     }
     return await pb.collection('cer_session_notes').update<CerSessionNoteRecord>(noteId, {
       text: text,
@@ -186,6 +193,8 @@ export const cerSessionObservationService = {
    * Lista as observações registradas para uma sessão
    */
   async listBySession(sessionId: string): Promise<CerSessionObservationRecord[]> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) return demoAdapter.listSessionObservations(sessionId)
     return await pb
       .collection('cer_session_observations')
       .getFullList<CerSessionObservationRecord>({
@@ -217,6 +226,9 @@ export const cerSessionObservationService = {
     observation_type: SessionObservationType
     text: string
   }): Promise<CerSessionObservationRecord> {
+    if (!data.text.trim()) throw new Error('Escreva a observação antes de salvar.')
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) return demoAdapter.createSessionObservation(data.session_id, data.observation_type, data.text.trim())
     const session = await pb.collection('cer_sessions').getOne<CerSessionRecord>(data.session_id)
     const currentUserId = pb.authStore.record?.id
     return await pb.collection('cer_session_observations').create<CerSessionObservationRecord>({
