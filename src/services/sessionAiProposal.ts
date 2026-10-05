@@ -23,6 +23,7 @@ export async function requestSessionAiProposal(sessionId: string, enrollmentId: 
   } catch (error) {
     const failure = error as { status?: number; response?: { code?: string } }
     if (failure.status === 404 || failure.response?.code === 'ai_not_configured') throw new Error('A análise por IA ainda não foi configurada no servidor.')
+    if (failure.response?.code === 'ai_privacy_pending') throw new Error('O processamento por IA aguarda a revisão de privacidade e do provedor.')
     if (failure.response?.code === 'ai_source_changed') throw new Error('A nota ou o mapa mudou durante a análise. Solicite uma nova proposta.')
     if (failure.status === 429) throw new Error('Aguarde um minuto antes de solicitar outra análise.')
     // Never display the provider body or credentials via a generic server error.

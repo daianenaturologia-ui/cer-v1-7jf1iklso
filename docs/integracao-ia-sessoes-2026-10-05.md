@@ -17,7 +17,7 @@ Auditoria registra somente metadados de invocação, não texto nem chave. O res
 ## Ativação pendente
 
 1. Identificar a versão real do servidor PocketBase e o mecanismo do Skip para instalar rotas/hooks. A versão do SDK cliente não determina a versão do servidor. Em PocketBase nativo, instalar este arquivo com extensão `.pb.js` dentro do diretório de hooks configurado; apenas copiar um `.js` comum não garante carregamento.
-2. Configurar os segredos no servidor, nunca no repositório público ou em variáveis `VITE_`: `CER_SESSION_AI_OPENAI_API_KEY`, `CER_SESSION_AI_MODEL` (modelo compatível com Structured Outputs) e `CER_SESSION_AI_ENABLED=true`. A flag fica ausente/desligada até os termos de processamento e a configuração do provedor estarem definidos. Não solicitar chave na conversa.
+2. Primeiro avaliar a IA nativa do Skip, conforme a preferência da proprietária. O adapter OpenAI é uma alternativa preparada, não uma contratação nem a escolha final. Se essa alternativa for escolhida, configurar os segredos somente no servidor: `CER_SESSION_AI_OPENAI_API_KEY`, `CER_SESSION_AI_MODEL`, `CER_SESSION_AI_ENABLED=true` e `CER_SESSION_AI_PROCESSING_APPROVED=true`. A segunda flag exige revisão prévia do processamento, mas não substitui base legal, informação ao titular ou consentimento quando aplicável. Ambas ficam ausentes/desligadas até essa revisão. Nunca usar variáveis `VITE_` para chaves nem solicitar chave na conversa.
 3. Configurar limite de concorrência/quota no servidor e verificar auditoria, papel/vínculo e autoria contra o backend real. Instalar a rota em ambiente de testes e chamar com notas fictícias; conferir escopos cruzados, revogação, erro de provedor e alteração das fontes. Só então integrar a interface de proposta/revisão e o gatilho após salvar a nota, com proteção contra repetição e resposta tardia.
 4. Preservar publicação explícita após revisão da profissional. A proposta gerada não é o mapa compartilhado. O caminho geral `aiContextResolver`/`cer_ai_proposals` continua proibindo `session_note`; esta rota é um contrato separado e não relaxa essas permissões.
 
@@ -30,3 +30,5 @@ Referências primárias consultadas em 05/10/2026:
 - https://pocketbase.io/docs/js-sending-http-requests/
 - https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create
 - https://developers.openai.com/api/docs/guides/migrate-to-responses
+
+Revisão de segurança posterior: a rota agora verifica também o estado atual da conta antes e depois da chamada e recusa processamento sem a flag específica de aprovação. A bateria direcionada desta revisão aprovou 29 testes em três arquivos, incluindo os testes anteriores do adapter e do cliente. A nova revisão está documentada em `auditoria-seguranca-portabilidade-2026-10-05.md`. Nenhuma dessas alterações foi instalada no servidor vivo.

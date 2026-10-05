@@ -9,16 +9,20 @@ routerAdd('POST', '/backend/v1/cer/session-map-proposal', (e) => {
   const session = e.app.findRecordById('cer_sessions', sessionId)
   const enrollmentId = session.getString('enrollment_id')
   function authorize() {
+    const currentActor = e.app.findRecordById('users', actor.id)
     const current = e.app.findRecordById('cer_sessions', sessionId)
     const links = e.app.findRecordsByFilter('professional_enrollment_access', 'enrollment_id = {:enrollment} && professional_user_id = {:actor} && is_active = true', '', 1, 0, { enrollment: enrollmentId, actor: actor.id })
     const roles = e.app.findRecordsByFilter('user_roles', 'user_id = {:actor} && role = "profissional" && is_active = true', '', 1, 0, { actor: actor.id })
-    if (!links.length || !roles.length || current.getString('enrollment_id') !== enrollmentId || current.getString('professional_user_id') !== actor.id || current.getString('status') === 'cancelled') throw new ForbiddenError('Encontro fora do seu acompanhamento ativo.')
+    if (currentActor.getString('status') !== 'active' || !links.length || !roles.length || current.getString('enrollment_id') !== enrollmentId || current.getString('professional_user_id') !== actor.id || current.getString('status') === 'cancelled') throw new ForbiddenError('Encontro fora do seu acompanhamento ativo.')
   }
   authorize()
   e.response.header().set('Cache-Control', 'no-store')
   const key = $os.getenv('CER_SESSION_AI_OPENAI_API_KEY')
   const model = $os.getenv('CER_SESSION_AI_MODEL')
   if ($os.getenv('CER_SESSION_AI_ENABLED') !== 'true' || !key || !model) return e.json(503, { code: 'ai_not_configured', message: 'A análise por IA ainda não foi configurada no servidor.' })
+  // Administrative release gate, NOT a substitute for a lawful basis or user consent.
+  // Remains off until provider contract/data flow and participant notice are reviewed.
+  if ($os.getenv('CER_SESSION_AI_PROCESSING_APPROVED') !== 'true') return e.json(503, { code: 'ai_privacy_pending', message: 'O uso de dados por IA ainda depende da revisão de privacidade e do provedor.' })
   const note = e.app.findFirstRecordByFilter('cer_session_notes', 'session_id = {:session} && author_user_id = {:actor} && enrollment_id = {:enrollment}', { session: sessionId, actor: actor.id, enrollment: enrollmentId })
   const noteText = note.getString('text').trim()
   if (!noteText || noteText.length > 16000) throw new BadRequestError('A nota salva deve ter entre 1 e 16.000 caracteres para esta análise.')

@@ -17,7 +17,7 @@ function harness(options: Record<string, any> = {}) {
   const map = record({ reading_snapshot: JSON.stringify({ participantName: 'NOME NÃO ENVIADO', overview: 'Leitura publicada', lifeEvents: [{ title: 'Marco compartilhado' }] }) }, 'map000000000001')
   let callCount = 0
   const app = {
-    findRecordById: vi.fn((collection: string) => collection === 'cer_sessions' ? session : note),
+    findRecordById: vi.fn((collection: string) => collection === 'users' ? record({ status: options.suspended ? 'suspended' : 'active' }) : collection === 'cer_sessions' ? session : note),
     findFirstRecordByFilter: vi.fn((_collection: string, _filter: string, params: any) => { expect(params.actor).toBe(actorId); if (options.noNote) throw Error('No note'); return note }),
     findRecordsByFilter: vi.fn((collection: string) => {
       if (collection === 'professional_enrollment_access') return options.noAccess || options.revoke && callCount ? [] : [{}]
@@ -35,7 +35,7 @@ function harness(options: Record<string, any> = {}) {
     if (options.transportFailure) throw Error('PROVIDER BODY SECRET')
     return options.response || { statusCode: 200, json: { choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(options.output || proposal) } }] } }
   })
-  const env = { CER_SESSION_AI_ENABLED: 'true', CER_SESSION_AI_OPENAI_API_KEY: 'SERVER_ONLY_SECRET', CER_SESSION_AI_MODEL: 'configured-model', ...options.env }
+  const env = { CER_SESSION_AI_ENABLED: 'true', CER_SESSION_AI_PROCESSING_APPROVED: 'true', CER_SESSION_AI_OPENAI_API_KEY: 'SERVER_ONLY_SECRET', CER_SESSION_AI_MODEL: 'configured-model', ...options.env }
   vm.runInNewContext(source, { routerAdd: (_method: any, _path: any, fn: any) => { handler = fn }, $apis: { requireAuth: () => ({}) }, $os: { getenv: (name: string) => env[name as keyof typeof env] || '' }, $security: { sha256: (text: string) => createHash('sha256').update(text).digest('hex') }, $http: { send }, Record: function(this: any) { this.fields = {}; this.set = (key: string, value: any) => { this.fields[key] = value } }, ForbiddenError: Error, BadRequestError: Error })
   const event = { auth: options.guest ? null : { id: actorId }, requestInfo: () => ({ body: options.body || { sessionId } }), app, response: { header: () => ({ set: vi.fn() }) }, json: (status: number, body: any) => ({ status, body }) }
   return { invoke: () => handler(event), app, send, saved }
@@ -58,7 +58,7 @@ describe('Dedicated session AI server route (simulated PocketBase events)', () =
     expect(JSON.stringify(h.saved)).not.toContain('RELATO FICTÍCIO PRIVADO')
     expect(h.saved[0].fields.result).toBe('success')
   })
-  it.each([{ guest: true }, { noAccess: true }, { noRole: true }, { otherProfessional: true }, { cancelled: true }, { noNote: true }, { body: { sessionId, text: 'Injected source' } }])('denies unauthorized or injected context before provider call: %j', (options) => {
+  it.each([{ guest: true }, { suspended: true }, { noAccess: true }, { noRole: true }, { otherProfessional: true }, { cancelled: true }, { noNote: true }, { body: { sessionId, text: 'Injected source' } }])('denies unauthorized or injected context before provider call: %j', (options) => {
     const h = harness(options); expect(h.invoke).toThrow(); expect(h.send).not.toHaveBeenCalled()
   })
   it('stays inactive without server configuration', () => {
@@ -67,6 +67,9 @@ describe('Dedicated session AI server route (simulated PocketBase events)', () =
   })
   it('rejects repeated requests before invoking the provider', () => {
     const h = harness({ cooldown: true }); expect(h.invoke().status).toBe(429); expect(h.send).not.toHaveBeenCalled()
+  })
+  it('blocks processing even with a key when the privacy release is absent', () => {
+    const h = harness({ env: { CER_SESSION_AI_PROCESSING_APPROVED: '' } }); expect(h.invoke().body.code).toBe('ai_privacy_pending'); expect(h.send).not.toHaveBeenCalled(); expect(h.app.save).not.toHaveBeenCalled()
   })
   it.each([
     { transportFailure: true },

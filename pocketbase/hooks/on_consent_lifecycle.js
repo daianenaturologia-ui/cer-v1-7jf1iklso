@@ -161,7 +161,8 @@ onRecordAfterUpdateSuccess((e) => {
         JSON.stringify({
           consent_id: c.id,
           practice_version_id: c.getString('practice_version_id'),
-          withdrawal_reason: c.getString('withdrawal_reason') || undefined,
+          // Free text may contain health/sexual-life data; keep it in its source record.
+          has_withdrawal_reason: Boolean(c.getString('withdrawal_reason')),
         }),
       )
       $app.save(audit)
