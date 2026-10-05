@@ -1,6 +1,8 @@
 import { DemoPracticeWorkspace } from '@/components/DemoPracticeWorkspace'
 import { CareCycleManager } from '@/components/CareCycleManager'
 import { LifeDirections } from '@/components/experience/LifeDirections'
+import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
+import { DevelopmentLearningView } from '@/components/DevelopmentLearningView'
 import { LifeTimeline } from '@/components/experience/LifeTimeline'
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
@@ -566,7 +568,10 @@ export const ParticipantWorkspace: React.FC = () => {
               </div>
             ))}
           {careTool === 'mandala' && (
-            <MandalaStructuredView enrollmentId={enrollment.id} audience="professional" />
+            <div className="space-y-4">
+              <DevelopmentLearningView key={enrollment.id} enrollmentId={enrollment.id} />
+              <MandalaStructuredView enrollmentId={enrollment.id} audience="professional" />
+            </div>
           )}
           {careTool === 'planner' && <ProfessionalPlannerView enrollmentId={enrollment.id} />}
           {careTool === 'ciclos' && <CareCycleManager enrollmentId={enrollment.id} />}
@@ -578,6 +583,11 @@ export const ParticipantWorkspace: React.FC = () => {
         <div className="space-y-5">
           <LifeTimeline enrollmentId={enrollment.id} readOnly />
           <LifeDirections enrollmentId={enrollment.id} readOnly />
+          <SelfDevelopmentJourney
+            key={`shared-development-${enrollment.id}`}
+            enrollmentId={enrollment.id}
+            readOnly
+          />
           <CarePlanEditor
             key={enrollment.id}
             enrollmentId={enrollment.id}

@@ -1,10 +1,14 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { PracticeSelector } from '@/components/PracticeSelector'
+import { DevelopmentResourceEditor } from '@/components/DevelopmentResourceEditor'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, BookOpen } from 'lucide-react'
 
 export const BibliotecaPage: React.FC = () => {
+  const { isProfissional } = useAuth()
+  if (!isProfissional) return <p className="p-6">Este espaço é da profissional.</p>
   return (
     <div className="container max-w-5xl mx-auto py-6 px-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -25,6 +29,7 @@ export const BibliotecaPage: React.FC = () => {
         </div>
       </div>
 
+      <DevelopmentResourceEditor />
       <PracticeSelector />
     </div>
   )

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
 import { MandalaStructuredView } from '@/components/MandalaStructuredView'
+import { DevelopmentLearningView } from '@/components/DevelopmentLearningView'
 import type { EnrollmentRecord } from '@/types/cer'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
@@ -74,7 +75,10 @@ export const MandalaPage: React.FC = () => {
             onAction={() => navigate('/')}
           />
         ) : (
-          <MandalaStructuredView enrollmentId={enrollment.id} />
+          <div className="space-y-4">
+            <DevelopmentLearningView key={enrollment.id} enrollmentId={enrollment.id} />
+            <MandalaStructuredView enrollmentId={enrollment.id} />
+          </div>
         )}
       </div>
     </div>
