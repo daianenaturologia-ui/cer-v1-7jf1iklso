@@ -386,11 +386,7 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
                 tabIndex={0}
                 role="button"
                 data-testid="ser-integral-map-center"
-                aria-label={
-                  hasPublishedMap
-                    ? 'Abrir Meu Mapa CER'
-                    : 'Meu Mapa CER — em construção'
-                }
+                aria-label={hasPublishedMap ? 'Abrir Meu Mapa CER' : 'Meu Mapa CER — em construção'}
                 className={`group relative flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full border-2 transition-all duration-200 cursor-pointer shadow-lg hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary ${
                   hasPublishedMap
                     ? 'border-emerald-500 bg-emerald-500/20 shadow-emerald-500/20 hover:border-emerald-600'

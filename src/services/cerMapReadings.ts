@@ -216,7 +216,9 @@ export function buildCerMapReadings(
           },
         ]
       }
-      summaryRows.push(...detailedRows.filter(row => /energia|vitalidade|sono/i.test(row.label)).slice(0, 4))
+      summaryRows.push(
+        ...detailedRows.filter((row) => /energia|vitalidade|sono/i.test(row.label)).slice(0, 4),
+      )
     } else {
       const latest = new Map<string, ExperienceResponseRecord>()
       for (const response of [...dimensionResponses].sort((a, b) =>

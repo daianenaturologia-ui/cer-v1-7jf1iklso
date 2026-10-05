@@ -5,7 +5,10 @@ import { ChevronDown, HeartHandshake } from 'lucide-react'
 /** Reception approved by Daiane. Static copy; no participant data or workflow mutation. */
 export function CerWelcome() {
   return (
-    <Collapsible defaultOpen className="cer-reading-panel rounded-xl border border-border/60 bg-card overflow-hidden">
+    <Collapsible
+      defaultOpen
+      className="cer-reading-panel rounded-xl border border-border/60 bg-card overflow-hidden"
+    >
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"
@@ -31,8 +34,8 @@ export function CerWelcome() {
           relacionamos com a vida e descobrir o que desejamos transformar.
         </p>
         <p>
-          <strong className="cer-pullquote">Tudo começa com uma decisão.</strong> Ela não resolve tudo de uma vez, mas pode abrir um novo
-          caminho.
+          <strong className="cer-pullquote">Tudo começa com uma decisão.</strong> Ela não resolve
+          tudo de uma vez, mas pode abrir um novo caminho.
         </p>
         <p>Minha jornada começou com uma perda. E, ao atravessá-la, pude começar a me encontrar.</p>
         <p>
@@ -52,7 +55,8 @@ export function CerWelcome() {
         </p>
         <p>
           Desse caminho, somado à minha formação e ao acompanhamento de outras pessoas, nasceu o
-          Método CER: <strong className="cer-emphasis">Consciência, Equilíbrio e Realização.</strong>
+          Método CER:{' '}
+          <strong className="cer-emphasis">Consciência, Equilíbrio e Realização.</strong>
         </p>
         <p>
           Este espaço é um convite para você conhecer seu próprio funcionamento, reconhecer seus
@@ -65,10 +69,10 @@ export function CerWelcome() {
           produtividade e realização possam caminhar junto com qualidade de vida.
         </p>
         <p>
-          Quando falo em <strong className="cer-emphasis">viver gostosamente</strong>, falo de encontrar mais presença, prazer e sentido na
-          vida que você constrói. De ter espaço para seus desejos, suas responsabilidades, seus
-          vínculos e seu descanso. De aprender a atravessar os desafios sem perder de vista aquilo
-          que torna a vida valiosa para você.
+          Quando falo em <strong className="cer-emphasis">viver gostosamente</strong>, falo de
+          encontrar mais presença, prazer e sentido na vida que você constrói. De ter espaço para
+          seus desejos, suas responsabilidades, seus vínculos e seu descanso. De aprender a
+          atravessar os desafios sem perder de vista aquilo que torna a vida valiosa para você.
         </p>
         <p>
           O percurso será organizado em etapas, com momentos para aprender, experimentar e

@@ -24,7 +24,13 @@ function Rows({ rows }: { rows: CerMapReadingRow[] }) {
   )
 }
 
-export function CerMapReadingsView({ snapshot, initial = false }: { snapshot: CerMapReadingSnapshot; initial?: boolean }) {
+export function CerMapReadingsView({
+  snapshot,
+  initial = false,
+}: {
+  snapshot: CerMapReadingSnapshot
+  initial?: boolean
+}) {
   const [depth, setDepth] = useState('resumida')
   const deep = depth === 'aprofundada'
   return (
@@ -42,7 +48,9 @@ export function CerMapReadingsView({ snapshot, initial = false }: { snapshot: Ce
         </Tabs>
         <p className="text-xs text-muted-foreground">
           {deep
-            ? initial ? 'Suas respostas em detalhe e explicações das dimensões. A leitura profissional será aprofundada nas sessões.' : 'Suas respostas em detalhe, explicações e a leitura construída em conversa.'
+            ? initial
+              ? 'Suas respostas em detalhe e explicações das dimensões. A leitura profissional será aprofundada nas sessões.'
+              : 'Suas respostas em detalhe, explicações e a leitura construída em conversa.'
             : 'Um panorama das seis dimensões, com explicações para compreender cada leitura.'}
         </p>
       </div>
@@ -101,11 +109,16 @@ export function CerMapReadingsView({ snapshot, initial = false }: { snapshot: Ce
       {snapshot.integration && (
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-base font-serif">Leitura integrada do meu funcionamento</CardTitle>
+            <CardTitle className="text-base font-serif">
+              Leitura integrada do meu funcionamento
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{snapshot.integration}</p>
-            <p className="text-xs text-muted-foreground mt-3">Esta compreensão apoia suas escolhas. Na Evolução, você e sua profissional definem o futuro e constroem o plano de ação juntos.</p>
+            <p className="text-xs text-muted-foreground mt-3">
+              Esta compreensão apoia suas escolhas. Na Evolução, você e sua profissional definem o
+              futuro e constroem o plano de ação juntos.
+            </p>
           </CardContent>
         </Card>
       )}

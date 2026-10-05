@@ -33,8 +33,14 @@ export function ParticipantIntegrativeMapView({
   if (initial?.sourceResponseIds.length) {
     return (
       <div className="space-y-4 p-4" data-testid="participant-initial-map">
-        {onClose && <button className="text-sm text-primary" onClick={onClose}>Voltar à Consciência</button>}
-        <p className="text-xs font-semibold text-primary">Mapa inicial · a partir das suas respostas</p>
+        {onClose && (
+          <button className="text-sm text-primary" onClick={onClose}>
+            Voltar à Consciência
+          </button>
+        )}
+        <p className="text-xs font-semibold text-primary">
+          Mapa inicial · a partir das suas respostas
+        </p>
         <CerMapReadingsView snapshot={initial} initial />
       </div>
     )
