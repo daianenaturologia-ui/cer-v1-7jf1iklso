@@ -1,3 +1,5 @@
+import { JourneyNavigation } from '@/components/JourneyNavigation'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CerWelcome } from '@/components/CerWelcome'
 import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
 import { cerCycleInvitationService } from '@/services/cerCycleInvitationService'
@@ -657,44 +659,15 @@ export const InteragenteHome: React.FC = () => {
         <div className="mx-auto flex min-h-14 max-w-4xl min-w-0 items-center justify-between gap-2 px-4 py-2">
           <div className="flex min-w-0 items-center gap-1 sm:gap-2">
             <span className="font-serif font-bold text-lg tracking-tight">CER</span>
-            <Badge variant="outline" className="text-[10px] font-normal uppercase tracking-wider">
+            <Badge
+              variant="outline"
+              className="hidden sm:inline-flex text-[10px] font-normal uppercase tracking-wider"
+            >
               Interagente
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/experimentos')}
-              aria-label="Experimentos"
-              title="Experimentos"
-              className="gap-1.5 text-xs h-8 px-2 sm:px-3 text-foreground"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              <span className="hidden sm:inline">Experimentos</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/planner')}
-              aria-label="Planner"
-              title="Planner"
-              className="gap-1.5 text-xs h-8 px-2 sm:px-3 text-foreground"
-            >
-              <CalendarIcon className="w-3.5 h-3.5 text-primary" />
-              <span className="hidden sm:inline">Planner</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/mandala')}
-              aria-label="Mandala"
-              title="Mandala"
-              className="gap-1.5 text-xs h-8 px-2 sm:px-3 text-primary border-primary/30 hover:bg-primary/5"
-            >
-              <Compass className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Mandala</span>
-            </Button>
+            <JourneyNavigation />
             <span className="text-xs text-muted-foreground hidden sm:inline ml-2">
               {person?.preferred_name || person?.full_name || user?.name || user?.email}
             </span>
@@ -754,9 +727,7 @@ export const InteragenteHome: React.FC = () => {
             Olá, {person?.preferred_name || person?.full_name?.split(' ')[0] || 'você'}.
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Este é o seu espaço de acompanhamento no CER. Você não precisa conhecer todo o
-            aplicativo agora nem fazer tudo de uma vez. Leia com calma, explore no seu ritmo e, se
-            precisar de ajuda, pode me chamar.
+            Um passo de cada vez, no seu ritmo.
           </p>
         </div>
 
@@ -1790,180 +1761,86 @@ export const InteragenteHome: React.FC = () => {
                 Levar para o meu dia · Planner
               </Button>
             </div>
-            {/* Esclarecimento conceitual importante: Mandala vs Mapa CER */}
-            <div className="p-3.5 rounded-lg bg-primary/5 border border-primary/20 text-xs text-muted-foreground leading-relaxed">
-              <span className="font-semibold text-foreground block mb-0.5">
-                Acompanhamento Cotidiano com a Mandala & Plano
-              </span>
-              A <strong>Mandala</strong> acompanha o ritmo vivo do seu cuidado cotidiano, enquanto o{' '}
-              <strong>Mapa CER</strong> traz a síntese integrativa estruturada das seis dimensões.
-              Elas se complementam sem se substituir.
-            </div>
-
-            {/* Experimentos de Cuidado combinados */}
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    <span>Experimentos de Cuidado</span>
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Práticas combinadas para o seu momento, com foco na experiência e sem notas de
-                    desempenho.
-                  </p>
-                </div>
-                {assignments.length > 0 && (
-                  <Badge variant="outline" className="text-xs">
-                    {assignments.filter((a) => a.status === 'active').length} ativo(s)
-                  </Badge>
-                )}
-              </div>
-
-              {assignments.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {assignments.map((asgn) => (
-                    <ExperimentCard
-                      key={asgn.id}
-                      assignment={asgn}
-                      onConfirm={handleConfirmExperiment}
-                      onResponseRecorded={loadData}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  variant="experiments"
-                  title="Experimentos combinados"
-                  description="Os experimentos aparecem depois que algo for combinado com sua profissional."
-                  actionLabel="Ver detalhes na página de experimentos"
-                  onAction={() => navigate('/experimentos')}
-                />
-              )}
-            </div>
-
-            {/* Mandala Estruturada */}
-            {enrollment && (
-              <div className="space-y-4 pt-4 border-t border-border/40">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
-                      <Compass className="w-4 h-4 text-primary" />
-                      <span>Sua Mandala de Cuidado Cotidiano</span>
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Acompanhamento cíclico e dinâmico de práticas e recursos.
-                    </p>
+            <Tabs defaultValue="praticas">
+              <TabsList aria-label="Equilíbrio">
+                <TabsTrigger value="praticas">Práticas</TabsTrigger>
+                <TabsTrigger value="mandala">Mandala</TabsTrigger>
+              </TabsList>
+              <TabsContent value="praticas" className="mt-4">
+                {/* Experimentos de Cuidado combinados */}
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <span>Experimentos de Cuidado</span>
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Práticas combinadas para o seu momento, com foco na experiência e sem notas
+                        de desempenho.
+                      </p>
+                    </div>
+                    {assignments.length > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        {assignments.filter((a) => a.status === 'active').length} ativo(s)
+                      </Badge>
+                    )}
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate('/mandala')}
-                    className="text-xs h-7 gap-1"
-                  >
-                    <span>Página Completa</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </Button>
+
+                  {assignments.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {assignments.map((asgn) => (
+                        <ExperimentCard
+                          key={asgn.id}
+                          assignment={asgn}
+                          onConfirm={handleConfirmExperiment}
+                          onResponseRecorded={loadData}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      variant="experiments"
+                      title="Experimentos combinados"
+                      description="Os experimentos aparecem depois que algo for combinado com sua profissional."
+                      actionLabel="Ver detalhes na página de experimentos"
+                      onAction={() => navigate('/experimentos')}
+                    />
+                  )}
                 </div>
-                <MandalaStructuredView enrollmentId={enrollment.id} onRefreshRequested={loadData} />
-              </div>
-            )}
-
-            {/* Planner da Semana */}
-            <div className="space-y-4 pt-4 border-t border-border/40">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    <span>Janela do Planner de Cuidados</span>
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Momentos e recursos organizados para apoiar seu ritmo.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/planner')}
-                  className="text-xs h-7 gap-1"
-                >
-                  <span>Abrir Planner</span>
-                  <ArrowRight className="w-3 h-3" />
-                </Button>
-              </div>
-
-              {plannerItems.filter((p) => p.status !== 'cancelled').length > 0 ? (
-                <div className="space-y-2">
-                  {plannerItems
-                    .filter((p) => p.status !== 'cancelled')
-                    .map((item) => {
-                      const isContextual = item.item_type === 'contextual_resource'
-                      const isCompleted = item.status === 'completed'
-
-                      return (
-                        <Card
-                          key={item.id}
-                          className={`border-border/60 transition-colors ${
-                            isCompleted ? 'bg-muted/20 opacity-80' : ''
-                          }`}
-                        >
-                          <CardContent className="p-3.5 flex items-center justify-between gap-3">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`text-sm font-medium ${
-                                    isCompleted
-                                      ? 'line-through text-muted-foreground'
-                                      : 'text-foreground'
-                                  }`}
-                                >
-                                  {item.safe_title}
-                                </span>
-                                <Badge variant="secondary" className="text-[10px] uppercase">
-                                  {isContextual
-                                    ? 'Recurso Disponível'
-                                    : item.daypart || 'Dia a dia'}
-                                </Badge>
-                              </div>
-                              {item.safe_summary && (
-                                <p className="text-xs text-muted-foreground">{item.safe_summary}</p>
-                              )}
-                            </div>
-
-                            {!isCompleted && !isContextual && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 px-3 text-xs shrink-0 text-primary hover:bg-primary/10"
-                                onClick={() => handleCompletePlannerItem(item.id)}
-                              >
-                                <CheckCircle2 className="w-4 h-4 mr-1 text-primary" />
-                                <span>aconteceu</span>
-                              </Button>
-                            )}
-                            {isCompleted && (
-                              <Badge
-                                variant="outline"
-                                className="text-[11px] text-primary border-primary/30"
-                              >
-                                aconteceu
-                              </Badge>
-                            )}
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                </div>
-              ) : (
-                <EmptyState
-                  variant="planner"
-                  title="Janela de práticas"
-                  description="Ainda não há nenhum experimento combinado para este momento."
-                  actionLabel="Abrir página completa do Planner"
-                  onAction={() => navigate('/planner')}
-                />
-              )}
-            </div>
+              </TabsContent>
+              <TabsContent value="mandala" className="mt-4">
+                {/* Mandala Estruturada */}
+                {enrollment && (
+                  <div className="space-y-4 pt-4 border-t border-border/40">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
+                          <Compass className="w-4 h-4 text-primary" />
+                          <span>Sua Mandala de Cuidado Cotidiano</span>
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          Acompanhamento cíclico e dinâmico de práticas e recursos.
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate('/mandala')}
+                        className="text-xs h-7 gap-1"
+                      >
+                        <span>Página Completa</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <MandalaStructuredView
+                      enrollmentId={enrollment.id}
+                      onRefreshRequested={loadData}
+                    />
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 
@@ -1975,9 +1852,7 @@ export const InteragenteHome: React.FC = () => {
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
               <h2 className="font-serif text-lg">Que vida quero construir?</h2>
               <p className="text-sm">
-                Seu Mapa CER ajuda a reconhecer seu jeito. Aqui você explora seus desejos, planeja
-                pequenos passos e aprende com o que acontece na vida. Sua profissional acompanha e
-                ajuda a aprofundar o caminho.
+                Defina seu caminho, planeje um passo e leve-o para a sua agenda.
               </p>
               <Button variant="outline" onClick={() => setActivePhase('consciencia')}>
                 Rever meu Mapa CER
@@ -1987,303 +1862,323 @@ export const InteragenteHome: React.FC = () => {
               </Button>
             </div>
 
-            {enrollment && (
-              <SelfDevelopmentJourney
-                key={`development-${enrollment.id}`}
-                enrollmentId={enrollment.id}
-              />
-            )}
-            {/* Como estou agora? (a partir de informações JÁ registradas, sem novos questionários) */}
-            <Card className="border-border/70 bg-gradient-to-br from-card to-muted/20">
-              <CardHeader className="pb-3 border-b border-border/40">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-primary font-semibold">
-                  Síntese Viva
-                </span>
-                <CardTitle className="font-serif font-semibold text-base text-foreground">
-                  Como estou agora?
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Leitura reflexiva construída a partir do que você já registrou no seu
-                  acompanhamento (sem a necessidade de responder a novos questionários).
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-5 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1">
-                    <span className="text-muted-foreground text-[11px] block">
-                      Experiências Vivas
-                    </span>
-                    <span className="text-lg font-bold font-serif text-foreground">
-                      {availableExperiences.filter((e) => e.release_status === 'completed').length}{' '}
-                      de {availableExperiences.length}
-                    </span>
-                    <p className="text-[11px] text-muted-foreground">
-                      Momentos de percepção concluídos
-                    </p>
-                  </div>
+            <Tabs defaultValue="planejar">
+              <TabsList aria-label="Evolução" className="h-auto flex-wrap">
+                <TabsTrigger value="planejar">Planejar</TabsTrigger>
+                <TabsTrigger value="caminho">Linha da Vida</TabsTrigger>
+                <TabsTrigger value="cuidado">Acompanhamento</TabsTrigger>
+              </TabsList>
+              <TabsContent value="planejar" className="mt-4">
+                {enrollment && (
+                  <SelfDevelopmentJourney
+                    key={`development-${enrollment.id}`}
+                    enrollmentId={enrollment.id}
+                  />
+                )}
+              </TabsContent>
+              <TabsContent value="caminho" className="space-y-4 mt-4">
+                {/* Direções Futuras & Recursos em Construção */}
+                <div className="space-y-4">
+                  {enrollment && (
+                    <LifeTimeline
+                      enrollmentId={enrollment.id}
+                      unlocked={consciousnessCoverage(
+                        participantResponses,
+                        availableExperiences,
+                      ).every((d) => d.completed)}
+                    />
+                  )}
 
-                  <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1">
-                    <span className="text-muted-foreground text-[11px] block">
-                      Experimentos Práticos
-                    </span>
-                    <span className="text-lg font-bold font-serif text-foreground">
-                      {
-                        assignments.filter(
-                          (a) =>
-                            a.status === 'completed' || a.participant_response_type === 'confirmed',
-                        ).length
-                      }{' '}
-                      de {assignments.length}
-                    </span>
-                    <p className="text-[11px] text-muted-foreground">
-                      Práticas acolhidas no cotidiano
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1">
-                    <span className="text-muted-foreground text-[11px] block">
-                      Retornos do Cuidado
-                    </span>
-                    <span className="text-lg font-bold font-serif text-foreground">
-                      {
-                        Object.keys(selectedPlanResponses).filter(
-                          (k) => selectedPlanResponses[k].saved,
-                        ).length
-                      }
-                    </span>
-                    <p className="text-[11px] text-muted-foreground">
-                      Aceites operacionais compartilhados
-                    </p>
-                  </div>
+                  {enrollment && (
+                    <LifeDirections
+                      enrollmentId={enrollment.id}
+                      unlocked={consciousnessCoverage(
+                        participantResponses,
+                        availableExperiences,
+                      ).every((d) => d.completed)}
+                    />
+                  )}
                 </div>
-
-                {/* Percepção consolidada */}
-                <div className="p-3.5 rounded-lg bg-card border border-primary/20 text-xs text-foreground space-y-1">
-                  <span className="font-semibold text-primary block">Ritmo do Cuidado</span>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Seu processo está vivo. Cada registro permite que Daiane refine as prioridades e
-                    respeite os limites e possibilidades do seu corpo e da sua rotina.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Revisões de Ciclo (Convite existente e histórico) */}
-            <Card className="border-border/60">
-              <CardHeader className="pb-3 border-b border-border/40">
-                <CardTitle className="font-serif font-semibold text-base text-foreground flex items-center gap-2">
-                  <RotateCcw className="w-4 h-4 text-primary" />
-                  <span>Revisões de Ciclo</span>
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Momentos combinados com a profissional para olhar para trás, pausar e calibrar as
-                  próximas direções.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-5 space-y-3">
-                {activeReviewInvite ? (
-                  <div className="p-4 rounded-xl border border-primary/40 bg-primary/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <span className="font-semibold text-foreground text-sm block">
-                        Você tem uma revisão de ciclo aberta
-                      </span>
-                      <p className="text-xs text-muted-foreground">
-                        Sua profissional enviou um convite para você compartilhar suas percepções
-                        sobre este ciclo.
+              </TabsContent>
+              <TabsContent value="cuidado" className="space-y-4 mt-4">
+                {/* Nosso plano de ação (Plano Compartilhado existente) */}
+                {presentedCarePlans.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
+                        <Compass className="w-5 h-5 text-primary" />
+                        <span>Nosso plano de ação</span>
+                      </h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Este plano e próximo passo foram compartilhados por Daiane. Você pode
+                        registrar com leveza como isso soa para você agora.
                       </p>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => navigate(`/reviews/${activeReviewInvite.cycleId}`)}
-                      className="text-xs h-8 px-4 shrink-0 gap-1.5"
-                    >
-                      <span>Responder Revisão</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-lg bg-muted/20 border border-border/40 text-xs text-muted-foreground text-center">
-                    Nenhuma revisão de ciclo pendente no momento. As revisões são abertas pela
-                    profissional ao final de cada ciclo de acompanhamento.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Direções Futuras & Recursos em Construção */}
-            <div className="space-y-4">
-              {enrollment && (
-                <LifeTimeline
-                  enrollmentId={enrollment.id}
-                  unlocked={consciousnessCoverage(participantResponses, availableExperiences).every(
-                    (d) => d.completed,
-                  )}
-                />
-              )}
+                    <div className="space-y-4">
+                      {presentedCarePlans.map((planPres) => {
+                        const currentResp = selectedPlanResponses[planPres.id]
+                        const currentType = currentResp?.response_type
+                        const currentComment = currentResp?.shared_comment || ''
+                        const isSaved = currentResp?.saved
 
-              {enrollment && (
-                <LifeDirections
-                  enrollmentId={enrollment.id}
-                  unlocked={consciousnessCoverage(participantResponses, availableExperiences).every(
-                    (d) => d.completed,
-                  )}
-                />
-              )}
-            </div>
-            {/* Nosso plano de ação (Plano Compartilhado existente) */}
-            {presentedCarePlans.length > 0 ? (
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
-                    <Compass className="w-5 h-5 text-primary" />
-                    <span>Nosso plano de ação</span>
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Este plano e próximo passo foram compartilhados por Daiane. Você pode registrar
-                    com leveza como isso soa para você agora.
-                  </p>
-                </div>
+                        const acceptanceOptions: {
+                          value: OperationalAcceptanceResponseType
+                          label: string
+                        }[] = [
+                          { value: 'accepted', label: 'consegui experimentar' },
+                          { value: 'wants_to_try', label: 'quero tentar' },
+                          { value: 'too_much', label: 'foi muito' },
+                          { value: 'wants_to_talk', label: 'prefiro conversar' },
+                        ]
 
-                <div className="space-y-4">
-                  {presentedCarePlans.map((planPres) => {
-                    const currentResp = selectedPlanResponses[planPres.id]
-                    const currentType = currentResp?.response_type
-                    const currentComment = currentResp?.shared_comment || ''
-                    const isSaved = currentResp?.saved
+                        return (
+                          <Card
+                            key={planPres.id}
+                            className="border-primary/40 bg-card/80 backdrop-blur-sm shadow-sm"
+                          >
+                            <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/15">
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span className="font-semibold text-primary text-[11px] uppercase tracking-wider">
+                                  Plano Compartilhado por Daiane
+                                </span>
+                                <span className="text-[11px] text-muted-foreground font-mono">
+                                  {planPres.presented_at
+                                    ? new Date(planPres.presented_at).toLocaleDateString('pt-BR')
+                                    : 'Recente'}
+                                </span>
+                              </div>
+                              <h4 className="text-base font-serif font-medium text-foreground pt-1">
+                                {planPres.participant_title || 'Próximo Passo Proposto'}
+                              </h4>
+                              {planPres.participant_summary && (
+                                <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap pt-1 font-sans">
+                                  {planPres.participant_summary}
+                                </p>
+                              )}
+                              {planPres.practical_invitation && (
+                                <div className="p-2.5 rounded bg-primary/10 border border-primary/20 text-xs text-foreground italic mt-2">
+                                  &ldquo;{planPres.practical_invitation}&rdquo;
+                                </div>
+                              )}
+                            </CardHeader>
+                            <CardContent className="p-4 space-y-4">
+                              <div className="space-y-2">
+                                <span className="text-xs font-medium text-foreground block">
+                                  Como você se sente em relação a este próximo passo?
+                                </span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                  {acceptanceOptions.map((opt) => (
+                                    <Button
+                                      key={opt.value}
+                                      type="button"
+                                      variant={currentType === opt.value ? 'default' : 'outline'}
+                                      size="sm"
+                                      disabled={isSaved}
+                                      onClick={() => {
+                                        setSelectedPlanResponses((prev) => ({
+                                          ...prev,
+                                          [planPres.id]: {
+                                            response_type: opt.value,
+                                            shared_comment: prev[planPres.id]?.shared_comment || '',
+                                            saved: false,
+                                          },
+                                        }))
+                                      }}
+                                      className="justify-start text-xs h-9 px-3 text-left font-normal"
+                                    >
+                                      {opt.label}
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
 
-                    const acceptanceOptions: {
-                      value: OperationalAcceptanceResponseType
-                      label: string
-                    }[] = [
-                      { value: 'accepted', label: 'consegui experimentar' },
-                      { value: 'wants_to_try', label: 'quero tentar' },
-                      { value: 'too_much', label: 'foi muito' },
-                      { value: 'wants_to_talk', label: 'prefiro conversar' },
-                    ]
-
-                    return (
-                      <Card
-                        key={planPres.id}
-                        className="border-primary/40 bg-card/80 backdrop-blur-sm shadow-sm"
-                      >
-                        <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/15">
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span className="font-semibold text-primary text-[11px] uppercase tracking-wider">
-                              Plano Compartilhado por Daiane
-                            </span>
-                            <span className="text-[11px] text-muted-foreground font-mono">
-                              {planPres.presented_at
-                                ? new Date(planPres.presented_at).toLocaleDateString('pt-BR')
-                                : 'Recente'}
-                            </span>
-                          </div>
-                          <h4 className="text-base font-serif font-medium text-foreground pt-1">
-                            {planPres.participant_title || 'Próximo Passo Proposto'}
-                          </h4>
-                          {planPres.participant_summary && (
-                            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap pt-1 font-sans">
-                              {planPres.participant_summary}
-                            </p>
-                          )}
-                          {planPres.practical_invitation && (
-                            <div className="p-2.5 rounded bg-primary/10 border border-primary/20 text-xs text-foreground italic mt-2">
-                              &ldquo;{planPres.practical_invitation}&rdquo;
-                            </div>
-                          )}
-                        </CardHeader>
-                        <CardContent className="p-4 space-y-4">
-                          <div className="space-y-2">
-                            <span className="text-xs font-medium text-foreground block">
-                              Como você se sente em relação a este próximo passo?
-                            </span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                              {acceptanceOptions.map((opt) => (
-                                <Button
-                                  key={opt.value}
-                                  type="button"
-                                  variant={currentType === opt.value ? 'default' : 'outline'}
-                                  size="sm"
+                              <div className="space-y-1.5 pt-1">
+                                <label className="text-[11px] font-medium text-muted-foreground">
+                                  Quer contar mais alguma percepção sobre esse próximo passo?
+                                  (Opcional)
+                                </label>
+                                <Textarea
+                                  placeholder="Como você imagina tentar, o que pode facilitar ou dificultar..."
+                                  value={currentComment}
                                   disabled={isSaved}
-                                  onClick={() => {
+                                  onChange={(e) => {
                                     setSelectedPlanResponses((prev) => ({
                                       ...prev,
                                       [planPres.id]: {
-                                        response_type: opt.value,
-                                        shared_comment: prev[planPres.id]?.shared_comment || '',
+                                        response_type:
+                                          prev[planPres.id]?.response_type || 'wants_to_try',
+                                        shared_comment: e.target.value,
                                         saved: false,
                                       },
                                     }))
                                   }}
-                                  className="justify-start text-xs h-9 px-3 text-left font-normal"
-                                >
-                                  {opt.label}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
+                                  className="text-xs min-h-[64px]"
+                                />
+                              </div>
 
-                          <div className="space-y-1.5 pt-1">
-                            <label className="text-[11px] font-medium text-muted-foreground">
-                              Quer contar mais alguma percepção sobre esse próximo passo? (Opcional)
-                            </label>
-                            <Textarea
-                              placeholder="Como você imagina tentar, o que pode facilitar ou dificultar..."
-                              value={currentComment}
-                              disabled={isSaved}
-                              onChange={(e) => {
-                                setSelectedPlanResponses((prev) => ({
-                                  ...prev,
-                                  [planPres.id]: {
-                                    response_type:
-                                      prev[planPres.id]?.response_type || 'wants_to_try',
-                                    shared_comment: e.target.value,
-                                    saved: false,
-                                  },
-                                }))
-                              }}
-                              className="text-xs min-h-[64px]"
-                            />
-                          </div>
+                              <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+                                <span className="text-[11px] text-muted-foreground italic">
+                                  {isSaved
+                                    ? 'Seu retorno foi compartilhado com Daiane.'
+                                    : 'Sua resposta ajuda Daiane a calibrar o ritmo junto com você.'}
+                                </span>
+                                {!isSaved && currentType && (
+                                  <Button
+                                    size="sm"
+                                    disabled={submittingPlanResponse === planPres.id}
+                                    onClick={() => handleSaveOperationalAcceptance(planPres.id)}
+                                    className="text-xs h-8 px-4 bg-primary text-primary-foreground hover:bg-primary/90"
+                                  >
+                                    {submittingPlanResponse === planPres.id
+                                      ? 'Enviando...'
+                                      : 'Enviar retorno para Daiane'}
+                                  </Button>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <Card className="border-dashed border-border/80 bg-muted/10">
+                    <CardContent className="py-6 text-center space-y-1.5">
+                      <Compass className="w-6 h-6 text-muted-foreground mx-auto opacity-50" />
+                      <span className="font-medium text-xs text-foreground block">
+                        Acompanhamento individual · nenhum plano compartilhado ainda
+                      </span>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                        Seu desenvolvimento educativo pode seguir no espaço acima. Quando você e sua
+                        profissional combinarem um plano individual, ele também aparecerá aqui.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+                {/* Como estou agora? (a partir de informações JÁ registradas, sem novos questionários) */}
+                <Card className="border-border/70 bg-gradient-to-br from-card to-muted/20">
+                  <CardHeader className="pb-3 border-b border-border/40">
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-primary font-semibold">
+                      Síntese Viva
+                    </span>
+                    <CardTitle className="font-serif font-semibold text-base text-foreground">
+                      Como estou agora?
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Leitura reflexiva construída a partir do que você já registrou no seu
+                      acompanhamento (sem a necessidade de responder a novos questionários).
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4 sm:p-5 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1">
+                        <span className="text-muted-foreground text-[11px] block">
+                          Experiências Vivas
+                        </span>
+                        <span className="text-lg font-bold font-serif text-foreground">
+                          {
+                            availableExperiences.filter((e) => e.release_status === 'completed')
+                              .length
+                          }{' '}
+                          de {availableExperiences.length}
+                        </span>
+                        <p className="text-[11px] text-muted-foreground">
+                          Momentos de percepção concluídos
+                        </p>
+                      </div>
 
-                          <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
-                            <span className="text-[11px] text-muted-foreground italic">
-                              {isSaved
-                                ? 'Seu retorno foi compartilhado com Daiane.'
-                                : 'Sua resposta ajuda Daiane a calibrar o ritmo junto com você.'}
-                            </span>
-                            {!isSaved && currentType && (
-                              <Button
-                                size="sm"
-                                disabled={submittingPlanResponse === planPres.id}
-                                onClick={() => handleSaveOperationalAcceptance(planPres.id)}
-                                className="text-xs h-8 px-4 bg-primary text-primary-foreground hover:bg-primary/90"
-                              >
-                                {submittingPlanResponse === planPres.id
-                                  ? 'Enviando...'
-                                  : 'Enviar retorno para Daiane'}
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : (
-              <Card className="border-dashed border-border/80 bg-muted/10">
-                <CardContent className="py-6 text-center space-y-1.5">
-                  <Compass className="w-6 h-6 text-muted-foreground mx-auto opacity-50" />
-                  <span className="font-medium text-xs text-foreground block">
-                    Acompanhamento individual · nenhum plano compartilhado ainda
-                  </span>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                    Seu desenvolvimento educativo pode seguir no espaço acima. Quando você e sua
-                    profissional combinarem um plano individual, ele também aparecerá aqui.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+                      <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1">
+                        <span className="text-muted-foreground text-[11px] block">
+                          Experimentos Práticos
+                        </span>
+                        <span className="text-lg font-bold font-serif text-foreground">
+                          {
+                            assignments.filter(
+                              (a) =>
+                                a.status === 'completed' ||
+                                a.participant_response_type === 'confirmed',
+                            ).length
+                          }{' '}
+                          de {assignments.length}
+                        </span>
+                        <p className="text-[11px] text-muted-foreground">
+                          Práticas acolhidas no cotidiano
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1">
+                        <span className="text-muted-foreground text-[11px] block">
+                          Retornos do Cuidado
+                        </span>
+                        <span className="text-lg font-bold font-serif text-foreground">
+                          {
+                            Object.keys(selectedPlanResponses).filter(
+                              (k) => selectedPlanResponses[k].saved,
+                            ).length
+                          }
+                        </span>
+                        <p className="text-[11px] text-muted-foreground">
+                          Aceites operacionais compartilhados
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Percepção consolidada */}
+                    <div className="p-3.5 rounded-lg bg-card border border-primary/20 text-xs text-foreground space-y-1">
+                      <span className="font-semibold text-primary block">Ritmo do Cuidado</span>
+                      <p className="text-muted-foreground leading-relaxed">
+                        Seu processo está vivo. Cada registro permite que Daiane refine as
+                        prioridades e respeite os limites e possibilidades do seu corpo e da sua
+                        rotina.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Revisões de Ciclo (Convite existente e histórico) */}
+                <Card className="border-border/60">
+                  <CardHeader className="pb-3 border-b border-border/40">
+                    <CardTitle className="font-serif font-semibold text-base text-foreground flex items-center gap-2">
+                      <RotateCcw className="w-4 h-4 text-primary" />
+                      <span>Revisões de Ciclo</span>
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Momentos combinados com a profissional para olhar para trás, pausar e calibrar
+                      as próximas direções.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4 sm:p-5 space-y-3">
+                    {activeReviewInvite ? (
+                      <div className="p-4 rounded-xl border border-primary/40 bg-primary/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-0.5">
+                          <span className="font-semibold text-foreground text-sm block">
+                            Você tem uma revisão de ciclo aberta
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            Sua profissional enviou um convite para você compartilhar suas
+                            percepções sobre este ciclo.
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => navigate(`/reviews/${activeReviewInvite.cycleId}`)}
+                          className="text-xs h-8 px-4 shrink-0 gap-1.5"
+                        >
+                          <span>Responder Revisão</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-lg bg-muted/20 border border-border/40 text-xs text-muted-foreground text-center">
+                        Nenhuma revisão de ciclo pendente no momento. As revisões são abertas pela
+                        profissional ao final de cada ciclo de acompanhamento.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 

@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event'
 import React from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
@@ -39,7 +40,11 @@ it('página real do Planner encontra a matrícula demo e mostra o passo sem cons
       <PlannerPage />
     </MemoryRouter>,
   )
-  await screen.findByText('Meu passo deve aparecer no Planner')
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('tab', { name: /Sem horário/ }))
+  await user.click(
+    await screen.findByRole('button', { name: /Meu passo deve aparecer no Planner/ }),
+  )
   expect(screen.getByRole('button', { name: 'Experimentei' })).toBeTruthy()
   expect(network).not.toHaveBeenCalled()
 })

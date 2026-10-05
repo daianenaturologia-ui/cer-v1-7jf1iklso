@@ -101,13 +101,8 @@ export function DevelopmentResourceEditor() {
     <section className="rounded-xl border p-4 space-y-4" aria-label="Acervo educativo">
       <h2 className="font-serif text-xl">Acervo de desenvolvimento</h2>
       <p className="text-sm text-muted-foreground">
-        {DEVELOPMENT_CATALOG.length} recursos iniciais já estão disponíveis. Você pode ampliar este
-        acervo quando quiser. Publicar uma vez permite o uso autônomo; não precisa autorizar cada
-        pessoa ou tentativa.
-      </p>
-      <p className="text-sm text-muted-foreground">
-        Cadastre aqui ensinamentos e exercícios educativos de foco, rotina, escolhas e aprendizado.
-        Técnicas que exigem avaliação individual pertencem à biblioteca clínica.
+        {DEVELOPMENT_CATALOG.length} recursos disponíveis. Publique novos ensinamentos uma vez para
+        todos explorarem com autonomia.
       </p>
       <details>
         <summary className="text-sm cursor-pointer">Conhecer o acervo inicial</summary>

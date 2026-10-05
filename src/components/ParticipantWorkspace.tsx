@@ -1,3 +1,4 @@
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { DemoPracticeWorkspace } from '@/components/DemoPracticeWorkspace'
 import { CareCycleManager } from '@/components/CareCycleManager'
 import { LifeDirections } from '@/components/experience/LifeDirections'
@@ -580,30 +581,36 @@ export const ParticipantWorkspace: React.FC = () => {
 
       {/* EVOLUÇÃO */}
       {currentTab === 'evolucao' && (
-        <div className="space-y-5">
-          <LifeTimeline enrollmentId={enrollment.id} readOnly />
-          <LifeDirections enrollmentId={enrollment.id} readOnly />
-          <SelfDevelopmentJourney
-            key={`shared-development-${enrollment.id}`}
-            enrollmentId={enrollment.id}
-            readOnly
-          />
-          <CarePlanEditor
-            key={enrollment.id}
-            enrollmentId={enrollment.id}
-            participantName={participantName}
-          />
-          <div className="flex flex-wrap gap-2">
+        <Tabs defaultValue="plano" key={`evolution-${enrollment.id}`}>
+          <TabsList aria-label="Evolução da interagente" className="flex-wrap h-auto">
+            <TabsTrigger value="plano">Plano</TabsTrigger>
+            <TabsTrigger value="caminho">Linha da Vida</TabsTrigger>
+            <TabsTrigger value="agenda">Agenda</TabsTrigger>
+            <TabsTrigger value="revisao">Revisão</TabsTrigger>
+          </TabsList>
+          <TabsContent value="plano" className="space-y-4 mt-4">
+            <CarePlanEditor
+              key={enrollment.id}
+              enrollmentId={enrollment.id}
+              participantName={participantName}
+            />
             <Button variant="outline" onClick={() => openCareTool('biblioteca')}>
-              Combinar experimentos para o plano
+              Combinar uma prática
             </Button>
-            <Button variant="outline" onClick={() => openCareTool('planner')}>
-              Ver execução no Planner
-            </Button>
-          </div>
-          <CareCycleManager key={`cycles-${enrollment.id}`} enrollmentId={enrollment.id} />
-          <ResponseDigest enrollmentId={enrollment.id} participantName={participantName} />
-        </div>
+          </TabsContent>
+          <TabsContent value="caminho" className="space-y-4 mt-4">
+            <LifeTimeline enrollmentId={enrollment.id} readOnly />
+            <LifeDirections enrollmentId={enrollment.id} readOnly />
+          </TabsContent>
+          <TabsContent value="agenda" className="mt-4">
+            <ProfessionalPlannerView enrollmentId={enrollment.id} />
+          </TabsContent>
+          <TabsContent value="revisao" className="space-y-4 mt-4">
+            <SelfDevelopmentJourney enrollmentId={enrollment.id} readOnly />
+            <CareCycleManager key={`cycles-${enrollment.id}`} enrollmentId={enrollment.id} />
+            <ResponseDigest enrollmentId={enrollment.id} participantName={participantName} />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   )

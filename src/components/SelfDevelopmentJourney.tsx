@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
   selfDevelopmentService,
@@ -43,6 +45,7 @@ export function SelfDevelopmentJourney({
   const [message, setMessage] = useState('')
   const [revision, setRevision] = useState(0)
   const [showCatalog, setShowCatalog] = useState(false)
+  const [view, setView] = useState('plan')
   useEffect(() => {
     let active = true
     setRecords([])
@@ -122,6 +125,7 @@ export function SelfDevelopmentJourney({
       setRecords((old) => (id ? old.map((r) => (r.id === id ? saved : r)) : [saved, ...old]))
       setEditing(null)
       setShowCatalog(false)
+      if (value.status === 'reviewed') setView('learn')
       setReviewing(undefined)
       setMessage(text)
     } catch (e) {
@@ -138,35 +142,43 @@ export function SelfDevelopmentJourney({
     setEditing((old) => (old ? { ...old, [key]: value } : old))
   }
   const visible =
-    mode === 'play' ? records.filter((r) => !['reviewed', 'completed'].includes(r.status)) : records
+    mode === 'play'
+      ? records.filter((r) => !['reviewed', 'completed'].includes(r.status))
+      : records.filter((r) =>
+          view === 'learn'
+            ? ['completed', 'reviewed'].includes(r.status)
+            : !['completed', 'reviewed'].includes(r.status),
+        )
   const readyToReview = records.filter((r) => r.status === 'completed').length
   return (
     <section
       className="rounded-xl border border-primary/30 p-4 sm:p-5 space-y-4"
       aria-label={readOnly ? 'Desenvolvimento compartilhado' : 'Meu desenvolvimento'}
     >
-      <div className="space-y-2">
+      <div className="space-y-1">
         <h2 className="font-serif text-xl">
           {readOnly
-            ? 'Passos e aprendizados compartilhados'
+            ? 'Passos compartilhados'
             : mode === 'play'
               ? 'Meus pequenos passos'
-              : 'Meu desenvolvimento · do desejo ao pequeno passo'}
+              : 'Um desejo, um pequeno passo'}
         </h2>
         <p className="text-sm text-muted-foreground">
           {readOnly
-            ? 'A pessoa escolhe, planeja e revisa seus recursos educativos. Você acompanha o que ela decidiu compartilhar, sem aprovar cada etapa.'
-            : mode === 'play'
-              ? 'Faça a experiência no seu ritmo. Você pode ajustar, pausar e revisar sem esperar um convite.'
-              : 'Escolha o que faz sentido, planeje uma tentativa possível e aprenda com a vida real. O acervo educativo está disponível sem precisar de liberação profissional.'}
+            ? 'Acompanhe o que a pessoa escolheu compartilhar.'
+            : 'Escolha algo possível. Experimente, aprenda e ajuste ao seu ritmo.'}
         </p>
-        {!readOnly && (
-          <p className="text-xs text-muted-foreground">
-            Os recursos ajudam a explorar foco, rotina, escolhas e aprendizado. Práticas clínicas
-            são combinadas no acompanhamento individual.
-          </p>
-        )}
       </div>
+      {mode === 'plan' && (
+        <Tabs value={view} onValueChange={setView}>
+          <TabsList aria-label="Meu desenvolvimento">
+            <TabsTrigger value="plan">Planejar</TabsTrigger>
+            <TabsTrigger value="learn">
+              Aprendizados{readyToReview ? ` · ${readyToReview}` : ''}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
       {error && (
         <div role="alert" className="text-sm text-destructive">
           {error}{' '}
@@ -192,7 +204,7 @@ export function SelfDevelopmentJourney({
         <p role="status">Carregando seus passos…</p>
       ) : (
         <>
-          {!readOnly && mode === 'plan' && !editing && (
+          {!readOnly && mode === 'plan' && view === 'plan' && !editing && (
             <Button variant="outline" onClick={() => setShowCatalog((v) => !v)}>
               {showCatalog
                 ? 'Fechar acervo'
@@ -222,9 +234,9 @@ export function SelfDevelopmentJourney({
                     {resource.theme} · {resource.duration}
                   </span>
                   <h3 className="font-semibold">{resource.title}</h3>
-                  <p className="text-sm text-muted-foreground">{resource.lesson}</p>
                   <details className="text-sm">
                     <summary className="cursor-pointer">Conhecer a proposta</summary>
+                    <p className="mt-2">{resource.lesson}</p>
                     <ol className="list-decimal pl-5 mt-2 space-y-1">
                       {resource.instructions.map((s, i) => (
                         <li key={i}>{s}</li>
@@ -240,138 +252,152 @@ export function SelfDevelopmentJourney({
             </div>
           )}
           {!readOnly && editing && (
-            <form
-              className="rounded-lg border p-4 space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault()
-                void save(editing, editingId)
+            <Dialog
+              open
+              onOpenChange={(open) => {
+                if (!open && !busy) setEditing(null)
               }}
             >
-              <h3 className="font-semibold">Planejar · {editing.resource_snapshot.title}</h3>
-              <p className="text-sm">
-                Comece com uma tentativa. Você escolhe o tamanho e decide o que compartilhar.
-              </p>
-              <label className="block text-sm space-y-1">
-                <span>Vincular a um futuro da Linha da Vida (opcional)</span>
-                <select
-                  disabled={!!editingId}
-                  className="w-full rounded-md border bg-background p-2"
-                  value={editing.direction_id}
-                  onChange={(e) => {
-                    const source = directions.find((d) => d.id === e.target.value)
-                    setEditing((old) =>
-                      old
-                        ? {
-                            ...old,
-                            direction_id: source?.id || '',
-                            goal: source?.title || old.goal,
-                          }
-                        : old,
-                    )
+              <DialogContent className="rounded-2xl max-h-[90vh]">
+                <DialogTitle className="font-serif">{editing.resource_snapshot.title}</DialogTitle>
+                <DialogDescription>Seu plano começa com três escolhas.</DialogDescription>
+                <form
+                  className="rounded-lg border p-4 space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    void save(editing, editingId)
                   }}
                 >
-                  <option value="">Planejar sem vínculo</option>
-                  {editingId && editing.direction_id && (
-                    <option value={editing.direction_id}>Origem desta tentativa preservada</option>
-                  )}
-                  {directions.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block text-sm space-y-1">
-                <span>Que desejo ou direção quero cultivar?</span>
-                <Textarea
-                  required
-                  maxLength={5000}
-                  value={editing.goal}
-                  onChange={(e) => patch('goal', e.target.value)}
-                  placeholder="Ex.: manter minha renda e ter mais tempo livre"
-                />
-              </label>
-              <label className="block text-sm space-y-1">
-                <span>Qual pequeno passo vou experimentar?</span>
-                <Textarea
-                  required
-                  maxLength={5000}
-                  value={editing.action}
-                  onChange={(e) => patch('action', e.target.value)}
-                  placeholder="Ex.: encerrar o trabalho no horário escolhido em um dia desta semana"
-                />
-              </label>
-              <label className="block text-sm space-y-1">
-                <span>Quando ou em que situação isso cabe na minha vida?</span>
-                <Textarea
-                  required
-                  maxLength={5000}
-                  value={editing.context}
-                  onChange={(e) => patch('context', e.target.value)}
-                  placeholder="Considere disposição, concentração, compromissos e apoios. Ex.: depois do último atendimento de terça, com o material já organizado."
-                />
-              </label>
-              <label className="block text-sm space-y-1">
-                <span>Reservar data e horário (opcional)</span>
-                <Input
-                  type="datetime-local"
-                  value={editing.scheduled_at ? localDate(editing.scheduled_at) : ''}
-                  onChange={(e) =>
-                    patch(
-                      'scheduled_at',
-                      e.target.value ? new Date(e.target.value).toISOString() : '',
-                    )
-                  }
-                />
-              </label>
-              <label className="block text-sm space-y-1">
-                <span>Minha alternativa para um dia difícil</span>
-                <Textarea
-                  maxLength={5000}
-                  value={editing.fallback}
-                  onChange={(e) => patch('fallback', e.target.value)}
-                />
-              </label>
-              <label className="block text-sm space-y-1">
-                <span>Como vou perceber se essa tentativa ajudou? (opcional)</span>
-                <Textarea
-                  maxLength={5000}
-                  value={editing.signal}
-                  onChange={(e) => patch('signal', e.target.value)}
-                  placeholder="Ex.: consegui encerrar e tive tempo para algo de que gosto"
-                />
-              </label>
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={editing.access_class === 'participant_shared'}
-                  onChange={(e) =>
-                    patch(
-                      'access_class',
-                      e.target.checked ? 'participant_shared' : 'participant_private',
-                    )
-                  }
-                />
-                Compartilhar este passo e seus aprendizados com minha profissional
-              </label>
-              <p className="text-xs text-muted-foreground">
-                O compartilhamento inclui estes campos. Outros relatos privados da Linha da Vida
-                continuam privados.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button disabled={busy} type="submit">
-                  {busy ? 'Salvando…' : 'Salvar meu passo'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={busy}
-                  onClick={() => setEditing(null)}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+                  <label className="block text-sm space-y-1">
+                    <span>Vincular a um futuro da Linha da Vida (opcional)</span>
+                    <select
+                      disabled={!!editingId}
+                      className="w-full rounded-md border bg-background p-2"
+                      value={editing.direction_id}
+                      onChange={(e) => {
+                        const source = directions.find((d) => d.id === e.target.value)
+                        setEditing((old) =>
+                          old
+                            ? {
+                                ...old,
+                                direction_id: source?.id || '',
+                                goal: source?.title || old.goal,
+                              }
+                            : old,
+                        )
+                      }}
+                    >
+                      <option value="">Planejar sem vínculo</option>
+                      {editingId && editing.direction_id && (
+                        <option value={editing.direction_id}>
+                          Origem desta tentativa preservada
+                        </option>
+                      )}
+                      {directions.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block text-sm space-y-1">
+                    <span>Que vida quero cultivar?</span>
+                    <Textarea
+                      required
+                      maxLength={5000}
+                      value={editing.goal}
+                      onChange={(e) => patch('goal', e.target.value)}
+                      placeholder="Ex.: manter minha renda e ter mais tempo livre"
+                    />
+                  </label>
+                  <label className="block text-sm space-y-1">
+                    <span>Meu pequeno passo</span>
+                    <Textarea
+                      required
+                      maxLength={5000}
+                      value={editing.action}
+                      onChange={(e) => patch('action', e.target.value)}
+                      placeholder="Ex.: encerrar o trabalho no horário escolhido em um dia desta semana"
+                    />
+                  </label>
+                  <label className="block text-sm space-y-1">
+                    <span>Quando isso cabe na minha vida?</span>
+                    <Textarea
+                      required
+                      maxLength={5000}
+                      value={editing.context}
+                      onChange={(e) => patch('context', e.target.value)}
+                      placeholder="Ex.: segunda de manhã, depois do café"
+                    />
+                  </label>
+                  <details className="space-y-3 text-sm">
+                    <summary className="cursor-pointer text-primary">
+                      Personalizar · horário, alternativa e sinais
+                    </summary>
+                    <label className="block text-sm space-y-1">
+                      <span>Reservar data e horário (opcional)</span>
+                      <Input
+                        type="datetime-local"
+                        value={editing.scheduled_at ? localDate(editing.scheduled_at) : ''}
+                        onChange={(e) =>
+                          patch(
+                            'scheduled_at',
+                            e.target.value ? new Date(e.target.value).toISOString() : '',
+                          )
+                        }
+                      />
+                    </label>
+                    <label className="block text-sm space-y-1">
+                      <span>Minha alternativa para um dia difícil</span>
+                      <Textarea
+                        maxLength={5000}
+                        value={editing.fallback}
+                        onChange={(e) => patch('fallback', e.target.value)}
+                      />
+                    </label>
+                    <label className="block text-sm space-y-1">
+                      <span>Como vou perceber se essa tentativa ajudou? (opcional)</span>
+                      <Textarea
+                        maxLength={5000}
+                        value={editing.signal}
+                        onChange={(e) => patch('signal', e.target.value)}
+                        placeholder="Ex.: consegui encerrar e tive tempo para algo de que gosto"
+                      />
+                    </label>
+                  </details>
+                  <label className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={editing.access_class === 'participant_shared'}
+                      onChange={(e) =>
+                        patch(
+                          'access_class',
+                          e.target.checked ? 'participant_shared' : 'participant_private',
+                        )
+                      }
+                    />
+                    Compartilhar este passo e seus aprendizados com minha profissional
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    O compartilhamento inclui estes campos. Outros relatos privados da Linha da Vida
+                    continuam privados.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button disabled={busy} type="submit">
+                      {busy ? 'Salvando…' : 'Salvar meu passo'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() => setEditing(null)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           )}
           {visible.length === 0 && !editing && (
             <p className="text-sm text-muted-foreground">
@@ -391,8 +417,7 @@ export function SelfDevelopmentJourney({
                     {record.access_class === 'participant_shared' ? 'Compartilhado' : 'Só meu'}
                   </span>
                   <h3 className="font-semibold">{record.action}</h3>
-                  <p className="text-sm text-muted-foreground">Direção: {record.goal}</p>
-                  <p className="text-sm">Quando cabe: {record.context}</p>
+
                   {record.scheduled_at && (
                     <p className="text-xs">
                       {new Date(record.scheduled_at).toLocaleString('pt-BR')}
@@ -400,9 +425,9 @@ export function SelfDevelopmentJourney({
                   )}
                 </div>
                 <details className="text-sm">
-                  <summary className="cursor-pointer">
-                    Meu recurso · {record.resource_snapshot.title}
-                  </summary>
+                  <summary className="cursor-pointer">Ver meu passo e recurso</summary>
+                  <p className="mt-2">Direção: {record.goal}</p>
+                  <p>Quando cabe: {record.context}</p>
                   <p className="mt-2">{record.resource_snapshot.lesson}</p>
                   <ol className="list-decimal pl-5 space-y-1 mt-2">
                     {record.resource_snapshot.instructions.map((s, i) => (
@@ -421,68 +446,24 @@ export function SelfDevelopmentJourney({
                 )}
                 {!readOnly && (
                   <>
-                    <div className="flex flex-wrap gap-2">
-                      {record.status === 'planned' && (
+                    <div className="flex flex-wrap gap-2 items-start">
+                      {mode === 'plan' && record.status === 'reviewed' && (
                         <Button
                           size="sm"
-                          disabled={busy}
-                          onClick={() =>
-                            save(
-                              { ...record, status: 'experimenting' },
-                              record.id,
-                              'Tentativa em andamento. Você pode ajustar seu ritmo.',
-                            )
-                          }
-                        >
-                          Começar
-                        </Button>
-                      )}
-                      {['planned', 'experimenting', 'paused'].includes(record.status) && (
-                        <Button
-                          size="sm"
-                          disabled={busy}
-                          onClick={() =>
-                            save(
-                              { ...record, status: 'completed' },
-                              record.id,
-                              'Tentativa registrada. Revise o que aprendeu na Evolução.',
-                            )
-                          }
-                        >
-                          Experimentei
-                        </Button>
-                      )}
-                      {['planned', 'experimenting'].includes(record.status) && (
-                        <Button
                           variant="outline"
-                          size="sm"
                           disabled={busy}
-                          onClick={() =>
-                            save(
-                              { ...record, status: 'paused' },
-                              record.id,
-                              'Passo pausado. Você pode retomar quando fizer sentido.',
-                            )
-                          }
+                          onClick={() => open(record.resource_snapshot, record)}
                         >
-                          Pausar
+                          Planejar uma nova tentativa
                         </Button>
                       )}
-                      {record.status === 'paused' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={busy}
-                          onClick={() =>
-                            save({ ...record, status: 'planned' }, record.id, 'Passo retomado.')
-                          }
-                        >
-                          Retomar
+                      {mode === 'plan' && !['completed', 'reviewed'].includes(record.status) && (
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to="/planner">Levar para a agenda</Link>
                         </Button>
                       )}
-                      {mode === 'plan' && record.status !== 'reviewed' && (
+                      {mode === 'plan' && record.status === 'completed' && (
                         <Button
-                          variant="outline"
                           size="sm"
                           disabled={busy}
                           onClick={() => {
@@ -494,55 +475,125 @@ export function SelfDevelopmentJourney({
                           Revisar o que aprendi
                         </Button>
                       )}
-                      {mode === 'plan' &&
-                        ['planned', 'experimenting', 'paused'].includes(record.status) && (
+                      <details className="text-sm">
+                        <summary className="cursor-pointer rounded-md px-3 py-2 hover:bg-muted">
+                          Mais opções
+                        </summary>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {record.status === 'planned' && (
+                            <Button
+                              size="sm"
+                              disabled={busy}
+                              onClick={() =>
+                                save(
+                                  { ...record, status: 'experimenting' },
+                                  record.id,
+                                  'Tentativa em andamento. Você pode ajustar seu ritmo.',
+                                )
+                              }
+                            >
+                              Começar
+                            </Button>
+                          )}
+                          {['planned', 'experimenting', 'paused'].includes(record.status) && (
+                            <Button
+                              size="sm"
+                              disabled={busy}
+                              onClick={() =>
+                                save(
+                                  { ...record, status: 'completed' },
+                                  record.id,
+                                  'Tentativa registrada. Revise o que aprendeu na Evolução.',
+                                )
+                              }
+                            >
+                              Experimentei
+                            </Button>
+                          )}
+                          {['planned', 'experimenting'].includes(record.status) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={busy}
+                              onClick={() =>
+                                save(
+                                  { ...record, status: 'paused' },
+                                  record.id,
+                                  'Passo pausado. Você pode retomar quando fizer sentido.',
+                                )
+                              }
+                            >
+                              Pausar
+                            </Button>
+                          )}
+                          {record.status === 'paused' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={busy}
+                              onClick={() =>
+                                save({ ...record, status: 'planned' }, record.id, 'Passo retomado.')
+                              }
+                            >
+                              Retomar
+                            </Button>
+                          )}
+                          {mode === 'plan' &&
+                            !['reviewed', 'completed'].includes(record.status) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={busy}
+                                onClick={() => {
+                                  setReviewing(record.id)
+                                  setReflection(record.reflection)
+                                  setNextStep(record.next_step)
+                                }}
+                              >
+                                Revisar o que aprendi
+                              </Button>
+                            )}
+                          {mode === 'plan' &&
+                            ['planned', 'experimenting', 'paused'].includes(record.status) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={busy}
+                                onClick={() => {
+                                  setEditing(record)
+                                  setEditingId(record.id)
+                                  setDirections([])
+                                }}
+                              >
+                                Ajustar meu passo
+                              </Button>
+                            )}
                           <Button
                             variant="ghost"
                             size="sm"
                             disabled={busy}
-                            onClick={() => {
-                              setEditing(record)
-                              setEditingId(record.id)
-                              setDirections([])
-                            }}
-                          >
-                            Ajustar meu passo
-                          </Button>
-                        )}
-                      {mode === 'plan' && record.status === 'reviewed' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={busy}
-                          onClick={() => open(record.resource_snapshot, record)}
-                        >
-                          Planejar uma nova tentativa
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={busy}
-                        onClick={() =>
-                          save(
-                            {
-                              ...record,
-                              access_class:
+                            onClick={() =>
+                              save(
+                                {
+                                  ...record,
+                                  access_class:
+                                    record.access_class === 'participant_private'
+                                      ? 'participant_shared'
+                                      : 'participant_private',
+                                },
+                                record.id,
                                 record.access_class === 'participant_private'
-                                  ? 'participant_shared'
-                                  : 'participant_private',
-                            },
-                            record.id,
-                            record.access_class === 'participant_private'
-                              ? 'Este passo e seus aprendizados foram compartilhados.'
-                              : 'Este passo ficou privado no app.',
-                          )
-                        }
-                      >
-                        {record.access_class === 'participant_private'
-                          ? 'Compartilhar este passo'
-                          : 'Deixar só para mim'}
-                      </Button>
+                                  ? 'Este passo e seus aprendizados foram compartilhados.'
+                                  : 'Este passo ficou privado no app.',
+                              )
+                            }
+                          >
+                            {record.access_class === 'participant_private'
+                              ? 'Compartilhar este passo'
+                              : 'Deixar só para mim'}
+                          </Button>
+                        </div>
+                      </details>
                     </div>
                     {reviewing === record.id && (
                       <form

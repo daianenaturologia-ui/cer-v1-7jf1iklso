@@ -1,3 +1,10 @@
+import { CerLibrary } from '@/components/CerLibrary'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService, productService } from '@/services/cer'
@@ -242,28 +249,27 @@ export const ProfissionalHome: React.FC = () => {
             className="text-xs gap-1.5"
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Biblioteca de Práticas</span>
+            <span>Biblioteca</span>
           </Button>
 
-          <Button
-            variant={activeMainTab === 'ai' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveMainTab('ai')}
-            className="text-xs gap-1.5"
-          >
-            <Bot className="w-3.5 h-3.5" />
-            <span>Assistência IA</span>
-          </Button>
-
-          <Button
-            variant={activeMainTab === 'auditoria' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveMainTab('auditoria')}
-            className="text-xs gap-1.5"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Auditoria & Segurança</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={['ai', 'auditoria'].includes(activeMainTab) ? 'default' : 'ghost'}
+                size="sm"
+              >
+                Ferramentas
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setActiveMainTab('ai')}>
+                Assistência IA
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setActiveMainTab('auditoria')}>
+                Auditoria & Segurança
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* ABA 1: PARTICIPANTES & HOME COTIDIANA */}
@@ -313,19 +319,7 @@ export const ProfissionalHome: React.FC = () => {
         )}
 
         {/* ABA 3: BIBLIOTECA */}
-        {activeMainTab === 'biblioteca' && (
-          <div className="space-y-4">
-            <DevelopmentResourceEditor />
-            {isDemo ? (
-              <p className="text-sm text-muted-foreground">
-                As práticas clínicas fictícias são combinadas no acompanhamento de Mariana. O acervo
-                educativo acima pode ser explorado aqui.
-              </p>
-            ) : (
-              <PracticeSelector />
-            )}
-          </div>
-        )}
+        {activeMainTab === 'biblioteca' && <CerLibrary isDemo={isDemo} />}
 
         {/* ABA 4: ASSISTÊNCIA IA */}
         {activeMainTab === 'ai' && (
