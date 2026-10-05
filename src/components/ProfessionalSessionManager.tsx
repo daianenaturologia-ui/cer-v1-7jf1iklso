@@ -1,12 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { SessionMapUpdate } from './SessionMapUpdate'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -69,11 +63,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
   function openSchedule(session?: CerSessionRecord) {
     setScheduleTarget(session?.id || null)
     const date = session?.scheduled_at ? new Date(session.scheduled_at) : null
-    setScheduleAt(
-      date && Number.isFinite(date.getTime())
-        ? new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
-        : '',
-    )
+    setScheduleAt(date && Number.isFinite(date.getTime()) ? new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '')
     setScheduleOpen(true)
   }
 
@@ -88,7 +78,35 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
     null,
   )
 
-  const loadAll = async () => {
+  const selectSession = useCallback(async (sess: CerSessionRecord) => {
+    if (sess.enrollment_id !== enrollmentId) return
+    const current = ++selection.current
+    setSessionLoading(true); setSessionLoadFailed(false)
+    setActiveNote(null); setObservations([]); setNoteDraft(''); setObservationText('')
+    setActiveSession(sess)
+    try {
+      const [note, obsList] = await Promise.all([
+        cerSessionNoteService.getBySessionId(sess.id),
+        cerSessionObservationService.listBySession(sess.id),
+      ])
+      if (current !== selection.current) return
+      if (note && (note.enrollment_id !== enrollmentId || note.session_id !== sess.id)) throw new Error('Anotação de outro encontro.')
+      setActiveNote(note)
+      setObservations(obsList.filter((o) => o.enrollment_id === enrollmentId && o.session_id === sess.id))
+      setNoteDraft(note?.text || '')
+    } catch {
+      if (current !== selection.current) return
+      setSessionLoadFailed(true)
+      setFeedback({ message: 'Não foi possível carregar o registro deste encontro. A edição foi bloqueada para preservar suas anotações.', type: 'error' })
+      setActiveNote(null)
+      setObservations([])
+      setNoteDraft('')
+    } finally {
+      if (current === selection.current) setSessionLoading(false)
+    }
+  }, [enrollmentId])
+
+  const loadAll = useCallback(async () => {
     const current = ++request.current
     try {
       setLoading(true)
@@ -97,9 +115,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
         computeSessionPreparation(enrollmentId),
       ])
       if (current !== request.current) return
-      const sessList = Array.isArray(rawSessList)
-        ? rawSessList.filter((s) => s.enrollment_id === enrollmentId)
-        : []
+      const sessList = Array.isArray(rawSessList) ? rawSessList.filter((s) => s.enrollment_id === enrollmentId) : []
       setSessions(sessList)
       setPreparation(prepData)
 
@@ -115,55 +131,14 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
         setActiveNote(null)
         setNoteDraft('')
       }
-    } catch (err) {
-      if (current === request.current)
-        setFeedback({
-          message: 'Não foi possível carregar os encontros. Tente novamente.',
-          type: 'error',
-        })
+    } catch (_err) {
+      if (current === request.current) setFeedback({ message: 'Não foi possível carregar os encontros. Tente novamente.', type: 'error' })
     } finally {
       if (current === request.current) setLoading(false)
     }
-  }
+  }, [enrollmentId, selectSession])
 
-  const selectSession = async (sess: CerSessionRecord) => {
-    if (sess.enrollment_id !== enrollmentId) return
-    const current = ++selection.current
-    setSessionLoading(true)
-    setSessionLoadFailed(false)
-    setActiveNote(null)
-    setObservations([])
-    setNoteDraft('')
-    setObservationText('')
-    setActiveSession(sess)
-    try {
-      const [note, obsList] = await Promise.all([
-        cerSessionNoteService.getBySessionId(sess.id),
-        cerSessionObservationService.listBySession(sess.id),
-      ])
-      if (current !== selection.current) return
-      if (note && (note.enrollment_id !== enrollmentId || note.session_id !== sess.id))
-        throw new Error('Anotação de outro encontro.')
-      setActiveNote(note)
-      setObservations(
-        obsList.filter((o) => o.enrollment_id === enrollmentId && o.session_id === sess.id),
-      )
-      setNoteDraft(note?.text || '')
-    } catch {
-      if (current !== selection.current) return
-      setSessionLoadFailed(true)
-      setFeedback({
-        message:
-          'Não foi possível carregar o registro deste encontro. A edição foi bloqueada para preservar suas anotações.',
-        type: 'error',
-      })
-      setActiveNote(null)
-      setObservations([])
-      setNoteDraft('')
-    } finally {
-      if (current === selection.current) setSessionLoading(false)
-    }
-  }
+  const invalidateRequests = useCallback(() => { request.current++; selection.current++ }, [])
 
   const handleCreateObservation = async () => {
     if (!activeSession || !observationText.trim()) return
@@ -192,44 +167,22 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
   }
 
   useEffect(() => {
-    setSessions([])
-    setActiveSession(null)
-    setActiveNote(null)
-    setPreparation(null)
-    setNoteDraft('')
-    setObservations([])
-    setObservationText('')
-    setFeedback(null)
-    setScheduleOpen(false)
+    setSessions([]); setActiveSession(null); setActiveNote(null); setPreparation(null); setNoteDraft(''); setObservations([]); setObservationText(''); setFeedback(null); setScheduleOpen(false)
     loadAll()
-    return () => {
-      request.current++
-      selection.current++
-    }
-  }, [enrollmentId])
+    return invalidateRequests
+  }, [enrollmentId, loadAll, invalidateRequests])
 
   const handleCreateSession = async () => {
     try {
       setActionLoading(true)
       const newSess = scheduleTarget
-        ? await cerSessionService.updateScheduledDate(
-            scheduleTarget,
-            scheduleAt ? new Date(scheduleAt).toISOString() : '',
-          )
-        : await cerSessionService.createScheduled(
-            enrollmentId,
-            scheduleAt ? new Date(scheduleAt).toISOString() : undefined,
-          )
+        ? await cerSessionService.updateScheduledDate(scheduleTarget, scheduleAt ? new Date(scheduleAt).toISOString() : '')
+        : await cerSessionService.createScheduled(enrollmentId, scheduleAt ? new Date(scheduleAt).toISOString() : undefined)
       setScheduleOpen(false)
       await loadAll()
       await selectSession(newSess)
       setActiveTab('encontro')
-      setFeedback({
-        message: scheduleAt
-          ? 'Data e horário do encontro salvos.'
-          : 'Encontro criado. Você pode definir o horário depois.',
-        type: 'success',
-      })
+      setFeedback({ message: scheduleAt ? 'Data e horário do encontro salvos.' : 'Encontro criado. Você pode definir o horário depois.', type: 'success' })
     } catch (err: unknown) {
       setFeedback({
         message: err instanceof Error ? err.message : 'Falha ao agendar encontro.',
@@ -343,8 +296,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
   const isCancelled = activeSession?.status === 'cancelled'
   const isInProgress = activeSession?.status === 'in_progress'
   const isScheduled = activeSession?.status === 'scheduled'
-  const isReadOnly =
-    isCompleted || isCancelled || sessionLoading || sessionLoadFailed || actionLoading || savingNote
+  const isReadOnly = isCompleted || isCancelled || sessionLoading || sessionLoadFailed || actionLoading || savingNote
 
   return (
     <Card className="border-border/80 shadow-none">
@@ -738,15 +690,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                           year: 'numeric',
                         })}
                       </span>
-                      {activeSession.scheduled_at && (
-                        <span>
-                          Agendado:{' '}
-                          {new Date(activeSession.scheduled_at).toLocaleString('pt-BR', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          })}
-                        </span>
-                      )}
+                      {activeSession.scheduled_at && <span>Agendado: {new Date(activeSession.scheduled_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>}
                       {activeSession.started_at && (
                         <span>
                           Iniciado às:{' '}
@@ -776,9 +720,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                           variant="default"
                           size="sm"
                           onClick={() => handleStartSession(activeSession.id)}
-                          disabled={
-                            actionLoading || savingNote || sessionLoading || sessionLoadFailed
-                          }
+                          disabled={actionLoading || savingNote || sessionLoading || sessionLoadFailed}
                           className="text-xs h-8 gap-1.5"
                         >
                           <Play className="w-3.5 h-3.5" />
@@ -788,9 +730,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                           variant="ghost"
                           size="sm"
                           onClick={() => handleCancelSession(activeSession.id)}
-                          disabled={
-                            actionLoading || savingNote || sessionLoading || sessionLoadFailed
-                          }
+                          disabled={actionLoading || savingNote || sessionLoading || sessionLoadFailed}
                           className="text-xs h-8 text-muted-foreground hover:text-destructive"
                         >
                           <XCircle className="w-3.5 h-3.5 mr-1" />
@@ -804,9 +744,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                         variant="default"
                         size="sm"
                         onClick={() => handleCompleteSession(activeSession.id)}
-                        disabled={
-                          actionLoading || savingNote || sessionLoading || sessionLoadFailed
-                        }
+                        disabled={actionLoading || savingNote || sessionLoading || sessionLoadFailed}
                         className="text-xs h-8 gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
@@ -852,13 +790,9 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                   <Textarea
                     aria-label="Nota profissional privada"
                     placeholder={
-                      sessionLoadFailed
-                        ? 'Registro indisponível. Tente carregar novamente.'
-                        : sessionLoading
-                          ? 'Carregando anotação...'
-                          : isCompleted || isCancelled
-                            ? 'Nenhuma anotação adicional pode ser feita neste encontro concluído.'
-                            : 'Espaço livre para reflexões, impressões subjetivas e registros do encontro...'
+                      sessionLoadFailed ? 'Registro indisponível. Tente carregar novamente.' : sessionLoading ? 'Carregando anotação...' : isCompleted || isCancelled
+                        ? 'Nenhuma anotação adicional pode ser feita neste encontro concluído.'
+                        : 'Espaço livre para reflexões, impressões subjetivas e registros do encontro...'
                     }
                     value={noteDraft}
                     onChange={(e) => setNoteDraft(e.target.value)}
@@ -876,29 +810,9 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                 </div>
 
                 {/* BLOCO HUMANO OPCIONAL (Build 04B): "O que vale preservar deste encontro?" */}
-                {sessionLoadFailed && (
-                  <Button variant="outline" onClick={() => void selectSession(activeSession)}>
-                    Tentar carregar este encontro
-                  </Button>
-                )}
-                {isScheduled && (
-                  <Button
-                    variant="outline"
-                    disabled={actionLoading}
-                    onClick={() => openSchedule(activeSession)}
-                  >
-                    Definir ou alterar horário
-                  </Button>
-                )}
-                {!isCancelled && !sessionLoading && !sessionLoadFailed && (
-                  <SessionMapUpdate
-                    key={`${enrollmentId}-${activeSession.id}`}
-                    enrollmentId={enrollmentId}
-                    sessionId={activeSession.id}
-                    participantName={participantName}
-                    onOpenMap={onOpenMap}
-                  />
-                )}
+                {sessionLoadFailed && <Button variant="outline" onClick={() => void selectSession(activeSession)}>Tentar carregar este encontro</Button>}
+                {isScheduled && <Button variant="outline" disabled={actionLoading} onClick={() => openSchedule(activeSession)}>Definir ou alterar horário</Button>}
+                {!isCancelled && !sessionLoading && !sessionLoadFailed && <SessionMapUpdate key={`${enrollmentId}-${activeSession.id}`} enrollmentId={enrollmentId} sessionId={activeSession.id} participantName={participantName} onOpenMap={onOpenMap} />}
                 <div className="p-3.5 rounded-lg border border-border/70 bg-background space-y-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -1115,35 +1029,10 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
         )}
       </CardContent>
       <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{scheduleTarget ? 'Horário do encontro' : 'Novo encontro'}</DialogTitle>
-          </DialogHeader>
-          <label className="block space-y-2 text-sm">
-            <span>Data e horário</span>
-            <input
-              type="datetime-local"
-              value={scheduleAt}
-              onChange={(e) => setScheduleAt(e.target.value)}
-              className="w-full rounded-md border bg-background p-2"
-            />
-          </label>
-          <p className="text-sm text-muted-foreground">
-            O horário fica registrado neste acompanhamento. Combine o encontro com a pessoa pelo
-            canal que vocês utilizam.
-          </p>
-          <DialogFooter>
-            <Button
-              disabled={actionLoading || Boolean(scheduleTarget && !scheduleAt)}
-              onClick={() => void handleCreateSession()}
-            >
-              {actionLoading
-                ? 'Salvando...'
-                : scheduleAt
-                  ? 'Salvar horário'
-                  : 'Criar encontro sem horário'}
-            </Button>
-          </DialogFooter>
+        <DialogContent><DialogHeader><DialogTitle>{scheduleTarget ? 'Horário do encontro' : 'Novo encontro'}</DialogTitle></DialogHeader>
+          <label className="block space-y-2 text-sm"><span>Data e horário</span><input type="datetime-local" value={scheduleAt} onInput={(e) => setScheduleAt(e.currentTarget.value)} onChange={(e) => setScheduleAt(e.target.value)} className="w-full rounded-md border bg-background p-2" /></label>
+          <p className="text-sm text-muted-foreground">O horário fica registrado neste acompanhamento. Combine o encontro com a pessoa pelo canal que vocês utilizam.</p>
+          <DialogFooter><Button disabled={actionLoading || Boolean(scheduleTarget && !scheduleAt)} onClick={() => void handleCreateSession()}>{actionLoading ? 'Salvando...' : scheduleAt ? 'Salvar horário' : 'Criar encontro sem horário'}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
