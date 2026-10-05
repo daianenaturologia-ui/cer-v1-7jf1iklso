@@ -1,3 +1,4 @@
+import { CerLibrary } from '@/components/CerLibrary'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { PracticeSelector } from '@/components/PracticeSelector'
@@ -23,21 +24,11 @@ export const BibliotecaPage: React.FC = () => {
               <span>Voltar para o Painel Profissional</span>
             </Button>
           </Link>
-          <h1 className="text-xl font-bold font-serif text-foreground">
-            Biblioteca de Práticas Clínicas
-          </h1>
+          <h1 className="text-xl font-bold font-serif text-foreground">Biblioteca CER</h1>
         </div>
       </div>
 
-      <DevelopmentResourceEditor />
-      {isDemo ? (
-        <p className="text-sm text-muted-foreground">
-          As práticas clínicas fictícias são combinadas no acompanhamento de Mariana. O acervo
-          educativo acima pode ser explorado aqui.
-        </p>
-      ) : (
-        <PracticeSelector />
-      )}
+      <CerLibrary isDemo={isDemo} />
     </div>
   )
 }

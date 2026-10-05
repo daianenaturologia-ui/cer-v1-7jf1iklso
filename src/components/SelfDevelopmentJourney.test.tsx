@@ -28,13 +28,10 @@ it('a pessoa escolhe recurso, planeja no seu ritmo, executa no Planner e revisa 
   )
   await user.click(await screen.findByRole('button', { name: 'Escolher meu primeiro recurso' }))
   await user.click(screen.getAllByRole('button', { name: 'Quero experimentar' })[0])
-  await user.type(screen.getByLabelText('Que desejo ou direção quero cultivar?'), 'Ter tempo livre')
+  await user.type(screen.getByLabelText('Que vida quero cultivar?'), 'Ter tempo livre')
+  await user.type(screen.getByLabelText('Meu pequeno passo'), 'Observar minha concentração')
   await user.type(
-    screen.getByLabelText('Qual pequeno passo vou experimentar?'),
-    'Observar minha concentração',
-  )
-  await user.type(
-    screen.getByLabelText('Quando ou em que situação isso cabe na minha vida?'),
+    screen.getByLabelText('Quando isso cabe na minha vida?'),
     'Depois do almoço de terça',
   )
   await user.click(screen.getByRole('button', { name: 'Salvar meu passo' }))
@@ -45,7 +42,8 @@ it('a pessoa escolhe recurso, planeja no seu ritmo, executa no Planner e revisa 
       <SelfDevelopmentJourney enrollmentId={DEMO_ENROLLMENT_ID} mode="play" />
     </MemoryRouter>,
   )
-  await user.click(await screen.findByRole('button', { name: 'Experimentei' }))
+  await user.click(await screen.findByText('Mais opções'))
+  await user.click(screen.getByRole('button', { name: 'Experimentei' }))
   await screen.findByText(/tentativa\(s\) pronta/)
   cleanup()
   render(
@@ -53,7 +51,8 @@ it('a pessoa escolhe recurso, planeja no seu ritmo, executa no Planner e revisa 
       <SelfDevelopmentJourney enrollmentId={DEMO_ENROLLMENT_ID} />
     </MemoryRouter>,
   )
-  await user.click(await screen.findByRole('button', { name: 'Revisar o que aprendi' }))
+  await user.click(await screen.findByRole('tab', { name: /Aprendizados/ }))
+  await user.click(screen.getByRole('button', { name: 'Revisar o que aprendi' }))
   await user.type(
     screen.getByLabelText('O que percebi e aprendi?'),
     'Depois do almoço preciso reduzir o bloco',
@@ -71,15 +70,9 @@ it('visão profissional não mostra privados nem oferece ações de autoria da p
   )
   await user.click(await screen.findByRole('button', { name: 'Escolher meu primeiro recurso' }))
   await user.click(screen.getAllByRole('button', { name: 'Quero experimentar' })[0])
-  await user.type(
-    screen.getByLabelText('Que desejo ou direção quero cultivar?'),
-    'Um desejo privado',
-  )
-  await user.type(screen.getByLabelText('Qual pequeno passo vou experimentar?'), 'Uma ação privada')
-  await user.type(
-    screen.getByLabelText('Quando ou em que situação isso cabe na minha vida?'),
-    'Na terça',
-  )
+  await user.type(screen.getByLabelText('Que vida quero cultivar?'), 'Um desejo privado')
+  await user.type(screen.getByLabelText('Meu pequeno passo'), 'Uma ação privada')
+  await user.type(screen.getByLabelText('Quando isso cabe na minha vida?'), 'Na terça')
   await user.click(screen.getByRole('button', { name: 'Salvar meu passo' }))
   await screen.findByText('Uma ação privada')
   cleanup()

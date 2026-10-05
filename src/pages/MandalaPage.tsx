@@ -1,3 +1,5 @@
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { JourneyNavigation } from '@/components/JourneyNavigation'
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
@@ -49,24 +51,7 @@ export const MandalaPage: React.FC = () => {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Voltar ao Início</span>
           </Button>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/experimentos')}
-              className="text-xs h-8"
-            >
-              Experimentos
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/planner')}
-              className="text-xs h-8"
-            >
-              Planner
-            </Button>
-          </div>
+          <JourneyNavigation />
         </div>
 
         {loading ? (
@@ -87,10 +72,18 @@ export const MandalaPage: React.FC = () => {
             onAction={() => navigate('/')}
           />
         ) : (
-          <div className="space-y-4">
-            <DevelopmentLearningView key={enrollment.id} enrollmentId={enrollment.id} />
-            <MandalaStructuredView enrollmentId={enrollment.id} />
-          </div>
+          <Tabs defaultValue="mandala">
+            <TabsList aria-label="Visões da Mandala">
+              <TabsTrigger value="mandala">Minha Mandala</TabsTrigger>
+              <TabsTrigger value="aprendizados">Aprendizados</TabsTrigger>
+            </TabsList>
+            <TabsContent value="mandala">
+              <MandalaStructuredView enrollmentId={enrollment.id} />
+            </TabsContent>
+            <TabsContent value="aprendizados">
+              <DevelopmentLearningView key={enrollment.id} enrollmentId={enrollment.id} />
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>

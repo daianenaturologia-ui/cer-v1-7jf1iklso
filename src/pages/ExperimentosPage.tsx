@@ -1,3 +1,4 @@
+import { JourneyNavigation } from '@/components/JourneyNavigation'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
@@ -85,11 +86,7 @@ export const ExperimentosPage: React.FC = () => {
               <span>Início</span>
             </Button>
             <div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-[10px]">
-                  Práticas Combinadas
-                </Badge>
-              </div>
+              <JourneyNavigation />
               <h1 className="text-xl font-serif font-bold text-foreground mt-0.5 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
                 <span>Experimentos de Cuidado</span>
