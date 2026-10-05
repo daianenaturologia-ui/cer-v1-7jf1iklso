@@ -42,6 +42,9 @@ export const cerMapCandidateService = {
    */
   async listCandidatesForEnrollment(enrollmentId: string): Promise<MapCandidateItem[]> {
     if (!enrollmentId) return []
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    // Demo has no canonical knowledge fixtures; do not consult the real backend or invent them.
+    if (demoAdapter.isEnabled()) return []
 
     // 1. Buscar todos os KIs do enrollment
     const kis = await pb.collection('cer_knowledge_items').getFullList<CerKnowledgeItemRecord>({
