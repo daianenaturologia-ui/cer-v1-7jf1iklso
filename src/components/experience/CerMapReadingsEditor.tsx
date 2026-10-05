@@ -147,8 +147,10 @@ export function CerMapReadingsEditor({
             </fieldset>
           ))}
           <label className="block text-sm space-y-1">
-            <span>Como as dimensões se relacionam</span>
+            <span>Leitura integrada · o que ajuda a construir o próximo caminho</span>
+            <p className="text-xs text-muted-foreground">Relacione ritmos e concentração, interesses e desgastes, respostas à sobrecarga, vínculos e condições da rotina, recursos e habilidades a desenvolver. Use as respostas disponíveis; registre o que ainda precisa ser conversado. Separe relatos e hipóteses. A direção será escolhida junto com a pessoa na Evolução.</p>
             <Textarea
+              placeholder="Como esta pessoa funciona hoje? O que a sustenta? O que pede atenção? Que condições e habilidades podem favorecer a vida que deseja?"
               value={snapshot.integration}
               onChange={(e) => change({ ...snapshot, integration: e.target.value })}
             />

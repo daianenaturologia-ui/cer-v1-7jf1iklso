@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext'
+import { DEVELOPMENT_REVIEW_PROMPT } from '@/services/developmentPlanning'
 import React, { useEffect, useState } from 'react'
 import { cerCareCycleService } from '@/services/cerCareCycleService'
 import {
@@ -26,7 +27,7 @@ export function CareCycleManager({ enrollmentId }: { enrollmentId: string }) {
   const [focus, setFocus] = useState('')
   const [date, setDate] = useState('')
   const [prompt, setPrompt] = useState(
-    'O que foi possível neste ciclo? O que ajudou e o que gostaria de ajustar?',
+    DEVELOPMENT_REVIEW_PROMPT,
   )
   const [selected, setSelected] = useState('')
   const [busy, setBusy] = useState(false)

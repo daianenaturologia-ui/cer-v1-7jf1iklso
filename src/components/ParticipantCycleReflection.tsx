@@ -69,6 +69,13 @@ export function ParticipantCycleReflection({
         compartilhado com sua profissional.
       </p>
       {invitation.shared_prompt && (
+        <details className="rounded-lg border p-3 text-sm">
+          <summary>Ideias para colher o aprendizado</summary>
+          <p className="mt-2">O que descobri sobre meu jeito e meu ritmo? O que quero manter ou ajustar? O que consigo conduzir com mais autonomia? Que apoio preciso e como posso retomar quando a vida muda?</p>
+          <p className="mt-2 text-muted-foreground">Conte o que fizer sentido. Uma experiência que não aconteceu também pode ajudar a compreender suas condições.</p>
+        </details>
+      )}
+      {invitation.shared_prompt && (
         <p className="rounded-lg bg-muted p-3 text-sm">{invitation.shared_prompt}</p>
       )}
       <label className="block text-sm" htmlFor="cycle-reflection">

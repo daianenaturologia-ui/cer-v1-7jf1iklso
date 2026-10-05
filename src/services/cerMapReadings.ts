@@ -78,6 +78,8 @@ const promptSets: Record<string, CerPromptRecord[]> = {
 
 const essentialKeys: Record<string, string[]> = {
   mente: [
+    'dois_retratos_espaco',
+    'dois_retratos_sobrecarga',
     'emocoes_recorrentes',
     'movimentos_interferencia_atual',
     'movimentos_automaticos_frequencia_p1',
@@ -213,6 +215,7 @@ export function buildCerMapReadings(
           },
         ]
       }
+      summaryRows.push(...detailedRows.filter(row => /energia|vitalidade|sono/i.test(row.label)).slice(0, 4))
     } else {
       const latest = new Map<string, ExperienceResponseRecord>()
       for (const response of [...dimensionResponses].sort((a, b) =>

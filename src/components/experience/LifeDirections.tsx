@@ -105,7 +105,7 @@ export function LifeDirections({
       <h2 className="font-serif text-xl">Linha da Vida · Presente e futuro</h2>
       <p className="text-sm text-muted-foreground">
         Como estou agora? Que vida desejo construir? Registre como se sente, o que faz sentido, o
-        que quer cultivar e o que prefere não repetir. Você pode preencher aos poucos.
+        que quer cultivar e o que prefere não repetir. Você pode preencher aos poucos. Ao compartilhar, você e sua profissional poderão escolher uma direção e construir o plano de ação na Evolução.
       </p>
       <p className="text-sm text-muted-foreground">
         O futuro é uma direção que pode mudar. Se ainda não consegue imaginá-lo, comece pelo que

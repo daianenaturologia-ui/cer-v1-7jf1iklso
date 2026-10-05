@@ -1404,6 +1404,7 @@ class DemoAdapter {
     enrollment_id: string
     direction_mode: any
     direction_statement?: string
+    direction_source_id?: string
     professional_context?: string
     professional_rationale?: string
     created_by_user_id?: string
@@ -1420,6 +1421,7 @@ class DemoAdapter {
       status: 'draft',
       direction_mode: input.direction_mode || 'reused',
       direction_statement: input.direction_statement || '',
+      direction_source_id: input.direction_source_id || '',
       professional_context: input.professional_context || '',
       professional_rationale: input.professional_rationale || '',
       created_by_user_id: DEMO_USER_DAIANE.id,

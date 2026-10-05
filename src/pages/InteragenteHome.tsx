@@ -1773,14 +1773,11 @@ export const InteragenteHome: React.FC = () => {
            ======================================================== */}
         {activePhase === 'equilibrio' && (
           <div className="space-y-6">
-            {enrollment && (
-              <LifeDirections
-                enrollmentId={enrollment.id}
-                unlocked={consciousnessCoverage(participantResponses, availableExperiences).every(
-                  (d) => d.completed,
-                )}
-              />
-            )}
+            <div className="rounded-xl border p-4 space-y-2">
+              <p className="text-sm">Na Evolução, escolhemos o futuro e planejamos juntos. Aqui você encontra os ensinamentos e experimentos que apoiam o caminho.</p>
+              <Button variant="outline" onClick={() => setActivePhase('evolucao')}>Ver direção e plano na Evolução</Button>
+              <Button variant="ghost" onClick={() => navigate('/planner')}>Levar para o meu dia · Planner</Button>
+            </div>
             {/* Esclarecimento conceitual importante: Mandala vs Mapa CER */}
             <div className="p-3.5 rounded-lg bg-primary/5 border border-primary/20 text-xs text-muted-foreground leading-relaxed">
               <span className="font-semibold text-foreground block mb-0.5">
@@ -1790,161 +1787,6 @@ export const InteragenteHome: React.FC = () => {
               <strong>Mapa CER</strong> traz a síntese integrativa estruturada das seis dimensões.
               Elas se complementam sem se substituir.
             </div>
-
-            {/* Próximo Passo do Nosso Cuidado (Plano Compartilhado existente) */}
-            {presentedCarePlans.length > 0 ? (
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
-                    <Compass className="w-5 h-5 text-primary" />
-                    <span>Próximo Passo do Nosso Cuidado</span>
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Este plano e próximo passo foram compartilhados por Daiane. Você pode registrar
-                    com leveza como isso soa para você agora.
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  {presentedCarePlans.map((planPres) => {
-                    const currentResp = selectedPlanResponses[planPres.id]
-                    const currentType = currentResp?.response_type
-                    const currentComment = currentResp?.shared_comment || ''
-                    const isSaved = currentResp?.saved
-
-                    const acceptanceOptions: {
-                      value: OperationalAcceptanceResponseType
-                      label: string
-                    }[] = [
-                      { value: 'accepted', label: 'consegui experimentar' },
-                      { value: 'wants_to_try', label: 'quero tentar' },
-                      { value: 'too_much', label: 'foi muito' },
-                      { value: 'wants_to_talk', label: 'prefiro conversar' },
-                    ]
-
-                    return (
-                      <Card
-                        key={planPres.id}
-                        className="border-primary/40 bg-card/80 backdrop-blur-sm shadow-sm"
-                      >
-                        <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/15">
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span className="font-semibold text-primary text-[11px] uppercase tracking-wider">
-                              Plano Compartilhado por Daiane
-                            </span>
-                            <span className="text-[11px] text-muted-foreground font-mono">
-                              {planPres.presented_at
-                                ? new Date(planPres.presented_at).toLocaleDateString('pt-BR')
-                                : 'Recente'}
-                            </span>
-                          </div>
-                          <h4 className="text-base font-serif font-medium text-foreground pt-1">
-                            {planPres.participant_title || 'Próximo Passo Proposto'}
-                          </h4>
-                          {planPres.participant_summary && (
-                            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap pt-1 font-sans">
-                              {planPres.participant_summary}
-                            </p>
-                          )}
-                          {planPres.practical_invitation && (
-                            <div className="p-2.5 rounded bg-primary/10 border border-primary/20 text-xs text-foreground italic mt-2">
-                              &ldquo;{planPres.practical_invitation}&rdquo;
-                            </div>
-                          )}
-                        </CardHeader>
-                        <CardContent className="p-4 space-y-4">
-                          <div className="space-y-2">
-                            <span className="text-xs font-medium text-foreground block">
-                              Como você se sente em relação a este próximo passo?
-                            </span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                              {acceptanceOptions.map((opt) => (
-                                <Button
-                                  key={opt.value}
-                                  type="button"
-                                  variant={currentType === opt.value ? 'default' : 'outline'}
-                                  size="sm"
-                                  disabled={isSaved}
-                                  onClick={() => {
-                                    setSelectedPlanResponses((prev) => ({
-                                      ...prev,
-                                      [planPres.id]: {
-                                        response_type: opt.value,
-                                        shared_comment: prev[planPres.id]?.shared_comment || '',
-                                        saved: false,
-                                      },
-                                    }))
-                                  }}
-                                  className="justify-start text-xs h-9 px-3 text-left font-normal"
-                                >
-                                  {opt.label}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="space-y-1.5 pt-1">
-                            <label className="text-[11px] font-medium text-muted-foreground">
-                              Quer contar mais alguma percepção sobre esse próximo passo? (Opcional)
-                            </label>
-                            <Textarea
-                              placeholder="Como você imagina tentar, o que pode facilitar ou dificultar..."
-                              value={currentComment}
-                              disabled={isSaved}
-                              onChange={(e) => {
-                                setSelectedPlanResponses((prev) => ({
-                                  ...prev,
-                                  [planPres.id]: {
-                                    response_type:
-                                      prev[planPres.id]?.response_type || 'wants_to_try',
-                                    shared_comment: e.target.value,
-                                    saved: false,
-                                  },
-                                }))
-                              }}
-                              className="text-xs min-h-[64px]"
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
-                            <span className="text-[11px] text-muted-foreground italic">
-                              {isSaved
-                                ? '✓ Seu retorno foi acolhido e já está no prontuário de Daiane.'
-                                : 'Sua resposta ajuda Daiane a calibrar o ritmo junto com você.'}
-                            </span>
-                            {!isSaved && currentType && (
-                              <Button
-                                size="sm"
-                                disabled={submittingPlanResponse === planPres.id}
-                                onClick={() => handleSaveOperationalAcceptance(planPres.id)}
-                                className="text-xs h-8 px-4 bg-primary text-primary-foreground hover:bg-primary/90"
-                              >
-                                {submittingPlanResponse === planPres.id
-                                  ? 'Enviando...'
-                                  : 'Enviar retorno para Daiane'}
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : (
-              <Card className="border-dashed border-border/80 bg-muted/10">
-                <CardContent className="py-6 text-center space-y-1.5">
-                  <Compass className="w-6 h-6 text-muted-foreground mx-auto opacity-50" />
-                  <span className="font-medium text-xs text-foreground block">
-                    Nenhum plano compartilhado ainda
-                  </span>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                    Quando você e sua profissional combinarem as direções de cuidado, o plano e os
-                    próximos passos aparecerão aqui para seu retorno.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Experimentos de Cuidado combinados */}
             <div className="space-y-4 pt-2">
@@ -2118,6 +1960,13 @@ export const InteragenteHome: React.FC = () => {
            ======================================================== */}
         {activePhase === 'evolucao' && (
           <div className="space-y-6">
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
+              <h2 className="font-serif text-lg">Que vida quero construir?</h2>
+              <p className="text-sm">Seu Mapa CER ajuda a reconhecer seu jeito. Aqui você e sua profissional definem o futuro, combinam o plano e aprendem com o que acontece na vida.</p>
+              <Button variant="outline" onClick={() => setActivePhase('consciencia')}>Rever meu Mapa CER</Button>
+              <Button variant="outline" onClick={() => navigate('/planner')}>Experimentar no cotidiano · Planner</Button>
+            </div>
+
             {/* Como estou agora? (a partir de informações JÁ registradas, sem novos questionários) */}
             <Card className="border-border/70 bg-gradient-to-br from-card to-muted/20">
               <CardHeader className="pb-3 border-b border-border/40">
@@ -2255,6 +2104,161 @@ export const InteragenteHome: React.FC = () => {
                 />
               )}
             </div>
+            {/* Nosso plano de ação (Plano Compartilhado existente) */}
+            {presentedCarePlans.length > 0 ? (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
+                    <Compass className="w-5 h-5 text-primary" />
+                    <span>Nosso plano de ação</span>
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Este plano e próximo passo foram compartilhados por Daiane. Você pode registrar
+                    com leveza como isso soa para você agora.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {presentedCarePlans.map((planPres) => {
+                    const currentResp = selectedPlanResponses[planPres.id]
+                    const currentType = currentResp?.response_type
+                    const currentComment = currentResp?.shared_comment || ''
+                    const isSaved = currentResp?.saved
+
+                    const acceptanceOptions: {
+                      value: OperationalAcceptanceResponseType
+                      label: string
+                    }[] = [
+                      { value: 'accepted', label: 'consegui experimentar' },
+                      { value: 'wants_to_try', label: 'quero tentar' },
+                      { value: 'too_much', label: 'foi muito' },
+                      { value: 'wants_to_talk', label: 'prefiro conversar' },
+                    ]
+
+                    return (
+                      <Card
+                        key={planPres.id}
+                        className="border-primary/40 bg-card/80 backdrop-blur-sm shadow-sm"
+                      >
+                        <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/15">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span className="font-semibold text-primary text-[11px] uppercase tracking-wider">
+                              Plano Compartilhado por Daiane
+                            </span>
+                            <span className="text-[11px] text-muted-foreground font-mono">
+                              {planPres.presented_at
+                                ? new Date(planPres.presented_at).toLocaleDateString('pt-BR')
+                                : 'Recente'}
+                            </span>
+                          </div>
+                          <h4 className="text-base font-serif font-medium text-foreground pt-1">
+                            {planPres.participant_title || 'Próximo Passo Proposto'}
+                          </h4>
+                          {planPres.participant_summary && (
+                            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap pt-1 font-sans">
+                              {planPres.participant_summary}
+                            </p>
+                          )}
+                          {planPres.practical_invitation && (
+                            <div className="p-2.5 rounded bg-primary/10 border border-primary/20 text-xs text-foreground italic mt-2">
+                              &ldquo;{planPres.practical_invitation}&rdquo;
+                            </div>
+                          )}
+                        </CardHeader>
+                        <CardContent className="p-4 space-y-4">
+                          <div className="space-y-2">
+                            <span className="text-xs font-medium text-foreground block">
+                              Como você se sente em relação a este próximo passo?
+                            </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                              {acceptanceOptions.map((opt) => (
+                                <Button
+                                  key={opt.value}
+                                  type="button"
+                                  variant={currentType === opt.value ? 'default' : 'outline'}
+                                  size="sm"
+                                  disabled={isSaved}
+                                  onClick={() => {
+                                    setSelectedPlanResponses((prev) => ({
+                                      ...prev,
+                                      [planPres.id]: {
+                                        response_type: opt.value,
+                                        shared_comment: prev[planPres.id]?.shared_comment || '',
+                                        saved: false,
+                                      },
+                                    }))
+                                  }}
+                                  className="justify-start text-xs h-9 px-3 text-left font-normal"
+                                >
+                                  {opt.label}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-1.5 pt-1">
+                            <label className="text-[11px] font-medium text-muted-foreground">
+                              Quer contar mais alguma percepção sobre esse próximo passo? (Opcional)
+                            </label>
+                            <Textarea
+                              placeholder="Como você imagina tentar, o que pode facilitar ou dificultar..."
+                              value={currentComment}
+                              disabled={isSaved}
+                              onChange={(e) => {
+                                setSelectedPlanResponses((prev) => ({
+                                  ...prev,
+                                  [planPres.id]: {
+                                    response_type:
+                                      prev[planPres.id]?.response_type || 'wants_to_try',
+                                    shared_comment: e.target.value,
+                                    saved: false,
+                                  },
+                                }))
+                              }}
+                              className="text-xs min-h-[64px]"
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+                            <span className="text-[11px] text-muted-foreground italic">
+                              {isSaved
+                                ? 'Seu retorno foi compartilhado com Daiane.'
+                                : 'Sua resposta ajuda Daiane a calibrar o ritmo junto com você.'}
+                            </span>
+                            {!isSaved && currentType && (
+                              <Button
+                                size="sm"
+                                disabled={submittingPlanResponse === planPres.id}
+                                onClick={() => handleSaveOperationalAcceptance(planPres.id)}
+                                className="text-xs h-8 px-4 bg-primary text-primary-foreground hover:bg-primary/90"
+                              >
+                                {submittingPlanResponse === planPres.id
+                                  ? 'Enviando...'
+                                  : 'Enviar retorno para Daiane'}
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <Card className="border-dashed border-border/80 bg-muted/10">
+                <CardContent className="py-6 text-center space-y-1.5">
+                  <Compass className="w-6 h-6 text-muted-foreground mx-auto opacity-50" />
+                  <span className="font-medium text-xs text-foreground block">
+                    Nenhum plano compartilhado ainda
+                  </span>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    Quando você e sua profissional combinarem as direções de cuidado, o plano e os
+                    próximos passos aparecerão aqui para seu retorno.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
           </div>
         )}
 

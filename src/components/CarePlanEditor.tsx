@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react'
+import { lifeDirectionsService, type LifeDirection } from '@/services/lifeDirections'
+import { sharedFutureDirections, developmentPresentation } from '@/services/developmentPlanning'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -79,6 +81,28 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
   const [newPlanDirection, setNewPlanDirection] = useState('')
   const [newPlanIntent, setNewPlanIntent] = useState('')
   const [newPlanRationale, setNewPlanRationale] = useState('')
+  const [directionSources, setDirectionSources] = useState<LifeDirection[]>([])
+  const [directionSourceId, setDirectionSourceId] = useState('')
+  const [sourceError, setSourceError] = useState('')
+  const [sourcesLoading, setSourcesLoading] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    setDirectionSources([])
+    setDirectionSourceId('')
+    setNewPlanDirection('')
+    setNewPlanIntent('')
+    setNewPlanRationale('')
+    setSourceError('')
+    if (!createPlanDialogOpen) return
+    setSourcesLoading(true)
+    lifeDirectionsService.list(enrollmentId).then(values => {
+      if (active) setDirectionSources(sharedFutureDirections(values, enrollmentId))
+    }).catch(() => {
+      if (active) setSourceError('Não foi possível carregar as direções compartilhadas. Feche e reabra para tentar novamente.')
+    }).finally(() => { if (active) setSourcesLoading(false) })
+    return () => { active = false }
+  }, [enrollmentId, createPlanDialogOpen])
 
   // Formulário de nova prioridade
   const [prioTitle, setPrioTitle] = useState('')
@@ -200,7 +224,8 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
       const newPlan = await cerCarePlanService.createDraftPlan({
         enrollment_id: enrollmentId,
         created_by_user_id: authUser?.id || '',
-        direction_mode: 'reused',
+        direction_mode: directionSourceId ? 'reused' : 'contextualized',
+        direction_source_id: directionSourceId || undefined,
         direction_statement: newPlanDirection.trim(),
         professional_context: newPlanIntent.trim() || undefined,
         professional_rationale: newPlanRationale.trim() || undefined,
@@ -310,10 +335,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
   const handleOpenPresentation = () => {
     if (!selectedPlan) return
     const activePrios = priorities.filter((p) => p.is_possible_now)
-    const prioSummary = activePrios.map((p) => `• ${p.title}`).join('\n')
-    setPresentationSummary(
-      `Direção de Cuidado: ${selectedPlan.direction_statement || ''}\n\nFocos combinados para este momento:\n${prioSummary}`,
-    )
+    setPresentationSummary(developmentPresentation(selectedPlan, activePrios))
     setPreviewPerspective('PARTICIPANT')
     setPresentationPreviewDialogOpen(true)
   }
@@ -324,7 +346,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     setActionLoading(true)
     setErrorMsg(null)
     try {
-      const activePrios = priorities.filter((p) => p.is_possible_now)
+      const activePrios = priorities.filter((p) => p.is_possible_now && ['shared_care', 'participant_shared'].includes(p.access_class))
       const pres = await cerCarePlanService.createPresentation({
         plan_id: selectedPlan.id,
         priority_id: activePrios[0]?.id || undefined,
@@ -365,7 +387,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
               )}
             </div>
             <CardDescription className="text-xs">
-              Direção terapêutica pactuada, priorização realista de capacidade e preview obrigatório
+              Definam a direção e o plano juntos. Considerem o Mapa CER, o ritmo, os apoios e a vida que esta pessoa deseja construir.
             </CardDescription>
           </div>
 
@@ -711,20 +733,44 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
       {/* MODAL 1: Criar Novo Plano */}
       <Dialog open={createPlanDialogOpen} onOpenChange={setCreatePlanDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
               Formular Novo Plano de Cuidado
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Defina a direção terapêutica unificada a partir da síntese da Consciência e do Mapa.
+              Escolham juntos uma direção. O Mapa ajuda a compreender o funcionamento; a escolha pertence à pessoa.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
+            <label className="block space-y-1">
+              Futuro compartilhado na Linha da Vida
+              <select aria-label="Futuro compartilhado na Linha da Vida" className="block w-full border rounded p-2 bg-background"
+                value={directionSourceId} disabled={sourcesLoading || !!sourceError || actionLoading}
+                onChange={e => {
+                  setDirectionSourceId(e.target.value)
+                  setNewPlanDirection(directionSources.find(v => v.id === e.target.value)?.title || '')
+                }}>
+                <option value="">Direção conversada em sessão, sem vincular registro</option>
+                {directionSources.map(v => <option key={v.id} value={v.id}>{v.title}</option>)}
+              </select>
+            </label>
+            {sourcesLoading && <p role="status">Carregando direções…</p>}
+            {sourceError && <p role="alert">{sourceError}</p>}
+            {!sourcesLoading && !sourceError && !directionSources.length && <p>Nenhum futuro compartilhado ainda. A pessoa pode registrá-lo e escolher compartilhar na Evolução.</p>}
+            {directionSourceId && directionSources.filter(v => v.id === directionSourceId).map(v => (
+              <details key={v.id} className="rounded border p-3">
+                <summary>Rever o que a pessoa compartilhou</summary>
+                <p className="whitespace-pre-wrap">{v.narrative}</p>
+                {v.resources && <p>Recursos e apoios: {v.resources}</p>}
+                {v.limits && <p>Limites e necessidades: {v.limits}</p>}
+                {v.first_step && <p>Primeiro passo imaginado: {v.first_step}</p>}
+              </details>
+            ))}
             <div className="space-y-1">
               <label className="text-[11px] font-medium text-foreground">
-                Direção Clínica Principal *
+                Direção que combinamos *
               </label>
               <Input
                 placeholder="Ex: Fortalecimento de auto-regulação e limites relacionais"
@@ -783,7 +829,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
       {/* MODAL 2: Adicionar Prioridade com interruptores IMPORTANTE vs AGORA */}
       <Dialog open={createPriorityDialogOpen} onOpenChange={setCreatePriorityDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
               Adicionar Prioridade ao Plano
@@ -812,12 +858,13 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                 Descrição para o Plano
               </label>
               <Textarea
-                placeholder="Detalhes ou contextualização do foco"
+                placeholder="O que deseja desenvolver? Que habilidade vai fortalecer? Qual experiência cabe na rotina? Que apoio e alternativa precisa? Como reconhecerá uma mudança?"
                 value={prioDescription}
                 onChange={(e) => setPrioDescription(e.target.value)}
-                rows={2}
+                rows={6}
                 className="text-xs"
               />
+              <p className="text-muted-foreground">Uma experiência pequena já pode ensinar muito. Incluam tempo para descanso, prazer e vínculos. Este texto só chega à pessoa após a prévia e o compartilhamento do plano.</p>
             </div>
 
             {/* Os dois interruptores visuais: IMPORTANTE vs AGORA */}
@@ -978,7 +1025,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                   </span>
                   <div className="space-y-1.5">
                     {priorities
-                      .filter((p) => p.is_possible_now)
+                      .filter((p) => p.is_possible_now && ['shared_care', 'participant_shared'].includes(p.access_class))
                       .map((p) => (
                         <div key={p.id} className="flex items-center gap-2 text-xs">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
