@@ -29,6 +29,17 @@ try:
       for(const pair of [['a','p'],['b','q']]){
         const e=save('enrollments',{interagente:users[pair[0]].id,profissional:users[pair[1]].id,person_id:people[pair[0]].id,product:'Reference only',status:'active'});
         save('professional_enrollment_access',{enrollment_id:e.id,professional_user_id:users[pair[1]].id,access_role:'primary',is_active:true});
+        if(pair[0]==='a'){
+          save('professional_enrollment_access',{enrollment_id:e.id,professional_user_id:users.q.id,access_role:'collaborator',is_active:false});
+          for(const code of ['corpo_fisiologia_ayurveda','mente_emocoes_cer','regulacao_respostas_cer','relacoes_cer','sexualidade_cer','sentido_conexao_cer']){
+            let experience;
+            try{experience=app.findFirstRecordByData('cer_experiences','code',code)}catch(_){
+              const dim=app.findFirstRecordByData('cer_dimensions','code','corpo_fisiologia');
+              experience=save('cer_experiences',{dimension_id:dim.id,code,title:code,order_index:1,version:1});
+            }
+            save('enrollment_experiences',{enrollment_id:e.id,experience_id:experience.id,release_status:'completed',progress_status:'completed'});
+          }
+        }
       }
     },()=>{});'''.replace('PASSWORD', json.dumps(password))
     (migrations / '9999_reference_fixtures.js').write_text(fixture)
@@ -58,7 +69,10 @@ try:
     def record(col, token='', method='GET', body=None, id=''):
         return ok('/api/collections/'+col+'/records'+('/'+id if id else ''),token,method,body)
     def check(name, fn):
-        fn();results.append({'name':name,'status':'PASS'}); print('PASS '+name,flush=True)
+        try:
+            fn();results.append({'name':name,'status':'PASS'});print('PASS '+name,flush=True)
+        except AssertionError as err:
+            results.append({'name':name,'status':'FAIL','detail':str(err)});print('FAIL '+name+': '+str(err),flush=True)
     def require(condition):
         assert condition, 'Expected isolation or lifecycle invariant'
     with (root/'server.log').open('w') as log:
@@ -104,11 +118,52 @@ try:
         check('Completed session note is immutable',lambda:require(request('/api/collections/cer_session_notes/records/'+note['id'],tokens['p'],'PATCH',{'text':'changed'})[0]==400))
         audit=ok('/api/collections/audit_events/records?perPage=500',admin)['items']
         check('Audit events produced without private content',lambda:require({'JOURNAL_ENTRY_CREATED','SESSION_NOTE_CREATED','SESSION_COMPLETED','NEXT_SESSION_MESSAGE_WITHDRAWN'}.issubset({e['action'] for e in audit}) and not any(marker in json.dumps(audit) for marker in ['FICTIONAL_PRIVATE_MARKER','FICTIONAL_UPDATED_MARKER','FICTIONAL_SESSION_MARKER'])))
+        life_body={'enrollment_id':enroll['a'],'title':'Fictional life event','time_kind':'year','time_value':'2000','emotions':['Alegria'],'narrative':'FICTIONAL_LIFE_MARKER','access_class':'participant_private'}
+        check('Life event blocked before six dimensions completed',lambda:require(request('/api/collections/cer_life_events/records',tokens['b'],'POST',{**life_body,'enrollment_id':enroll['b']})[0]==400))
+        life=record('cer_life_events',tokens['a'],'POST',life_body)
+        life_endpoint='/api/collections/cer_life_events/records/'+life['id']
+        check('Owner can read own private life event',lambda:require(request(life_endpoint,tokens['a'])[0]==200))
+        check('Other patient and linked professional cannot read private life event',lambda:require(request(life_endpoint,tokens['b'])[0]==404 and request(life_endpoint,tokens['p'])[0]==404))
+        check('Owner can change life sharing with partial update',lambda:require(request(life_endpoint,tokens['a'],'PATCH',{'access_class':'participant_shared'})[0]==200))
+        check('Shared life event visible to active linked professional',lambda:require(request(life_endpoint,tokens['p'])[0]==200))
+        check('Inactive link cannot borrow another professionals active link',lambda:require(request(life_endpoint,tokens['q'])[0]==404))
+        check('Inactive link cannot read session through another active link',lambda:require(request('/api/collections/cer_sessions/records/'+session['id'],tokens['q'])[0]==404))
+        multi_links=record('professional_enrollment_access',admin)['items']
+        q_link=next(v for v in multi_links if v['enrollment_id']==enroll['a'] and v['professional_user_id']==actors['q']['record']['id'])
+        record('professional_enrollment_access',admin,'PATCH',{'is_active':True},q_link['id'])
+        check('Two active professionals can read shared life event',lambda:require(request(life_endpoint,tokens['p'])[0]==200 and request(life_endpoint,tokens['q'])[0]==200))
+        check('Collaborator cannot read another authors session note',lambda:require(request('/api/collections/cer_session_notes/records/'+note['id'],tokens['q'])[0]==404))
+        check('Owner cannot transfer life event to other enrollment',lambda:require(request(life_endpoint,tokens['a'],'PATCH',{'enrollment_id':enroll['b']})[0]==404))
+        check('Invalid calendar date refused in life edit',lambda:require(request(life_endpoint,tokens['a'],'PATCH',{'time_kind':'date','time_value':'2000-02-31'})[0]==400))
+        check('User cannot self-change status or person association',lambda:require(request('/api/collections/users/records/'+actors['a']['record']['id'],tokens['a'],'PATCH',{'status':'suspended'})[0]==403 and request('/api/collections/users/records/'+actors['a']['record']['id'],tokens['a'],'PATCH',{'person_id':actors['b']['record']['person_id']})[0]==403))
+        check('Professional cannot edit life narrative',lambda:require(request(life_endpoint,tokens['p'],'PATCH',{'narrative':'tampered'})[0]==404))
+        check('Owner can withdraw life sharing with partial update',lambda:require(request(life_endpoint,tokens['a'],'PATCH',{'access_class':'participant_private'})[0]==200))
+        check('Life sharing withdrawal blocks existing token',lambda:require(request(life_endpoint,tokens['p'])[0]==404))
+        suspension_message=record('cer_next_session_messages',tokens['a'],'POST',{'enrollment_id':enroll['a'],'participant_user_id':actors['a']['record']['id'],'message_text':'Fictional suspension probe','summary_text':'Fictional suspension probe','status':'approved','access_class':'shared_care'})
+        record('users',admin,'PATCH',{'status':'suspended'},actors['a']['record']['id'])
+        check('Participant suspension persists with hooks loaded',lambda:require(record('users',admin,id=actors['a']['record']['id'])['status']=='suspended'))
+        check('Suspended participant cannot read journal with old token',lambda:require(request('/api/collections/cer_journal_entries/records/'+journal['id'],tokens['a'])[0]==404))
+        check('Suspended participant cannot read history with old token',lambda:require(record('cer_journal_entry_versions',tokens['a'])['items']==[]))
+        check('Suspended participant cannot read or edit life event',lambda:require(request(life_endpoint,tokens['a'])[0]==404 and request(life_endpoint,tokens['a'],'PATCH',{'title':'changed'})[0]==404))
+        check('Suspended participant cannot read or update approved message',lambda:require(request('/api/collections/cer_next_session_messages/records/'+suspension_message['id'],tokens['a'])[0]==404 and request('/api/collections/cer_next_session_messages/records/'+suspension_message['id'],tokens['a'],'PATCH',{'message_text':'changed'})[0]==404))
+        check('Suspended participant cannot create life event',lambda:require(request('/api/collections/cer_life_events/records',tokens['a'],'POST',life_body)[0]==400))
+        record('users',admin,'PATCH',{'status':'active'},actors['a']['record']['id'])
+        record('users',admin,'PATCH',{'status':'suspended'},actors['p']['record']['id'])
+        check('Professional suspension persists with hooks loaded',lambda:require(record('users',admin,id=actors['p']['record']['id'])['status']=='suspended'))
+        check('Suspended professional cannot read session or note',lambda:require(request('/api/collections/cer_sessions/records/'+session['id'],tokens['p'])[0]==404 and request('/api/collections/cer_session_notes/records/'+note['id'],tokens['p'])[0]==404))
+        record('cer_life_events',tokens['a'],'PATCH',{'access_class':'participant_shared'},life['id'])
+        check('Suspended professional cannot read shared life or approved message',lambda:require(request(life_endpoint,tokens['p'])[0]==404 and request('/api/collections/cer_next_session_messages/records/'+suspension_message['id'],tokens['p'])[0]==404))
+        record('cer_life_events',tokens['a'],'PATCH',{'access_class':'participant_private'},life['id'])
+        record('users',admin,'PATCH',{'status':'active'},actors['p']['record']['id'])
         links=record('professional_enrollment_access',admin)['items']
         link=next(v for v in links if v['enrollment_id']==enroll['a'] and v['professional_user_id']==actors['p']['record']['id'])
         record('professional_enrollment_access',admin,'PATCH',{'is_active':False},link['id'])
         check('Revocation persists',lambda:require(record('professional_enrollment_access',admin,id=link['id'])['is_active'] is False))
         check('Revocation blocks session and note with existing token',lambda:require(request('/api/collections/cer_sessions/records/'+session['id'],tokens['p'])[0]==404 and request('/api/collections/cer_session_notes/records/'+note['id'],tokens['p'])[0]==404))
+        record('cer_life_events',tokens['a'],'PATCH',{'access_class':'participant_shared'},life['id'])
+        check('Revoked P cannot borrow still-active Q access to shared life',lambda:require(request(life_endpoint,tokens['p'])[0]==404 and request(life_endpoint,tokens['q'])[0]==200))
+        check('Revoked P cannot borrow Q access to approved message',lambda:require(request('/api/collections/cer_next_session_messages/records/'+suspension_message['id'],tokens['p'])[0]==404 and request('/api/collections/cer_next_session_messages/records/'+suspension_message['id'],tokens['q'])[0]==200))
+        record('cer_life_events',tokens['a'],'PATCH',{'access_class':'participant_private'},life['id'])
         check('Create complete fictional backend backup',lambda:require(request('/api/backups',admin,'POST',{'name':'reference.zip'})[0]==204))
         import zipfile
         archive=data/'backups'/'reference.zip'
@@ -137,12 +192,14 @@ try:
             restored_a=ok('/api/collections/users/auth-with-password',method='POST',body={'identity':'a@example.invalid','password':password})['token']
             restored_p=ok('/api/collections/users/auth-with-password',method='POST',body={'identity':'p@example.invalid','password':password})['token']
             check('Restored login and journal content preserved',lambda:require(record('cer_journal_entries',restored_a,id=journal['id'])['content']=='FICTIONAL_UPDATED_MARKER'))
+            check('Restored private life remains inaccessible to professional',lambda:require(request(life_endpoint,restored_p)[0]==404 and request(life_endpoint,restored_a)[0]==200))
             check('Restored history preserved',lambda:require(any(v['content']=='FICTIONAL_PRIVATE_MARKER' for v in record('cer_journal_entry_versions',restored_a)['items'])))
             check('Restored revoked scope and withdrawal preserved',lambda:require(request('/api/collections/cer_sessions/records/'+session['id'],restored_p)[0]==404 and request(endpoint,restored_p)[0]==404))
             proc.terminate();proc.wait(timeout=5)
     errors=re.findall(r'^.*(?:ReferenceError|SyntaxError|TypeError).*$',(root/'server.log').read_text()+(root/'restore.log').read_text(),re.MULTILINE)
     assert not errors, 'Runtime hook errors: '+str(errors)
-    print(json.dumps({'engine':'PocketBase 0.26.1 reference only','scope':'Complete repository migrations/hooks, generated fictional fixtures; NOT live Skip homologation','scenarios':results,'allPassed':True},indent=2))
+    print(json.dumps({'engine':'PocketBase 0.26.1 reference only','scope':'Complete repository migrations/hooks, generated fictional fixtures; NOT live Skip homologation','scenarios':results,'allPassed':all(v['status']=='PASS' for v in results)},indent=2))
+    assert all(v['status']=='PASS' for v in results), 'One or more authenticated lifecycle checks failed'
 finally:
     if proc is not None and proc.poll() is None:proc.terminate();proc.wait(timeout=5)
     shutil.rmtree(root)
