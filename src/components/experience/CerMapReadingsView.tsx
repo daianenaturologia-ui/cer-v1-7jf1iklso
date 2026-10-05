@@ -101,10 +101,11 @@ export function CerMapReadingsView({ snapshot }: { snapshot: CerMapReadingSnapsh
       {snapshot.integration && (
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-base font-serif">Como as dimensões se relacionam</CardTitle>
+            <CardTitle className="text-base font-serif">Leitura integrada do meu funcionamento</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{snapshot.integration}</p>
+            <p className="text-xs text-muted-foreground mt-3">Esta compreensão apoia suas escolhas. Na Evolução, você e sua profissional definem o futuro e constroem o plano de ação juntos.</p>
           </CardContent>
         </Card>
       )}

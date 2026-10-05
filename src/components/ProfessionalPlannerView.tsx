@@ -45,7 +45,7 @@ export const ProfessionalPlannerView: React.FC<{ enrollmentId: string }> = ({ en
         <div>
           <h2 className="font-serif font-semibold">Planner</h2>
           <p className="text-xs text-muted-foreground">
-            Planejamento cotidiano desta interagente, para revisar em sessão.
+            Execução cotidiana do plano construído na Evolução, para revisar em sessão.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => setRevision((value) => value + 1)}>

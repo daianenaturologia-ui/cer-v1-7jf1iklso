@@ -11,6 +11,7 @@ import type {
 } from '@/types/cer'
 import { cerCycleReviewService } from './cerCycleReviewService'
 import { demoAdapter } from './demoAdapter'
+import { lifeDirectionsService, sharedLifeDirections, type LifeDirection } from './lifeDirections'
 
 export type MandalaAudience = 'participant' | 'professional'
 
@@ -18,6 +19,7 @@ export type MandalaAudience = 'participant' | 'professional'
 export function getDemoMandalaProjection(
   enrollmentId: string,
   audience: MandalaAudience,
+  directions: LifeDirection[] = [],
 ): MandalaReadModel {
   if (audience === 'professional' && demoAdapter.getActivePersona() !== 'daiane') {
     throw new Error('Esta leitura está disponível na visão profissional.')
@@ -106,7 +108,10 @@ export function getDemoMandalaProjection(
       duration: a.assigned_duration,
       status: a.status,
     })),
-    recognized_resources: [],
+    recognized_resources: sharedLifeDirections(directions, enrollmentId)
+      .filter(v => v.resources.trim()).slice(-5).map(v => ({
+        id: v.id, statement: `No registro “${v.title}”: ${v.resources}`, concept_key: 'recursos_compartilhados_linha_da_vida',
+      })),
     current_capacity: {
       last_response: lastCapacity,
       summary: lastCapacity
@@ -143,7 +148,8 @@ export const cerMandalaReadModelService = {
     enrollmentId: string,
     audience: MandalaAudience = 'participant',
   ): Promise<MandalaReadModel> {
-    if (demoAdapter.isEnabled()) return getDemoMandalaProjection(enrollmentId, audience)
+    if (demoAdapter.isEnabled()) return getDemoMandalaProjection(enrollmentId, audience,
+      await lifeDirectionsService.list(enrollmentId))
     // 1. Buscar plano ativo e ciclo
     let careCycle: CerCareCycleRecord | undefined
     let carePlan: CerCarePlanRecord | undefined
