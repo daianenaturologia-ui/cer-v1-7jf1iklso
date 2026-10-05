@@ -96,12 +96,23 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     setSourceError('')
     if (!createPlanDialogOpen) return
     setSourcesLoading(true)
-    lifeDirectionsService.list(enrollmentId).then(values => {
-      if (active) setDirectionSources(sharedFutureDirections(values, enrollmentId))
-    }).catch(() => {
-      if (active) setSourceError('Não foi possível carregar as direções compartilhadas. Feche e reabra para tentar novamente.')
-    }).finally(() => { if (active) setSourcesLoading(false) })
-    return () => { active = false }
+    lifeDirectionsService
+      .list(enrollmentId)
+      .then((values) => {
+        if (active) setDirectionSources(sharedFutureDirections(values, enrollmentId))
+      })
+      .catch(() => {
+        if (active)
+          setSourceError(
+            'Não foi possível carregar as direções compartilhadas. Feche e reabra para tentar novamente.',
+          )
+      })
+      .finally(() => {
+        if (active) setSourcesLoading(false)
+      })
+    return () => {
+      active = false
+    }
   }, [enrollmentId, createPlanDialogOpen])
 
   // Formulário de nova prioridade
@@ -346,7 +357,9 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     setActionLoading(true)
     setErrorMsg(null)
     try {
-      const activePrios = priorities.filter((p) => p.is_possible_now && ['shared_care', 'participant_shared'].includes(p.access_class))
+      const activePrios = priorities.filter(
+        (p) => p.is_possible_now && ['shared_care', 'participant_shared'].includes(p.access_class),
+      )
       const pres = await cerCarePlanService.createPresentation({
         plan_id: selectedPlan.id,
         priority_id: activePrios[0]?.id || undefined,
@@ -387,7 +400,8 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
               )}
             </div>
             <CardDescription className="text-xs">
-              Definam a direção e o plano juntos. Considerem o Mapa CER, o ritmo, os apoios e a vida que esta pessoa deseja construir.
+              Definam a direção e o plano juntos. Considerem o Mapa CER, o ritmo, os apoios e a vida
+              que esta pessoa deseja construir.
             </CardDescription>
           </div>
 
@@ -739,35 +753,54 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
               Formular Novo Plano de Cuidado
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Escolham juntos uma direção. O Mapa ajuda a compreender o funcionamento; a escolha pertence à pessoa.
+              Escolham juntos uma direção. O Mapa ajuda a compreender o funcionamento; a escolha
+              pertence à pessoa.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <label className="block space-y-1">
               Futuro compartilhado na Linha da Vida
-              <select aria-label="Futuro compartilhado na Linha da Vida" className="block w-full border rounded p-2 bg-background"
-                value={directionSourceId} disabled={sourcesLoading || !!sourceError || actionLoading}
-                onChange={e => {
+              <select
+                aria-label="Futuro compartilhado na Linha da Vida"
+                className="block w-full border rounded p-2 bg-background"
+                value={directionSourceId}
+                disabled={sourcesLoading || !!sourceError || actionLoading}
+                onChange={(e) => {
                   setDirectionSourceId(e.target.value)
-                  setNewPlanDirection(directionSources.find(v => v.id === e.target.value)?.title || '')
-                }}>
+                  setNewPlanDirection(
+                    directionSources.find((v) => v.id === e.target.value)?.title || '',
+                  )
+                }}
+              >
                 <option value="">Direção conversada em sessão, sem vincular registro</option>
-                {directionSources.map(v => <option key={v.id} value={v.id}>{v.title}</option>)}
+                {directionSources.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.title}
+                  </option>
+                ))}
               </select>
             </label>
             {sourcesLoading && <p role="status">Carregando direções…</p>}
             {sourceError && <p role="alert">{sourceError}</p>}
-            {!sourcesLoading && !sourceError && !directionSources.length && <p>Nenhum futuro compartilhado ainda. A pessoa pode registrá-lo e escolher compartilhar na Evolução.</p>}
-            {directionSourceId && directionSources.filter(v => v.id === directionSourceId).map(v => (
-              <details key={v.id} className="rounded border p-3">
-                <summary>Rever o que a pessoa compartilhou</summary>
-                <p className="whitespace-pre-wrap">{v.narrative}</p>
-                {v.resources && <p>Recursos e apoios: {v.resources}</p>}
-                {v.limits && <p>Limites e necessidades: {v.limits}</p>}
-                {v.first_step && <p>Primeiro passo imaginado: {v.first_step}</p>}
-              </details>
-            ))}
+            {!sourcesLoading && !sourceError && !directionSources.length && (
+              <p>
+                Nenhum futuro compartilhado ainda. A pessoa pode registrá-lo e escolher compartilhar
+                na Evolução.
+              </p>
+            )}
+            {directionSourceId &&
+              directionSources
+                .filter((v) => v.id === directionSourceId)
+                .map((v) => (
+                  <details key={v.id} className="rounded border p-3">
+                    <summary>Rever o que a pessoa compartilhou</summary>
+                    <p className="whitespace-pre-wrap">{v.narrative}</p>
+                    {v.resources && <p>Recursos e apoios: {v.resources}</p>}
+                    {v.limits && <p>Limites e necessidades: {v.limits}</p>}
+                    {v.first_step && <p>Primeiro passo imaginado: {v.first_step}</p>}
+                  </details>
+                ))}
             <div className="space-y-1">
               <label className="text-[11px] font-medium text-foreground">
                 Direção que combinamos *
@@ -864,7 +897,10 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                 rows={6}
                 className="text-xs"
               />
-              <p className="text-muted-foreground">Uma experiência pequena já pode ensinar muito. Incluam tempo para descanso, prazer e vínculos. Este texto só chega à pessoa após a prévia e o compartilhamento do plano.</p>
+              <p className="text-muted-foreground">
+                Uma experiência pequena já pode ensinar muito. Incluam tempo para descanso, prazer e
+                vínculos. Este texto só chega à pessoa após a prévia e o compartilhamento do plano.
+              </p>
             </div>
 
             {/* Os dois interruptores visuais: IMPORTANTE vs AGORA */}
@@ -1025,7 +1061,11 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                   </span>
                   <div className="space-y-1.5">
                     {priorities
-                      .filter((p) => p.is_possible_now && ['shared_care', 'participant_shared'].includes(p.access_class))
+                      .filter(
+                        (p) =>
+                          p.is_possible_now &&
+                          ['shared_care', 'participant_shared'].includes(p.access_class),
+                      )
                       .map((p) => (
                         <div key={p.id} className="flex items-center gap-2 text-xs">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />

@@ -499,7 +499,10 @@ export const ParticipantWorkspace: React.FC = () => {
       {/* EQUILÍBRIO & REALIZAÇÃO */}
       {currentTab === 'equilibrio' && (
         <div className="space-y-6">
-          <p className="text-sm text-muted-foreground">O futuro e o plano são construídos na Evolução. Aqui você organiza os recursos para colocá-los em prática.</p>
+          <p className="text-sm text-muted-foreground">
+            O futuro e o plano são construídos na Evolução. Aqui você organiza os recursos para
+            colocá-los em prática.
+          </p>
           <div className="flex flex-wrap gap-2 border-b border-border/50 pb-3">
             {(['plano', 'biblioteca', 'mandala', 'planner', 'ciclos'] as const).map((tool) => (
               <Button
@@ -521,7 +524,9 @@ export const ParticipantWorkspace: React.FC = () => {
             ))}
           </div>
           {careTool === 'plano' && (
-            <Button variant="outline" onClick={() => setSearchParams({ tab: 'evolucao' })}>Construir o plano na Evolução</Button>
+            <Button variant="outline" onClick={() => setSearchParams({ tab: 'evolucao' })}>
+              Construir o plano na Evolução
+            </Button>
           )}
 
           {careTool === 'biblioteca' &&
@@ -573,10 +578,18 @@ export const ParticipantWorkspace: React.FC = () => {
         <div className="space-y-5">
           <LifeTimeline enrollmentId={enrollment.id} readOnly />
           <LifeDirections enrollmentId={enrollment.id} readOnly />
-          <CarePlanEditor key={enrollment.id} enrollmentId={enrollment.id} participantName={participantName} />
+          <CarePlanEditor
+            key={enrollment.id}
+            enrollmentId={enrollment.id}
+            participantName={participantName}
+          />
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => openCareTool('biblioteca')}>Combinar experimentos para o plano</Button>
-            <Button variant="outline" onClick={() => openCareTool('planner')}>Ver execução no Planner</Button>
+            <Button variant="outline" onClick={() => openCareTool('biblioteca')}>
+              Combinar experimentos para o plano
+            </Button>
+            <Button variant="outline" onClick={() => openCareTool('planner')}>
+              Ver execução no Planner
+            </Button>
           </div>
           <CareCycleManager key={`cycles-${enrollment.id}`} enrollmentId={enrollment.id} />
           <ResponseDigest enrollmentId={enrollment.id} participantName={participantName} />

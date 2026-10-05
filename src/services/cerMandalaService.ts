@@ -109,8 +109,12 @@ export function getDemoMandalaProjection(
       status: a.status,
     })),
     recognized_resources: sharedLifeDirections(directions, enrollmentId)
-      .filter(v => v.resources.trim()).slice(-5).map(v => ({
-        id: v.id, statement: `No registro “${v.title}”: ${v.resources}`, concept_key: 'recursos_compartilhados_linha_da_vida',
+      .filter((v) => v.resources.trim())
+      .slice(-5)
+      .map((v) => ({
+        id: v.id,
+        statement: `No registro “${v.title}”: ${v.resources}`,
+        concept_key: 'recursos_compartilhados_linha_da_vida',
       })),
     current_capacity: {
       last_response: lastCapacity,
@@ -148,8 +152,12 @@ export const cerMandalaReadModelService = {
     enrollmentId: string,
     audience: MandalaAudience = 'participant',
   ): Promise<MandalaReadModel> {
-    if (demoAdapter.isEnabled()) return getDemoMandalaProjection(enrollmentId, audience,
-      await lifeDirectionsService.list(enrollmentId))
+    if (demoAdapter.isEnabled())
+      return getDemoMandalaProjection(
+        enrollmentId,
+        audience,
+        await lifeDirectionsService.list(enrollmentId),
+      )
     // 1. Buscar plano ativo e ciclo
     let careCycle: CerCareCycleRecord | undefined
     let carePlan: CerCarePlanRecord | undefined

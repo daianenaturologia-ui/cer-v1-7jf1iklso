@@ -152,7 +152,11 @@ export const PlannerPage: React.FC = () => {
           </div>
         </div>
 
-        <p className="rounded-xl border p-4 text-sm text-muted-foreground">Aqui você leva os experimentos combinados para o seu dia e ajusta os horários. A direção e o plano de ação são construídos juntos na Evolução. Inclua espaço para fazer, descansar e viver gostosamente.</p>
+        <p className="rounded-xl border p-4 text-sm text-muted-foreground">
+          Aqui você leva os experimentos combinados para o seu dia e ajusta os horários. A direção e
+          o plano de ação são construídos juntos na Evolução. Inclua espaço para fazer, descansar e
+          viver gostosamente.
+        </p>
         {/* CTA de Cycle Review quando participant_review_invited_at ativo */}
         {activeReviewInvite && (
           <Card className="border-primary/50 bg-gradient-to-r from-primary/10 via-card to-card shadow-sm animate-in fade-in">

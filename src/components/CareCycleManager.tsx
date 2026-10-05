@@ -26,9 +26,7 @@ export function CareCycleManager({ enrollmentId }: { enrollmentId: string }) {
   const [invitations, setInvitations] = useState<CycleInvitation[]>([])
   const [focus, setFocus] = useState('')
   const [date, setDate] = useState('')
-  const [prompt, setPrompt] = useState(
-    DEVELOPMENT_REVIEW_PROMPT,
-  )
+  const [prompt, setPrompt] = useState(DEVELOPMENT_REVIEW_PROMPT)
   const [selected, setSelected] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')

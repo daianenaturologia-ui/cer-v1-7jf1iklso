@@ -105,8 +105,11 @@ class CerCarePlanService {
 
   async createDraftPlan(input: CreateCarePlanInput): Promise<CerCarePlanRecord> {
     if (input.direction_source_id) {
-      requireSharedFuture(await lifeDirectionsService.list(input.enrollment_id),
-        input.enrollment_id, input.direction_source_id)
+      requireSharedFuture(
+        await lifeDirectionsService.list(input.enrollment_id),
+        input.enrollment_id,
+        input.direction_source_id,
+      )
     }
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) {

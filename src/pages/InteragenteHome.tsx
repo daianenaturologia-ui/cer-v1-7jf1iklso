@@ -1774,9 +1774,16 @@ export const InteragenteHome: React.FC = () => {
         {activePhase === 'equilibrio' && (
           <div className="space-y-6">
             <div className="rounded-xl border p-4 space-y-2">
-              <p className="text-sm">Na Evolução, escolhemos o futuro e planejamos juntos. Aqui você encontra os ensinamentos e experimentos que apoiam o caminho.</p>
-              <Button variant="outline" onClick={() => setActivePhase('evolucao')}>Ver direção e plano na Evolução</Button>
-              <Button variant="ghost" onClick={() => navigate('/planner')}>Levar para o meu dia · Planner</Button>
+              <p className="text-sm">
+                Na Evolução, escolhemos o futuro e planejamos juntos. Aqui você encontra os
+                ensinamentos e experimentos que apoiam o caminho.
+              </p>
+              <Button variant="outline" onClick={() => setActivePhase('evolucao')}>
+                Ver direção e plano na Evolução
+              </Button>
+              <Button variant="ghost" onClick={() => navigate('/planner')}>
+                Levar para o meu dia · Planner
+              </Button>
             </div>
             {/* Esclarecimento conceitual importante: Mandala vs Mapa CER */}
             <div className="p-3.5 rounded-lg bg-primary/5 border border-primary/20 text-xs text-muted-foreground leading-relaxed">
@@ -1962,9 +1969,16 @@ export const InteragenteHome: React.FC = () => {
           <div className="space-y-6">
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
               <h2 className="font-serif text-lg">Que vida quero construir?</h2>
-              <p className="text-sm">Seu Mapa CER ajuda a reconhecer seu jeito. Aqui você e sua profissional definem o futuro, combinam o plano e aprendem com o que acontece na vida.</p>
-              <Button variant="outline" onClick={() => setActivePhase('consciencia')}>Rever meu Mapa CER</Button>
-              <Button variant="outline" onClick={() => navigate('/planner')}>Experimentar no cotidiano · Planner</Button>
+              <p className="text-sm">
+                Seu Mapa CER ajuda a reconhecer seu jeito. Aqui você e sua profissional definem o
+                futuro, combinam o plano e aprendem com o que acontece na vida.
+              </p>
+              <Button variant="outline" onClick={() => setActivePhase('consciencia')}>
+                Rever meu Mapa CER
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/planner')}>
+                Experimentar no cotidiano · Planner
+              </Button>
             </div>
 
             {/* Como estou agora? (a partir de informações JÁ registradas, sem novos questionários) */}
@@ -2258,7 +2272,6 @@ export const InteragenteHome: React.FC = () => {
                 </CardContent>
               </Card>
             )}
-
           </div>
         )}
 
