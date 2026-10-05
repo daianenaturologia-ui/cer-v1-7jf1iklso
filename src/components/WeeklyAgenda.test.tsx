@@ -1,6 +1,6 @@
 import React from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { WeeklyAgenda } from './WeeklyAgenda'
@@ -36,7 +36,12 @@ it('um clique no horário cria nota, persiste após reabrir e permite concluir/a
   await user.click(await screen.findByRole('button', { name: /segunda-feira.*06:00/ }))
   await user.type(screen.getByLabelText('O que cabe aqui?'), 'Pausa gostosa')
   await user.type(screen.getByLabelText('Anotação (opcional)'), 'Tomar café sem pressa')
+  const end = screen.getByLabelText('Termina') as HTMLInputElement
+  fireEvent.input(end, { target: { value: end.value.slice(0, 11) + '07:00' } })
   await user.click(screen.getByRole('button', { name: 'Guardar momento' }))
+  expect(new Date((await plannerNotesService.list(DEMO_ENROLLMENT_ID))[0].ends_at).getHours()).toBe(
+    7,
+  )
   expect((await plannerNotesService.list(DEMO_ENROLLMENT_ID))[0].note).toBe('Tomar café sem pressa')
   cleanup()
   page()
@@ -72,13 +77,13 @@ it('leva passo sem horário para a semana e registra execução mantendo sua ori
   page()
   await user.click(await screen.findByRole('tab', { name: /Sem horário/ }))
   await user.click(await screen.findByRole('button', { name: /Observar meu ritmo/ }))
-  const start = mondayOf(new Date()); start.setHours(9)
+  const start = mondayOf(new Date())
+  start.setHours(9)
   const input = screen.getByLabelText('Reservar horário') as HTMLInputElement
-  const { fireEvent } = await import('@testing-library/react')
-  fireEvent.change(input, {target: {value: localDateInput(start)}})
-  await user.click(screen.getByRole('button', {name: 'Salvar horário'}))
-  await user.click(screen.getByRole('tab', {name: 'Minha semana'}))
-  await user.click(await screen.findByRole('button', {name: /Observar meu ritmo, 09:00/}))
+  fireEvent.change(input, { target: { value: localDateInput(start) } })
+  await user.click(screen.getByRole('button', { name: 'Salvar horário' }))
+  await user.click(screen.getByRole('tab', { name: 'Minha semana' }))
+  await user.click(await screen.findByRole('button', { name: /Observar meu ritmo, 09:00/ }))
   await user.click(screen.getByRole('button', { name: 'Experimentei' }))
   expect((await selfDevelopmentService.list(DEMO_ENROLLMENT_ID))[0].status).toBe('completed')
 })
