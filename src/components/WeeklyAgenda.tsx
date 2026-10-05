@@ -205,6 +205,21 @@ export function WeeklyAgenda({
     const saved = await selfDevelopmentService.save(value, value.id)
     setSteps((old) => old.map((s) => (s.id === saved.id ? saved : s)))
   }
+  function updateTime(field: 'starts_at' | 'ends_at', raw: string) {
+    if (!raw || !Number.isFinite(Date.parse(raw))) return
+    const iso = new Date(raw).toISOString()
+    setEditing((old) => {
+      if (!old) return old
+      const duration = Date.parse(old.ends_at) - Date.parse(old.starts_at)
+      return {
+        ...old,
+        [field]: iso,
+        ...(field === 'starts_at'
+          ? { ends_at: new Date(Date.parse(iso) + duration).toISOString() }
+          : {}),
+      }
+    })
+  }
   function exportWeek() {
     const url = URL.createObjectURL(
       new Blob([weekIcs(events, week, days.length)], { type: 'text/calendar;charset=utf-8' }),
@@ -580,13 +595,8 @@ export function WeeklyAgenda({
                     required
                     type="datetime-local"
                     value={localDateInput(editing.starts_at)}
-                    onChange={(e) => {
-                      if (e.target.value)
-                        setEditing({
-                          ...editing,
-                          starts_at: new Date(e.target.value).toISOString(),
-                        })
-                    }}
+                    onChange={(e) => updateTime('starts_at', e.target.value)}
+                    onInput={(e) => updateTime('starts_at', e.currentTarget.value)}
                   />
                 </label>
                 <label className="text-sm">
@@ -595,10 +605,8 @@ export function WeeklyAgenda({
                     required
                     type="datetime-local"
                     value={localDateInput(editing.ends_at)}
-                    onChange={(e) => {
-                      if (e.target.value)
-                        setEditing({ ...editing, ends_at: new Date(e.target.value).toISOString() })
-                    }}
+                    onChange={(e) => updateTime('ends_at', e.target.value)}
+                    onInput={(e) => updateTime('ends_at', e.currentTarget.value)}
                   />
                 </label>
               </div>
@@ -771,6 +779,7 @@ export function WeeklyAgenda({
                         type="datetime-local"
                         value={moment}
                         onChange={(e) => setMoment(e.target.value)}
+                        onInput={(e) => setMoment(e.currentTarget.value)}
                       />
                     </label>
                     <Button variant="outline" type="submit" disabled={busy}>
