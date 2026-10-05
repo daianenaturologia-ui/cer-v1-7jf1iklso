@@ -35,12 +35,13 @@ import { AuditSecurityPanel } from '@/components/AuditSecurityPanel'
 import { ParticipantList, ParticipantListItemData } from '@/components/ParticipantList'
 import { AttentionPanel } from '@/components/AttentionPanel'
 import { PracticeSelector } from '@/components/PracticeSelector'
+import { DevelopmentResourceEditor } from '@/components/DevelopmentResourceEditor'
 import { ProfessionalSessionManager } from '@/components/ProfessionalSessionManager'
 import { ProfessionalAiWorkspace } from '@/components/ProfessionalAiWorkspace'
 import pb from '@/lib/pocketbase/client'
 
 export const ProfissionalHome: React.FC = () => {
-  const { user, person, logout } = useAuth()
+  const { user, person, logout, isDemo } = useAuth()
   const [enrollments, setEnrollments] = useState<EnrollmentRecord[]>([])
   const [products, setProducts] = useState<CerProductRecord[]>([])
   const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
@@ -314,7 +315,15 @@ export const ProfissionalHome: React.FC = () => {
         {/* ABA 3: BIBLIOTECA */}
         {activeMainTab === 'biblioteca' && (
           <div className="space-y-4">
-            <PracticeSelector />
+            <DevelopmentResourceEditor />
+            {isDemo ? (
+              <p className="text-sm text-muted-foreground">
+                As práticas clínicas fictícias são combinadas no acompanhamento de Mariana. O acervo
+                educativo acima pode ser explorado aqui.
+              </p>
+            ) : (
+              <PracticeSelector />
+            )}
           </div>
         )}
 
