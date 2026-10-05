@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { demoAdapter } from './demoAdapter'
 import { cerSessionService, cerSessionNoteService, cerSessionObservationService } from './cerSession'
 import pb from '@/lib/pocketbase/client'
+import { sessionMapUpdateService } from './sessionMapUpdate'
+import { cerMapCandidateService } from './cerMapCandidateService'
 describe('Sessões na demonstração', () => {
   it('edita a nota por ID preservando encontro e matrícula, congela ao concluir e não consulta backend', async () => {
     demoAdapter.enableDemo('daiane')
@@ -13,6 +15,12 @@ describe('Sessões na demonstração', () => {
     expect(edited.session_id).toBe(session.id)
     expect(edited.enrollment_id).toBe('other-enrollment')
     expect((await cerSessionNoteService.getBySessionId(session.id))?.text).toBe('Anotação corrigida')
+    expect(await cerMapCandidateService.listCandidatesForEnrollment('other-enrollment')).toEqual([])
+    await sessionMapUpdateService.save({enrollmentId:'other-enrollment',sessionId:session.id,participantName:'Pessoa fictícia',professionalUserId:session.professional_user_id,summary:'Uma formulação humana para o mapa'})
+    const draft = demoAdapter.getDraftMap('other-enrollment')!
+    expect(draft.reading_snapshot?.sessionUpdates?.[0].summary).toBe('Uma formulação humana para o mapa')
+    expect(JSON.stringify(draft)).not.toContain('Anotação corrigida')
+    expect(draft.items).toEqual([])
     await cerSessionService.startSession(session.id)
     const obs = await cerSessionObservationService.create({session_id:session.id, observation_type:'participant_report', text:'Relato preservado'})
     expect(await cerSessionObservationService.listBySession(session.id)).toContainEqual(obs)

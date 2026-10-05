@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { SessionMapUpdate } from './SessionMapUpdate'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
@@ -78,39 +78,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
     null,
   )
 
-  const loadAll = async () => {
-    const current = ++request.current
-    try {
-      setLoading(true)
-      const [rawSessList, prepData] = await Promise.all([
-        cerSessionService.listByEnrollment(enrollmentId),
-        computeSessionPreparation(enrollmentId),
-      ])
-      if (current !== request.current) return
-      const sessList = Array.isArray(rawSessList) ? rawSessList.filter((s) => s.enrollment_id === enrollmentId) : []
-      setSessions(sessList)
-      setPreparation(prepData)
-
-      // Sessão prioritária: em andamento ou primeira agendada
-      const inProgress = sessList.find((s) => s.status === 'in_progress')
-      const scheduled = sessList.find((s) => s.status === 'scheduled')
-      const target = inProgress || scheduled || sessList[0] || null
-
-      if (target) {
-        await selectSession(target)
-      } else {
-        setActiveSession(null)
-        setActiveNote(null)
-        setNoteDraft('')
-      }
-    } catch (err) {
-      if (current === request.current) setFeedback({ message: 'Não foi possível carregar os encontros. Tente novamente.', type: 'error' })
-    } finally {
-      if (current === request.current) setLoading(false)
-    }
-  }
-
-  const selectSession = async (sess: CerSessionRecord) => {
+  const selectSession = useCallback(async (sess: CerSessionRecord) => {
     if (sess.enrollment_id !== enrollmentId) return
     const current = ++selection.current
     setSessionLoading(true); setSessionLoadFailed(false)
@@ -136,7 +104,41 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
     } finally {
       if (current === selection.current) setSessionLoading(false)
     }
-  }
+  }, [enrollmentId])
+
+  const loadAll = useCallback(async () => {
+    const current = ++request.current
+    try {
+      setLoading(true)
+      const [rawSessList, prepData] = await Promise.all([
+        cerSessionService.listByEnrollment(enrollmentId),
+        computeSessionPreparation(enrollmentId),
+      ])
+      if (current !== request.current) return
+      const sessList = Array.isArray(rawSessList) ? rawSessList.filter((s) => s.enrollment_id === enrollmentId) : []
+      setSessions(sessList)
+      setPreparation(prepData)
+
+      // Sessão prioritária: em andamento ou primeira agendada
+      const inProgress = sessList.find((s) => s.status === 'in_progress')
+      const scheduled = sessList.find((s) => s.status === 'scheduled')
+      const target = inProgress || scheduled || sessList[0] || null
+
+      if (target) {
+        await selectSession(target)
+      } else {
+        setActiveSession(null)
+        setActiveNote(null)
+        setNoteDraft('')
+      }
+    } catch (_err) {
+      if (current === request.current) setFeedback({ message: 'Não foi possível carregar os encontros. Tente novamente.', type: 'error' })
+    } finally {
+      if (current === request.current) setLoading(false)
+    }
+  }, [enrollmentId, selectSession])
+
+  const invalidateRequests = useCallback(() => { request.current++; selection.current++ }, [])
 
   const handleCreateObservation = async () => {
     if (!activeSession || !observationText.trim()) return
@@ -167,8 +169,8 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
   useEffect(() => {
     setSessions([]); setActiveSession(null); setActiveNote(null); setPreparation(null); setNoteDraft(''); setObservations([]); setObservationText(''); setFeedback(null); setScheduleOpen(false)
     loadAll()
-    return () => { request.current++; selection.current++ }
-  }, [enrollmentId])
+    return invalidateRequests
+  }, [enrollmentId, loadAll, invalidateRequests])
 
   const handleCreateSession = async () => {
     try {
@@ -1028,7 +1030,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
       </CardContent>
       <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
         <DialogContent><DialogHeader><DialogTitle>{scheduleTarget ? 'Horário do encontro' : 'Novo encontro'}</DialogTitle></DialogHeader>
-          <label className="block space-y-2 text-sm"><span>Data e horário</span><input type="datetime-local" value={scheduleAt} onChange={(e) => setScheduleAt(e.target.value)} className="w-full rounded-md border bg-background p-2" /></label>
+          <label className="block space-y-2 text-sm"><span>Data e horário</span><input type="datetime-local" value={scheduleAt} onInput={(e) => setScheduleAt(e.currentTarget.value)} onChange={(e) => setScheduleAt(e.target.value)} className="w-full rounded-md border bg-background p-2" /></label>
           <p className="text-sm text-muted-foreground">O horário fica registrado neste acompanhamento. Combine o encontro com a pessoa pelo canal que vocês utilizam.</p>
           <DialogFooter><Button disabled={actionLoading || Boolean(scheduleTarget && !scheduleAt)} onClick={() => void handleCreateSession()}>{actionLoading ? 'Salvando...' : scheduleAt ? 'Salvar horário' : 'Criar encontro sem horário'}</Button></DialogFooter>
         </DialogContent>

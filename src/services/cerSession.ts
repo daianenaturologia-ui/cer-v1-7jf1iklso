@@ -4,7 +4,6 @@ import type {
   CerSessionNoteRecord,
   CerSessionObservationRecord,
   SessionObservationType,
-  SessionStatus,
   SessionPreparationData,
   EnrollmentRecord,
   CerKnowledgeItemRecord,

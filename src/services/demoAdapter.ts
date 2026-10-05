@@ -1749,19 +1749,7 @@ class DemoAdapter {
       created_by_user_id: userId,
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
-      items: [
-        {
-          id: `demo-map-item-${Date.now()}`,
-          map_id: `demo-map-${Date.now()}`,
-          section: 'minha_natureza',
-          item_text: 'Ritmo sensível que busca clareza e acolhimento nas pausas.',
-          position: 1,
-          created_by_user_id: userId,
-          created: new Date().toISOString(),
-          updated: new Date().toISOString(),
-          sources: [],
-        },
-      ],
+      items: [],
     }
     this.state.maps.unshift(newMap)
     this.saveState()
