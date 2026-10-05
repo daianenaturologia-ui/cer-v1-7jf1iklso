@@ -27,4 +27,12 @@ Revisão tem convites sobre aprendizado, autonomia e retomada; texto permanece n
 
 Seis testes novos isolados: seleção por pessoa/visibilidade/momento; fonte revogada sem escrita; persistência da origem; prévia excluindo conteúdo privado; recursos compartilhados da Mandala; interação real do editor para selecionar futuro e salvar origem. Testes anteriores não executados. TypeScript do aplicativo e build Vite verificados. Testes detectaram e levaram à correção da omissão de direction_source_id no adapter demo.
 
-Acervo real/editor e homologação do backend autenticado continuam pendentes. Não implementados cursos/turmas. Este bloco não demonstra eficácia do método nem altera doshas. Publicação e prova visual devem ser acrescentadas após sincronização do Skip.
+Acervo real/editor e homologação do backend autenticado continuam pendentes. Não implementados cursos/turmas. Este bloco não demonstra eficácia do método nem altera doshas.
+
+## Publicação e prova visual
+
+Implementação local 051246f, publicada em main no commit 2cde4377ae9eb67ed0bab985e4249cc597975c87. Os 19 blobs foram conferidos contra os arquivos locais antes de avançar main, sem forçar histórico. Skip sincronizado; preview com identificador 2724cab mostra a organização atualizada.
+
+Conferência visual nas duas visões: Evolução da interagente apresenta futuro e plano compartilhado; atalho abre Planner com a orientação de execução; Evolução profissional apresenta direções, editor do plano e atalhos para combinar experimentos/acompanhar execução. Editor abre e explica a ausência de futuro compartilhado nesta sessão. Conferência sem salvar novos dados. Esta sessão de demonstração não contém o preenchimento da Mariana no navegador da usuária; o percurso com esses dados permanece para seu teste. Seleção de futuro e persistência da origem foram verificadas pelos testes novos.
+
+Imagem de referência: cer-evolucao-plano.jpg, identificador libfile_7641fbb37ccc81918af7a56e50002bdf. Preview conferido: https://cer-v1-1444e--preview.goskip.app/profissional/participantes/demo-enr-01?tab=evolucao.
