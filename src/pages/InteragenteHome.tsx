@@ -1,4 +1,5 @@
 import { CerWelcome } from '@/components/CerWelcome'
+import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
 import { cerCycleInvitationService } from '@/services/cerCycleInvitationService'
 import { LifeDirections } from '@/components/experience/LifeDirections'
 import { LifeTimeline } from '@/components/experience/LifeTimeline'
@@ -14,7 +15,7 @@ import {
   cerParticipantRecognitionService,
   cerKnowledgePresentationService,
 } from '@/services/cerKnowledge'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   EnrollmentRecord,
   EnrollmentExperienceRecord,
@@ -94,6 +95,7 @@ import pb from '@/lib/pocketbase/client'
 
 export const InteragenteHome: React.FC = () => {
   const navigate = useNavigate()
+  const [phaseParams] = useSearchParams()
   const { user, person, logout } = useAuth()
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [loading, setLoading] = useState(true)
@@ -103,7 +105,10 @@ export const InteragenteHome: React.FC = () => {
   // 1: comece_aqui | 2: consciencia | 3: equilibrio | 4: evolucao
   const [activePhase, setActivePhase] = useState<
     'comece_aqui' | 'consciencia' | 'equilibrio' | 'evolucao'
-  >('comece_aqui')
+  >(phaseParams.get('etapa') === 'evolucao' ? 'evolucao' : 'comece_aqui')
+  useEffect(() => {
+    if (phaseParams.get('etapa') === 'evolucao') setActivePhase('evolucao')
+  }, [phaseParams])
 
   const [activeExperienceId, setActiveExperienceId] = useState<string | null>(null)
   const [knowledgeItems, setKnowledgeItems] = useState<CerKnowledgeItemRecord[]>([])
@@ -1970,8 +1975,9 @@ export const InteragenteHome: React.FC = () => {
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
               <h2 className="font-serif text-lg">Que vida quero construir?</h2>
               <p className="text-sm">
-                Seu Mapa CER ajuda a reconhecer seu jeito. Aqui você e sua profissional definem o
-                futuro, combinam o plano e aprendem com o que acontece na vida.
+                Seu Mapa CER ajuda a reconhecer seu jeito. Aqui você explora seus desejos, planeja
+                pequenos passos e aprende com o que acontece na vida. Sua profissional acompanha e
+                ajuda a aprofundar o caminho.
               </p>
               <Button variant="outline" onClick={() => setActivePhase('consciencia')}>
                 Rever meu Mapa CER
@@ -1981,6 +1987,12 @@ export const InteragenteHome: React.FC = () => {
               </Button>
             </div>
 
+            {enrollment && (
+              <SelfDevelopmentJourney
+                key={`development-${enrollment.id}`}
+                enrollmentId={enrollment.id}
+              />
+            )}
             {/* Como estou agora? (a partir de informações JÁ registradas, sem novos questionários) */}
             <Card className="border-border/70 bg-gradient-to-br from-card to-muted/20">
               <CardHeader className="pb-3 border-b border-border/40">
@@ -2263,11 +2275,11 @@ export const InteragenteHome: React.FC = () => {
                 <CardContent className="py-6 text-center space-y-1.5">
                   <Compass className="w-6 h-6 text-muted-foreground mx-auto opacity-50" />
                   <span className="font-medium text-xs text-foreground block">
-                    Nenhum plano compartilhado ainda
+                    Acompanhamento individual · nenhum plano compartilhado ainda
                   </span>
                   <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                    Quando você e sua profissional combinarem as direções de cuidado, o plano e os
-                    próximos passos aparecerão aqui para seu retorno.
+                    Seu desenvolvimento educativo pode seguir no espaço acima. Quando você e sua
+                    profissional combinarem um plano individual, ele também aparecerá aqui.
                   </p>
                 </CardContent>
               </Card>

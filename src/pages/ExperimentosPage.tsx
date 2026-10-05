@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
 import { cerPracticeAssignmentService } from '@/services/cerPracticeAssignmentService'
@@ -110,6 +111,17 @@ export const ExperimentosPage: React.FC = () => {
           </div>
         </div>
 
+        <div className="rounded-xl border p-4 space-y-2">
+          <h2 className="font-serif text-lg">Quero experimentar por conta própria</h2>
+          <p className="text-sm text-muted-foreground">
+            Escolha recursos educativos, planeje uma tentativa e revise o que aprendeu, sem esperar
+            uma liberação.
+          </p>
+          <Link className="inline-block text-sm underline" to="/?etapa=evolucao">
+            Abrir meu desenvolvimento na Evolução
+          </Link>
+        </div>
+        <h2 className="font-serif text-lg">Práticas do acompanhamento individual</h2>
         {loading ? (
           <p className="text-xs text-muted-foreground text-center py-12">
             Carregando experimentos...
@@ -118,7 +130,7 @@ export const ExperimentosPage: React.FC = () => {
           <EmptyState
             variant="experiments"
             title="Experimentos combinados"
-            description="Os experimentos aparecem depois que algo for combinado com sua profissional."
+            description="As práticas individuais aparecem quando forem combinadas no acompanhamento. Você pode seguir com os recursos educativos na Evolução."
             actionLabel="Voltar para a página inicial"
             onAction={() => navigate('/')}
           />

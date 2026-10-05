@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
 import { Button } from '@/components/ui/button'
 import { cerPlannerService } from '@/services/cerPlannerService'
 import type { CerPlannerItemRecord } from '@/types/cer'
@@ -52,6 +53,13 @@ export const ProfessionalPlannerView: React.FC<{ enrollmentId: string }> = ({ en
           Atualizar
         </Button>
       </div>
+      <SelfDevelopmentJourney
+        key={`development-planner-${enrollmentId}`}
+        enrollmentId={enrollmentId}
+        mode="play"
+        readOnly
+      />
+      <h3 className="font-serif">Práticas do acompanhamento individual</h3>
       {loading ? (
         <p className="text-sm">Carregando planner...</p>
       ) : error ? (

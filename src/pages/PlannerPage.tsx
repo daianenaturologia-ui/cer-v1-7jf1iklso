@@ -1,4 +1,5 @@
 import { cerCycleInvitationService } from '@/services/cerCycleInvitationService'
+import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
@@ -153,10 +154,17 @@ export const PlannerPage: React.FC = () => {
         </div>
 
         <p className="rounded-xl border p-4 text-sm text-muted-foreground">
-          Aqui você leva os experimentos combinados para o seu dia e ajusta os horários. A direção e
-          o plano de ação são construídos juntos na Evolução. Inclua espaço para fazer, descansar e
-          viver gostosamente.
+          Aqui você leva seus pequenos passos para o dia. Planeje e revise na Evolução, escolha o
+          que cabe no seu ritmo e inclua espaço para fazer, descansar e viver gostosamente.
         </p>
+        {enrollment && (
+          <SelfDevelopmentJourney
+            key={`development-${enrollment.id}`}
+            enrollmentId={enrollment.id}
+            mode="play"
+          />
+        )}
+        <h2 className="font-serif text-lg">Práticas do acompanhamento individual</h2>
         {/* CTA de Cycle Review quando participant_review_invited_at ativo */}
         {activeReviewInvite && (
           <Card className="border-primary/50 bg-gradient-to-r from-primary/10 via-card to-card shadow-sm animate-in fade-in">
@@ -206,9 +214,9 @@ export const PlannerPage: React.FC = () => {
           <EmptyState
             variant="planner"
             title="Janela de práticas"
-            description="Ainda não há nenhum experimento combinado para este momento."
-            actionLabel="Voltar para a página inicial"
-            onAction={() => navigate('/')}
+            description="Ainda não há práticas individuais combinadas. Seus passos educativos estão disponíveis no espaço acima."
+            actionLabel="Planejar meu desenvolvimento"
+            onAction={() => navigate('/?etapa=evolucao')}
           />
         ) : (
           <div className="space-y-2.5">

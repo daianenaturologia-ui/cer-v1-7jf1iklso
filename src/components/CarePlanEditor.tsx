@@ -262,7 +262,9 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     setErrorMsg(null)
     try {
       await cerCarePlanService.activatePlan(planId)
-      setSuccessMsg('Plano de Cuidado ativado com sucesso.')
+      setSuccessMsg(
+        'Plano ativado para o acompanhamento. Para a pessoa vê-lo, confira a prévia em “Compartilhar plano”. Os recursos educativos já estão disponíveis sem esta etapa.',
+      )
       await loadPlanData()
       onPlanUpdated?.()
     } catch (err: any) {
