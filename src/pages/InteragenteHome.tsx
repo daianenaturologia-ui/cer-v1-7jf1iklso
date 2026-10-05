@@ -1484,7 +1484,7 @@ export const InteragenteHome: React.FC = () => {
                 {/* Introdução da Consciência */}
                 <Collapsible
                   defaultOpen
-                  className="border border-border/60 rounded-lg bg-card shadow-sm overflow-hidden"
+                  className="cer-reading-panel border border-border/60 rounded-lg bg-card shadow-sm overflow-hidden"
                 >
                   <CollapsibleTrigger asChild>
                     <Button
@@ -1498,9 +1498,9 @@ export const InteragenteHome: React.FC = () => {
                       <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200" />
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="px-4 pb-5 sm:px-5 space-y-3 text-xs text-muted-foreground leading-relaxed border-t border-border/40 pt-4">
+                  <CollapsibleContent className="cer-prose px-4 pb-5 sm:px-5 space-y-3 text-foreground/90 border-t border-border/40 pt-4">
                     <p>
-                      Nesta etapa, vamos olhar para você como um ser inteiro. As seis dimensões
+                      Nesta etapa, vamos olhar para você como <strong className="cer-emphasis">um ser inteiro.</strong> As seis dimensões
                       representam diferentes aspectos da sua experiência, mas elas não funcionam
                       separadamente: corpo, pensamentos, emoções, padrões de resposta, relações,
                       intimidade, valores e sentido se influenciam continuamente.
@@ -1508,15 +1508,16 @@ export const InteragenteHome: React.FC = () => {
                     <p>
                       Clique em cada dimensão para acessar a experiência que estiver disponível. Não
                       existem respostas certas, e você não precisa concluir tudo de uma vez.
-                      Responda no seu ritmo e registre apenas aquilo que fizer sentido compartilhar
+                      <strong className="cer-emphasis">Responda no seu ritmo</strong> e registre apenas aquilo que fizer sentido compartilhar
                       neste momento.
                     </p>
                     <p>
-                      No centro está o seu Mapa CER. Ele será construído aos poucos, a partir das
-                      suas respostas, dos nossos encontros e da minha leitura profissional. O
-                      aplicativo poderá ajudar a organizar informações, mas nenhuma conclusão será
-                      publicada automaticamente. Antes de se tornar uma devolutiva, o Mapa será
-                      revisado por mim e conversado com você.
+                      No centro está o seu <strong className="cer-emphasis">Mapa CER</strong>: um retrato
+                      do seu momento, que reúne como seu corpo, sua mente, suas emoções e suas
+                      relações funcionam, seus recursos e o que pede cuidado. Ele se transforma
+                      com você e será construído aos poucos, a partir das
+                      suas respostas, dos nossos encontros e da minha leitura profissional. Você já pode consultar um mapa inicial com suas respostas. A leitura profissional
+                      será aprofundada, revisada e conversada com você ao longo das sessões.
                     </p>
                     <p>
                       O objetivo não é colocar você dentro de uma definição. É ajudar você a
@@ -1534,6 +1535,7 @@ export const InteragenteHome: React.FC = () => {
                 <SerConscienciaMap
                   availableExperiences={availableExperiences}
                   hasPublishedMap={Boolean(currentMap)}
+                  hasInitialMap={participantResponses.some((r) => r.enrollment_id === enrollment?.id && ['participant_shared', 'shared_care'].includes(r.access_class) && !['draft', 'superseded', 'discarded'].includes(r.status))}
                   onSelectExperience={(expId) => setActiveExperienceId(expId)}
                   onOpenMap={() => setShowMapModal(true)}
                 />
@@ -1543,6 +1545,7 @@ export const InteragenteHome: React.FC = () => {
                   <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                     <ParticipantIntegrativeMapView
                       responses={participantResponses}
+                      enrollmentId={enrollment?.id}
                       participantName={person?.preferred_name || person?.full_name || 'você'}
                       currentMap={currentMap}
                       progress={availableExperiences}

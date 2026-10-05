@@ -148,6 +148,7 @@ export function buildCerMapReadings(
   responses: ExperienceResponseRecord[],
   enrollmentId: string,
   participantName: string,
+  options: { literalOnly?: boolean } = {},
 ): CerMapReadingSnapshot {
   const shared = (Array.isArray(responses) ? responses : []).filter(
     (response) =>
@@ -178,7 +179,7 @@ export function buildCerMapReadings(
         })),
       ]
       const reading = buildAyurvedaInterpretation(dimensionResponses)
-      if (reading.hasCompletedRevision) {
+      if (reading.hasCompletedRevision && !options.literalOnly) {
         detailedRows.push(
           ...[
             ...reading.prakritiHypothesis.evidencesVata,
@@ -215,9 +216,7 @@ export function buildCerMapReadings(
           },
         ]
       }
-      summaryRows.push(
-        ...detailedRows.filter((row) => /energia|vitalidade|sono/i.test(row.label)).slice(0, 4),
-      )
+      summaryRows.push(...detailedRows.filter(row => /energia|vitalidade|sono/i.test(row.label)).slice(0, 4))
     } else {
       const latest = new Map<string, ExperienceResponseRecord>()
       for (const response of [...dimensionResponses].sort((a, b) =>
@@ -284,8 +283,9 @@ export function buildCerMapReadings(
     participantName,
     generatedAt: new Date().toISOString(),
     sourceResponseIds: [...new Set(shared.map((response) => response.id))],
-    overview:
-      'Este mapa reúne suas respostas e a leitura revisada pela profissional. A versão resumida oferece um panorama; a aprofundada mostra mais detalhes e explica os conceitos. É um retrato para compreender seu funcionamento e conversar sobre ele, sem definir quem você é.',
+    overview: options.literalOnly
+      ? 'Este é seu mapa inicial: um retrato das respostas que você já registrou, disponível sem esperar pelo primeiro encontro. A versão resumida mostra o essencial; a aprofundada reúne mais detalhes e explica as dimensões. Vocês poderão aprofundar e ajustar essa compreensão nas sessões.'
+      : 'Este mapa reúne suas respostas e a leitura revisada pela profissional. A versão resumida oferece um panorama; a aprofundada mostra mais detalhes e explica os conceitos. É um retrato para compreender seu funcionamento e conversar sobre ele, sem definir quem você é.',
     integration: '',
     history: '',
     dimensions,

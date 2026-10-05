@@ -136,16 +136,20 @@ export const SER_INTEGRAL_ALT_TEXT =
 interface SerConscienciaMapProps {
   availableExperiences: EnrollmentExperienceRecord[]
   hasPublishedMap: boolean
+  hasInitialMap?: boolean
   onSelectExperience: (experienceId: string) => void
   onOpenMap: () => void
 }
 
 export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
   availableExperiences,
-  hasPublishedMap,
+  hasPublishedMap: publishedMap,
+  hasInitialMap = false,
   onSelectExperience,
   onOpenMap,
 }) => {
+  const hasPublishedMap = publishedMap || hasInitialMap
+
   const [imageError, setImageError] = useState(false)
   const [hoveredDimension, setHoveredDimension] = useState<string | null>(null)
 
@@ -384,7 +388,7 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
                 data-testid="ser-integral-map-center"
                 aria-label={
                   hasPublishedMap
-                    ? 'Abrir Meu Mapa CER — Devolutiva publicada por Daiane'
+                    ? 'Abrir Meu Mapa CER'
                     : 'Meu Mapa CER — em construção'
                 }
                 className={`group relative flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full border-2 transition-all duration-200 cursor-pointer shadow-lg hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary ${
