@@ -301,3 +301,65 @@
     animation: spotlight 2s ease forwards;
   }
 }
+
+/* Botanical editorial treatment: decorative only, with space reserved for text. */
+@layer components {
+  .cer-reading-panel {
+    position: relative;
+    isolation: isolate;
+    border-radius: 1.25rem;
+    box-shadow: 0 6px 28px hsl(var(--foreground) / 0.035);
+    background-image: linear-gradient(130deg, hsl(var(--primary) / 0.045), transparent 42%, hsl(var(--secondary) / 0.055));
+  }
+
+  .cer-reading-panel::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    top: 5rem;
+    right: 1rem;
+    bottom: 1.5rem;
+    width: 4rem;
+    opacity: 0.5;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='240' viewBox='0 0 80 240' fill='none'%3E%3Cg stroke='%235e8476' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M40 228C57 182 21 124 46 63M42 207C15 206 11 189 11 189C33 185 43 199 42 207ZM44 176C68 164 69 147 69 147C44 150 38 167 44 176ZM39 143C14 134 13 117 13 117C35 119 41 131 39 143ZM40 109C65 98 65 83 65 83C44 86 38 98 40 109ZM46 66C30 54 29 39 29 39C46 42 51 57 46 66Z'/%3E%3C/g%3E%3Cg stroke='%23aa7856' stroke-width='1.1'%3E%3Cpath d='M47 35C32 31 30 18 38 17C42 17 46 23 47 28C44 10 59 5 61 14C62 18 56 24 51 28C66 19 77 28 69 34C65 37 59 35 53 33C63 42 56 53 50 46C47 43 48 38 49 35C41 45 30 39 36 34'/%3E%3Ccircle cx='49' cy='31' r='3'/%3E%3C/g%3E%3C/svg%3E") top center / 100% auto repeat-y;
+  }
+
+  .cer-prose {
+    font-size: 1rem;
+    line-height: 1.95;
+    padding: 1.5rem;
+    overflow-wrap: anywhere;
+  }
+
+  .cer-prose > p, .cer-prose > div {
+    max-width: 65ch;
+    margin-inline: auto;
+  }
+
+  .cer-prose > p + p { margin-top: 1.35rem; }
+  .cer-emphasis { color: hsl(var(--primary)); font-weight: 600; }
+  .cer-pullquote {
+    display: block;
+    color: hsl(var(--primary));
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
+    line-height: 1.55;
+    font-weight: 500;
+    margin-block: 0.6rem;
+  }
+
+  @media (min-width: 640px) {
+    .cer-prose { padding: 2rem 6.5rem 2.5rem 2.5rem; }
+  }
+  @media (max-width: 639px) {
+    .cer-reading-panel::after {
+      top: 0.75rem;
+      right: 3rem;
+      bottom: auto;
+      width: 2rem;
+      height: 3rem;
+      opacity: 0.18;
+      background-repeat: no-repeat;
+    }
+  }
+}

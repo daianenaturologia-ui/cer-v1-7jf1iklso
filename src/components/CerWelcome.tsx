@@ -5,7 +5,7 @@ import { ChevronDown, HeartHandshake } from 'lucide-react'
 /** Reception approved by Daiane. Static copy; no participant data or workflow mutation. */
 export function CerWelcome() {
   return (
-    <Collapsible defaultOpen className="rounded-xl border border-border/60 bg-card overflow-hidden">
+    <Collapsible defaultOpen className="cer-reading-panel rounded-xl border border-border/60 bg-card overflow-hidden">
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"
@@ -20,7 +20,7 @@ export function CerWelcome() {
           <ChevronDown className="w-4 h-4 shrink-0 mt-1" />
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="border-t border-border/40 px-5 py-5 space-y-4 text-sm leading-7 text-foreground/90">
+      <CollapsibleContent className="cer-prose border-t border-border/40 px-5 py-5 space-y-4 text-foreground/90">
         <p>
           Às vezes, uma jornada de encontro consigo começa com um desencontro. Uma perda, uma
           relação que mudou, um modo de viver que deixou de fazer sentido. Às vezes, começa com uma
@@ -31,7 +31,7 @@ export function CerWelcome() {
           relacionamos com a vida e descobrir o que desejamos transformar.
         </p>
         <p>
-          Tudo começa com uma decisão. Ela não resolve tudo de uma vez, mas pode abrir um novo
+          <strong className="cer-pullquote">Tudo começa com uma decisão.</strong> Ela não resolve tudo de uma vez, mas pode abrir um novo
           caminho.
         </p>
         <p>Minha jornada começou com uma perda. E, ao atravessá-la, pude começar a me encontrar.</p>
@@ -52,7 +52,7 @@ export function CerWelcome() {
         </p>
         <p>
           Desse caminho, somado à minha formação e ao acompanhamento de outras pessoas, nasceu o
-          Método CER: <strong>Consciência, Equilíbrio e Realização.</strong>
+          Método CER: <strong className="cer-emphasis">Consciência, Equilíbrio e Realização.</strong>
         </p>
         <p>
           Este espaço é um convite para você conhecer seu próprio funcionamento, reconhecer seus
@@ -65,7 +65,7 @@ export function CerWelcome() {
           produtividade e realização possam caminhar junto com qualidade de vida.
         </p>
         <p>
-          Quando falo em viver gostosamente, falo de encontrar mais presença, prazer e sentido na
+          Quando falo em <strong className="cer-emphasis">viver gostosamente</strong>, falo de encontrar mais presença, prazer e sentido na
           vida que você constrói. De ter espaço para seus desejos, suas responsabilidades, seus
           vínculos e seu descanso. De aprender a atravessar os desafios sem perder de vista aquilo
           que torna a vida valiosa para você.
@@ -80,7 +80,7 @@ export function CerWelcome() {
           Você não precisa chegar sabendo por onde seguir. Podemos descobrir esse caminho em
           conjunto.
         </p>
-        <p className="font-semibold text-primary">Bora começar?</p>
+        <p className="cer-pullquote">Bora começar?</p>
       </CollapsibleContent>
     </Collapsible>
   )
