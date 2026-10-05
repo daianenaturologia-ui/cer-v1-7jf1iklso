@@ -309,7 +309,16 @@ export function isCerMapReadingSnapshot(value: unknown): value is CerMapReadingS
   return (
     !!s &&
     s.schemaVersion === 1 &&
-    (s.sessionUpdates === undefined || (Array.isArray(s.sessionUpdates) && new Set(s.sessionUpdates.map((u) => u?.sessionId)).size === s.sessionUpdates.length && s.sessionUpdates.every((u) => u && [u.sessionId, u.sessionDate, u.summary, u.preparedBy, u.preparedAt].every((v) => typeof v === 'string' && v.trim())))) &&
+    (s.sessionUpdates === undefined ||
+      (Array.isArray(s.sessionUpdates) &&
+        new Set(s.sessionUpdates.map((u) => u?.sessionId)).size === s.sessionUpdates.length &&
+        s.sessionUpdates.every(
+          (u) =>
+            u &&
+            [u.sessionId, u.sessionDate, u.summary, u.preparedBy, u.preparedAt].every(
+              (v) => typeof v === 'string' && v.trim(),
+            ),
+        ))) &&
     strings([
       s.enrollmentId,
       s.participantName,

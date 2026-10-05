@@ -1312,7 +1312,8 @@ class DemoAdapter {
   public startSession(sessionId: string): CerSessionRecord {
     const session = this.state.sessions.find((s) => s.id === sessionId)
     if (!session) throw new Error('Sessão não encontrada no modo demo')
-    if (session.status !== 'scheduled') throw new Error('Somente encontros agendados podem ser iniciados.')
+    if (session.status !== 'scheduled')
+      throw new Error('Somente encontros agendados podem ser iniciados.')
     session.status = 'in_progress'
     session.started_at = new Date().toISOString()
     session.updated = new Date().toISOString()
@@ -1334,7 +1335,8 @@ class DemoAdapter {
   public cancelSession(sessionId: string): CerSessionRecord {
     const session = this.state.sessions.find((s) => s.id === sessionId)
     if (!session) throw new Error('Sessão não encontrada no modo demo')
-    if (session.status !== 'scheduled') throw new Error('Somente encontros agendados podem ser cancelados.')
+    if (session.status !== 'scheduled')
+      throw new Error('Somente encontros agendados podem ser cancelados.')
     session.status = 'cancelled'
     session.updated = new Date().toISOString()
     this.saveState()
@@ -1342,16 +1344,19 @@ class DemoAdapter {
   }
 
   public getSessionNote(sessionId: string): CerSessionNoteRecord | null {
-    if (this.state.activePersona !== 'daiane') throw new Error('A anotação é privada da profissional.')
+    if (this.state.activePersona !== 'daiane')
+      throw new Error('A anotação é privada da profissional.')
     const note = this.state.notes.find((n) => n.session_id === sessionId)
     return note ? { ...note } : null
   }
 
   public createOrUpdateNote(sessionId: string, text: string): CerSessionNoteRecord {
-    if (this.state.activePersona !== 'daiane') throw new Error('A anotação é privada da profissional.')
+    if (this.state.activePersona !== 'daiane')
+      throw new Error('A anotação é privada da profissional.')
     const session = this.state.sessions.find((s) => s.id === sessionId)
     if (!session) throw new Error('Encontro não encontrado.')
-    if (!['scheduled', 'in_progress'].includes(session.status)) throw new Error('O registro deste encontro está fechado.')
+    if (!['scheduled', 'in_progress'].includes(session.status))
+      throw new Error('O registro deste encontro está fechado.')
     let note = this.state.notes.find((n) => n.session_id === sessionId)
     if (note) {
       note.text = text
@@ -1380,7 +1385,8 @@ class DemoAdapter {
 
   public updateSessionDate(sessionId: string, scheduledAt: string): CerSessionRecord {
     const session = this.state.sessions.find((s) => s.id === sessionId)
-    if (!session || session.status !== 'scheduled') throw new Error('Somente encontros agendados podem ser remarcados.')
+    if (!session || session.status !== 'scheduled')
+      throw new Error('Somente encontros agendados podem ser remarcados.')
     session.scheduled_at = scheduledAt
     session.updated = new Date().toISOString()
     this.saveState()
@@ -1388,16 +1394,35 @@ class DemoAdapter {
   }
 
   public listSessionObservations(sessionId: string): CerSessionObservationRecord[] {
-    if (this.state.activePersona !== 'daiane') throw new Error('Observações restritas à profissional.')
-    return (this.state.sessionObservations || []).filter((o) => o.session_id === sessionId).map((o) => ({ ...o }))
+    if (this.state.activePersona !== 'daiane')
+      throw new Error('Observações restritas à profissional.')
+    return (this.state.sessionObservations || [])
+      .filter((o) => o.session_id === sessionId)
+      .map((o) => ({ ...o }))
   }
 
-  public createSessionObservation(sessionId: string, observationType: CerSessionObservationRecord['observation_type'], text: string): CerSessionObservationRecord {
-    if (this.state.activePersona !== 'daiane') throw new Error('Observações restritas à profissional.')
+  public createSessionObservation(
+    sessionId: string,
+    observationType: CerSessionObservationRecord['observation_type'],
+    text: string,
+  ): CerSessionObservationRecord {
+    if (this.state.activePersona !== 'daiane')
+      throw new Error('Observações restritas à profissional.')
     const session = this.state.sessions.find((s) => s.id === sessionId)
-    if (!session || !['in_progress', 'completed'].includes(session.status)) throw new Error('Inicie o encontro antes de preservar uma observação.')
+    if (!session || !['in_progress', 'completed'].includes(session.status))
+      throw new Error('Inicie o encontro antes de preservar uma observação.')
     const now = new Date().toISOString()
-    const record: CerSessionObservationRecord = { id: `demo-obs-${crypto.randomUUID()}`, session_id: sessionId, enrollment_id: session.enrollment_id, recorded_by_user_id: DEMO_USER_DAIANE.id, observation_type: observationType, text, access_class: 'professional_private', created: now, updated: now }
+    const record: CerSessionObservationRecord = {
+      id: `demo-obs-${crypto.randomUUID()}`,
+      session_id: sessionId,
+      enrollment_id: session.enrollment_id,
+      recorded_by_user_id: DEMO_USER_DAIANE.id,
+      observation_type: observationType,
+      text,
+      access_class: 'professional_private',
+      created: now,
+      updated: now,
+    }
     this.state.sessionObservations ||= []
     this.state.sessionObservations.push(record)
     this.saveState()
