@@ -1,4 +1,7 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { LifeMapTrail } from './LifeMapTrail'
+import { lifeTimelineService, type LifeEvent } from '@/services/lifeTimeline'
+import { lifeDirectionsService, type LifeDirection } from '@/services/lifeDirections'
 import type {
   CerMapRecord,
   CerMapItemRecord,
@@ -26,16 +29,41 @@ export function ParticipantIntegrativeMapView({
   enrollmentId,
   onClose,
 }: Props) {
-  if (currentMap?.status === 'published') return <ParticipantMapDisplay map={currentMap} />
+  const [life, setLife] = useState<{id: string; events: LifeEvent[]; directions: LifeDirection[]; error: boolean}>({id: '', events: [], directions: [], error: false})
+  useEffect(() => {
+    let active = true
+    let generation = 0
+    setLife({id: '', events: [], directions: [], error: false})
+    if (!enrollmentId) return
+    const refresh = async () => {
+      const current = ++generation
+      const [history, directions] = await Promise.allSettled([lifeTimelineService.list(enrollmentId), lifeDirectionsService.list(enrollmentId)])
+      if (!active || current !== generation) return
+      setLife({id: enrollmentId,
+        events: history.status === 'fulfilled' ? history.value.filter(e => e.enrollment_id === enrollmentId) : [],
+        directions: directions.status === 'fulfilled' ? directions.value.filter(e => e.enrollment_id === enrollmentId) : [],
+        error: history.status === 'rejected' || directions.status === 'rejected'})
+    }
+    const changed = (event: Event) => { if ((event as CustomEvent).detail?.enrollmentId === enrollmentId) void refresh() }
+    const stored = (event: StorageEvent) => { if (event.key === `cer-demo-life-events-v1:${enrollmentId}` || event.key === `cer-demo-life-directions-v1:${enrollmentId}`) void refresh() }
+    void refresh()
+    window.addEventListener('cer-life-records-changed', changed)
+    window.addEventListener('storage', stored)
+    return () => { active = false; window.removeEventListener('cer-life-records-changed', changed); window.removeEventListener('storage', stored) }
+  }, [enrollmentId])
+  const ownLife = life.id === enrollmentId ? life : {events: [], directions: [], error: false}
+  const trail = <><LifeMapTrail events={ownLife.events} directions={ownLife.directions}/>{ownLife.error && <p role="alert" className="text-sm text-destructive">Não foi possível atualizar os registros da Linha da Vida neste mapa. Feche e abra o mapa para tentar novamente.</p>}</>
+  if (currentMap?.status === 'published') return <div className="space-y-5"><ParticipantMapDisplay map={currentMap} />{trail}</div>
   const initial = enrollmentId
     ? buildCerMapReadings(responses, enrollmentId, participantName, { literalOnly: true })
     : null
-  if (initial?.sourceResponseIds.length) {
+  if (initial && (initial.sourceResponseIds.length || ownLife.events.length || ownLife.directions.length)) {
     return (
       <div className="space-y-4 p-4" data-testid="participant-initial-map">
         {onClose && <button className="text-sm text-primary" onClick={onClose}>Voltar à Consciência</button>}
         <p className="text-xs font-semibold text-primary">Mapa inicial · a partir das suas respostas</p>
         <CerMapReadingsView snapshot={initial} initial />
+        {trail}
       </div>
     )
   }
@@ -76,6 +104,7 @@ export function ParticipantIntegrativeMapView({
           </li>
         ))}
       </ul>
+      {trail}
       <p className="text-sm text-muted-foreground">
         O mapa terá uma versão resumida e outra aprofundada, ambas com explicações e referências.
         Enquanto as respostas são carregadas, você pode consultá-las nos panoramas de cada dimensão.

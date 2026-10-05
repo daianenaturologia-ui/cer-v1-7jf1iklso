@@ -107,10 +107,13 @@ export const lifeTimelineService = {
       const next = id ? values.map((v) => (v.id === id ? record : v)) : [...values, record]
       localStorage.setItem(`cer-demo-life-events-v1:${event.enrollment_id}`, JSON.stringify(next))
       demoLifeEvents.set(event.enrollment_id, next)
+      window.dispatchEvent(new CustomEvent('cer-life-records-changed', { detail: { enrollmentId: event.enrollment_id } }))
       return record
     }
-    return id
+    const record = await (id
       ? pb.collection('cer_life_events').update<LifeEvent>(id, data)
-      : pb.collection('cer_life_events').create<LifeEvent>(data)
+      : pb.collection('cer_life_events').create<LifeEvent>(data))
+    window.dispatchEvent(new CustomEvent('cer-life-records-changed', { detail: { enrollmentId: event.enrollment_id } }))
+    return record
   },
 }

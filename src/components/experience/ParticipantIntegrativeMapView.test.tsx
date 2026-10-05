@@ -1,14 +1,16 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import React from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, cleanup, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BUILD_07C_REGULACAO_PROMPTS } from '@/services/build07cPrompts'
 import { ParticipantIntegrativeMapView } from './ParticipantIntegrativeMapView'
 import { buildCerMapReadings, CER_READING_DIMENSIONS } from '@/services/cerMapReadings'
 
-afterEach(cleanup)
+import { lifeTimelineService } from '@/services/lifeTimeline'
+import { lifeDirectionsService } from '@/services/lifeDirections'
+afterEach(() => { cleanup(); vi.restoreAllMocks() })
 const snapshot = () => buildCerMapReadings([], 'enr', 'Pessoa teste')
 describe('Mapa CER: somente a publicação revisada, em duas profundidades', () => {
   it('distingue ausência de respostas de seis dimensões concluídas mesmo sem respostas carregadas', () => {
@@ -109,4 +111,20 @@ describe('Mapa inicial automático', () => {
     expect(screen.queryByText('OUTRA PESSOA')).not.toBeInTheDocument()
     expect(screen.queryByText(/compartilhado após o primeiro encontro/)).not.toBeInTheDocument()
   })
+})
+
+it('atualiza os marcos no mapa ao salvar e isola histórias ao trocar a pessoa', async () => {
+  const record = {id:'life', enrollment_id:'enr', title:'Meu nascimento', time_kind:'age', time_value:'0', emotions:[], narrative:'História privada minha', access_class:'participant_private', updated:'2026-10-05'} as any
+  const list = vi.spyOn(lifeTimelineService,'list').mockResolvedValue([record])
+  vi.spyOn(lifeDirectionsService,'list').mockResolvedValue([])
+  const view = render(<ParticipantIntegrativeMapView responses={[]} enrollmentId="enr" participantName="Teste" />)
+  expect(await screen.findByText('Meu nascimento')).toBeInTheDocument()
+  list.mockResolvedValue([{...record,title:'Nascimento atualizado'}])
+  act(() => window.dispatchEvent(new CustomEvent('cer-life-records-changed',{detail:{enrollmentId:'enr'}})))
+  expect(await screen.findByText('Nascimento atualizado')).toBeInTheDocument()
+  expect(screen.queryByText('Meu nascimento')).toBeNull()
+  list.mockResolvedValue([record])
+  view.rerender(<ParticipantIntegrativeMapView responses={[]} enrollmentId="outra" participantName="Outra" />)
+  expect(screen.queryByText('Nascimento atualizado')).toBeNull()
+  expect(screen.queryByText('História privada minha')).toBeNull()
 })

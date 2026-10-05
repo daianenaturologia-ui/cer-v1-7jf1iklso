@@ -29,13 +29,14 @@ export function LifeTimeline({
   const [busy, setBusy] = useState(false)
   const [voice, setVoice] = useState(false)
   const [saved, setSaved] = useState('')
+  const [selectedId, setSelectedId] = useState<string>()
   const load = () => {
     setLoading(true)
     setError('')
     const request = lifeTimelineService.list(enrollmentId)
     return request
       .then((data) =>
-        setEvents(readOnly ? data.filter((e) => e.access_class === 'participant_shared') : data),
+        setEvents(data.filter(e => e.enrollment_id === enrollmentId && (!readOnly || e.access_class === 'participant_shared'))),
       )
       .catch(() => setError('Não foi possível carregar sua Linha da Vida. Tente novamente.'))
       .finally(() => setLoading(false))
@@ -43,6 +44,7 @@ export function LifeTimeline({
   useEffect(() => {
     let active = true
     setEditing(null)
+    setSelectedId(undefined)
     setLoading(true)
     setError('')
     setEvents([])
@@ -50,7 +52,7 @@ export function LifeTimeline({
     request
       .then((data) => {
         if (active)
-          setEvents(readOnly ? data.filter((e) => e.access_class === 'participant_shared') : data)
+          setEvents(data.filter(e => e.enrollment_id === enrollmentId && (!readOnly || e.access_class === 'participant_shared')))
       })
       .catch(() => {
         if (active) setError('Não foi possível carregar sua Linha da Vida. Tente novamente.')
@@ -91,7 +93,8 @@ export function LifeTimeline({
       setEvents(next)
       setEditing(null)
       setVoice(false)
-      setSaved('Acontecimento salvo.')
+      setSelectedId(event.id)
+      setSaved('Acontecimento salvo. Seu mapa inicial acompanha os registros da sua história.')
     } catch (e) {
       setError(
         e instanceof Error
@@ -111,6 +114,7 @@ export function LifeTimeline({
         : a.time_value.localeCompare(b.time_value))
     )
   })
+  const birthEvent = ordered.find(e => e.title.toLocaleLowerCase() === 'nascimento')
   return (
     <section className="border rounded-xl p-5 space-y-5" aria-label="Linha da Vida">
       <h2 className="font-serif text-xl">Linha da Vida · Minha história</h2>
@@ -128,42 +132,55 @@ export function LifeTimeline({
         <p role="status">Carregando acontecimentos…</p>
       ) : (
         <>
-          <div className="relative border-l-4 border-primary/70 pl-6 ml-2 space-y-5">
-            <p className="font-medium">Nascimento · início da sua história</p>
-            {!readOnly && unlocked && !error && (
-              <Button variant="outline" onClick={() => open()}>
-                ＋ Clique na linha para adicionar um acontecimento
-              </Button>
-            )}
-            {ordered.map((event) => (
-              <article key={event.id} className="rounded-lg border p-3 space-y-2 bg-background">
-                <h3 className="font-medium">{event.title}</h3>
-                <p className="text-sm">
-                  {lifeTimeLabel(event)} ·{' '}
-                  {event.access_class === 'participant_private'
-                    ? 'Só para mim'
-                    : 'Compartilhado com minha profissional'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {event.emotions.join(' · ') || 'Emoção não informada'}
-                </p>
-                <p className="text-sm whitespace-pre-wrap">{event.narrative}</p>
-                {!readOnly && (
-                  <Button variant="outline" size="sm" onClick={() => open(event)}>
-                    Editar acontecimento
-                  </Button>
+          <div className="rounded-2xl bg-gradient-to-br from-primary/5 via-background to-secondary/10 border p-4 sm:p-6">
+            <div className="overflow-x-auto pb-3" aria-label="Marcos da minha história">
+              <div className="relative flex items-start gap-4 min-w-max pt-5 px-2">
+                <div aria-hidden="true" className="absolute left-5 right-3 top-12 border-t-2 border-primary/50" />
+                <button type="button" className="relative flex flex-col items-center gap-3 w-32 text-center"
+                  disabled={!unlocked || (readOnly && !birthEvent) || Boolean(error)}
+                  onClick={() => {
+                    if (birthEvent) setSelectedId(birthEvent.id)
+                    else { open(); setEditing({enrollment_id: enrollmentId, title: 'Nascimento', time_kind: 'age', time_value: '0', emotions: [], narrative: '', access_class: 'participant_private'}) }
+                  }}>
+                  <span className="flex items-center justify-center w-14 h-14 rounded-full border-2 border-primary bg-background text-primary text-2xl shadow-sm">✧</span>
+                  <span className="text-sm font-semibold text-primary">Nascimento</span>
+                  <span className="text-xs text-muted-foreground">O ponto de partida</span>
+                </button>
+                {ordered.filter(e => e.title.toLocaleLowerCase() !== 'nascimento').map((event, index) => (
+                  <button type="button" key={event.id} onClick={() => setSelectedId(event.id)}
+                    aria-label={`Abrir marco: ${event.title}`} aria-pressed={selectedId === event.id}
+                    className="relative flex flex-col items-center gap-3 w-36 text-center group">
+                    <span className={`flex items-center justify-center w-14 h-14 rounded-full border-2 bg-background text-xl shadow-sm group-hover:border-primary ${selectedId === event.id ? 'border-primary text-primary' : 'border-primary/35 text-primary/80'}`}>{['❋', '◇', '◉'][index % 3]}</span>
+                    <span className="text-sm font-medium break-words w-full">{event.title}</span>
+                    <span className="text-xs text-muted-foreground">{lifeTimeLabel(event)}</span>
+                  </button>
+                ))}
+                {!readOnly && unlocked && !error && (
+                  <button type="button" onClick={() => open()} aria-label="Adicionar marco na linha"
+                    className="relative flex flex-col items-center gap-3 w-32 text-center group">
+                    <span className="flex items-center justify-center w-14 h-14 rounded-full border-2 border-dashed border-primary/50 bg-background text-primary text-2xl group-hover:border-primary">+</span>
+                    <span className="text-sm text-primary">Adicionar marco</span>
+                  </button>
                 )}
-              </article>
-            ))}
-            {!events.length && (
-              <p className="text-sm text-muted-foreground">
-                {readOnly
-                  ? 'Ainda não há histórias compartilhadas.'
-                  : 'Sua linha está pronta para receber o primeiro acontecimento.'}
-              </p>
-            )}
-            <p className="font-medium">Hoje</p>
+                <div className="relative flex flex-col items-center gap-3 w-28 text-center">
+                  <span className="flex items-center justify-center w-14 h-14 rounded-full border-2 border-primary bg-primary text-primary-foreground text-2xl">◎</span>
+                  <span className="text-sm font-semibold">Hoje</span>
+                  <span className="text-xs text-muted-foreground">Sua história continua</span>
+                </div>
+              </div>
+            </div>
+            {!readOnly && unlocked && !error && <button type="button" className="w-full border-t border-dashed border-primary/35 pt-4 mt-3 text-sm text-primary text-left" onClick={() => open()}>＋ Clique na linha para adicionar um acontecimento</button>}
           </div>
+          {ordered.filter(event => event.id === selectedId).map((event) => (
+            <article key={event.id} className="rounded-xl border p-5 space-y-3 bg-card">
+              <h3 className="font-serif text-lg text-primary">{event.title}</h3>
+              <p className="text-sm">{lifeTimeLabel(event)} · {event.access_class === 'participant_private' ? 'Só para mim' : 'Compartilhado com minha profissional'}</p>
+              <p className="text-sm text-muted-foreground">{event.emotions.join(' · ') || 'Emoção não informada'}</p>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{event.narrative}</p>
+              {!readOnly && <Button variant="outline" size="sm" onClick={() => open(event)}>Editar acontecimento</Button>}
+            </article>
+          ))}
+          {!events.length && <p className="text-sm text-muted-foreground">{readOnly ? 'Ainda não há histórias compartilhadas.' : 'Comece pelo nascimento ou por um momento que queira contar. Você pode incluir encontros, conquistas e apoios.'}</p>}
           <p className="text-xs text-muted-foreground">
             Datas e anos aparecem em ordem. Idades aproximadas e épocas não informadas ficam em
             grupos separados, sem inventar uma data.
@@ -295,12 +312,12 @@ export function LifeTimeline({
                 })
               }
             />
-            Compartilhar esta história com minha profissional e permitir que seja considerada no
-            Mapa CER.
+            Compartilhar esta história com minha profissional.
           </label>
           <p className="text-xs text-muted-foreground">
-            Desmarcado: só você pode acessar. Compartilhar não altera mapas já publicados. O ditado
-            precisa da sua confirmação; não guardamos o áudio.
+            Seu mapa inicial acompanha esta história. Desmarcado: ela aparece apenas para você.
+            Compartilhar permite que sua profissional a considere na leitura conjunta.
+            Mapas profissionais já publicados preservam sua versão. O ditado precisa da sua confirmação; não guardamos o áudio.
           </p>
           <div className="flex gap-2">
             <Button type="submit" disabled={busy}>

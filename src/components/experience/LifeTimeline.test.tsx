@@ -28,7 +28,7 @@ it('preserva a história quando o salvamento falha e permite tentar novamente', 
   expect(screen.getByLabelText('Conte a história como você se lembra')).toHaveValue('Recebi apoio.')
   expect(save.mock.calls[0][0].access_class).toBe('participant_private')
   await user.click(screen.getByRole('button', { name: 'Salvar acontecimento' }))
-  expect(await screen.findByText('Acontecimento salvo.')).toBeInTheDocument()
+  expect(await screen.findByText(/Acontecimento salvo\./)).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Minha conquista' })).toBeInTheDocument()
 })
 it('não oferece gravação ao profissional e impede início antes da conclusão', async () => {
@@ -57,4 +57,17 @@ it('filtra relatos privados também na demonstração profissional', async () =>
   render(<LifeTimeline enrollmentId="enr" readOnly />)
   await screen.findByText('Ainda não há histórias compartilhadas.')
   expect(screen.queryByText('Relato reservado')).toBeNull()
+})
+
+it('começa no nascimento e abre cada marco sem mostrar todos os relatos na entrada', async () => {
+  vi.spyOn(lifeTimelineService, 'list').mockResolvedValue([{id:'one', enrollment_id:'enr', title:'Uma mudança', time_kind:'age', time_value:'8', emotions:[], narrative:'História do marco', access_class:'participant_private'}])
+  render(<LifeTimeline enrollmentId="enr" />)
+  const user = userEvent.setup()
+  expect(await screen.findByRole('button', {name:/Nascimento/})).toBeInTheDocument()
+  expect(screen.queryByText('História do marco')).toBeNull()
+  await user.click(screen.getByRole('button', {name:'Abrir marco: Uma mudança'}))
+  expect(screen.getByText('História do marco')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', {name:/Nascimento/}))
+  expect(screen.getByLabelText('Nome do acontecimento')).toHaveValue('Nascimento')
+  expect(screen.getByLabelText('Idade aproximada (anos)')).toHaveValue(0)
 })
