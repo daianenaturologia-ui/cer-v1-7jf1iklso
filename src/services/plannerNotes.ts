@@ -49,12 +49,10 @@ export const plannerNotesService = {
         ? read().filter((r) => r.enrollment_id === enrollmentId)
         : []
     }
-    return pb
-      .collection('cer_planner_notes')
-      .getFullList<PlannerNote>({
-        filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
-        requestKey: null,
-      })
+    return pb.collection('cer_planner_notes').getFullList<PlannerNote>({
+      filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
+      requestKey: null,
+    })
   },
   async save(value: PlannerNoteInput, id?: string): Promise<PlannerNote> {
     validatePlannerNote(value)
