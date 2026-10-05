@@ -115,11 +115,13 @@ export const cerSessionService = {
    * Atualiza data prevista de agendamento (somente se status = 'scheduled')
    */
   async updateScheduledDate(sessionId: string, scheduledAt: string): Promise<CerSessionRecord> {
-    if (!scheduledAt || !Number.isFinite(Date.parse(scheduledAt))) throw new Error('Informe uma data e horário válidos.')
+    if (!scheduledAt || !Number.isFinite(Date.parse(scheduledAt)))
+      throw new Error('Informe uma data e horário válidos.')
     const { demoAdapter } = await import('@/services/demoAdapter')
     if (demoAdapter.isEnabled()) return demoAdapter.updateSessionDate(sessionId, scheduledAt)
     const session = await this.getById(sessionId)
-    if (session.status !== 'scheduled') throw new Error('Somente encontros agendados podem ser remarcados.')
+    if (session.status !== 'scheduled')
+      throw new Error('Somente encontros agendados podem ser remarcados.')
     return await pb.collection('cer_sessions').update<CerSessionRecord>(sessionId, {
       scheduled_at: scheduledAt,
     })
@@ -227,7 +229,12 @@ export const cerSessionObservationService = {
   }): Promise<CerSessionObservationRecord> {
     if (!data.text.trim()) throw new Error('Escreva a observação antes de salvar.')
     const { demoAdapter } = await import('@/services/demoAdapter')
-    if (demoAdapter.isEnabled()) return demoAdapter.createSessionObservation(data.session_id, data.observation_type, data.text.trim())
+    if (demoAdapter.isEnabled())
+      return demoAdapter.createSessionObservation(
+        data.session_id,
+        data.observation_type,
+        data.text.trim(),
+      )
     const session = await pb.collection('cer_sessions').getOne<CerSessionRecord>(data.session_id)
     const currentUserId = pb.authStore.record?.id
     return await pb.collection('cer_session_observations').create<CerSessionObservationRecord>({
