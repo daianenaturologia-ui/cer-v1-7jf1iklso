@@ -8,12 +8,17 @@ migrate((app) => {
   const persons = app.findCollectionByNameOrId('persons')
   persons.listRule = `${active} && (${owner} || (${role} && ${scoped}))`
   persons.viewRule = persons.listRule
-  persons.updateRule = `${persons.listRule} && @request.body.email:changed = false`
+  persons.updateRule = `${persons.listRule} && (@request.body.email:isset = false || @request.body.email = email)`
   persons.createRule = `${active} && ${role}`
   persons.deleteRule = null
   app.save(persons)
   const users = app.findCollectionByNameOrId('users')
   users.createRule = `${active} && ${role} && @request.body.status = "invited" && @request.body.person_id:isset = true && @request.body.person_id != ""`
+  // One account per person. Existing duplicates must be reviewed, never merged or deleted here.
+  const index = 'CREATE UNIQUE INDEX idx_users_person_id_nonempty ON users (person_id) WHERE person_id != ""'
+  if (!(users.indexes || []).some((value) => value.includes('idx_users_person_id_nonempty'))) {
+    users.indexes = [...(users.indexes || []), index]
+  }
   app.save(users)
 }, (_app) => {
   // Do not silently restore global person access or public registration on rollback.
