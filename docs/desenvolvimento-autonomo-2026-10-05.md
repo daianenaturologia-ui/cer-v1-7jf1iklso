@@ -27,3 +27,11 @@ Base remota 4bb5f88085413cfd710d8eabfc6c155d09bb57b8. Diferenças remotas de for
 As duas novas coleções foram observadas no painel Skip Cloud após sincronizar a implementação bbe33774716c291caf5fdc3b1dc582cc1d013578. Esse sinal confirma instalação do esquema, sem comprovar sozinho autorização ou salvamento em sessão real.
 
 O gatilho on_self_development também foi observado instalado em APIs e Gatilhos. A Biblioteca profissional em demonstração mostra o editor educativo e não tenta carregar o catálogo clínico do backend real.
+
+## Publicação e conferência visual
+
+Implementação publicada em main no commit bbe33774716c291caf5fdc3b1dc582cc1d013578 (21 blobs conferidos); correção de matrícula e projeção privada no commit 82b1544a13a1680fa6f108faf808aab4c13447cb (12 blobs conferidos). Sem forçar histórico. Skip sincronizado e versão 0.0.237 observada antes do ajuste final de acesso ao editor pelo menu Biblioteca de Práticas.
+
+Percurso completo conferido em uma sessão fictícia separada: escolher recurso O trabalho tem hora de acabar, planejar passo privado, recarregar e encontrá-lo no Planner, registrar tentativa, abrir Evolução pelo atalho, registrar aprendizado sem convite, ler aprendizado na Mandala, conferir ausência na visão profissional, compartilhar voluntariamente e conferir leitura profissional. Nenhum questionário foi resetado/semeado. Registro de prova identificado como Conferência fictícia; o preenchimento da Mariana no navegador da usuária continua para seus testes. Editor educativo acessível também no menu Biblioteca de Práticas do painel profissional, além da rota dedicada. Persistência e autorização com conta real continuam pendentes de homologação; a instalação do esquema/gatilho não substitui essa verificação.
+
+Imagem da entrega: cer-desenvolvimento-autonomo.jpg.
