@@ -93,10 +93,13 @@ export const lifeDirectionsService = {
         demoKey(value.enrollment_id),
         JSON.stringify(id ? values.map((v) => (v.id === id ? record : v)) : [...values, record]),
       )
+      window.dispatchEvent(new CustomEvent('cer-life-records-changed', { detail: { enrollmentId: value.enrollment_id } }))
       return record
     }
-    return id
+    const record = await (id
       ? pb.collection('cer_life_directions').update<LifeDirection>(id, data)
-      : pb.collection('cer_life_directions').create<LifeDirection>(data)
+      : pb.collection('cer_life_directions').create<LifeDirection>(data))
+    window.dispatchEvent(new CustomEvent('cer-life-records-changed', { detail: { enrollmentId: value.enrollment_id } }))
+    return record
   },
 }
