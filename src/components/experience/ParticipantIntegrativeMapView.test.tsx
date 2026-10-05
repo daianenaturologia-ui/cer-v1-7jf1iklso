@@ -10,7 +10,10 @@ import { buildCerMapReadings, CER_READING_DIMENSIONS } from '@/services/cerMapRe
 
 import { lifeTimelineService } from '@/services/lifeTimeline'
 import { lifeDirectionsService } from '@/services/lifeDirections'
-afterEach(() => { cleanup(); vi.restoreAllMocks() })
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 const snapshot = () => buildCerMapReadings([], 'enr', 'Pessoa teste')
 describe('Mapa CER: somente a publicação revisada, em duas profundidades', () => {
   it('distingue ausência de respostas de seis dimensões concluídas mesmo sem respostas carregadas', () => {
@@ -90,23 +93,43 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
   })
 })
 
-
 describe('Mapa inicial automático', () => {
   it('abre duas versões sem encontro, exclui outras pessoas e não expõe leitura profissional em rascunho', async () => {
-    const prompt = BUILD_07C_REGULACAO_PROMPTS.find(p => (p.schema_config as any).prompt_key === 'resposta_tendencia')!
+    const prompt = BUILD_07C_REGULACAO_PROMPTS.find(
+      (p) => (p.schema_config as any).prompt_key === 'resposta_tendencia',
+    )!
     const options = (prompt.schema_config as any).options.slice(0, 2)
-    const response = { id: 'mine', enrollment_id: 'enr', experience_id: prompt.experience_id,
-      prompt_id: prompt.id, access_class: 'shared_care', status: 'saved',
-      created: '2026-10-05', updated: '2026-10-05', structured_value: { value: options.map((o: any) => o.id) } }
+    const response = {
+      id: 'mine',
+      enrollment_id: 'enr',
+      experience_id: prompt.experience_id,
+      prompt_id: prompt.id,
+      access_class: 'shared_care',
+      status: 'saved',
+      created: '2026-10-05',
+      updated: '2026-10-05',
+      structured_value: { value: options.map((o: any) => o.id) },
+    }
     const draft = snapshot()
     draft.integration = 'NOTA PROFISSIONAL PRIVADA'
-    render(<ParticipantIntegrativeMapView enrollmentId="enr" participantName="Teste"
-      responses={[response, {...response, id: 'other', enrollment_id: 'other', free_text: 'OUTRA PESSOA'}] as any}
-      currentMap={{status: 'draft', reading_snapshot: draft, items: []} as any} />)
+    render(
+      <ParticipantIntegrativeMapView
+        enrollmentId="enr"
+        participantName="Teste"
+        responses={
+          [
+            response,
+            { ...response, id: 'other', enrollment_id: 'other', free_text: 'OUTRA PESSOA' },
+          ] as any
+        }
+        currentMap={{ status: 'draft', reading_snapshot: draft, items: [] } as any}
+      />,
+    )
     expect(screen.getByTestId('participant-initial-map')).toBeInTheDocument()
-    expect(screen.getByRole('tab', {name: 'Versão resumida'})).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', {name: 'Versão aprofundada'}))
-    for (const option of options) expect(screen.getByText(new RegExp(option.title))).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Versão resumida' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('tab', { name: 'Versão aprofundada' }))
+    for (const option of options)
+      expect(screen.getByText(new RegExp(option.title))).toBeInTheDocument()
     expect(screen.queryByText('NOTA PROFISSIONAL PRIVADA')).not.toBeInTheDocument()
     expect(screen.queryByText('OUTRA PESSOA')).not.toBeInTheDocument()
     expect(screen.queryByText(/compartilhado após o primeiro encontro/)).not.toBeInTheDocument()
@@ -114,17 +137,35 @@ describe('Mapa inicial automático', () => {
 })
 
 it('atualiza os marcos no mapa ao salvar e isola histórias ao trocar a pessoa', async () => {
-  const record = {id:'life', enrollment_id:'enr', title:'Meu nascimento', time_kind:'age', time_value:'0', emotions:[], narrative:'História privada minha', access_class:'participant_private', updated:'2026-10-05'} as any
-  const list = vi.spyOn(lifeTimelineService,'list').mockResolvedValue([record])
-  vi.spyOn(lifeDirectionsService,'list').mockResolvedValue([])
-  const view = render(<ParticipantIntegrativeMapView responses={[]} enrollmentId="enr" participantName="Teste" />)
+  const record = {
+    id: 'life',
+    enrollment_id: 'enr',
+    title: 'Meu nascimento',
+    time_kind: 'age',
+    time_value: '0',
+    emotions: [],
+    narrative: 'História privada minha',
+    access_class: 'participant_private',
+    updated: '2026-10-05',
+  } as any
+  const list = vi.spyOn(lifeTimelineService, 'list').mockResolvedValue([record])
+  vi.spyOn(lifeDirectionsService, 'list').mockResolvedValue([])
+  const view = render(
+    <ParticipantIntegrativeMapView responses={[]} enrollmentId="enr" participantName="Teste" />,
+  )
   expect(await screen.findByText('Meu nascimento')).toBeInTheDocument()
-  list.mockResolvedValue([{...record,title:'Nascimento atualizado'}])
-  act(() => window.dispatchEvent(new CustomEvent('cer-life-records-changed',{detail:{enrollmentId:'enr'}})))
+  list.mockResolvedValue([{ ...record, title: 'Nascimento atualizado' }])
+  act(() =>
+    window.dispatchEvent(
+      new CustomEvent('cer-life-records-changed', { detail: { enrollmentId: 'enr' } }),
+    ),
+  )
   expect(await screen.findByText('Nascimento atualizado')).toBeInTheDocument()
   expect(screen.queryByText('Meu nascimento')).toBeNull()
   list.mockResolvedValue([record])
-  view.rerender(<ParticipantIntegrativeMapView responses={[]} enrollmentId="outra" participantName="Outra" />)
+  view.rerender(
+    <ParticipantIntegrativeMapView responses={[]} enrollmentId="outra" participantName="Outra" />,
+  )
   expect(screen.queryByText('Nascimento atualizado')).toBeNull()
   expect(screen.queryByText('História privada minha')).toBeNull()
 })
