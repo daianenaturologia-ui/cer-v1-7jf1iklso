@@ -116,13 +116,11 @@ export const selfDevelopmentService = {
         demoAdapter.getActivePersona() === 'daiane',
       )
     }
-    return pb
-      .collection('cer_development_experiments')
-      .getFullList<DevelopmentExperiment>({
-        filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
-        sort: '-created',
-        requestKey: null,
-      })
+    return pb.collection('cer_development_experiments').getFullList<DevelopmentExperiment>({
+      filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
+      sort: '-created',
+      requestKey: null,
+    })
   },
   async save(value: DevelopmentInput, id?: string): Promise<DevelopmentExperiment> {
     validateDevelopment(value)
@@ -239,13 +237,11 @@ export const selfDevelopmentService = {
     }
     const author = pb.authStore.record?.id
     if (!author) throw new Error('Entre na sua conta profissional.')
-    return pb
-      .collection('cer_development_resources')
-      .getFullList<EditorialResource>({
-        filter: pb.filter('author_user_id = {:id}', { id: author }),
-        sort: '-created',
-        requestKey: null,
-      })
+    return pb.collection('cer_development_resources').getFullList<EditorialResource>({
+      filter: pb.filter('author_user_id = {:id}', { id: author }),
+      sort: '-created',
+      requestKey: null,
+    })
   },
   async saveResource(
     value: Omit<EditorialResource, 'id' | 'author_user_id'>,
