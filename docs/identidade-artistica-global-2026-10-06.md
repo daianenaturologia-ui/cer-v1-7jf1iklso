@@ -39,3 +39,7 @@ O Skip reconciliou o drawer e removeu um try/catch que somente relançava o erro
 O fechamento automático do Skip gravou alterações de arquivos protegidos na main ao reconciliar o workspace. Por isso a branch `cer-art-20261006`, descendente do checkpoint `ec8c952`, permanece a referência preservada das correções de segurança pendentes e do patch visual original. Não se deve interpretar a main automaticamente sincronizada como instalação ou validação dessas correções no backend.
 
 Backup/restauração do backend e as correções de segurança pendentes continuam no fluxo separado com o Skip. Esta entrega não ativa IA nem modifica registros reais.
+
+## Ajuste final verificado
+
+Versão 0.0.260, commit de fechamento b481731: seletor dos cards corrigido. Após recarregar a prévia, os dois strips de conteúdo dos cards profissionais têm display:none, mantendo somente os cabeçalhos decorados. Verificado visualmente. Skip informou lint, typecheck, build e testes aprovados, sem contagem de testes. Produção não publicada.
