@@ -30,6 +30,12 @@ Código salvo na branch remota `cer-art-20261006`, commit `21a0eb64a5d0c7d38f550
 
 ## Aplicação ao Skip
 
-Foi solicitada aplicação somente do diff visual de `src/`, sem sincronizar main inteira e sem instalar migrações/hooks pendentes. A tentativa de obter o diff por URL foi interrompida; o patch completo foi fornecido diretamente na conversa do projeto. A verificação visual e o resultado dessa aplicação devem ser registrados depois de sua conclusão, sem presumir que envio de uma instrução equivale a instalação.
+O patch foi aplicado ao workspace atual do Skip. Entrega inicial na versão 0.0.259, commit de fechamento `7aa7466`, com implementação em `0eec702`. O Skip informou lint, typecheck e build aprovados; não apresentou contagem de testes automatizados dessa execução. Os 18 testes acima pertencem à implementação local.
+
+A prévia foi conferida usando exclusivamente demonstração: agenda e diálogo “Um momento para mim” em desktop e mobile, painel profissional e Mandala. Os desenhos ocupam faixa própria, os campos e botão de fechamento continuam acessíveis e os destaques estão presentes. Nenhum momento foi salvo nem respostas foram resetadas. Não houve visita manual a todos os estados do app. URL verificada: https://cer-v1-1444e--preview.goskip.app/planner.
+
+O Skip reconciliou o drawer e removeu um try/catch que somente relançava o erro em `cerCycleReviewService.ts`. O diff desse serviço foi inspecionado e não modifica tratamento ou resultado da requisição. Na revisão visual identificou-se repetição da faixa no conteúdo de cards com cabeçalho; foi solicitado ajuste pontual do seletor CSS para restringir a faixa aos cards sem cabeçalho.
+
+O fechamento automático do Skip gravou alterações de arquivos protegidos na main ao reconciliar o workspace. Por isso a branch `cer-art-20261006`, descendente do checkpoint `ec8c952`, permanece a referência preservada das correções de segurança pendentes e do patch visual original. Não se deve interpretar a main automaticamente sincronizada como instalação ou validação dessas correções no backend.
 
 Backup/restauração do backend e as correções de segurança pendentes continuam no fluxo separado com o Skip. Esta entrega não ativa IA nem modifica registros reais.
