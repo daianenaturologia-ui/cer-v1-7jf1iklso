@@ -12,7 +12,7 @@ import type {
 } from '@/types/cer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Sparkles, ArrowLeft } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
 import { EmptyState } from '@/components/EmptyState'
@@ -75,44 +75,13 @@ export const ExperimentosPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground py-8 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between border-b border-border/40 pb-4">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="text-xs h-8 gap-1.5"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Início</span>
-            </Button>
-            <div>
-              <JourneyNavigation />
-              <h1 className="text-xl font-serif font-bold text-foreground mt-0.5 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <span>Experimentos de Cuidado</span>
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/planner')}
-              className="text-xs h-8"
-            >
-              Planner
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/mandala')}
-              className="text-xs h-8"
-            >
-              Mandala
-            </Button>
-          </div>
-        </div>
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-4">
+          <h1 className="text-xl font-serif font-bold text-foreground flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <span>Minhas práticas</span>
+          </h1>
+          <JourneyNavigation />
+        </header>
 
         <CerIntro title="Quero experimentar por conta própria" variant="seed">
           <p className="text-sm text-muted-foreground">
@@ -140,8 +109,8 @@ export const ExperimentosPage: React.FC = () => {
             variant="experiments"
             title="Experimentos combinados"
             description="As práticas individuais aparecem quando forem combinadas no acompanhamento. Você pode seguir com os recursos educativos na Evolução."
-            actionLabel="Voltar para a página inicial"
-            onAction={() => navigate('/')}
+            actionLabel="Explorar a Evolução"
+            onAction={() => navigate('/?etapa=evolucao')}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

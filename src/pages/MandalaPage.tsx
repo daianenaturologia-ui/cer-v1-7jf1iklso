@@ -8,7 +8,6 @@ import { DevelopmentLearningView } from '@/components/DevelopmentLearningView'
 import { CerIntro } from '@/components/CerArtwork'
 import type { EnrollmentRecord } from '@/types/cer'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { EmptyState } from '@/components/EmptyState'
 
@@ -42,16 +41,7 @@ export const MandalaPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground py-8 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between border-b border-border/40 pb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="text-xs h-8 gap-1.5"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Voltar ao Início</span>
-          </Button>
+        <div className="flex flex-wrap gap-3 items-center justify-end border-b border-border/40 pb-4">
           <JourneyNavigation />
         </div>
 
@@ -62,7 +52,9 @@ export const MandalaPage: React.FC = () => {
         </CerIntro>
 
         {loading ? (
-          <div className="p-8 text-center text-xs text-muted-foreground">Carregando Mandala...</div>
+          <div role="status" className="p-8 text-center text-sm text-muted-foreground">
+            Carregando Mandala...
+          </div>
         ) : error ? (
           <p role="alert">
             Não foi possível carregar seu acompanhamento.{' '}
