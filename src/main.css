@@ -452,9 +452,9 @@
     display: none;
   }
 
-  .cer-card-content > .cer-art-strip:first-child {
+  .cer-card > .cer-card-content:first-child > .cer-art-strip {
     display: flex;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
   }
 
   .cer-card-title,
