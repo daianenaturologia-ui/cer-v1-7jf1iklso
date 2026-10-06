@@ -43,7 +43,7 @@ export function CerMapReadingsView({
         <Tabs value={depth} onValueChange={setDepth}>
           <TabsList className="grid grid-cols-2 w-full sm:max-w-md">
             <TabsTrigger value="resumida">Versão resumida</TabsTrigger>
-            <TabsTrigger value="aprofundada">Versão aprofundada</TabsTrigger>
+            <TabsTrigger value="aprofundada">Versão detalhada</TabsTrigger>
           </TabsList>
         </Tabs>
         <p className="text-xs text-muted-foreground">
@@ -68,23 +68,25 @@ export function CerMapReadingsView({
               {dimension.summary && (
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{dimension.summary}</p>
               )}
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold">
-                  {dimension.id === 'corpo' && !initial
-                    ? 'Respostas e hipóteses do percurso'
-                    : 'O que você compartilhou'}
-                </h3>
-                <Rows rows={deep ? dimension.detailedRows : dimension.summaryRows} />
-              </div>
+              {!dimension.summary && !dimension.interpretation && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">
+                    {dimension.id === 'corpo' && !initial
+                      ? 'Respostas e hipóteses do percurso'
+                      : 'O que você compartilhou'}
+                  </h3>
+                  <Rows rows={deep ? dimension.detailedRows : dimension.summaryRows} />
+                </div>
+              )}
               <div className="rounded-lg bg-muted/30 p-3 space-y-1">
                 <h3 className="text-sm font-semibold">Como compreender esta dimensão</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {dimension.explanation}
                 </p>
               </div>
-              {deep && dimension.interpretation && (
+              {dimension.interpretation && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Leitura revisada com a profissional</h3>
+                  <h3 className="text-sm font-semibold">Como compreender seu funcionamento</h3>
                   <p className="text-sm whitespace-pre-wrap leading-relaxed">
                     {dimension.interpretation}
                   </p>

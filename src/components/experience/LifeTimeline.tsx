@@ -106,7 +106,9 @@ export function LifeTimeline({
       setEditing(null)
       setVoice(false)
       setSelectedId(event.id)
-      setSaved('Acontecimento salvo. Seu mapa inicial acompanha os registros da sua história.')
+      setSaved(
+        'Acontecimento salvo. Sua história foi registrada; a interpretação do Mapa CER será atualizada em uma nova versão.',
+      )
     } catch (e) {
       setError(
         e instanceof Error

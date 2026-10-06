@@ -1,4 +1,5 @@
 import { JourneyNavigation } from '@/components/JourneyNavigation'
+import { CerMapUpdateNotice } from '@/components/CerMapUpdateNotice'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CerWelcome } from '@/components/CerWelcome'
 import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
@@ -119,6 +120,32 @@ export const InteragenteHome: React.FC = () => {
   const [currentMap, setCurrentMap] = useState<
     (CerMapRecord & { items: CerMapItemRecord[] }) | null
   >(null)
+  useEffect(() => {
+    if (!enrollment?.id) return
+    const id = enrollment.id
+    let active = true
+    let generation = 0
+    const refresh = async () => {
+      const request = ++generation
+      try {
+        const map = await cerMapService.getCurrentPublishedMap(id)
+        if (active && request === generation)
+          setCurrentMap(map?.enrollment_id === id && map.status === 'published' ? map : null)
+      } catch {
+        /* The current published document stays readable on transient failure. */
+      }
+    }
+    const published = (event: Event) => {
+      if ((event as CustomEvent).detail?.enrollmentId === id) void refresh()
+    }
+    window.addEventListener('focus', refresh)
+    window.addEventListener('cer-map-published', published)
+    return () => {
+      active = false
+      window.removeEventListener('focus', refresh)
+      window.removeEventListener('cer-map-published', published)
+    }
+  }, [enrollment?.id])
   const [participantResponses, setParticipantResponses] = useState<ExperienceResponseRecord[]>([])
   const [selectedRecognitions, setSelectedRecognitions] = useState<
     Record<string, { type: RecognitionType; comment: string; saved: boolean }>
@@ -689,6 +716,16 @@ export const InteragenteHome: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {enrollment?.id && (
+          <CerMapUpdateNotice
+            map={currentMap}
+            enrollmentId={enrollment.id}
+            onOpen={() => {
+              setActivePhase('consciencia')
+              setShowMapModal(true)
+            }}
+          />
+        )}
         {/* Item 22: CTA de Revisão de Ciclo (Cycle Review) quando ativo */}
         {activeReviewInvite && (
           <Card className="border-primary/50 bg-gradient-to-r from-primary/10 via-card to-card shadow-sm animate-in fade-in">

@@ -28,7 +28,7 @@ import { ProfessionalAyurvedaCorpoFisiologiaView } from '@/components/experience
 import { ProfessionalAyurvedaInterpretationView } from '@/components/experience/ayurveda/ProfessionalAyurvedaInterpretationView'
 import { ProfessionalMindEmotionsView } from '@/components/experience/ProfessionalMindEmotionsView'
 import { ProfessionalDimensionReportView } from '@/components/experience/ProfessionalDimensionReportView'
-import { ProfessionalIntegrativeMapView } from '@/components/experience/ProfessionalIntegrativeMapView'
+import { SharedProfessionalCerMap } from '@/components/experience/SharedProfessionalCerMap'
 import {
   buildRegulacaoInterpretation,
   buildRelacoesInterpretation,
@@ -539,11 +539,9 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-base font-semibold font-serif">
-              Mapa e interpretação profissional
-            </h2>
+            <h2 className="text-base font-semibold font-serif">Mapa CER</h2>
             <p className="text-xs text-muted-foreground">
-              Prepare, revise e compartilhe as versões resumida e aprofundada das seis dimensões.
+              A mesma leitura disponível à interagente, nas versões resumida e detalhada.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -559,17 +557,24 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
           </div>
         </div>
 
-        <ProfessionalIntegrativeMapView
-          responses={allResponses}
-          participantName={participantName}
-          onSelectDimension={expandAndScrollTo}
-        />
-        <ProfessionalMapEditor
+        <SharedProfessionalCerMap
           enrollmentId={enrollment.id}
-          participantName={participantName}
-          professionalUserId={pb.authStore.record?.id || ''}
           responses={allResponses}
+          participantName={participantName}
         />
+        <details className="rounded-xl border border-border/50 p-4">
+          <summary className="cursor-pointer text-sm font-medium">
+            Preparar ou revisar uma versão
+          </summary>
+          <div className="pt-4">
+            <ProfessionalMapEditor
+              enrollmentId={enrollment.id}
+              participantName={participantName}
+              professionalUserId={pb.authStore.record?.id || ''}
+              responses={allResponses}
+            />
+          </div>
+        </details>
 
         {showProfessionalMap && (
           <div className="space-y-4 pt-4 border-t border-border/40">

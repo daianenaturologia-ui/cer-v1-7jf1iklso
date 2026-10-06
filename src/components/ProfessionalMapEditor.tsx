@@ -350,6 +350,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
     setErrorMessage(null)
     try {
       await cerMapService.publishDraft(activeDraft.id, enrollmentId)
+      window.dispatchEvent(new CustomEvent('cer-map-published', { detail: { enrollmentId } }))
       setWarningMessage(null)
       await loadAll()
       setSuccessMessage('Mapa CER publicado com sucesso! Já disponível para a participante.')

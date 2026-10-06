@@ -57,11 +57,11 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
     const { rerender } = render(
       <ParticipantIntegrativeMapView responses={[]} participantName="Teste" currentMap={map} />,
     )
-    expect(screen.getByText('RESPOSTA DA VERSÃO PUBLICADA')).toBeInTheDocument()
+    expect(screen.queryByText('RESPOSTA DA VERSÃO PUBLICADA')).not.toBeInTheDocument()
     expect(screen.getAllByText('Como compreender esta dimensão')).toHaveLength(6)
     expect(screen.getByText('Referências e fundamentos desta leitura')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: 'Versão aprofundada' }))
-    expect(screen.getByText('DETALHE DA VERSÃO PUBLICADA')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('tab', { name: 'Versão detalhada' }))
+    expect(screen.queryByText('DETALHE DA VERSÃO PUBLICADA')).not.toBeInTheDocument()
     expect(screen.getByText('INTERPRETAÇÃO REVISADA')).toBeInTheDocument()
     rerender(
       <ParticipantIntegrativeMapView
@@ -73,7 +73,7 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
       />,
     )
     expect(screen.queryByText('RESPOSTA NOVA PRIVADA')).not.toBeInTheDocument()
-    expect(screen.getByText('DETALHE DA VERSÃO PUBLICADA')).toBeInTheDocument()
+    expect(screen.queryByText('DETALHE DA VERSÃO PUBLICADA')).not.toBeInTheDocument()
   })
   it('mantém publicações legadas literais sem inventar uma interpretação nova', () => {
     render(
@@ -127,7 +127,7 @@ describe('Mapa inicial automático', () => {
     )
     expect(screen.getByTestId('participant-initial-map')).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Versão resumida' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: 'Versão aprofundada' }))
+    await userEvent.click(screen.getByRole('tab', { name: 'Versão detalhada' }))
     for (const option of options)
       expect(screen.getByText(new RegExp(option.title))).toBeInTheDocument()
     expect(screen.queryByText('NOTA PROFISSIONAL PRIVADA')).not.toBeInTheDocument()
