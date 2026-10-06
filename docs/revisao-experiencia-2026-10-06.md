@@ -19,6 +19,10 @@ Autorizada por Daiane em 06/10/2026. Escopo: navegação, clareza, leitura, cont
 
 ## Estado da instalação
 
-As correções estão preparadas e verificadas localmente. A nova sessão do navegador não tem autenticação Skip: o builder redirecionou para login. Não se afirma que essas mudanças foram instaladas na prévia. Solicitar reconexão segura somente após salvar a entrega. Aplicar apenas o diff desta rodada de src/, conciliando o workspace vigente; nunca sincronizar a branch inteira ou instalar código de segurança pendente no backend. A base preservada é `cer-art-20261006` em `4429b5dd673ce63fac30935df48524da6f1f464f`.
+Reconexão segura ao Skip concluída. Aplicado o patch de oito arquivos de interface, conciliado com o workspace vigente. O commit do Skip também atualizou o metadado de build e somente a data generatedAt do snapshot de schema; não houve diferença nas coleções nesse snapshot. A prévia foi atualizada para 0.0.261 (commit `80f2ba2`; implementação `e0e04d3`). O Skip informou oxlint, TypeScript, build e os três arquivos de testes aprovados. O fetch do GitHub confirmou os commits; o auto-commit posterior `4a51d9b` mudou somente `.skip.config.json`.
 
-O ambiente mobile atual não pôde ser reaberto pelo builder antes da reconexão. As melhorias de tamanho/rolagem novas requerem inspeção visual após a instalação. Não declarar revisão de todos os estados, conformidade legal, restauração ou validação de banco com base nestes testes de interface.
+A inspeção após instalação confirmou no builder mobile: cabeçalho “Minhas práticas” sem botões duplicados, navegação legível, Mandala sem os badges técnicos e diálogo “Um momento para mim” com desenho botânico e todos os campos/botão visíveis. A página de Práticas apresentou largura do conteúdo igual à largura do corpo (387px), sem transbordamento horizontal nessa superfície. Escape fechou o diálogo; nenhum momento foi salvo. A prévia externa foi recarregada e conferida.
+
+A base com alterações de segurança pendentes permanece preservada em `cer-art-20261006` (`4429b5dd673ce63fac30935df48524da6f1f464f`); esta rodada também está salva em `cer-ux-20261006`. Essa branch não foi sincronizada inteira ao Skip. As pendências de suporte — backup/restauração e ambiente de backend isolado — permanecem separadas desta revisão.
+
+Não declarar revisão de todos os estados, conformidade legal, restauração ou validação do banco com base em testes de interface. Não houve publicação em produção nesta rodada.
