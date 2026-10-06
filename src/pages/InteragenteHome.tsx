@@ -911,46 +911,54 @@ export const InteragenteHome: React.FC = () => {
               </Card>
             )}
             {/* Seção expansível: Entenda como funciona o CER */}
-            <Collapsible className="border border-border/60 rounded-lg bg-muted/20 overflow-hidden">
+            <Collapsible className="cer-reading-panel rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="px-5 pt-3">
+                <CerArtStrip variant="path" compact />
+              </div>
               <CollapsibleTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="w-full flex items-center justify-between p-4 sm:p-5 h-auto hover:bg-muted/30 text-left font-serif font-semibold text-base text-foreground rounded-none"
+                  className="w-full h-auto p-5 flex items-start justify-between gap-3 text-left whitespace-normal rounded-none"
                 >
-                  <span className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary shrink-0" />
-                    <span>Entenda como funciona o CER</span>
+                  <span className="flex items-start gap-3">
+                    <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <span className="font-serif text-lg font-semibold">
+                      Entenda como funciona o CER
+                    </span>
                   </span>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200" />
+                  <ChevronDown className="w-4 h-4 shrink-0 mt-1" />
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="px-4 pb-5 sm:px-5 space-y-3.5 text-xs text-muted-foreground leading-relaxed border-t border-border/40 pt-4">
+              <CollapsibleContent className="cer-prose border-t border-border/40 px-5 py-5 space-y-4 text-foreground/90">
                 <p>
-                  Na Consciência, vamos conhecer como você funciona de maneira integral: em seu
-                  corpo, pensamentos, emoções, padrões de resposta, relações, intimidade, valores e
-                  formas de se conectar com a vida. Também vamos reconhecer seus recursos,
-                  necessidades e aquilo que você deseja cuidar ou desenvolver.
+                  Na <strong className="cer-emphasis">Consciência</strong>, vamos conhecer como você
+                  funciona de maneira integral: em seu corpo, pensamentos, emoções, padrões de
+                  resposta, relações, intimidade, valores e formas de se conectar com a vida. Também
+                  vamos reconhecer seus recursos, necessidades e aquilo que você deseja cuidar ou
+                  desenvolver.
                 </p>
 
                 <p>
-                  No Equilíbrio, vamos compreender e cuidar dos processos físicos, mentais e
-                  emocionais que dificultam suas ações. Para isso, poderemos utilizar diferentes
-                  práticas e recursos, sempre respeitando seu momento, seus limites e o que
-                  realmente faz sentido para você.
+                  No <strong className="cer-emphasis">Equilíbrio</strong>, vamos compreender e
+                  cuidar dos processos físicos, mentais e emocionais que dificultam suas ações. Para
+                  isso, poderemos utilizar diferentes práticas e recursos, sempre respeitando seu
+                  momento, seus limites e o que realmente faz sentido para você.
                 </p>
 
                 <p>
-                  Na Realização, transformaremos essa compreensão em escolhas e passos possíveis.
-                  Vamos reconhecer a direção que você deseja seguir, as mudanças que quer construir
-                  e os hábitos que podem ajudá-la a levar esse cuidado para a sua vida. A proposta é
-                  criar uma rotina firme o suficiente para sustentar seus objetivos e confortável o
-                  suficiente para ser vivida.
+                  Na <strong className="cer-emphasis">Realização</strong>, transformaremos essa
+                  compreensão em escolhas e passos possíveis. Vamos reconhecer a direção que você
+                  deseja seguir, as mudanças que quer construir e os hábitos que podem ajudá-la a
+                  levar esse cuidado para a sua vida. A proposta é criar uma rotina firme o
+                  suficiente para sustentar seus objetivos e confortável o suficiente para ser
+                  vivida.
                 </p>
 
                 <p>
-                  Ao longo do caminho, a área Evolução ajudará você a reconhecer sua história,
-                  perceber como está agora e acompanhar as mudanças que vão acontecendo — sem pressa
-                  e sem a obrigação de ter todas as respostas.
+                  Ao longo do caminho, a área <strong className="cer-emphasis">Evolução</strong>{' '}
+                  ajudará você a reconhecer sua história, perceber como está agora e acompanhar as
+                  mudanças que vão acontecendo — sem pressa e sem a obrigação de ter todas as
+                  respostas.
                 </p>
 
                 <p>
@@ -974,31 +982,31 @@ export const InteragenteHome: React.FC = () => {
                   </p>
                   <ul className="space-y-1.5 pl-3 border-l-2 border-primary/30">
                     <li>
-                      <strong className="text-foreground">Meu Mapa CER:</strong> uma síntese
+                      <strong className="cer-emphasis">Meu Mapa CER:</strong> uma síntese
                       integrativa construída a partir do seu percurso, revisada por mim e
                       compartilhada com você.
                     </li>
                     <li>
-                      <strong className="text-foreground">Mandala do Cuidado:</strong> uma visão de
+                      <strong className="cer-emphasis">Mandala do Cuidado:</strong> uma visão de
                       como suas prioridades, recursos, práticas e movimentos estão se organizando no
                       cotidiano.
                     </li>
                     <li>
-                      <strong className="text-foreground">Planner:</strong> um espaço para
-                      transformar os cuidados combinados em passos possíveis na sua rotina.
+                      <strong className="cer-emphasis">Planner:</strong> um espaço para transformar
+                      os cuidados combinados em passos possíveis na sua rotina.
                     </li>
                     <li>
-                      <strong className="text-foreground">Experimentos de Cuidado:</strong> práticas
-                      e recursos escolhidos para o seu momento, sem cobrança por desempenho.
+                      <strong className="cer-emphasis">Experimentos de Cuidado:</strong> práticas e
+                      recursos escolhidos para o seu momento, sem cobrança por desempenho.
                     </li>
                     <li>
-                      <strong className="text-foreground">Meu Caderno:</strong> um espaço pessoal
-                      para registrar percepções por texto ou voz. O que estiver no Caderno
-                      permanecerá privado. Caso queira levar algo para o nosso encontro, haverá uma
-                      ação separada e explícita para compartilhar um recado comigo.
+                      <strong className="cer-emphasis">Meu Caderno:</strong> um espaço pessoal para
+                      registrar percepções por texto ou voz. O que estiver no Caderno permanecerá
+                      privado. Caso queira levar algo para o nosso encontro, haverá uma ação
+                      separada e explícita para compartilhar um recado comigo.
                     </li>
                   </ul>
-                  <p className="text-[11px] text-muted-foreground/90 italic pt-1">
+                  <p className="text-sm text-muted-foreground italic pt-1">
                     Algumas dessas ferramentas aparecerão somente quando estiverem disponíveis e
                     forem adequadas à etapa da sua jornada.
                   </p>
