@@ -28,7 +28,7 @@
 
     /* Secondary / Terracotta #D98E5F -> hsl(23, 63%, 61%) */
     --secondary: 23 63% 61%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary-foreground: 34 8% 16%;
 
     /* Muted #F0ECE1 and #6B655D */
     --muted: 38 25% 91%;
@@ -84,7 +84,7 @@
     --primary-foreground: 38 38% 96%;
 
     --secondary: 23 55% 55%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary-foreground: 34 8% 16%;
 
     --muted: 34 10% 20%;
     --muted-foreground: 34 10% 65%;

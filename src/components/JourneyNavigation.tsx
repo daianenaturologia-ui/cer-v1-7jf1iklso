@@ -3,7 +3,7 @@ export function JourneyNavigation() {
   return (
     <nav
       aria-label="Meu cotidiano"
-      className="flex gap-1 rounded-full bg-muted/50 p-1 text-[11px] sm:text-xs"
+      className="cer-journey-nav flex max-w-full flex-wrap gap-1 rounded-2xl bg-muted/50 p-1 text-sm"
     >
       {[
         ['/', 'Jornada'],
@@ -16,7 +16,7 @@ export function JourneyNavigation() {
           to={to}
           end
           className={({ isActive }) =>
-            `rounded-full px-2 sm:px-3 py-2 transition-colors ${isActive ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`
+            `inline-flex min-h-11 items-center rounded-full px-3 py-2 transition-colors ${isActive ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`
           }
         >
           {label}

@@ -63,16 +63,16 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
     (mandala && (mandala.enrollment_id !== enrollmentId || loadedAudience !== audience))
   ) {
     return (
-      <div className="p-12 text-center text-xs text-muted-foreground flex flex-col items-center justify-center gap-2">
+      <div role="status" className="p-12 text-center text-sm text-muted-foreground flex flex-col items-center justify-center gap-2">
         <RefreshCw className="w-4 h-4 animate-spin text-primary" />
-        <span>Organizando a projeção da Mandala de Cuidado...</span>
+        <span>Organizando sua Mandala...</span>
       </div>
     )
   }
 
   if (!mandala) {
     return (
-      <div className="p-8 text-center text-xs text-muted-foreground">
+      <div role={error ? 'alert' : 'status'} className="p-8 text-center text-sm text-muted-foreground">
         {error
           ? 'Não foi possível carregar a Mandala agora.'
           : 'Nenhum dado disponível para organizar a Mandala neste momento.'}
@@ -92,14 +92,6 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
       {/* Header com propósito e declaração de Read-Model */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/40 pb-4">
         <div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-[10px] uppercase font-mono tracking-wider">
-              Mandala V1 (Read-Model)
-            </Badge>
-            <Badge variant="secondary" className="text-[10px] font-normal">
-              Zero Score • Projeção Viva
-            </Badge>
-          </div>
           <h1 className="text-2xl font-serif font-bold text-foreground mt-1 flex items-center gap-2">
             <Compass className="w-6 h-6 text-primary" />
             <span>
@@ -108,9 +100,9 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
                 : 'Como o meu cuidado está se organizando e mudando'}
             </span>
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Estrutura descritiva integrada. A Mandala deriva de prioridades, experimentos, recursos
-            e movimento recente — sem rankings ou notas de eficácia.
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+            Aqui se encontram suas prioridades, práticas e recursos de cuidado.
+            Um espaço para perceber mudanças, sem notas ou comparação.
           </p>
         </div>
 

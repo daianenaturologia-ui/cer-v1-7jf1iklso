@@ -38,13 +38,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     waiting: {
       title: 'Aguardando próxima etapa',
       description: 'Sua profissional está preparando os próximos passos do seu cuidado.',
-      nextStep: 'Na próxima etapa, vocês vão escolher juntas o que faz sentido cuidar agora.',
+      nextStep: 'Na próxima etapa, vocês vão escolher em conjunto o que faz sentido cuidar agora.',
       icon: <Clock className="w-8 h-8 text-primary/70 animate-pulse" />,
     },
     experiments: {
       title: 'Experimentos combinados',
       description: 'Os experimentos aparecem depois que algo for combinado com sua profissional.',
-      nextStep: 'Você não precisa escolher nada sozinha: cada prática é afinada no seu ritmo.',
+      nextStep: 'As práticas do acompanhamento são combinadas com sua profissional, no seu ritmo.',
       icon: <Sparkles className="w-8 h-8 text-primary/70" />,
     },
     planner: {
