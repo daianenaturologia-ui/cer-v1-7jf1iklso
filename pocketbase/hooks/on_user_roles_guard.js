@@ -2,11 +2,13 @@
 // Bloquear deleção física de roles (preservar política existente)
 // Guardar create/update conforme matriz congelada do Build 09B
 
-onRecordCreate((e) => {
+onRecordCreateRequest((e) => {
   const authUser = e.auth
   if (!authUser || !authUser.id) {
     throw new ForbiddenError('Autenticação obrigatória para gerenciar papéis de usuário.')
   }
+
+  if (authUser.getString('status') !== 'active') throw new ForbiddenError('Conta ativa obrigatória.')
 
   // 1. Verificar papéis do ator autenticado
   const actorRoleRecords = $app.findRecordsByFilter(
@@ -73,15 +75,12 @@ onRecordCreate((e) => {
     for (let i = 0; i < enrollments.length; i++) {
       const enrId = enrollments[i].id
       try {
-        const access = $app.findFirstRecordByData(
+        const links = $app.findRecordsByFilter(
           'professional_enrollment_access',
-          'enrollment_id',
-          enrId,
+          'enrollment_id = {:id} && professional_user_id = {:actor} && is_active = true',
+          '', 1, 0, { id: enrId, actor: authUser.id },
         )
-        if (
-          access.getString('professional_user_id') === authUser.id &&
-          access.getBool('is_active')
-        ) {
+        if (links.length > 0) {
           inScope = true
           break
         }
@@ -120,11 +119,13 @@ onRecordCreate((e) => {
   } catch (_) {}
 }, 'user_roles')
 
-onRecordUpdate((e) => {
+onRecordUpdateRequest((e) => {
   const authUser = e.auth
   if (!authUser || !authUser.id) {
     throw new ForbiddenError('Autenticação obrigatória para alterar papéis de usuário.')
   }
+
+  if (authUser.getString('status') !== 'active') throw new ForbiddenError('Conta ativa obrigatória.')
 
   const actorRoleRecords = $app.findRecordsByFilter(
     'user_roles',
@@ -187,15 +188,12 @@ onRecordUpdate((e) => {
     for (let i = 0; i < enrollments.length; i++) {
       const enrId = enrollments[i].id
       try {
-        const access = $app.findFirstRecordByData(
+        const links = $app.findRecordsByFilter(
           'professional_enrollment_access',
-          'enrollment_id',
-          enrId,
+          'enrollment_id = {:id} && professional_user_id = {:actor} && is_active = true',
+          '', 1, 0, { id: enrId, actor: authUser.id },
         )
-        if (
-          access.getString('professional_user_id') === authUser.id &&
-          access.getBool('is_active')
-        ) {
+        if (links.length > 0) {
           inScope = true
           break
         }

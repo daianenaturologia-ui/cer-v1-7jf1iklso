@@ -14,6 +14,10 @@ routerAdd(
       throw new ForbiddenError('Autenticação obrigatória.')
     }
 
+    if (authUser.getString('status') !== 'active') {
+      throw new ForbiddenError('Conta ativa obrigatória para redefinir acesso.')
+    }
+
     // 1. Verificar se o ator possui papel de profissional ou admin
     const actorRoleRecords = $app.findRecordsByFilter(
       'user_roles',
@@ -54,6 +58,10 @@ routerAdd(
       throw new BadRequestError('Usuário alvo não encontrado.')
     }
 
+    if (!['active', 'invited'].includes(targetUser.getString('status'))) {
+      throw new ForbiddenError('Conta suspensa ou desabilitada exige revisão administrativa separada.')
+    }
+
     const targetPersonId = targetUser.getString('person_id')
     if (!targetPersonId) {
       throw new BadRequestError('Usuário alvo não possui vínculo com pessoa física (person).')
@@ -75,15 +83,12 @@ routerAdd(
       for (let i = 0; i < enrollments.length; i++) {
         const enrId = enrollments[i].id
         try {
-          const access = $app.findFirstRecordByData(
+          const links = $app.findRecordsByFilter(
             'professional_enrollment_access',
-            'enrollment_id',
-            enrId,
+            'enrollment_id = {:enrollmentId} && professional_user_id = {:actorId} && is_active = true',
+            '', 1, 0, { enrollmentId: enrId, actorId: authUser.id },
           )
-          if (
-            access.getString('professional_user_id') === authUser.id &&
-            access.getBool('is_active')
-          ) {
+          if (links.length > 0) {
             inScope = true
             associatedEnrollmentId = enrId
             break

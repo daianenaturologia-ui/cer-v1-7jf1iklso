@@ -7,9 +7,9 @@
 
 ## 1. Versão do PocketBase Compatível e Pendências
 
-- **Versão Derivada:** O repositório utiliza a biblioteca cliente oficial `pocketbase: "~0.26.9"` (definida em `package.json`).
-- **Compatibilidade Server-Side:** Recomenda-se binário PocketBase na versão correspondente `0.26.x` (ex: `0.26.9` ou versão LTS compatível com a API v0.26).
-- **Declaração de Pendência:** O repositório não embute binários executáveis do PocketBase por razões de integridade e portabilidade multiplataforma (Linux/macOS/Windows). O download do binário compatível deve ser efetuado exclusivamente no ambiente do operador de infraestrutura / CI/CD runner.
+- **Cliente:** O SDK `pocketbase: "~0.26.9"` não identifica a versão do servidor.
+- **Referência de testes:** Os workflows existentes fixam o binário oficial PocketBase 0.26.1. Isso não comprova equivalência com o runtime gerenciado do Skip.
+- **Ensaios executados em 05/10/2026:** `scripts/verify-identity-access.mjs` verifica identidade/convites e backup/restauração local; `scripts/verify-backend-portability.py` reconstrói as migrações disponíveis e verifica inicialização dos hooks. Baixar apenas binário oficial; manter todos os dados de bancada separados do banco vivo. Nenhum binário é versionado no repositório.
 
 ---
 
@@ -39,7 +39,10 @@ mkdir -p "${TMP_PB_DIR}/pb_hooks"
 cp pocketbase/migrations/*.js "${TMP_PB_DIR}/pb_migrations/"
 
 # Copiar hooks server-side de produção:
-cp pocketbase/hooks/*.js "${TMP_PB_DIR}/pb_hooks/"
+for hook_source in pocketbase/hooks/*.js; do
+  hook_name=$(basename "$hook_source" .js)
+  cp "$hook_source" "${TMP_PB_DIR}/pb_hooks/${hook_name}.pb.js"
+done
 ```
 
 ### 2.3 Inicialização do PocketBase em Porta Local

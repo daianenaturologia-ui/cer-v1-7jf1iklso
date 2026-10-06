@@ -3,11 +3,11 @@
 // (por exemplo: active -> invited, active -> suspended, active -> disabled)
 // Bloqueia tentativas de auto-promoção ou de corromper o estado da própria conta via API direta.
 
-onRecordUpdate((e) => {
+onRecordUpdateRequest((e) => {
   const authUser = e.auth
   // Se for superuser / migração / processo interno sem authUser, permitir
   if (!authUser || !authUser.id) {
-    return
+    return e.next()
   }
 
   const record = e.record
@@ -37,4 +37,5 @@ onRecordUpdate((e) => {
       throw new ForbiddenError('Alteração da vinculação com pessoa (person_id) não é permitida.')
     }
   }
+  e.next()
 }, 'users')

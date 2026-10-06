@@ -370,6 +370,7 @@ export const ProfissionalHome: React.FC = () => {
                 <span>Interagente vinculada com sucesso!</span>
               </div>
 
+              {createdResult.tempPasswordGenerated ? (
               <div className="p-3.5 bg-muted/40 rounded-lg border border-border/60 text-xs space-y-2">
                 <p className="font-medium text-foreground">Credenciais Geradas de Acesso:</p>
                 <div className="space-y-1 font-mono text-[11px]">
@@ -388,7 +389,14 @@ export const ProfissionalHome: React.FC = () => {
                 </p>
               </div>
 
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  O acompanhamento já está vinculado. O acesso atual foi preservado.
+                </p>
+              )}
+
               <DialogFooter className="flex sm:justify-between items-center gap-2 pt-2">
+                {createdResult.tempPasswordGenerated && (
                 <Button
                   type="button"
                   variant="outline"
@@ -399,6 +407,7 @@ export const ProfissionalHome: React.FC = () => {
                   <Copy className="w-3.5 h-3.5" />
                   <span>{copied ? 'Copiado!' : 'Copiar Credenciais'}</span>
                 </Button>
+                )}
                 <Button
                   type="button"
                   size="sm"
