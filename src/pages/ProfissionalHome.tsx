@@ -1,3 +1,4 @@
+import { CerArtStrip } from '@/components/CerArtwork'
 import { CerLibrary } from '@/components/CerLibrary'
 import {
   DropdownMenu,
@@ -220,6 +221,7 @@ export const ProfissionalHome: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        <CerArtStrip variant="leaves" compact />
         {/* Navegação Principal Profissional (Build 09C): Participantes · Sessões · Biblioteca · Auditoria */}
         <div className="flex border-b border-border/60 pb-2 space-x-2 overflow-x-auto">
           <Button

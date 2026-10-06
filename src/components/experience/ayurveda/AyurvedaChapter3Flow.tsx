@@ -1,3 +1,4 @@
+import { CerArtStrip } from '@/components/CerArtwork'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft,
@@ -489,7 +490,8 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
             aria-labelledby="c3-correction-dialog-title"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
           >
-            <div className="w-full max-w-md space-y-4 rounded-2xl bg-background p-5 shadow-xl">
+            <div className="cer-dialog w-full max-w-md space-y-4 rounded-2xl bg-background p-5 shadow-xl">
+              <CerArtStrip variant="seed" />
               <h3 id="c3-correction-dialog-title" className="font-serif text-lg font-semibold">
                 Corrigir respostas do Capítulo 3?
               </h3>

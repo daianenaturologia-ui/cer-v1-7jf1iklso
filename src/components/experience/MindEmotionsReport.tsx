@@ -1,3 +1,4 @@
+import { CerArtStrip } from '@/components/CerArtwork'
 import { movementReportValues } from '@/services/movementFrequency'
 import React, { useState } from 'react'
 import { BUILD_07C_MENTE_PROMPTS } from '../../services/build07cPrompts'
@@ -1391,6 +1392,7 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
       aria-label="Seu retrato de Mente & Emoções"
     >
       <div className="bg-card text-card-foreground border rounded-2xl shadow-xl w-full max-w-4xl p-6 sm:p-8 md:p-10 my-auto space-y-10 relative">
+        <CerArtStrip variant="waves" />
         {/* Top Close Button */}
         <div className="flex items-center justify-between border-b pb-4">
           <div className="flex items-center gap-2 text-primary font-medium text-xs tracking-wider uppercase">

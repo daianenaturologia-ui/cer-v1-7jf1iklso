@@ -377,3 +377,97 @@
     }
   }
 }
+
+/* Shared CER art: drawings live in their own space, never over a field or answer. */
+@layer components {
+  .cer-app { min-width: 0; min-height: 100dvh; }
+  .cer-artwork {
+    width: 9rem;
+    height: 5rem;
+    flex-shrink: 0;
+    color: hsl(var(--primary) / 0.7);
+    pointer-events: none;
+    user-select: none;
+  }
+  .cer-art-accent { stroke: hsl(var(--secondary)); }
+  .cer-art-strip {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 3.25rem;
+    min-width: 0;
+    padding-right: 1.25rem;
+    pointer-events: none;
+  }
+  .cer-art-strip .cer-artwork { width: 6rem; height: 3.25rem; }
+  .cer-art-rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, hsl(var(--primary) / 0.04), hsl(var(--primary) / 0.22));
+  }
+  .cer-art-strip-compact { height: 2rem; padding-right: 0; margin-bottom: 0.5rem; }
+  .cer-art-strip-compact .cer-artwork { width: 4.25rem; height: 2rem; }
+  .cer-card {
+    border-radius: 1.25rem;
+    box-shadow: 0 4px 22px hsl(var(--foreground) / 0.035);
+  }
+  .cer-card-content > .cer-art-strip { display: none; }
+  .cer-card > .cer-card-content:first-child > .cer-art-strip { display: flex; margin-top: 0.75rem; }
+  .cer-card-title, .cer-dialog-title {
+    font-family: 'Lora', Georgia, serif;
+    line-height: 1.45;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+  }
+  .cer-description { line-height: 1.8; text-wrap: pretty; }
+  .cer-card-header .cer-description { font-size: 0.925rem; }
+  .cer-dialog {
+    border-radius: 1.25rem;
+    background-image: linear-gradient(140deg, hsl(var(--primary) / 0.04), transparent 36%);
+    overscroll-behavior: contain;
+  }
+  .cer-dialog .cer-description { font-size: 0.95rem; }
+  .cer-dialog :is(input, textarea, select) { font-size: 1rem; }
+  .cer-dialog p { line-height: 1.8; }
+  .cer-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid hsl(var(--primary) / 0.18);
+    border-radius: 1.5rem;
+    background: linear-gradient(115deg, hsl(var(--primary) / 0.045), hsl(var(--card)), hsl(var(--secondary) / 0.06));
+  }
+  .cer-intro-copy { min-width: 0; max-width: 65ch; }
+  .cer-intro h2 {
+    font-family: 'Lora', Georgia, serif;
+    font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+    line-height: 1.5;
+    font-weight: 500;
+    text-wrap: pretty;
+  }
+  .cer-intro-copy > div { margin-top: 0.5rem; font-size: 1rem; line-height: 1.85; color: hsl(var(--muted-foreground)); }
+  .cer-intro strong, .cer-prose strong { color: hsl(var(--primary)); font-weight: 600; }
+  .cer-emphasis { font-size: 1.05em; }
+  .cer-app :is(h1, h2, h3) { text-wrap: pretty; }
+  .cer-app :is(button, a, input, textarea, summary):focus-visible,
+  .cer-dialog :is(button, a, input, textarea, summary):focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 3px;
+  }
+  .cer-reading-panel[data-cer-art='waves']::after,
+  .cer-reading-panel[data-cer-art='path']::after { display: none; }
+  @media (max-width: 639px) {
+    .cer-intro { gap: 0.75rem; padding: 1.1rem; align-items: flex-start; }
+    .cer-intro > .cer-artwork { width: 3.5rem; height: 3.5rem; }
+    .cer-intro-copy > div { font-size: 0.95rem; }
+    .cer-dialog { padding: 1.25rem; }
+    .cer-dialog .cer-art-strip { height: 2.5rem; }
+    .cer-dialog .cer-art-strip .cer-artwork { height: 2.5rem; }
+    .cer-app [role='tablist'] { max-width: 100%; overflow-x: auto; justify-content: flex-start; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cer-app *, .cer-dialog { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+}

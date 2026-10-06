@@ -1,3 +1,4 @@
+import { CerArtStrip } from '@/components/CerArtwork'
 import { JourneyNavigation } from '@/components/JourneyNavigation'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CerWelcome } from '@/components/CerWelcome'
@@ -1535,6 +1536,7 @@ export const InteragenteHome: React.FC = () => {
                   </CollapsibleContent>
                 </Collapsible>
 
+                <CerArtStrip variant="leaves" compact />
                 {/* O Ser em Seis Dimensões + Centro "Meu Mapa CER" (única entrada para o mapa) */}
                 <SerConscienciaMap
                   availableExperiences={availableExperiences}

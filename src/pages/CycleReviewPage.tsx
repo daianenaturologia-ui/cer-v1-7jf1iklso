@@ -1,3 +1,4 @@
+import { CerArtStrip } from '@/components/CerArtwork'
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
@@ -60,6 +61,7 @@ export const CycleReviewPage: React.FC = () => {
           </Button>
         </div>
 
+        <CerArtStrip variant="path" />
         <CycleReviewView
           cycleId={cycleId}
           enrollmentId={enrollment.id}

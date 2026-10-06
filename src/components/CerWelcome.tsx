@@ -1,4 +1,5 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { CerArtStrip } from '@/components/CerArtwork'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, HeartHandshake } from 'lucide-react'
 
@@ -9,6 +10,9 @@ export function CerWelcome() {
       defaultOpen
       className="cer-reading-panel rounded-xl border border-border/60 bg-card overflow-hidden"
     >
+      <div className="px-5 pt-3">
+        <CerArtStrip variant="flower" compact />
+      </div>
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CerIntro } from '@/components/CerArtwork'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
@@ -155,20 +156,29 @@ export function SelfDevelopmentJourney({
       className="rounded-xl border border-primary/30 p-4 sm:p-5 space-y-4"
       aria-label={readOnly ? 'Desenvolvimento compartilhado' : 'Meu desenvolvimento'}
     >
-      <div className="space-y-1">
-        <h2 className="font-serif text-xl">
-          {readOnly
+      <CerIntro
+        title={
+          readOnly
             ? 'Passos compartilhados'
             : mode === 'play'
               ? 'Meus pequenos passos'
-              : 'Um desejo, um pequeno passo'}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {readOnly
-            ? 'Acompanhe o que a pessoa escolheu compartilhar.'
-            : 'Escolha algo possível. Experimente, aprenda e ajuste ao seu ritmo.'}
+              : 'Um desejo, um pequeno passo'
+        }
+        variant={mode === 'play' ? 'path' : 'seed'}
+      >
+        <p>
+          {readOnly ? (
+            <>
+              Acompanhe o que a pessoa escolheu <strong>compartilhar.</strong>
+            </>
+          ) : (
+            <>
+              Escolha algo <strong>possível.</strong> Experimente, aprenda e ajuste{' '}
+              <strong>ao seu ritmo.</strong>
+            </>
+          )}
         </p>
-      </div>
+      </CerIntro>
       {mode === 'plan' && (
         <Tabs value={view} onValueChange={setView}>
           <TabsList aria-label="Meu desenvolvimento">

@@ -1,3 +1,4 @@
+import { CerArtStrip } from '@/components/CerArtwork'
 import { formatPromptResponse, readOrbitItems } from './formatPromptResponse'
 import { MovementFrequencyCards } from './MovementFrequencyCards'
 import {
@@ -1336,6 +1337,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           )}
         </div>
 
+        <CerArtStrip />
         <div className="space-y-3 text-center py-4">
           <h1 className="text-2xl sm:text-3xl font-serif font-medium text-foreground tracking-tight">
             {experience.title}

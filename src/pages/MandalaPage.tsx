@@ -1,3 +1,4 @@
+import { CerIntro } from '@/components/CerArtwork'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { JourneyNavigation } from '@/components/JourneyNavigation'
 import React, { useEffect, useState } from 'react'
@@ -54,6 +55,11 @@ export const MandalaPage: React.FC = () => {
           <JourneyNavigation />
         </div>
 
+        <CerIntro title="Minha Mandala" variant="waves">
+          <p>
+            Um olhar para <strong>como você viveu</strong>, com espaço para perceber e aprender.
+          </p>
+        </CerIntro>
         {loading ? (
           <div className="p-8 text-center text-xs text-muted-foreground">Carregando Mandala...</div>
         ) : error ? (

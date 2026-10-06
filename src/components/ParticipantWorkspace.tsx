@@ -1,3 +1,4 @@
+import { CerArtStrip } from '@/components/CerArtwork'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { DemoPracticeWorkspace } from '@/components/DemoPracticeWorkspace'
 import { CareCycleManager } from '@/components/CareCycleManager'
@@ -581,6 +582,7 @@ export const ParticipantWorkspace: React.FC = () => {
         </div>
       )}
 
+      <CerArtStrip variant="path" compact />
       {/* EVOLUÇÃO */}
       {currentTab === 'evolucao' && (
         <Tabs defaultValue="plano" key={`evolution-${enrollment.id}`}>
