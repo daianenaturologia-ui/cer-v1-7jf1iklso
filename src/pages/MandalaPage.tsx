@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
 import { MandalaStructuredView } from '@/components/MandalaStructuredView'
 import { DevelopmentLearningView } from '@/components/DevelopmentLearningView'
+import { CerIntro } from '@/components/CerArtwork'
 import type { EnrollmentRecord } from '@/types/cer'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
@@ -53,6 +54,12 @@ export const MandalaPage: React.FC = () => {
           </Button>
           <JourneyNavigation />
         </div>
+
+        <CerIntro title="Minha Mandala" variant="waves">
+          <p>
+            Um olhar para <strong>como você viveu</strong>, com espaço para perceber e aprender.
+          </p>
+        </CerIntro>
 
         {loading ? (
           <div className="p-8 text-center text-xs text-muted-foreground">Carregando Mandala...</div>

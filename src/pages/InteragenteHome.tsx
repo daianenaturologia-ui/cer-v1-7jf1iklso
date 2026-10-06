@@ -91,6 +91,7 @@ import type {
 import { ExperimentCard } from '@/components/ExperimentCard'
 import { MandalaStructuredView } from '@/components/MandalaStructuredView'
 import { SerConscienciaMap } from '@/components/SerConscienciaMap'
+import { CerArtStrip } from '@/components/CerArtwork'
 import { OnboardingFlow } from '@/components/OnboardingFlow'
 import { EmptyState } from '@/components/EmptyState'
 import pb from '@/lib/pocketbase/client'
@@ -1536,6 +1537,7 @@ export const InteragenteHome: React.FC = () => {
                 </Collapsible>
 
                 {/* O Ser em Seis Dimensões + Centro "Meu Mapa CER" (única entrada para o mapa) */}
+                <CerArtStrip variant="leaves" compact />
                 <SerConscienciaMap
                   availableExperiences={availableExperiences}
                   hasPublishedMap={Boolean(currentMap)}

@@ -32,6 +32,7 @@ import {
   ProtectionPatternsChart,
   MindEmotionsReport,
 } from '@/components/experience'
+import { CerArtStrip } from '@/components/CerArtwork'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -1335,6 +1336,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             </Button>
           )}
         </div>
+
+        <CerArtStrip />
 
         <div className="space-y-3 text-center py-4">
           <h1 className="text-2xl sm:text-3xl font-serif font-medium text-foreground tracking-tight">

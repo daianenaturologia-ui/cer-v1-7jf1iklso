@@ -2,6 +2,7 @@ import React from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { LifeTimeline } from './LifeTimeline'
 import { LifeDirections } from './LifeDirections'
+import { CerArtStrip } from '@/components/CerArtwork'
 
 /** One trajectory, three perspectives. Existing records and permissions remain the source. */
 export function LifeJourney({
@@ -15,12 +16,13 @@ export function LifeJourney({
 }) {
   return (
     <section className="space-y-5" aria-label="Minha trajetória">
-      <div className="cer-reading-panel border bg-card px-5 py-6 sm:px-8">
+      <div className="cer-reading-panel border bg-card px-5 py-6 sm:px-8" data-cer-art="path">
+        <CerArtStrip variant="path" compact />
         <p className="text-xs tracking-widest uppercase text-primary">Minha trajetória</p>
         <h2 className="font-serif text-2xl sm:text-3xl mt-2">Uma história que continua</h2>
         <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-          Do nascimento aos caminhos que você deseja construir. Cada marco tem seu lugar; você
-          escolhe por onde contar.
+          Do nascimento aos caminhos que você deseja construir. Cada marco tem seu lugar; você{' '}
+          <strong className="cer-emphasis">escolhe por onde contar.</strong>
         </p>
         <svg
           aria-hidden="true"

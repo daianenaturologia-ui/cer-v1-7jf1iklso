@@ -51,16 +51,12 @@ export const cerCycleReviewService = {
       demoProfessional()
       return demoAdapter.readCareStore().reviews.find((r) => r.care_cycle_id === cycleId) || null
     }
-    try {
-      const records = await pb.collection('cer_cycle_reviews').getList<CerCycleReviewRecord>(1, 1, {
-        filter: `care_cycle_id = "${cycleId}"`,
-        sort: '-created',
-        expand: 'care_cycle_id,created_by_user_id',
-      })
-      return records.items[0] || null
-    } catch (error) {
-      throw error
-    }
+    const records = await pb.collection('cer_cycle_reviews').getList<CerCycleReviewRecord>(1, 1, {
+      filter: `care_cycle_id = "${cycleId}"`,
+      sort: '-created',
+      expand: 'care_cycle_id,created_by_user_id',
+    })
+    return records.items[0] || null
   },
 
   async createReview(input: CreateCycleReviewInput): Promise<CerCycleReviewRecord> {

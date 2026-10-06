@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
 import { CycleReviewView } from '@/components/CycleReviewView'
+import { CerArtStrip } from '@/components/CerArtwork'
 import type { EnrollmentRecord } from '@/types/cer'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
@@ -59,6 +60,8 @@ export const CycleReviewPage: React.FC = () => {
             <span>Voltar ao Início</span>
           </Button>
         </div>
+
+        <CerArtStrip variant="path" />
 
         <CycleReviewView
           cycleId={cycleId}

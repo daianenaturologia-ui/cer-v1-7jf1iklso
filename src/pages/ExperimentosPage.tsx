@@ -16,6 +16,7 @@ import { Sparkles, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
 import { EmptyState } from '@/components/EmptyState'
+import { CerIntro } from '@/components/CerArtwork'
 
 export const ExperimentosPage: React.FC = () => {
   const { user } = useAuth()
@@ -113,16 +114,15 @@ export const ExperimentosPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="rounded-xl border p-4 space-y-2">
-          <h2 className="font-serif text-lg">Quero experimentar por conta própria</h2>
+        <CerIntro title="Quero experimentar por conta própria" variant="seed">
           <p className="text-sm text-muted-foreground">
-            Escolha recursos educativos, planeje uma tentativa e revise o que aprendeu, sem esperar
-            uma liberação.
+            Escolha recursos educativos, planeje uma tentativa e revise{' '}
+            <strong>o que aprendeu</strong>, sem esperar uma liberação.
           </p>
-          <Link className="inline-block text-sm underline" to="/?etapa=evolucao">
+          <Link className="inline-block text-sm underline mt-2" to="/?etapa=evolucao">
             Abrir meu desenvolvimento na Evolução
           </Link>
-        </div>
+        </CerIntro>
         <h2 className="font-serif text-lg">Práticas do acompanhamento individual</h2>
         {loading ? (
           <p className="text-xs text-muted-foreground text-center py-12">

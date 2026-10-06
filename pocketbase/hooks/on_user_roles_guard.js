@@ -8,7 +8,8 @@ onRecordCreateRequest((e) => {
     throw new ForbiddenError('Autenticação obrigatória para gerenciar papéis de usuário.')
   }
 
-  if (authUser.getString('status') !== 'active') throw new ForbiddenError('Conta ativa obrigatória.')
+  if (authUser.getString('status') !== 'active')
+    throw new ForbiddenError('Conta ativa obrigatória.')
 
   // 1. Verificar papéis do ator autenticado
   const actorRoleRecords = $app.findRecordsByFilter(
@@ -78,7 +79,10 @@ onRecordCreateRequest((e) => {
         const links = $app.findRecordsByFilter(
           'professional_enrollment_access',
           'enrollment_id = {:id} && professional_user_id = {:actor} && is_active = true',
-          '', 1, 0, { id: enrId, actor: authUser.id },
+          '',
+          1,
+          0,
+          { id: enrId, actor: authUser.id },
         )
         if (links.length > 0) {
           inScope = true
@@ -125,7 +129,8 @@ onRecordUpdateRequest((e) => {
     throw new ForbiddenError('Autenticação obrigatória para alterar papéis de usuário.')
   }
 
-  if (authUser.getString('status') !== 'active') throw new ForbiddenError('Conta ativa obrigatória.')
+  if (authUser.getString('status') !== 'active')
+    throw new ForbiddenError('Conta ativa obrigatória.')
 
   const actorRoleRecords = $app.findRecordsByFilter(
     'user_roles',
@@ -191,7 +196,10 @@ onRecordUpdateRequest((e) => {
         const links = $app.findRecordsByFilter(
           'professional_enrollment_access',
           'enrollment_id = {:id} && professional_user_id = {:actor} && is_active = true',
-          '', 1, 0, { id: enrId, actor: authUser.id },
+          '',
+          1,
+          0,
+          { id: enrId, actor: authUser.id },
         )
         if (links.length > 0) {
           inScope = true

@@ -376,4 +376,223 @@
       background-repeat: no-repeat;
     }
   }
+
+  /* ========================================================
+     CER Botanical Linework & Visual Theme
+     ======================================================== */
+  .cer-app {
+    min-height: 100vh;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  .cer-artwork {
+    color: hsl(var(--primary));
+    opacity: 0.85;
+    flex-shrink: 0;
+  }
+
+  .cer-art-accent {
+    color: #c86d51;
+    stroke: currentColor;
+    fill: none;
+  }
+
+  .cer-art-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    padding-block: 0.5rem;
+    overflow: hidden;
+  }
+
+  .cer-art-strip .cer-artwork {
+    height: 2.75rem;
+    width: auto;
+    max-width: 10rem;
+    z-index: 1;
+    background-color: transparent;
+  }
+
+  .cer-art-rule {
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--primary) / 0.18) 25%,
+      hsl(var(--primary) / 0.18) 75%,
+      transparent 100%
+    );
+    z-index: 0;
+  }
+
+  .cer-art-strip-compact {
+    padding-block: 0.25rem;
+  }
+
+  .cer-art-strip-compact .cer-artwork {
+    height: 2rem;
+    max-width: 7rem;
+  }
+
+  .cer-card {
+    position: relative;
+  }
+
+  .cer-card-header {
+    position: relative;
+  }
+
+  .cer-card-content > .cer-art-strip {
+    display: none;
+  }
+
+  .cer-card-content > .cer-art-strip:first-child {
+    display: flex;
+    margin-bottom: 0.5rem;
+  }
+
+  .cer-card-title,
+  .cer-dialog-title {
+    font-family: 'Lora', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+
+  .cer-description {
+    line-height: 1.6;
+  }
+
+  .cer-card-header .cer-description {
+    font-size: 0.875rem;
+  }
+
+  .cer-dialog {
+    background-image:
+      radial-gradient(circle at top right, hsl(var(--primary) / 0.05), transparent 60%),
+      linear-gradient(140deg, hsl(var(--background)) 0%, hsl(var(--card)) 100%);
+    overscroll-behavior: contain;
+  }
+
+  .cer-dialog .cer-description {
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .cer-dialog input,
+  .cer-dialog select,
+  .cer-dialog textarea {
+    font-size: 1rem;
+  }
+
+  .cer-dialog p {
+    line-height: 1.8;
+  }
+
+  .cer-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.5rem 1.75rem;
+    border-radius: 1.5rem;
+    border: 1px solid hsl(var(--primary) / 0.18);
+    background: linear-gradient(
+      115deg,
+      hsl(var(--primary) / 0.06) 0%,
+      hsl(var(--card)) 55%,
+      hsl(var(--primary) / 0.03) 100%
+    );
+  }
+
+  .cer-intro .cer-artwork {
+    height: 5rem;
+    width: auto;
+    max-width: 9rem;
+  }
+
+  .cer-intro-copy {
+    max-width: 65ch;
+  }
+
+  .cer-intro h2 {
+    font-family: 'Lora', Georgia, serif;
+    font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+    line-height: 1.35;
+    margin-bottom: 0.35rem;
+  }
+
+  .cer-intro-copy > div {
+    font-size: 0.925rem;
+    line-height: 1.65;
+  }
+
+  .cer-intro strong,
+  .cer-prose strong {
+    color: hsl(var(--primary));
+    font-weight: 600;
+  }
+
+  .cer-emphasis {
+    font-size: 1.05em;
+  }
+
+  .cer-app h1,
+  .cer-app h2,
+  .cer-app h3 {
+    text-wrap: pretty;
+  }
+
+  .cer-app :focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  .cer-reading-panel[data-cer-art='waves']::after,
+  .cer-reading-panel[data-cer-art='path']::after {
+    display: none;
+  }
+
+  @media (max-width: 639px) {
+    .cer-intro {
+      flex-direction: column-reverse;
+      align-items: flex-start;
+      padding: 1.25rem;
+      gap: 0.75rem;
+    }
+
+    .cer-intro .cer-artwork {
+      height: 3.5rem;
+      align-self: flex-end;
+    }
+
+    .cer-dialog {
+      padding: 1.25rem;
+    }
+
+    .cer-art-strip .cer-artwork {
+      height: 2.5rem;
+    }
+
+    [role='tablist'] {
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    [role='tablist']::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cer-artwork,
+    .cer-art-strip {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
 }

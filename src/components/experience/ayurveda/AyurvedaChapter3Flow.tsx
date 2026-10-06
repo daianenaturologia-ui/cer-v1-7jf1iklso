@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import { experienceResponseService } from '@/services/experienceEngine'
 import type { ExperienceResponseRecord } from '@/types/cer'
+import { CerArtStrip } from '@/components/CerArtwork'
 import {
   AYV_C3_CONTEXT_OPTIONS,
   chapter3DirectionOptions,
@@ -489,7 +490,8 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
             aria-labelledby="c3-correction-dialog-title"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
           >
-            <div className="w-full max-w-md space-y-4 rounded-2xl bg-background p-5 shadow-xl">
+            <div className="cer-dialog w-full max-w-md space-y-4 rounded-2xl bg-background p-5 shadow-xl">
+              <CerArtStrip variant="seed" />
               <h3 id="c3-correction-dialog-title" className="font-serif text-lg font-semibold">
                 Corrigir respostas do Capítulo 3?
               </h3>

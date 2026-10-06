@@ -8,15 +8,15 @@ Revisão de 05/10/2026. Escopo: código disponível, snapshot de permissões de 
 
 Não considerar concluída a preparação para dados reais. A prioridade é testar isolamento entre pacientes e profissionais no backend real, esclarecer operadores/contratos e estabelecer direitos, retenção e recuperação de dados. A aparência de confiança precisa corresponder a controles verificados.
 
-| Achado | Evidência | Correção ou próximo passo |
-| --- | --- | --- |
-| Leitura ampla de cadastros pessoais | Snapshot permite listar/ver pessoas para qualquer conta ativa | Migração 0074 preparada para restringir ao próprio titular ou profissional com vínculo ativo; validar parser e associação no servidor |
-| Criação pública de usuários | Regra `users.create` vazia no snapshot | Migração preparada para limitar a profissionais ativos e status de convite; testar também associação indevida a cadastro existente |
-| Texto sensível em auditoria | Motivo livre de retirada de consentimento era duplicado no log | Hook passa a registrar somente presença do motivo; registros anteriores não foram alterados |
-| IA sem revisão operacional concluída | Adapter externo preparado anteriormente | Nova trava de processamento e verificação da conta ativa; nenhuma ativação |
-| MFA não implementado | Estado explícito no contexto de autenticação | Implementar e testar proteção reforçada para profissionais e administração |
-| Política geral e exercício de direitos incompletos | Não localizada política geral com controlador, contato e fluxo de solicitações nas telas examinadas | Definir informações reais e publicar política/fluxo antes do piloto clínico |
-| Backups e criptografia de infraestrutura não verificados | Código frontend não comprova esses controles | Confirmar com o operador e testar restauração isolada |
+| Achado                                                   | Evidência                                                                                           | Correção ou próximo passo                                                                                                             |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Leitura ampla de cadastros pessoais                      | Snapshot permite listar/ver pessoas para qualquer conta ativa                                       | Migração 0074 preparada para restringir ao próprio titular ou profissional com vínculo ativo; validar parser e associação no servidor |
+| Criação pública de usuários                              | Regra `users.create` vazia no snapshot                                                              | Migração preparada para limitar a profissionais ativos e status de convite; testar também associação indevida a cadastro existente    |
+| Texto sensível em auditoria                              | Motivo livre de retirada de consentimento era duplicado no log                                      | Hook passa a registrar somente presença do motivo; registros anteriores não foram alterados                                           |
+| IA sem revisão operacional concluída                     | Adapter externo preparado anteriormente                                                             | Nova trava de processamento e verificação da conta ativa; nenhuma ativação                                                            |
+| MFA não implementado                                     | Estado explícito no contexto de autenticação                                                        | Implementar e testar proteção reforçada para profissionais e administração                                                            |
+| Política geral e exercício de direitos incompletos       | Não localizada política geral com controlador, contato e fluxo de solicitações nas telas examinadas | Definir informações reais e publicar política/fluxo antes do piloto clínico                                                           |
+| Backups e criptografia de infraestrutura não verificados | Código frontend não comprova esses controles                                                        | Confirmar com o operador e testar restauração isolada                                                                                 |
 
 O snapshot contém 70 coleções; o painel vivo mostrou 74. Portanto o arquivo exportado não prova as permissões atualmente aplicadas. No PocketBase, superusuários ignoram regras de coleção: uma informação “privada” na interface não significa inacessível à administração técnica.
 
@@ -80,6 +80,7 @@ Resultado final: 15 cenários aprovados, incluindo isolamento A/B por listagem, 
 Limite: esse ensaio NÃO testou o backend vivo do Skip, o conjunto completo de migrações/hooks, arquivos clínicos, MFA ou todas as coleções do CER. No painel atual não foi identificado um ambiente de homologação separado nem uma ferramenta de recuperação integral self-service. Não foram criadas contas no banco vivo nem efetuadas alterações de permissões nele. Portanto o teste autenticado no Skip e a saída completa da plataforma continuam bloqueados pela falta desse ambiente/procedimento; não basta validar no frontend em demonstração.
 
 Referências adicionais localizadas nesta continuação:
+
 - https://adaptaorg.zendesk.com/hc/pt-br/articles/50834940639131-16-04-08-05-2026
 - https://adaptaorg.zendesk.com/hc/pt-br/articles/50834905374619-Dominando-o-Skip-Cloud-Banco-de-Dados-e-Autentica%C3%A7%C3%A3o
 

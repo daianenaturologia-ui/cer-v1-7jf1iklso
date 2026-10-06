@@ -1,4 +1,5 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { CerArtStrip } from '@/components/CerArtwork'
 import { DemoPracticeWorkspace } from '@/components/DemoPracticeWorkspace'
 import { CareCycleManager } from '@/components/CareCycleManager'
 import { LifeDirections } from '@/components/experience/LifeDirections'
@@ -582,6 +583,7 @@ export const ParticipantWorkspace: React.FC = () => {
       )}
 
       {/* EVOLUÇÃO */}
+      <CerArtStrip variant="path" compact />
       {currentTab === 'evolucao' && (
         <Tabs defaultValue="plano" key={`evolution-${enrollment.id}`}>
           <TabsList aria-label="Evolução da interagente" className="flex-wrap h-auto">

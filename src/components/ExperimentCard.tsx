@@ -1,6 +1,7 @@
 import { demoAdapter } from '@/services/demoAdapter'
 import { DemoExperimentCard } from './DemoExperimentCard'
 import React, { useState } from 'react'
+import { CerArtStrip } from '@/components/CerArtwork'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -490,7 +491,8 @@ const LiveExperimentCard: React.FC<ExperimentCardProps> = ({
       {/* Modal / Dialog de Safety Consent do Participante */}
       {consentModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-background rounded-xl max-w-md w-full p-5 border border-border shadow-lg space-y-4 text-xs">
+          <div className="cer-dialog bg-background rounded-xl max-w-md w-full p-5 border border-border shadow-lg space-y-4 text-xs">
+            <CerArtStrip variant="leaves" />
             <div className="space-y-1">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-primary" />

@@ -59,7 +59,9 @@ routerAdd(
     }
 
     if (!['active', 'invited'].includes(targetUser.getString('status'))) {
-      throw new ForbiddenError('Conta suspensa ou desabilitada exige revisão administrativa separada.')
+      throw new ForbiddenError(
+        'Conta suspensa ou desabilitada exige revisão administrativa separada.',
+      )
     }
 
     const targetPersonId = targetUser.getString('person_id')
@@ -86,7 +88,10 @@ routerAdd(
           const links = $app.findRecordsByFilter(
             'professional_enrollment_access',
             'enrollment_id = {:enrollmentId} && professional_user_id = {:actorId} && is_active = true',
-            '', 1, 0, { enrollmentId: enrId, actorId: authUser.id },
+            '',
+            1,
+            0,
+            { enrollmentId: enrId, actorId: authUser.id },
           )
           if (links.length > 0) {
             inScope = true

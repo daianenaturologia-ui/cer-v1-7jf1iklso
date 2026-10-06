@@ -26,6 +26,7 @@ Auditoria registra somente metadados de invocação, não texto nem chave. O res
 Testes automatizados simulam eventos PocketBase e o transporte, sem rede. Não há binário PocketBase nem acesso administrativo ao runtime/segredos do servidor nesta sessão, portanto não houve teste integrado autenticado ou ativação em produção. 25 testes novos aprovados, além dos 27 testes anteriores aprovados na bateria inicial deste bloco (um caso adicional foi incluído e os dois arquivos novos foram reexecutados). Typecheck `tsconfig.app.json`, lint dos três arquivos TypeScript novos e build Vite aprovados; avisos preexistentes de tamanho de chunk e imports dinâmicos permanecem. O serviço `sessionAiProposal.ts` serve como ponto de integração futuro e verifica o vínculo da resposta com o encontro solicitado.
 
 Referências primárias consultadas em 05/10/2026:
+
 - https://pocketbase.io/docs/js-routing/
 - https://pocketbase.io/docs/js-sending-http-requests/
 - https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { CerIntro } from '@/components/CerArtwork'
 import {
   plannerNotesService,
   type PlannerNote,
@@ -232,24 +233,17 @@ export function WeeklyAgenda({
   }
   return (
     <section aria-label={readOnly ? 'Agenda compartilhada' : 'Minha agenda'} className="space-y-4">
-      <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-r from-primary/5 via-amber-50/50 to-rose-50/60 px-5 py-4">
-        <svg
-          aria-hidden="true"
-          className="absolute right-4 top-0 h-24 w-40 text-primary/15"
-          viewBox="0 0 160 100"
-          fill="none"
-        >
-          <path d="M8 80C25 18 72 110 95 46S141 19 150 58" stroke="currentColor" strokeWidth="2" />
-          <circle cx="121" cy="26" r="15" stroke="currentColor" />
-          <path d="M38 63Q11 15 66 36Q64 61 38 63Z" fill="currentColor" />
-        </svg>
-        <p className="relative font-serif text-xl">Uma semana que cabe na sua vida</p>
-        <p className="relative text-sm text-muted-foreground mt-1">
-          {readOnly
-            ? 'Somente os passos que a pessoa escolheu compartilhar.'
-            : 'Foco, descanso e tempo para viver gostosamente.'}
+      <CerIntro title="Uma semana que cabe na sua vida" variant="sun">
+        <p className="text-sm text-muted-foreground">
+          {readOnly ? (
+            'Somente os passos que a pessoa escolheu compartilhar.'
+          ) : (
+            <>
+              <strong>Foco</strong>, descanso e tempo para <strong>viver gostosamente.</strong>
+            </>
+          )}
         </p>
-      </div>
+      </CerIntro>
       <Tabs defaultValue="agenda">
         <TabsList aria-label="Visões do Planner" className="mb-3">
           <TabsTrigger value="agenda">Minha semana</TabsTrigger>
