@@ -233,134 +233,14 @@ export const enrollmentService = {
     enrollment: EnrollmentRecord
     tempPasswordGenerated?: string
   }> {
-    const randomSuffix = Math.random().toString(36).slice(-8)
-    const tempPassword = params.temporaryPassword || `Tmp-${randomSuffix}`
-
-    // 1. Criar ou reutilizar PERSON
-    let person: PersonRecord
-    try {
-      person = await pb
-        .collection('persons')
-        .getFirstListItem<PersonRecord>(`email = "${params.email}"`)
-    } catch {
-      person = await pb.collection('persons').create<PersonRecord>({
-        full_name: params.fullName,
-        preferred_name: params.preferredName || params.fullName.split(' ')[0],
-        email: params.email,
-        notes: params.notes || '',
-      })
-    }
-
-    // 2. Criar ou associar USER_ACCOUNT (conta do usuário)
-    let userRecordId: string | null = null
-    try {
-      const existingUser = await pb
-        .collection('users')
-        .getFirstListItem(`email = "${params.email}"`)
-      userRecordId = existingUser.id
-      if (!existingUser.person_id) {
-        await pb.collection('users').update(existingUser.id, { person_id: person.id })
-      }
-    } catch {
-      // Criar nova conta com senha temporária e status 'invited' (Item 3 & 8: First Login P0)
-      const newUser = await pb.collection('users').create({
-        email: params.email,
-        password: tempPassword,
-        passwordConfirm: tempPassword,
-        name: params.preferredName || params.fullName,
-        verified: true,
-        status: 'invited',
-        person_id: person.id,
-      })
-      userRecordId = newUser.id
-
-      await auditService.log({
-        action: 'ACCOUNT_INVITED',
-        resource_type: 'user_account',
-        resource_id: newUser.id,
-        result: 'success',
-        metadata: { email: params.email, initial_status: 'invited' },
-      })
-    }
-
-    // 3. Garantir USER_ROLE 'interagente'
-    if (userRecordId) {
-      try {
-        await pb
-          .collection('user_roles')
-          .getFirstListItem(`user_id = "${userRecordId}" && role = "interagente"`)
-      } catch {
-        await pb.collection('user_roles').create<UserRoleRecord>({
-          user_id: userRecordId,
-          role: 'interagente',
-          is_active: true,
-        })
-      }
-    }
-
-    // 4. Criar ENROLLMENT (com status oficial 'active', sem campos legados)
-    const enrollment = await pb.collection('enrollments').create<EnrollmentRecord>({
-      person_id: person.id,
-      product_id: params.productId,
-      status: 'active',
-      notes: params.notes || '',
+    return pb.send<{
+      person: PersonRecord
+      enrollment: EnrollmentRecord
+      tempPasswordGenerated?: string
+    }>('/backend/v1/cer/invite-participant', {
+      method: 'POST',
+      body: params,
     })
-
-    // 5. Criar PROFESSIONAL_ENROLLMENT_ACCESS de forma autorizada
-    // O hook server-side on_enrollment_created cria a concessão automaticamente quando o profissional cria o enrollment.
-    // Como garantia defensiva, se o registro ainda não existir (ex: execução por platform_admin), cria se autorizado.
-    try {
-      let existing = null
-      try {
-        existing = await pb
-          .collection('professional_enrollment_access')
-          .getFirstListItem(`enrollment_id = "${enrollment.id}"`)
-      } catch {
-        /* intentionally ignored */
-      }
-
-      if (!existing) {
-        const createdAccess = await pb
-          .collection('professional_enrollment_access')
-          .create<ProfessionalEnrollmentAccessRecord>({
-            enrollment_id: enrollment.id,
-            professional_user_id: params.professionalUserId,
-            access_role: 'primary',
-            is_active: true,
-          })
-
-        await auditService.log({
-          action: 'PROFESSIONAL_ACCESS_GRANTED',
-          resource_type: 'professional_enrollment_access',
-          resource_id: createdAccess.id,
-          enrollment_id: enrollment.id,
-          result: 'success',
-          metadata: {
-            professional_user_id: params.professionalUserId,
-            access_role: 'primary',
-          },
-        })
-      }
-    } catch {
-      // Ignora se já gerado pelo hook server-side ou se regra RLS direta não permitir
-    }
-
-    // 6. Criar JOURNEY_STATE inicial em 'onboarding'
-    await pb.collection('journey_states').create<JourneyStateRecord>({
-      enrollment_id: enrollment.id,
-      current_stage: 'onboarding',
-      stage_status: 'nao_iniciado',
-      metadata: {
-        created_by_professional: params.professionalUserId,
-        initialized_at: new Date().toISOString(),
-      },
-    })
-
-    return {
-      person,
-      enrollment,
-      tempPasswordGenerated: tempPassword,
-    }
   },
 
   async getActiveForUser(userId: string): Promise<EnrollmentRecord | null> {

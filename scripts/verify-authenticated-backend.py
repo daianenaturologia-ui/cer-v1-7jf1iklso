@@ -53,6 +53,13 @@ try:
     assert setup.returncode == 0, 'Fixture reconstruction failed: '+setup.stdout+setup.stderr
     for src in pathlib.Path('pocketbase/hooks').glob('*.js'):
         shutil.copy(src, hooks / (src.stem + '.pb.js'))
+    # Fault injection only in the disposable bench, to prove the complete transaction rolls back.
+    (hooks/'999_reference_rollback.pb.js').write_text('''onRecordCreate((e)=>{
+      const enrollment=e.app.findRecordById('enrollments',e.record.getString('enrollment_id'));
+      const person=e.app.findRecordById('persons',enrollment.getString('person_id'));
+      if(person.getString('email')==='rollback@example.invalid')throw new BadRequestError('Reference rollback probe');
+      e.next();
+    },'journey_states');''')
     with socket.socket() as sock:
         sock.bind(('127.0.0.1',0)); port=sock.getsockname()[1]
     base='http://127.0.0.1:'+str(port)
@@ -92,6 +99,39 @@ try:
         tokens={n:v['token'] for n,v in actors.items()}
         enrollments=record('enrollments',admin)['items']
         enroll={n:next(e for e in enrollments if e['person_id']==actors[n]['record']['person_id'])['id'] for n in ['a','b']}
+        invite_endpoint='/backend/v1/cer/invite-participant'
+        product=record('cer_products',admin)['items'][0]
+        invite_body={'fullName':'Reference invited person','email':'fresh@example.invalid','productId':product['id'],'professionalUserId':actors['p']['record']['id']}
+        check('Anonymous and patient cannot invite',lambda:require(request(invite_endpoint,method='POST',body=invite_body)[0] in (401,403) and request(invite_endpoint,tokens['a'],'POST',invite_body)[0]==403))
+        check('Invitation cannot name another professional',lambda:require(request(invite_endpoint,tokens['p'],'POST',{**invite_body,'professionalUserId':actors['q']['record']['id']})[0]==403))
+        check('Invalid product creates no account',lambda:require(request(invite_endpoint,tokens['p'],'POST',{**invite_body,'productId':'nonexistent0000'})[0]==400))
+        check('Invitation rejects malformed email and short credential',lambda:require(request(invite_endpoint,tokens['p'],'POST',{**invite_body,'email':'invalid'})[0]==400 and request(invite_endpoint,tokens['p'],'POST',{**invite_body,'temporaryPassword':'short'})[0]==400))
+        counted=['persons','users','enrollments','user_roles','professional_enrollment_access','journey_states']
+        before_counts={col:record(col,admin)['totalItems'] for col in counted}
+        check('Failure at journey creation rolls back complete invitation',lambda:require(request(invite_endpoint,tokens['p'],'POST',{**invite_body,'email':'rollback@example.invalid'})[0]==400 and before_counts=={col:record(col,admin)['totalItems'] for col in counted}))
+        invited_result=ok(invite_endpoint,tokens['p'],'POST',invite_body)
+        fresh=ok('/api/collections/users/auth-with-password',method='POST',body={'identity':'fresh@example.invalid','password':invited_result['tempPasswordGenerated']})
+        fresh_enrollment=invited_result['enrollment']['id']
+        check('Invitation creates linked invited account and unverified email',lambda:require(fresh['record']['status']=='invited' and fresh['record']['person_id']==invited_result['person']['id'] and fresh['record']['verified'] is False))
+        check('Invitation persists role, professional link and journey',lambda:require(any(v['user_id']==fresh['record']['id'] and v['role']=='interagente' for v in record('user_roles',admin)['items']) and any(v['enrollment_id']==fresh_enrollment and v['professional_user_id']==actors['p']['record']['id'] and v['is_active'] for v in record('professional_enrollment_access',admin)['items']) and any(v['enrollment_id']==fresh_enrollment for v in record('journey_states',admin)['items'])))
+        check('Professional can read new scoped person and enrollment',lambda:require(request('/api/collections/persons/records/'+invited_result['person']['id'],tokens['p'])[0]==200 and request('/api/collections/enrollments/records/'+fresh_enrollment,tokens['p'])[0]==200))
+        retry=ok(invite_endpoint,tokens['p'],'POST',invite_body)
+        check('Retry reuses enrollment without issuing or changing credential',lambda:require(retry['enrollment']['id']==fresh_enrollment and 'tempPasswordGenerated' not in retry and request('/api/collections/users/auth-with-password',method='POST',body={'identity':'fresh@example.invalid','password':invited_result['tempPasswordGenerated']})[0]==200))
+        check('Retry preserves account and invitation audit privacy',lambda:require(len([v for v in record('users',admin)['items'] if v['email']=='fresh@example.invalid'])==1 and len([v for v in record('enrollments',admin)['items'] if v['person_id']==invited_result['person']['id']])==1 and invited_result['tempPasswordGenerated'] not in json.dumps(ok('/api/collections/audit_events/records?perPage=500',admin)['items'])))
+        orphan=record('persons',admin,'POST',{'full_name':'Reference unclaimed','email':'unclaimed@example.invalid'})
+        check('Invitation does not silently claim existing unlinked person',lambda:require(request(invite_endpoint,tokens['p'],'POST',{**invite_body,'email':'unclaimed@example.invalid'})[0]==403))
+        check('Other professional cannot claim existing invited person',lambda:require(request(invite_endpoint,tokens['q'],'POST',{**invite_body,'professionalUserId':actors['q']['record']['id']})[0]==403))
+        record('users',admin,'PATCH',{'status':'suspended'},actors['p']['record']['id'])
+        check('Suspended professional cannot invite with old token',lambda:require(request(invite_endpoint,tokens['p'],'POST',{**invite_body,'email':'suspended-invite@example.invalid'})[0]==403))
+        record('users',admin,'PATCH',{'status':'active'},actors['p']['record']['id'])
+        check('Client cannot bypass invitation route to create account',lambda:require(request('/api/collections/users/records',tokens['p'],'POST',{'email':'bypass@example.invalid','password':password,'passwordConfirm':password,'status':'invited','person_id':invited_result['person']['id']})[0]==403))
+        check('Professional cannot elevate participant role',lambda:require(request('/api/collections/user_roles/records',tokens['p'],'POST',{'user_id':fresh['record']['id'],'role':'admin','is_active':True})[0] in (400,403)))
+        ok('/backend/v1/cer/first-login',fresh['token'],'POST',{'newPassword':password,'passwordConfirm':password})
+        active_fresh=ok('/api/collections/users/auth-with-password',method='POST',body={'identity':'fresh@example.invalid','password':password})
+        fresh_role=next(v for v in record('user_roles',admin)['items'] if v['user_id']==fresh['record']['id'] and v['role']=='interagente')
+        check('Scoped professional can maintain participant role',lambda:require(request('/api/collections/user_roles/records/'+fresh_role['id'],tokens['p'],'PATCH',{'is_active':True})[0]==200))
+        check('Unlinked professional cannot maintain participant role',lambda:require(request('/api/collections/user_roles/records/'+fresh_role['id'],tokens['q'],'PATCH',{'is_active':True})[0] in (403,404)))
+        check('Invited participant activates and reads own enrollment',lambda:require(request('/api/collections/enrollments/records/'+fresh_enrollment,active_fresh['token'])[0]==200))
         journal=record('cer_journal_entries',tokens['a'],'POST',{'enrollment_id':enroll['a'],'participant_user_id':actors['a']['record']['id'],'content':'FICTIONAL_PRIVATE_MARKER','status':'active','access_class':'participant_private','version_number':1})
         check('Journal persists and is forced private',lambda:require(record('cer_journal_entries',tokens['a'],id=journal['id'])['access_class']=='participant_private'))
         for n in ['b','p','q']:
