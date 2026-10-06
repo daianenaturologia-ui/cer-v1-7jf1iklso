@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-01T17:07:04.414Z",
+  "generatedAt": "2026-10-06T10:47:12.752Z",
   "collections": [
     {
       "name": "users",
@@ -7598,14 +7598,394 @@
       "indexes": [
         "CREATE INDEX idx_life_directions_enrollment ON cer_life_directions (enrollment_id)"
       ]
+    },
+    {
+      "name": "cer_cycle_invitations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && ((participant_user_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (@collection.professional_enrollment_access:inviteAccess.enrollment_id ?= enrollment_id && @collection.professional_enrollment_access:inviteAccess.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:inviteAccess.is_active ?= true))",
+        "view": "@request.auth.id != '' && ((participant_user_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) || (@collection.professional_enrollment_access:inviteAccess.enrollment_id ?= enrollment_id && @collection.professional_enrollment_access:inviteAccess.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:inviteAccess.is_active ?= true))",
+        "create": "@request.auth.id != '' && (@collection.professional_enrollment_access:inviteAccess.enrollment_id ?= enrollment_id && @collection.professional_enrollment_access:inviteAccess.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:inviteAccess.is_active ?= true) && @request.body.invited_by_user_id = @request.auth.id && @request.body.participant_reflection:isset = false && @request.body.completed_at:isset = false",
+        "update": "@request.auth.id != '' && (participant_user_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id) && completed_at = '' && @request.body.enrollment_id:changed = false && @request.body.care_cycle_id:changed = false && @request.body.participant_user_id:changed = false && @request.body.invited_by_user_id:changed = false && @request.body.shared_prompt:changed = false",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "care_cycle_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "cer_care_cycles"
+        },
+        {
+          "name": "participant_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "invited_by_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "shared_prompt",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "participant_reflection",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "completed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_cycle_invitation_cycle ON cer_cycle_invitations (care_cycle_id)"
+      ]
+    },
+    {
+      "name": "cer_development_experiments",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.status = 'active' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (access_class = 'participant_shared' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && @request.auth.status = 'active' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (access_class = 'participant_shared' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && @request.auth.status = 'active' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
+        "update": "@request.auth.id != '' && @request.auth.status = 'active' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && @request.body.enrollment_id:changed = false",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "direction_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "cer_life_directions"
+        },
+        {
+          "name": "resource_snapshot",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "goal",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "action",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "context",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "fallback",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "signal",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "reflection",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "next_step",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "scheduled_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "planned",
+            "experimenting",
+            "paused",
+            "completed",
+            "reviewed"
+          ]
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared"
+          ]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_development_enrollment ON cer_development_experiments (enrollment_id)"
+      ]
+    },
+    {
+      "name": "cer_development_resources",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.status = 'active' && (status = 'published' || author_user_id = @request.auth.id)",
+        "view": "@request.auth.id != '' && @request.auth.status = 'active' && (status = 'published' || author_user_id = @request.auth.id)",
+        "create": "@request.auth.id != '' && @request.auth.status = 'active' && author_user_id = @request.auth.id && @request.auth.user_roles_via_user_id.role ?= 'profissional' && @request.auth.user_roles_via_user_id.is_active ?= true",
+        "update": "@request.auth.id != '' && @request.auth.status = 'active' && author_user_id = @request.auth.id && @request.body.author_user_id:changed = false",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "author_user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "theme",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "duration",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "lesson",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "fallback",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "reflection",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "instructions",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "draft",
+            "published",
+            "archived"
+          ]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "cer_planner_notes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.status = 'active' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
+        "view": "@request.auth.id != '' && @request.auth.status = 'active' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
+        "create": "@request.auth.id != '' && @request.auth.status = 'active' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
+        "update": "@request.auth.id != '' && @request.auth.status = 'active' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && @request.body.enrollment_id:changed = false",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "note",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "starts_at",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "ends_at",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "kind",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "focus",
+            "rest",
+            "life"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "planned",
+            "completed",
+            "archived"
+          ]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_planner_notes_enrollment ON cer_planner_notes (enrollment_id)"
+      ]
     }
-  ],
-  "manualRuleOverrides": {
-    "appliedAt": "2026-10-05",
-    "collections": [
-      "persons",
-      "users"
-    ],
-    "scope": "Five rules manually verified in live UI; all other schema metadata remains the historical snapshot, not a complete fresh export."
-  }
+  ]
 }
