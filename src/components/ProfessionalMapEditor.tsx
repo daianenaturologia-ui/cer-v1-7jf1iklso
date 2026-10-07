@@ -769,7 +769,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
               </Button>
             </div>
 
-            <ParticipantMapDisplay map={publishedMap} />
+            <ParticipantMapDisplay map={publishedMap} participantName={participantName} />
           </div>
         ) : (
           /* NENHUM MAPA CRIADO AINDA */
@@ -804,7 +804,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
           </DialogHeader>
 
           {previewPublished && publishedMap ? (
-            <ParticipantMapDisplay map={publishedMap} />
+            <ParticipantMapDisplay map={publishedMap} participantName={participantName} />
           ) : activeDraft ? (
             <ParticipantMapDisplay
               map={{
@@ -812,6 +812,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                 status: 'published',
                 published_at: new Date().toISOString(),
               }}
+              participantName={participantName}
             />
           ) : null}
 

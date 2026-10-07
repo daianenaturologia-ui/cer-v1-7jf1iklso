@@ -69,7 +69,7 @@ export function SharedProfessionalCerMap({
         </button>
       </p>
     )
-  if (state.map) return <ParticipantMapDisplay map={state.map} />
+  if (state.map) return <ParticipantMapDisplay map={state.map} participantName={participantName} />
   return (
     <CerMapReadingsView
       snapshot={buildCerMapReadings(responses, enrollmentId, participantName, {

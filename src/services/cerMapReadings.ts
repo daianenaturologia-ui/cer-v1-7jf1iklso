@@ -1,5 +1,6 @@
 import { validateLifeDirection } from '@/services/lifeDirections'
 import type {
+  CerMapItemRecord,
   CerPromptRecord,
   EnrollmentExperienceRecord,
   ExperienceResponseRecord,

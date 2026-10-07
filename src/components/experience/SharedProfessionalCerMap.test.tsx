@@ -29,6 +29,37 @@ describe('Documento comum às duas áreas', () => {
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
     expect(screen.getByText('Meu Mapa CER · Teste')).toBeInTheDocument()
   })
+
+  it('passa o participantName para o mapa legado publicado adaptado', async () => {
+    vi.spyOn(cerMapService, 'getCurrentPublishedMap').mockResolvedValue({
+      id: 'map-legacy-1',
+      enrollment_id: 'enr-legacy-1',
+      status: 'published',
+      version_number: 1,
+      items: [
+        {
+          id: 'item-1',
+          map_id: 'map-legacy-1',
+          section: 'minha_natureza',
+          item_text: 'Constituição tranquila',
+        },
+      ],
+      reading_snapshot: null,
+    } as any)
+
+    render(
+      <SharedProfessionalCerMap
+        enrollmentId="enr-legacy-1"
+        participantName="Mariana"
+        responses={[]}
+      />,
+    )
+
+    expect(await screen.findByTestId('cer-map-readings')).toBeInTheDocument()
+    expect(screen.getByText('Meu Mapa CER · Mariana')).toBeInTheDocument()
+    expect(screen.getByText('Mariana')).toBeInTheDocument()
+    expect(screen.queryByText('Meu Mapa CER · você')).not.toBeInTheDocument()
+  })
   it('ignora retorno atrasado de outra pessoa', async () => {
     let resolveA!: (value: any) => void
     const requestA = new Promise<any>((resolve) => {

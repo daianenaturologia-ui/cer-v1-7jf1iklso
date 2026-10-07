@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import type {
   CerMapReadingSnapshot,
   CerMapReadingRow,
@@ -224,8 +224,14 @@ const REGULATION_REACTIONS = [
 
 export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadingsViewProps) {
   const [activeDialog, setActiveDialog] = useState<DialogState | null>(null)
+  const triggerRef = useRef<HTMLElement | null>(null)
 
-  const openDialog = (state: DialogState) => {
+  const openDialog = (state: DialogState, trigger?: HTMLElement | null) => {
+    if (trigger) {
+      triggerRef.current = trigger
+    } else if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      triggerRef.current = document.activeElement
+    }
     setActiveDialog(state)
   }
 
@@ -354,77 +360,83 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     </div>
   )
 
-  const openHowMapHelps = () => {
-    openDialog({
-      title: 'Como este mapa ajuda você',
-      subtitle: 'O caminho do Método CER',
-      tag: 'Método CER',
-      content: (
-        <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-          <p>
-            O autodesenvolvimento precisa de uma boa porção de autoconhecimento. Conhecer suas
-            forças, vulnerabilidades e condições de vida ajuda você e a Daiane a escolher
-            ferramentas e construir uma estratégia que faça sentido. Corpo, pensamentos, emoções,
-            ações e relações influenciam-se mutuamente. O mapa apoia suas escolhas e será ajustado
-            com sua experiência.
-          </p>
-          <div className="grid gap-3 pt-2">
-            <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
-              <h4 className="font-serif font-semibold text-foreground text-sm">1. Consciência</h4>
-              <p className="text-xs text-muted-foreground leading-normal">
-                Questionários cuidadosos, Linha da Vida, identificação de forças essenciais e
-                necessidades reais da sua rotina.
-              </p>
-            </div>
-            <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
-              <h4 className="font-serif font-semibold text-foreground text-sm">2. Equilíbrio</h4>
-              <p className="text-xs text-muted-foreground leading-normal">
-                Plano de cuidado construído com a Daiane: práticas integrativas, ajustes de hábitos
-                e encaminhamentos individualizados.
-              </p>
-            </div>
-            <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
-              <h4 className="font-serif font-semibold text-foreground text-sm">3. Realização</h4>
-              <p className="text-xs text-muted-foreground leading-normal">
-                Pequenos passos possíveis no Planner, experimentos de cuidado no cotidiano e
-                anotações no Caderno.
-              </p>
-            </div>
-            <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
-              <h4 className="font-serif font-semibold text-foreground text-sm">4. Evolução</h4>
-              <p className="text-xs text-muted-foreground leading-normal">
-                Observar, reconhecer conquistas, ajustar rotas e renovar os ciclos de cuidado com
-                autonomia.
-              </p>
-            </div>
-          </div>
-          {!!snapshot.lifeDirections?.length && (
-            <div className="mt-4 pt-3 border-t">
-              <h4 className="font-serif font-semibold text-xs uppercase tracking-wider text-primary mb-2">
-                Objetivos e Horizontes Compartilhados
-              </h4>
-              <div className="space-y-2">
-                {snapshot.lifeDirections.map((dir) => (
-                  <div key={dir.id} className="text-xs border rounded p-2.5 bg-card">
-                    <span className="font-medium text-foreground block">
-                      {dir.title} ({LIFE_HORIZONS[dir.horizon]})
-                    </span>
-                    {dir.first_step && (
-                      <span className="text-muted-foreground block mt-1">
-                        Pequeno passo: {dir.first_step}
-                      </span>
-                    )}
-                  </div>
-                ))}
+  const openHowMapHelps = (e?: React.MouseEvent<HTMLElement>) => {
+    openDialog(
+      {
+        title: 'Como este mapa ajuda você',
+        subtitle: 'O caminho do Método CER',
+        tag: 'Método CER',
+        content: (
+          <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            <p>
+              O autodesenvolvimento precisa de uma boa porção de autoconhecimento. Conhecer suas
+              forças, vulnerabilidades e condições de vida ajuda você e a Daiane a escolher
+              ferramentas e construir uma estratégia que faça sentido. Corpo, pensamentos, emoções,
+              ações e relações influenciam-se mutuamente. O mapa apoia suas escolhas e será ajustado
+              com sua experiência.
+            </p>
+            <div className="grid gap-3 pt-2">
+              <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
+                <h4 className="font-serif font-semibold text-foreground text-sm">1. Consciência</h4>
+                <p className="text-xs text-muted-foreground leading-normal">
+                  Questionários cuidadosos, Linha da Vida, identificação de forças essenciais e
+                  necessidades reais da sua rotina.
+                </p>
+              </div>
+              <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
+                <h4 className="font-serif font-semibold text-foreground text-sm">2. Equilíbrio</h4>
+                <p className="text-xs text-muted-foreground leading-normal">
+                  Plano de cuidado construído com a Daiane: práticas integrativas, ajustes de
+                  hábitos e encaminhamentos individualizados.
+                </p>
+              </div>
+              <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
+                <h4 className="font-serif font-semibold text-foreground text-sm">3. Realização</h4>
+                <p className="text-xs text-muted-foreground leading-normal">
+                  Pequenos passos possíveis no Planner, experimentos de cuidado no cotidiano e
+                  anotações no Caderno.
+                </p>
+              </div>
+              <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
+                <h4 className="font-serif font-semibold text-foreground text-sm">4. Evolução</h4>
+                <p className="text-xs text-muted-foreground leading-normal">
+                  Observar, reconhecer conquistas, ajustar rotas e renovar os ciclos de cuidado com
+                  autonomia.
+                </p>
               </div>
             </div>
-          )}
-        </div>
-      ),
-    })
+            {!!snapshot.lifeDirections?.length && (
+              <div className="mt-4 pt-3 border-t">
+                <h4 className="font-serif font-semibold text-xs uppercase tracking-wider text-primary mb-2">
+                  Objetivos e Horizontes Compartilhados
+                </h4>
+                <div className="space-y-2">
+                  {snapshot.lifeDirections.map((dir) => (
+                    <div key={dir.id} className="text-xs border rounded p-2.5 bg-card">
+                      <span className="font-medium text-foreground block">
+                        {dir.title} ({LIFE_HORIZONS[dir.horizon]})
+                      </span>
+                      {dir.first_step && (
+                        <span className="text-muted-foreground block mt-1">
+                          Pequeno passo: {dir.first_step}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ),
+      },
+      e?.currentTarget,
+    )
   }
 
-  const openDoshaDialog = (doshaName: 'Vata' | 'Pitta' | 'Kapha') => {
+  const openDoshaDialog = (
+    doshaName: 'Vata' | 'Pitta' | 'Kapha',
+    e?: React.MouseEvent<HTMLElement>,
+  ) => {
     const concepts = {
       Vata: {
         principle: 'Movimento e variabilidade',
@@ -451,439 +463,475 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
       r.label.toLowerCase().includes(doshaName.toLowerCase()),
     )
 
-    openDialog({
-      title: `Dosha ${doshaName}`,
-      subtitle: info.principle,
-      tag: 'Corpo & Fisiologia',
-      content: (
-        <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-          <p>{info.desc}</p>
-          <div className="rounded-lg bg-muted/30 p-3 space-y-1 text-xs">
-            <span className="font-semibold text-foreground block">Referencial tradicional</span>
-            <p className="text-muted-foreground">{info.ayurvedaContext}</p>
-            <p className="text-muted-foreground mt-1">
-              A psique também é influenciada por história, educação, cultura, saúde, sono e
-              vínculos. Para aprofundar, converse com a Daiane sobre a avaliação ayurvédica
-              específica.
-            </p>
-          </div>
-
-          <div className="pt-2 border-t space-y-2">
-            <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-              Leitura publicada relevante
-            </h4>
-            {relevantRows.length > 0 ? (
-              <div className="space-y-2">
-                {relevantRows.map((row, idx) => (
-                  <div key={idx} className="border-l-2 border-primary/40 pl-3 py-1">
-                    <span className="font-medium text-xs text-foreground block">{row.label}</span>
-                    <span className="text-xs text-muted-foreground whitespace-pre-wrap">
-                      {row.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground italic">
-                Conteúdo psicoeducativo geral. A leitura específica para esta dimensão será
-                aprofundada com a Daiane ao longo das sessões.
+    openDialog(
+      {
+        title: `Dosha ${doshaName}`,
+        subtitle: info.principle,
+        tag: 'Corpo & Fisiologia',
+        content: (
+          <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            <p>{info.desc}</p>
+            <div className="rounded-lg bg-muted/30 p-3 space-y-1 text-xs">
+              <span className="font-semibold text-foreground block">Referencial tradicional</span>
+              <p className="text-muted-foreground">{info.ayurvedaContext}</p>
+              <p className="text-muted-foreground mt-1">
+                A psique também é influenciada por história, educação, cultura, saúde, sono e
+                vínculos. Para aprofundar, converse com a Daiane sobre a avaliação ayurvédica
+                específica.
               </p>
+            </div>
+
+            <div className="pt-2 border-t space-y-2">
+              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                Leitura publicada relevante
+              </h4>
+              {relevantRows.length > 0 ? (
+                <div className="space-y-2">
+                  {relevantRows.map((row, idx) => (
+                    <div key={idx} className="border-l-2 border-primary/40 pl-3 py-1">
+                      <span className="font-medium text-xs text-foreground block">{row.label}</span>
+                      <span className="text-xs text-muted-foreground whitespace-pre-wrap">
+                        {row.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  Conteúdo psicoeducativo geral. A leitura específica para esta dimensão será
+                  aprofundada com a Daiane ao longo das sessões.
+                </p>
+              )}
+            </div>
+          </div>
+        ),
+      },
+      e?.currentTarget,
+    )
+  }
+
+  const openAgniDialog = (e?: React.MouseEvent<HTMLElement>) => {
+    openDialog(
+      {
+        title: 'Agni · Fogo Digestivo',
+        subtitle: 'Capacidade de digestão e transformação',
+        tag: 'Ayurveda',
+        content: (
+          <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            <p>
+              Na tradição ayurvédica, Agni é a capacidade de digerir, assimilar e transformar tanto
+              alimentos quanto estímulos do mundo. É um aspecto central da nutrição e da saúde
+              integrativa: investigamos a fome, o conforto após comer, a eliminação e a
+              regularidade.
+            </p>
+            <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+              <span className="font-semibold text-foreground block">Limites da leitura</span>
+              <p>
+                Agni não é uma enzima específica nem um resultado de exame laboratorial de sangue.
+                As consequências e o resultado específico provêm exclusivamente da leitura
+                disponível no seu percurso de cuidado.
+              </p>
+            </div>
+            {agniRow && (
+              <div className="border-t pt-3 space-y-1">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Sua leitura de Agni
+                </h4>
+                <p className="text-xs text-foreground font-medium">{agniRow.label}</p>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{agniRow.text}</p>
+              </div>
             )}
           </div>
-        </div>
-      ),
-    })
+        ),
+      },
+      e?.currentTarget,
+    )
   }
 
-  const openAgniDialog = () => {
-    openDialog({
-      title: 'Agni · Fogo Digestivo',
-      subtitle: 'Capacidade de digestão e transformação',
-      tag: 'Ayurveda',
-      content: (
-        <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-          <p>
-            Na tradição ayurvédica, Agni é a capacidade de digerir, assimilar e transformar tanto
-            alimentos quanto estímulos do mundo. É um aspecto central da nutrição e da saúde
-            integrativa: investigamos a fome, o conforto após comer, a eliminação e a regularidade.
-          </p>
-          <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
-            <span className="font-semibold text-foreground block">Limites da leitura</span>
+  const openAmaDialog = (e?: React.MouseEvent<HTMLElement>) => {
+    openDialog(
+      {
+        title: 'Ama · Digestão Incompleta',
+        subtitle: 'Conceito tradicional de sobrecarga e acúmulo',
+        tag: 'Ayurveda',
+        content: (
+          <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
             <p>
-              Agni não é uma enzima específica nem um resultado de exame laboratorial de sangue. As
-              consequências e o resultado específico provêm exclusivamente da leitura disponível no
-              seu percurso de cuidado.
+              Ama descreve produtos ou estados de processamento incompleto na tradição ayurvédica. A
+              palavra &ldquo;toxinas&rdquo; é uma tradução aproximada e coloquial: a toxicologia
+              biomédica investiga substâncias identificáveis em dose e exposição concretas; já Ama é
+              uma categoria tradicional ampla de peso ou lentidão no sistema digestivo, não
+              equivalendo a uma substância detectada no sangue.
             </p>
-          </div>
-          {agniRow && (
-            <div className="border-t pt-3 space-y-1">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Sua leitura de Agni
-              </h4>
-              <p className="text-xs text-foreground font-medium">{agniRow.label}</p>
-              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{agniRow.text}</p>
+            <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+              <span className="font-semibold text-foreground block">Cuidado com mitos</span>
+              <p>
+                Algumas propostas ayurvédicas incluem práticas de purificação após avaliação
+                cuidadosa, não um detox obrigatório nem com eficácia presumida. A
+                &ldquo;desintoxicação mental ou emocional&rdquo; é uma metáfora para elaborar
+                experiências e reduzir a sobrecarga; emoções não são toxinas. Não se conclui doença
+                nem acúmulo patológico pela pontuação.
+              </p>
             </div>
-          )}
-        </div>
-      ),
-    })
+            {amaRow && (
+              <div className="border-t pt-3 space-y-1">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Sua leitura de Ama
+                </h4>
+                <p className="text-xs text-foreground font-medium">{amaRow.label}</p>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{amaRow.text}</p>
+              </div>
+            )}
+          </div>
+        ),
+      },
+      e?.currentTarget,
+    )
   }
 
-  const openAmaDialog = () => {
-    openDialog({
-      title: 'Ama · Digestão Incompleta',
-      subtitle: 'Conceito tradicional de sobrecarga e acúmulo',
-      tag: 'Ayurveda',
-      content: (
-        <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-          <p>
-            Ama descreve produtos ou estados de processamento incompleto na tradição ayurvédica. A
-            palavra &ldquo;toxinas&rdquo; é uma tradução aproximada e coloquial: a toxicologia
-            biomédica investiga substâncias identificáveis em dose e exposição concretas; já Ama é
-            uma categoria tradicional ampla de peso ou lentidão no sistema digestivo, não
-            equivalendo a uma substância detectada no sangue.
-          </p>
-          <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
-            <span className="font-semibold text-foreground block">Cuidado com mitos</span>
-            <p>
-              Algumas propostas ayurvédicas incluem práticas de purificação após avaliação
-              cuidadosa, não um detox obrigatório nem com eficácia presumida. A
-              &ldquo;desintoxicação mental ou emocional&rdquo; é uma metáfora para elaborar
-              experiências e reduzir a sobrecarga; emoções não são toxinas. Não se conclui doença
-              nem acúmulo patológico pela pontuação.
-            </p>
-          </div>
-          {amaRow && (
-            <div className="border-t pt-3 space-y-1">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Sua leitura de Ama
-              </h4>
-              <p className="text-xs text-foreground font-medium">{amaRow.label}</p>
-              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{amaRow.text}</p>
-            </div>
-          )}
-        </div>
-      ),
-    })
-  }
-
-  const openPatternDialog = (patternKey: string, narrativeLabel: string) => {
+  const openPatternDialog = (
+    patternKey: string,
+    narrativeLabel: string,
+    e?: React.MouseEvent<HTMLElement>,
+  ) => {
     const canonical = CER_PROTECTION_PATTERNS[patternKey]
     const content = getCerProtectionPatternContent(patternKey)
     const row = getPatternRow(patternKey)
 
-    openDialog({
-      title: narrativeLabel,
-      subtitle: canonical?.movementDescription || 'Padrão de Proteção CER',
-      tag: 'Mente & Emoções',
-      content: (
-        <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-          {content?.shortDescription && <p>{content.shortDescription}</p>}
+    openDialog(
+      {
+        title: narrativeLabel,
+        subtitle: canonical?.movementDescription || 'Padrão de Proteção CER',
+        tag: 'Mente & Emoções',
+        content: (
+          <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            {content?.shortDescription && <p>{content.shortDescription}</p>}
 
-          {content?.commonThoughts?.length ? (
-            <div className="space-y-1">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Pensamentos comuns quando ativo
-              </h4>
-              <ul className="list-disc pl-5 text-xs text-muted-foreground space-y-1">
-                {content.commonThoughts.slice(0, 3).map((thought, i) => (
-                  <li key={i}>{thought}</li>
-                ))}
-              </ul>
+            {content?.commonThoughts?.length ? (
+              <div className="space-y-1">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Pensamentos comuns quando ativo
+                </h4>
+                <ul className="list-disc pl-5 text-xs text-muted-foreground space-y-1">
+                  {content.commonThoughts.slice(0, 3).map((thought, i) => (
+                    <li key={i}>{thought}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {content?.associatedFeelings?.length ? (
+              <div className="space-y-1">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Sentimentos associados
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  {content.associatedFeelings.slice(0, 4).join(' · ')}
+                </p>
+              </div>
+            ) : null}
+
+            <div className="rounded-lg bg-muted/20 p-3 space-y-2 text-xs">
+              <h4 className="font-semibold text-foreground">O que este padrão pode proteger</h4>
+              <p className="text-muted-foreground leading-relaxed">
+                {content?.possibleProtectiveFunctions ||
+                  'Em sua história de vida, esse movimento pode ter surgido para preservar vínculos, conter sobrecargas ou buscar segurança em momentos desafiadores.'}
+              </p>
+              {content?.clarificationNote && (
+                <p className="text-primary/90 font-medium pt-1 border-t border-border/50">
+                  {content.clarificationNote}
+                </p>
+              )}
             </div>
-          ) : null}
 
-          {content?.associatedFeelings?.length ? (
-            <div className="space-y-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+              <div className="border rounded p-2.5 bg-card">
+                <span className="font-semibold text-foreground block mb-1">
+                  Recursos essenciais
+                </span>
+                <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
+                  {(content?.strengths || ['Sensibilidade', 'Responsabilidade', 'Capacidade'])
+                    .slice(0, 3)
+                    .map((st, i) => (
+                      <li key={i}>{st}</li>
+                    ))}
+                </ul>
+              </div>
+              <div className="border rounded p-2.5 bg-card">
+                <span className="font-semibold text-foreground block mb-1">Custos possíveis</span>
+                <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
+                  {(content?.costToSelf || ['Cansaço', 'Sobrecarga', 'Autoexigência'])
+                    .slice(0, 3)
+                    .map((c, i) => (
+                      <li key={i}>{c}</li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+
+            {content?.wakeUpCalls?.length ? (
+              <div className="space-y-1 pt-1">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Direção de cuidado e aprendizagem
+                </h4>
+                <ul className="list-disc pl-5 text-xs text-primary/90 space-y-1">
+                  {content.wakeUpCalls.slice(0, 2).map((call, i) => (
+                    <li key={i}>{call}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <div className="border-t pt-3 space-y-1 text-xs">
+              <h4 className="font-semibold uppercase tracking-wider text-foreground text-[11px]">
+                Sua resposta declarada
+              </h4>
+              {row ? (
+                <p className="text-muted-foreground">
+                  <span className="font-medium text-foreground">{row.label}: </span>
+                  {row.text}
+                </p>
+              ) : (
+                <p className="text-muted-foreground italic">
+                  Ainda não há resposta detalhada registrada para este padrão específico no
+                  snapshot.
+                </p>
+              )}
+            </div>
+
+            <p className="text-[11px] text-muted-foreground/80 pt-2 border-t">
+              Referência: Modelo dos Padrões de Proteção CER, adaptado a partir do trabalho de
+              Shirzad Chamine (Positive Intelligence). Não constitui psicometria formal nem
+              diagnóstico clínico individual.
+            </p>
+          </div>
+        ),
+      },
+      e?.currentTarget,
+    )
+  }
+
+  const openRegulationDialog = (
+    item: (typeof REGULATION_REACTIONS)[number],
+    e?: React.MouseEvent<HTMLElement>,
+  ) => {
+    const status = getRegulationStatus(item)
+    openDialog(
+      {
+        title: `${item.title} (${item.subtitle})`,
+        subtitle: item.description,
+        tag: 'Regulação & Padrões de Resposta',
+        content: (
+          <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            <p>{item.concept}</p>
+            <div className="rounded-lg bg-muted/20 p-3 space-y-2 text-xs">
+              <h4 className="font-semibold text-foreground">
+                Compreensão integrativa e desenvolvimento
+              </h4>
+              <p className="text-muted-foreground">
+                A resposta a situações difíceis não se forma definitivamente até os 3 anos de idade:
+                a aprendizagem emocional e relacional continua ao longo de toda a vida. A combinação
+                de respostas é uma hipótese contextual e relacional, nunca um subtipo neurológico
+                rígido.
+              </p>
+            </div>
+            <div className="border-t pt-3 space-y-1">
               <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Sentimentos associados
+                Presença no seu mapa
               </h4>
               <p className="text-xs text-muted-foreground">
-                {content.associatedFeelings.slice(0, 4).join(' · ')}
+                {status.reported ? (
+                  <>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                      Relatada por você no percurso:
+                    </span>{' '}
+                    {status.detail}
+                  </>
+                ) : (
+                  'Esta reação não foi marcada como sua tendência espontânea principal neste momento.'
+                )}
               </p>
-            </div>
-          ) : null}
-
-          <div className="rounded-lg bg-muted/20 p-3 space-y-2 text-xs">
-            <h4 className="font-semibold text-foreground">O que este padrão pode proteger</h4>
-            <p className="text-muted-foreground leading-relaxed">
-              {content?.possibleProtectiveFunctions ||
-                'Em sua história de vida, esse movimento pode ter surgido para preservar vínculos, conter sobrecargas ou buscar segurança em momentos desafiadores.'}
-            </p>
-            {content?.clarificationNote && (
-              <p className="text-primary/90 font-medium pt-1 border-t border-border/50">
-                {content.clarificationNote}
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-            <div className="border rounded p-2.5 bg-card">
-              <span className="font-semibold text-foreground block mb-1">Recursos essenciais</span>
-              <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
-                {(content?.strengths || ['Sensibilidade', 'Responsabilidade', 'Capacidade'])
-                  .slice(0, 3)
-                  .map((st, i) => (
-                    <li key={i}>{st}</li>
-                  ))}
-              </ul>
-            </div>
-            <div className="border rounded p-2.5 bg-card">
-              <span className="font-semibold text-foreground block mb-1">Custos possíveis</span>
-              <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
-                {(content?.costToSelf || ['Cansaço', 'Sobrecarga', 'Autoexigência'])
-                  .slice(0, 3)
-                  .map((c, i) => (
-                    <li key={i}>{c}</li>
-                  ))}
-              </ul>
             </div>
           </div>
-
-          {content?.wakeUpCalls?.length ? (
-            <div className="space-y-1 pt-1">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Direção de cuidado e aprendizagem
-              </h4>
-              <ul className="list-disc pl-5 text-xs text-primary/90 space-y-1">
-                {content.wakeUpCalls.slice(0, 2).map((call, i) => (
-                  <li key={i}>{call}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          <div className="border-t pt-3 space-y-1 text-xs">
-            <h4 className="font-semibold uppercase tracking-wider text-foreground text-[11px]">
-              Sua resposta declarada
-            </h4>
-            {row ? (
-              <p className="text-muted-foreground">
-                <span className="font-medium text-foreground">{row.label}: </span>
-                {row.text}
-              </p>
-            ) : (
-              <p className="text-muted-foreground italic">
-                Ainda não há resposta detalhada registrada para este padrão específico no snapshot.
-              </p>
-            )}
-          </div>
-
-          <p className="text-[11px] text-muted-foreground/80 pt-2 border-t">
-            Referência: Modelo dos Padrões de Proteção CER, adaptado a partir do trabalho de Shirzad
-            Chamine (Positive Intelligence). Não constitui psicometria formal nem diagnóstico
-            clínico individual.
-          </p>
-        </div>
-      ),
-    })
+        ),
+      },
+      e?.currentTarget,
+    )
   }
 
-  const openRegulationDialog = (item: (typeof REGULATION_REACTIONS)[number]) => {
-    const status = getRegulationStatus(item)
-    openDialog({
-      title: `${item.title} (${item.subtitle})`,
-      subtitle: item.description,
-      tag: 'Regulação & Padrões de Resposta',
-      content: (
-        <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-          <p>{item.concept}</p>
-          <div className="rounded-lg bg-muted/20 p-3 space-y-2 text-xs">
-            <h4 className="font-semibold text-foreground">
-              Compreensão integrativa e desenvolvimento
-            </h4>
-            <p className="text-muted-foreground">
-              A resposta a situações difíceis não se forma definitivamente até os 3 anos de idade: a
-              aprendizagem emocional e relacional continua ao longo de toda a vida. A combinação de
-              respostas é uma hipótese contextual e relacional, nunca um subtipo neurológico rígido.
-            </p>
-          </div>
-          <div className="border-t pt-3 space-y-1">
-            <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-              Presença no seu mapa
-            </h4>
-            <p className="text-xs text-muted-foreground">
-              {status.reported ? (
-                <>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                    Relatada por você no percurso:
-                  </span>{' '}
-                  {status.detail}
-                </>
-              ) : (
-                'Esta reação não foi marcada como sua tendência espontânea principal neste momento.'
-              )}
-            </p>
-          </div>
-        </div>
-      ),
-    })
-  }
-
-  const openDimensionDialog = (dimId: string) => {
+  const openDimensionDialog = (dimId: string, e?: React.MouseEvent<HTMLElement>) => {
     const dim = snapshot.dimensions.find((d) => d.id === dimId)
     if (!dim) return
     const refs = snapshot.references.filter((r) => dim.referenceIds.includes(r.id))
 
-    openDialog({
-      title: dim.title,
-      subtitle: 'Conceito, leitura pessoal e recursos',
-      tag: 'Dimensão CER',
-      content: (
-        <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-          <div className="rounded-lg bg-muted/30 p-3 space-y-1">
-            <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-              Como compreender esta dimensão
-            </h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">{dim.explanation}</p>
-          </div>
-
-          {dim.summary && (
-            <div className="space-y-1">
+    openDialog(
+      {
+        title: dim.title,
+        subtitle: 'Conceito, leitura pessoal e recursos',
+        tag: 'Dimensão CER',
+        content: (
+          <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            <div className="rounded-lg bg-muted/30 p-3 space-y-1">
               <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Síntese da leitura
+                Como compreender esta dimensão
               </h4>
-              <p className="text-xs text-foreground whitespace-pre-wrap">{dim.summary}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{dim.explanation}</p>
             </div>
-          )}
 
-          {dim.interpretation && (
-            <div className="space-y-1">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Interpretação revisada em conversa
-              </h4>
-              <p className="text-xs text-foreground whitespace-pre-wrap">{dim.interpretation}</p>
-            </div>
-          )}
-
-          <div className="space-y-2 pt-1 border-t">
-            <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-              Respostas compartilhadas nesta versão
-            </h4>
-            {dim.detailedRows.length > 0 ? (
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                {dim.detailedRows.map((r, i) => (
-                  <div key={i} className="text-xs border-b pb-1.5 last:border-b-0">
-                    <span className="font-medium text-foreground block">{r.label}</span>
-                    <span className="text-muted-foreground whitespace-pre-wrap">{r.text}</span>
-                  </div>
-                ))}
+            {dim.summary && (
+              <div className="space-y-1">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Síntese da leitura
+                </h4>
+                <p className="text-xs text-foreground whitespace-pre-wrap">{dim.summary}</p>
               </div>
-            ) : (
-              <p className="text-xs text-muted-foreground italic">
-                Ainda não há respostas compartilhadas suficientes para esta dimensão.
-              </p>
             )}
-          </div>
 
-          {renderReferencesList(refs)}
-        </div>
-      ),
-    })
-  }
+            {dim.interpretation && (
+              <div className="space-y-1">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Interpretação revisada em conversa
+                </h4>
+                <p className="text-xs text-foreground whitespace-pre-wrap">{dim.interpretation}</p>
+              </div>
+            )}
 
-  const openIntegratedNodeDialog = (nodeKey: string) => {
-    switch (nodeKey) {
-      case 'centro':
-        openDialog({
-          title: 'Meu funcionamento em conjunto',
-          subtitle: 'Integração das dimensões do seu ser',
-          tag: 'Método CER',
-          content: (
-            <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-              <p>
-                {snapshot.integration ||
-                  'As conexões serão aprofundadas com sua história. Corpo, mente, regulação, relações, sexualidade e sentido formam uma teia interligada, onde nenhuma dimensão atua isoladamente.'}
-              </p>
-              {snapshot.lifeDirections?.length ? (
-                <div className="border-t pt-3 space-y-2">
-                  <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                    Seus objetivos no centro do mapa
-                  </h4>
-                  {snapshot.lifeDirections.map((dir) => (
-                    <div key={dir.id} className="text-xs border rounded p-2.5">
-                      <span className="font-medium block">{dir.title}</span>
-                      {dir.meaning && (
-                        <span className="text-muted-foreground block text-[11px] mt-0.5">
-                          Sentido: {dir.meaning}
-                        </span>
-                      )}
+            <div className="space-y-2 pt-1 border-t">
+              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                Respostas compartilhadas nesta versão
+              </h4>
+              {dim.detailedRows.length > 0 ? (
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {dim.detailedRows.map((r, i) => (
+                    <div key={i} className="text-xs border-b pb-1.5 last:border-b-0">
+                      <span className="font-medium text-foreground block">{r.label}</span>
+                      <span className="text-muted-foreground whitespace-pre-wrap">{r.text}</span>
                     </div>
                   ))}
                 </div>
-              ) : null}
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  Ainda não há respostas compartilhadas suficientes para esta dimensão.
+                </p>
+              )}
             </div>
-          ),
-        })
+
+            {renderReferencesList(refs)}
+          </div>
+        ),
+      },
+      e?.currentTarget,
+    )
+  }
+
+  const openIntegratedNodeDialog = (nodeKey: string, e?: React.MouseEvent<HTMLElement>) => {
+    switch (nodeKey) {
+      case 'centro':
+        openDialog(
+          {
+            title: 'Meu funcionamento em conjunto',
+            subtitle: 'Integração das dimensões do seu ser',
+            tag: 'Método CER',
+            content: (
+              <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+                <p>
+                  {snapshot.integration ||
+                    'As conexões serão aprofundadas com sua história. Corpo, mente, regulação, relações, sexualidade e sentido formam uma teia interligada, onde nenhuma dimensão atua isoladamente.'}
+                </p>
+                {snapshot.lifeDirections?.length ? (
+                  <div className="border-t pt-3 space-y-2">
+                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                      Seus objetivos no centro do mapa
+                    </h4>
+                    {snapshot.lifeDirections.map((dir) => (
+                      <div key={dir.id} className="text-xs border rounded p-2.5">
+                        <span className="font-medium block">{dir.title}</span>
+                        {dir.meaning && (
+                          <span className="text-muted-foreground block text-[11px] mt-0.5">
+                            Sentido: {dir.meaning}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ),
+          },
+          e?.currentTarget,
+        )
         break
       case 'corpo':
-        openDimensionDialog('corpo')
+        openDimensionDialog('corpo', e)
         break
       case 'pensamentos':
       case 'emocoes':
       case 'protecao':
-        openDimensionDialog('mente')
+        openDimensionDialog('mente', e)
         break
       case 'relacoes':
-        openDimensionDialog('relacoes')
+        openDimensionDialog('relacoes', e)
         break
       case 'vida_cotidiana':
-        openDimensionDialog('sentido')
+        openDimensionDialog('sentido', e)
         break
       default:
         break
     }
   }
 
-  const openHistoryDialog = () => {
-    openDialog({
-      title: 'Sua história e seu funcionamento hoje',
-      subtitle: 'Conexões exploradas com sua profissional',
-      tag: 'Linha da Vida',
-      content: (
-        <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-          <p>
-            {snapshot.history ||
-              'A relação entre sua história e seu funcionamento ainda será aprofundada em conversa e na Linha da Vida. As respostas das dimensões não permitem afirmar como um padrão se formou.'}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Tendências pessoais, experiências e contexto atual podem participar desse retrato.
-            Prakriti e Vikriti são leituras ayurvédicas, e não equivalências diretas entre genética
-            e história de vida.
-          </p>
-          {!!snapshot.lifeConnections?.length && (
-            <div className="border-t pt-3 space-y-2">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Relações exploradas em conversa
-              </h4>
-              {snapshot.lifeConnections.map((conn, idx) => (
-                <div key={idx} className="border rounded p-2.5 text-xs space-y-1">
-                  <p className="font-medium text-foreground">{conn.text}</p>
-                  {conn.question && (
-                    <p className="text-primary italic">Para investigar: {conn.question}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          {!!snapshot.lifeEvents?.length && (
-            <div className="border-t pt-3 space-y-2">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Acontecimentos da sua história compartilhados
-              </h4>
-              {snapshot.lifeEvents.map((evt) => (
-                <div key={evt.id} className="border rounded p-2 text-xs">
-                  <span className="font-medium block">
-                    {evt.title} ({lifeTimeLabel(evt)})
-                  </span>
-                  <span className="text-muted-foreground text-[11px] block">{evt.narrative}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ),
-    })
+  const openHistoryDialog = (e?: React.MouseEvent<HTMLElement>) => {
+    openDialog(
+      {
+        title: 'Sua história e seu funcionamento hoje',
+        subtitle: 'Conexões exploradas com sua profissional',
+        tag: 'Linha da Vida',
+        content: (
+          <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            <p>
+              {snapshot.history ||
+                'A relação entre sua história e seu funcionamento ainda será aprofundada em conversa e na Linha da Vida. As respostas das dimensões não permitem afirmar como um padrão se formou.'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Tendências pessoais, experiências e contexto atual podem participar desse retrato.
+              Prakriti e Vikriti são leituras ayurvédicas, e não equivalências diretas entre
+              genética e história de vida.
+            </p>
+            {!!snapshot.lifeConnections?.length && (
+              <div className="border-t pt-3 space-y-2">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Relações exploradas em conversa
+                </h4>
+                {snapshot.lifeConnections.map((conn, idx) => (
+                  <div key={idx} className="border rounded p-2.5 text-xs space-y-1">
+                    <p className="font-medium text-foreground">{conn.text}</p>
+                    {conn.question && (
+                      <p className="text-primary italic">Para investigar: {conn.question}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {!!snapshot.lifeEvents?.length && (
+              <div className="border-t pt-3 space-y-2">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Acontecimentos da sua história compartilhados
+                </h4>
+                {snapshot.lifeEvents.map((evt) => (
+                  <div key={evt.id} className="border rounded p-2 text-xs">
+                    <span className="font-medium block">
+                      {evt.title} ({lifeTimeLabel(evt)})
+                    </span>
+                    <span className="text-muted-foreground text-[11px] block">{evt.narrative}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      e?.currentTarget,
+    )
   }
 
   return (
@@ -915,7 +963,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             type="button"
             variant="outline"
             size="sm"
-            onClick={openHowMapHelps}
+            onClick={(e) => openHowMapHelps(e)}
             className="self-start sm:self-center text-xs h-10 px-3 min-h-[44px] border-primary/30 hover:bg-primary/5 text-foreground"
             aria-label="Abrir explicação: Como este mapa ajuda você"
           >
@@ -947,7 +995,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => openDimensionDialog('corpo')}
+            onClick={(e) => openDimensionDialog('corpo', e)}
             className="text-xs text-primary min-h-[44px] self-start sm:self-auto"
             aria-label="Ver leitura completa da dimensão Corpo"
           >
@@ -980,7 +1028,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               type="button"
-              onClick={() => openDoshaDialog('Vata')}
+              onClick={(e) => openDoshaDialog('Vata', e)}
               className="min-h-[48px] p-3 rounded-lg border border-border/70 hover:border-primary/60 bg-card hover:bg-muted/10 transition-colors text-left flex flex-col justify-center focus:outline-none focus:ring-2 focus:ring-primary"
               aria-label="Abrir detalhes do Dosha Vata"
             >
@@ -994,7 +1042,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
 
             <button
               type="button"
-              onClick={() => openDoshaDialog('Pitta')}
+              onClick={(e) => openDoshaDialog('Pitta', e)}
               className="min-h-[48px] p-3 rounded-lg border border-border/70 hover:border-primary/60 bg-card hover:bg-muted/10 transition-colors text-left flex flex-col justify-center focus:outline-none focus:ring-2 focus:ring-primary"
               aria-label="Abrir detalhes do Dosha Pitta"
             >
@@ -1008,7 +1056,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
 
             <button
               type="button"
-              onClick={() => openDoshaDialog('Kapha')}
+              onClick={(e) => openDoshaDialog('Kapha', e)}
               className="min-h-[48px] p-3 rounded-lg border border-border/70 hover:border-primary/60 bg-card hover:bg-muted/10 transition-colors text-left flex flex-col justify-center focus:outline-none focus:ring-2 focus:ring-primary"
               aria-label="Abrir detalhes do Dosha Kapha"
             >
@@ -1025,7 +1073,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             <button
               type="button"
-              onClick={openAgniDialog}
+              onClick={(e) => openAgniDialog(e)}
               className="min-h-[48px] p-3 rounded-lg border border-border/60 hover:border-primary/60 bg-card hover:bg-muted/10 text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary"
               aria-label="Abrir detalhes sobre Agni"
             >
@@ -1042,7 +1090,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
 
             <button
               type="button"
-              onClick={openAmaDialog}
+              onClick={(e) => openAmaDialog(e)}
               className="min-h-[48px] p-3 rounded-lg border border-border/60 hover:border-primary/60 bg-card hover:bg-muted/10 text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary"
               aria-label="Abrir detalhes sobre Ama"
             >
@@ -1081,7 +1129,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => openDimensionDialog('mente')}
+            onClick={(e) => openDimensionDialog('mente', e)}
             className="text-xs min-h-[44px] self-start sm:self-auto border-primary/30 text-foreground"
             aria-label="Abrir: Meu mundo emocional"
           >
@@ -1118,7 +1166,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                 <button
                   key={p.canonicalKey}
                   type="button"
-                  onClick={() => openPatternDialog(p.canonicalKey, p.narrativeLabel)}
+                  onClick={(e) => openPatternDialog(p.canonicalKey, p.narrativeLabel, e)}
                   className="group flex flex-col items-center justify-end h-full focus:outline-none focus:ring-2 focus:ring-primary rounded p-1 transition-all"
                   aria-label={`${p.narrativeLabel}: categoria ${config.label}. Toque para abrir detalhes.`}
                 >
@@ -1154,7 +1202,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                 <button
                   key={p.canonicalKey}
                   type="button"
-                  onClick={() => openPatternDialog(p.canonicalKey, p.narrativeLabel)}
+                  onClick={(e) => openPatternDialog(p.canonicalKey, p.narrativeLabel, e)}
                   className="group flex flex-col items-center justify-end h-full focus:outline-none focus:ring-2 focus:ring-primary rounded p-1 transition-all"
                   aria-label={`${p.narrativeLabel}: categoria ${config.label}. Toque para abrir detalhes.`}
                 >
@@ -1204,7 +1252,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => openDimensionDialog('regulacao')}
+            onClick={(e) => openDimensionDialog('regulacao', e)}
             className="text-xs text-primary min-h-[44px] self-start sm:self-auto"
             aria-label="Ver leitura completa da dimensão Regulação"
           >
@@ -1219,7 +1267,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
               <button
                 key={item.id}
                 type="button"
-                onClick={() => openRegulationDialog(item)}
+                onClick={(e) => openRegulationDialog(item, e)}
                 className={`min-h-[52px] p-3 rounded-xl border text-left flex flex-col justify-between transition-all focus:outline-none focus:ring-2 focus:ring-primary ${
                   status.reported
                     ? 'border-primary/50 bg-primary/5 hover:bg-primary/10'
@@ -1273,7 +1321,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           <button
             type="button"
-            onClick={() => openDimensionDialog('relacoes')}
+            onClick={(e) => openDimensionDialog('relacoes', e)}
             className="min-h-[48px] p-3.5 rounded-xl border border-border/70 hover:border-primary/60 bg-card hover:bg-muted/15 transition-colors text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary"
             aria-label="Abrir dimensão: Relações & Vínculos"
           >
@@ -1290,7 +1338,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
 
           <button
             type="button"
-            onClick={() => openDimensionDialog('sexualidade')}
+            onClick={(e) => openDimensionDialog('sexualidade', e)}
             className="min-h-[48px] p-3.5 rounded-xl border border-border/70 hover:border-primary/60 bg-card hover:bg-muted/15 transition-colors text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary"
             aria-label="Abrir dimensão: Sexualidade & Intimidade"
           >
@@ -1307,7 +1355,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
 
           <button
             type="button"
-            onClick={() => openDimensionDialog('sentido')}
+            onClick={(e) => openDimensionDialog('sentido', e)}
             className="min-h-[48px] p-3.5 rounded-xl border border-border/70 hover:border-primary/60 bg-card hover:bg-muted/15 transition-colors text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary"
             aria-label="Abrir dimensão: Sentido & Conexão"
           >
@@ -1345,7 +1393,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             type="button"
             variant="ghost"
             size="sm"
-            onClick={openHistoryDialog}
+            onClick={(e) => openHistoryDialog(e)}
             className="text-xs text-primary min-h-[44px] self-start sm:self-auto"
             aria-label="Abrir histórico e conexões da Linha da Vida"
           >
@@ -1358,7 +1406,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
           {/* Botão Central */}
           <button
             type="button"
-            onClick={() => openIntegratedNodeDialog('centro')}
+            onClick={(e) => openIntegratedNodeDialog('centro', e)}
             className="w-full sm:max-w-xs min-h-[56px] p-4 rounded-2xl border-2 border-primary/50 bg-primary/10 hover:bg-primary/20 text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary shadow-sm mb-4 relative z-10"
             aria-label="Centro integrador: Pessoa e Objetivos. Toque para abrir leitura integrada."
           >
@@ -1417,7 +1465,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                 <button
                   key={node.id}
                   type="button"
-                  onClick={() => openIntegratedNodeDialog(node.id)}
+                  onClick={(e) => openIntegratedNodeDialog(node.id, e)}
                   className="min-h-[48px] p-3 rounded-xl border border-dashed border-border/80 hover:border-primary/60 bg-card hover:bg-muted/20 text-left flex items-center gap-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-primary shadow-2xs"
                   aria-label={`Nó ${node.label}. Toque para abrir leitura individual.`}
                 >
@@ -1464,7 +1512,15 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
 
       {/* DIÁLOGO CONTROLADO ÚNICO */}
       <Dialog open={Boolean(activeDialog)} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+        <DialogContent
+          className="max-w-xl max-h-[85vh] overflow-y-auto"
+          onCloseAutoFocus={(e) => {
+            if (triggerRef.current) {
+              e.preventDefault()
+              triggerRef.current.focus()
+            }
+          }}
+        >
           <DialogHeader>
             {activeDialog?.tag && (
               <Badge

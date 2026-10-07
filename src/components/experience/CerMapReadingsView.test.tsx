@@ -34,12 +34,19 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     // Fechar dialog com tecla Escape
     fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
 
+    // O foco deve retornar ao botão acionador
+    expect(document.activeElement).toBe(howBtn)
+
     // Abrir outro dialog (Dosha Vata)
     const vataBtn = screen.getByRole('button', { name: 'Abrir detalhes do Dosha Vata' })
     await userEvent.click(vataBtn)
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Dosha Vata' })).toBeInTheDocument()
     expect(screen.getAllByRole('dialog')).toHaveLength(1)
+
+    // Fechar Vata com tecla Escape e verificar retorno de foco
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+    expect(document.activeElement).toBe(vataBtn)
   })
 
   it('não inventa gráfico de pizza se os percentuais não forem números finitos válidos somando 100', () => {
@@ -103,6 +110,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     ).toBeInTheDocument()
 
     fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+    expect(document.activeElement).toBe(centroBtn)
 
     const historiaBtn = screen.getByRole('button', {
       name: 'Abrir histórico e conexões da Linha da Vida',
@@ -112,5 +120,29 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     expect(
       screen.getByRole('heading', { name: 'Sua história e seu funcionamento hoje' }),
     ).toBeInTheDocument()
+
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+    expect(document.activeElement).toBe(historiaBtn)
+  })
+
+  it('restaura o foco ao botão acionador ao fechar por Escape para alvos de padrão (ex: Prestativo) e Agni', async () => {
+    const snapshot = buildCerMapReadings([], 'enr-1', 'Lia')
+    render(<CerMapReadingsView snapshot={snapshot} />)
+
+    const agniBtn = screen.getByRole('button', { name: 'Abrir detalhes sobre Agni' })
+    await userEvent.click(agniBtn)
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+    expect(document.activeElement).toBe(agniBtn)
+
+    const prestativoBtn = screen.getByRole('button', {
+      name: /Prestativo: categoria ausente\. Toque para abrir detalhes\./,
+    })
+    await userEvent.click(prestativoBtn)
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+    expect(document.activeElement).toBe(prestativoBtn)
   })
 })
