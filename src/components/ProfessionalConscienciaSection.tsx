@@ -541,7 +541,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
           <div>
             <h2 className="text-base font-semibold font-serif">Mapa CER</h2>
             <p className="text-xs text-muted-foreground">
-              A mesma leitura disponível à interagente, nas versões resumida e detalhada.
+              A mesma leitura disponível à interagente, em uma visão única com detalhes ao tocar.
             </p>
           </div>
           <div className="flex items-center gap-2">

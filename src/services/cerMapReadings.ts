@@ -403,3 +403,77 @@ export function unreviewedMapReadings(snapshot: CerMapReadingSnapshot): CerMapRe
   delete copy.reviewedBy
   return copy
 }
+
+export function adaptLegacyMapItemsToReadings(
+  items: CerMapItemRecord[],
+  enrollmentId: string,
+  participantName: string,
+  mapVersionNumber: number = 1,
+): CerMapReadingSnapshot {
+  const SECTION_CANONICAL_DIMENSION: Record<string, string> = {
+    minha_natureza: 'corpo',
+    meu_momento: 'corpo',
+    quando_estou_no_meu_eixo: 'corpo',
+    quando_saio_do_meu_eixo: 'corpo',
+    o_que_me_mobiliza: 'mente',
+    meus_padroes: 'mente',
+    meus_recursos: 'mente',
+    minhas_relacoes: 'relacoes',
+    minha_historia: 'relacoes',
+    o_que_tem_sentido_para_mim: 'sentido',
+    o_que_reconheci_sobre_mim: 'sentido',
+  }
+
+  const SECTION_FRIENDLY_LABEL: Record<string, string> = {
+    minha_natureza: 'Minha Natureza',
+    meu_momento: 'Meu Momento',
+    quando_estou_no_meu_eixo: 'Quando estou no meu eixo',
+    quando_saio_do_meu_eixo: 'Quando saio do meu eixo',
+    o_que_me_mobiliza: 'O que me mobiliza',
+    meus_padroes: 'Meus Padrões',
+    meus_recursos: 'Meus Recursos',
+    minhas_relacoes: 'Minhas Relações',
+    minha_historia: 'Minha História',
+    o_que_tem_sentido_para_mim: 'O que tem sentido para mim',
+    o_que_reconheci_sobre_mim: 'O que reconheci sobre mim',
+  }
+
+  const dimensions = CER_READING_DIMENSIONS.map((meta) => {
+    const matchingItems = (Array.isArray(items) ? items : []).filter(
+      (item) => SECTION_CANONICAL_DIMENSION[item.section] === meta.id,
+    )
+
+    const detailedRows: CerMapReadingRow[] = matchingItems.map((item) => ({
+      label: `${SECTION_FRIENDLY_LABEL[item.section] || item.section} · Conteúdo do mapa publicado anteriormente`,
+      text: item.item_text,
+    }))
+
+    const summaryRows: CerMapReadingRow[] = detailedRows.slice(0, 3)
+
+    return {
+      id: meta.id,
+      title: meta.title,
+      explanation: meta.explanation,
+      summary: matchingItems.length > 0 ? 'Conteúdo da versão anterior do mapa.' : '',
+      interpretation: '',
+      summaryRows,
+      detailedRows,
+      referenceIds: [...meta.refs],
+    }
+  })
+
+  return {
+    schemaVersion: 1,
+    enrollmentId,
+    participantName,
+    generatedAt: new Date().toISOString(),
+    sourceResponseIds: [],
+    overview: `Este mapa reúne o conteúdo da versão anterior do mapa (v${mapVersionNumber}), apresentado em visualização interativa com detalhes disponíveis ao tocar em cada alvo.`,
+    integration: '',
+    history: '',
+    dimensions,
+    references: structuredClone(CER_MAP_REFERENCES),
+    reviewedBy: 'Versão anterior do mapa',
+    reviewedAt: new Date().toISOString(),
+  }
+}

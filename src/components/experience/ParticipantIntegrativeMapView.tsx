@@ -94,7 +94,7 @@ export function ParticipantIntegrativeMapView({
   if (currentMap?.status === 'published')
     return (
       <div className="space-y-5">
-        <ParticipantMapDisplay map={currentMap} />
+        <ParticipantMapDisplay map={currentMap} participantName={participantName} />
         {trail}
       </div>
     )

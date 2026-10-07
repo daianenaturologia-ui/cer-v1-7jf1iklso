@@ -234,12 +234,12 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
   }
 
   // Dimensões do snapshot
-  const dimCorpo = snapshot.dimensions.find((d) => d.id === 'corpo')
-  const dimMente = snapshot.dimensions.find((d) => d.id === 'mente')
-  const dimRegulacao = snapshot.dimensions.find((d) => d.id === 'regulacao')
-  const dimRelacoes = snapshot.dimensions.find((d) => d.id === 'relacoes')
-  const dimSexualidade = snapshot.dimensions.find((d) => d.id === 'sexualidade')
-  const dimSentido = snapshot.dimensions.find((d) => d.id === 'sentido')
+  const dimCorpo = snapshot.dimensions?.find((d) => d?.id === 'corpo')
+  const dimMente = snapshot.dimensions?.find((d) => d?.id === 'mente')
+  const dimRegulacao = snapshot.dimensions?.find((d) => d?.id === 'regulacao')
+  const dimRelacoes = snapshot.dimensions?.find((d) => d?.id === 'relacoes')
+  const dimSexualidade = snapshot.dimensions?.find((d) => d?.id === 'sexualidade')
+  const dimSentido = snapshot.dimensions?.find((d) => d?.id === 'sentido')
 
   // Verificação estrita de percentuais de dosha no snapshot publicado
   const doshaPercents = (() => {
@@ -301,19 +301,27 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
 
   // Extração das respostas de Regulação
   const getRegulationStatus = (item: (typeof REGULATION_REACTIONS)[number]) => {
-    const row = dimRegulacao?.detailedRows.find(
-      (r) =>
-        r.label.toLowerCase().includes('resposta') ||
-        r.label.toLowerCase().includes('tende') ||
-        r.sourcePromptKey === 'resposta_tendencia',
-    )
+    const row = dimRegulacao?.detailedRows.find((r) => {
+      const lbl = (r.label || '').toLowerCase()
+      const key = r.sourcePromptKey || ''
+      const text = (r.text || '').toLowerCase()
+      return (
+        lbl.includes('resposta') ||
+        lbl.includes('tende') ||
+        lbl.includes(item.id) ||
+        lbl.includes(item.title.toLowerCase()) ||
+        key === 'resposta_tendencia' ||
+        text.includes(item.title.toLowerCase())
+      )
+    })
     if (!row) return { reported: false, detail: undefined }
-    const text = row.text.toLowerCase()
+    const text = (row.text || '').toLowerCase()
     const isPresent =
       text.includes(item.id) ||
       text.includes(item.title.toLowerCase()) ||
       text.includes(item.subtitle.toLowerCase()) ||
-      text.includes(item.description.slice(0, 15).toLowerCase())
+      text.includes(item.description.slice(0, 15).toLowerCase()) ||
+      (row.label || '').toLowerCase().includes(item.title.toLowerCase())
     return { reported: isPresent, detail: row.text }
   }
 
@@ -1345,13 +1353,13 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
           </Button>
         </div>
 
-        {/* Nós em disposição circular/responsiva */}
-        <div className="py-4 flex flex-col items-center justify-center">
+        {/* Nós em disposição circular/responsiva com setas tracejadas conectando os nós ao centro */}
+        <div className="py-4 flex flex-col items-center justify-center relative">
           {/* Botão Central */}
           <button
             type="button"
             onClick={() => openIntegratedNodeDialog('centro')}
-            className="w-full sm:max-w-xs min-h-[56px] p-4 rounded-2xl border-2 border-primary/50 bg-primary/10 hover:bg-primary/20 text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary shadow-sm mb-4"
+            className="w-full sm:max-w-xs min-h-[56px] p-4 rounded-2xl border-2 border-primary/50 bg-primary/10 hover:bg-primary/20 text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary shadow-sm mb-4 relative z-10"
             aria-label="Centro integrador: Pessoa e Objetivos. Toque para abrir leitura integrada."
           >
             <span className="font-serif font-bold text-sm sm:text-base text-foreground block">
@@ -1363,6 +1371,36 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                 : 'Toque para abrir a visão integrada'}
             </span>
           </button>
+
+          {/* Diagrama decorativo com setas tracejadas entre os nós e o centro */}
+          <div
+            className="w-full max-w-md hidden sm:flex justify-around items-center py-1 text-muted-foreground/60 select-none pointer-events-none"
+            aria-hidden="true"
+          >
+            <svg className="w-full h-6" viewBox="0 0 320 24" fill="none">
+              <line
+                x1="20"
+                y1="20"
+                x2="160"
+                y2="4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeDasharray="4 4"
+              />
+              <line
+                x1="160"
+                y1="4"
+                x2="300"
+                y2="20"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeDasharray="4 4"
+              />
+              <circle cx="20" cy="20" r="3" fill="currentColor" />
+              <circle cx="160" cy="4" r="3" fill="currentColor" />
+              <circle cx="300" cy="20" r="3" fill="currentColor" />
+            </svg>
+          </div>
 
           {/* 6 Nós ao redor */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 w-full">
@@ -1380,7 +1418,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                   key={node.id}
                   type="button"
                   onClick={() => openIntegratedNodeDialog(node.id)}
-                  className="min-h-[48px] p-3 rounded-xl border border-border/70 hover:border-primary/50 bg-card hover:bg-muted/20 text-left flex items-center gap-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="min-h-[48px] p-3 rounded-xl border border-dashed border-border/80 hover:border-primary/60 bg-card hover:bg-muted/20 text-left flex items-center gap-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-primary shadow-2xs"
                   aria-label={`Nó ${node.label}. Toque para abrir leitura individual.`}
                 >
                   <Icon className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
