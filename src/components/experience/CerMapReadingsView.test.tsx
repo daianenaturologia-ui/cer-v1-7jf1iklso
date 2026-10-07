@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CerMapReadingsView } from './CerMapReadingsView'
-import { buildCerMapReadings } from '@/services/cerMapReadings'
+import { buildCerMapReadings, isCerMapReadingSnapshot } from '@/services/cerMapReadings'
+import { createDemoCerMapReading } from '@/services/demoCerMapReading'
 
 describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
   it('renderiza o mapa interativo em visão única sem abas de versão resumida/detalhada', () => {
@@ -144,5 +145,64 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
 
     fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
     expect(document.activeElement).toBe(prestativoBtn)
+  })
+
+  it('renderiza o snapshot demo gerado por createDemoCerMapReading com doshas, 10 comportamentos preenchidos e reação destacada', () => {
+    const demoSnapshot = createDemoCerMapReading('demo-enr-01')
+    expect(isCerMapReadingSnapshot(demoSnapshot)).toBe(true)
+
+    render(<CerMapReadingsView snapshot={demoSnapshot} />)
+
+    // 1. Doshas preenchidos sem aviso de indisponibilidade
+    expect(
+      screen.queryByText(
+        'A distribuição percentual ainda não está disponível no snapshot publicado.',
+      ),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('Distribuição Constitucional Registrada')).toBeInTheDocument()
+    expect(screen.getByText('Vata: 45%')).toBeInTheDocument()
+    expect(screen.getByText('Pitta: 35%')).toBeInTheDocument()
+    expect(screen.getByText('Kapha: 20%')).toBeInTheDocument()
+
+    // 2. Todos os 10 comportamentos preenchidos (nenhum "Não informado" ou categoria ausente)
+    const ausenteButtons = screen.queryAllByRole('button', {
+      name: /categoria Não informado|categoria ausente/,
+    })
+    expect(ausenteButtons).toHaveLength(0)
+
+    // Confere que comportamentos canônicos específicos aparecem com suas categorias ordinais
+    expect(
+      screen.getByRole('button', {
+        name: /Insistente: categoria Repete-se com frequência/i,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: /Prestativo: categoria Aparece com muita força quando estou sob pressão/i,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: /Realizador incansável: categoria Aparece em algumas situações/i,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: /Desencorajado: categoria Quase nunca acontece comigo/i,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: /Esquivo: categoria Ainda não sei dizer/i,
+      }),
+    ).toBeInTheDocument()
+
+    // 3. Ao menos uma reação de regulação destacada como "Relatada no percurso"
+    expect(screen.getByText('Relatada no percurso')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: /Reação Luta.*Relatada por você/i,
+      }),
+    ).toBeInTheDocument()
   })
 })
