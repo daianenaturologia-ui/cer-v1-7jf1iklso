@@ -40,6 +40,7 @@ import type {
 } from '@/types/cer'
 import { BUILD_07C_MENTE_PROMPTS } from './build07cPrompts'
 import { buildConscienciaQaFixture } from './conscienciaQaFixture'
+import { createDemoCerMapReading } from './demoCerMapReading'
 
 export interface DemoUserAccount {
   id: string
@@ -1710,6 +1711,7 @@ class DemoAdapter {
         created_by_user_id: DEMO_USER_DAIANE.id,
         created: now,
         updated: now,
+        reading_snapshot: createDemoCerMapReading(enrollmentId || DEMO_ENROLLMENT_ID),
         items: [
           {
             id: 'demo-qa-map-item-1',
