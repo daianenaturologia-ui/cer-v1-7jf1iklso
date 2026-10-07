@@ -286,8 +286,8 @@ export function buildCerMapReadings(
     generatedAt: new Date().toISOString(),
     sourceResponseIds: [...new Set(shared.map((response) => response.id))],
     overview: options.literalOnly
-      ? 'Este é seu mapa inicial: um retrato das respostas que você já registrou, disponível sem esperar pelo primeiro encontro. A versão resumida mostra o essencial; a aprofundada reúne mais detalhes e explica as dimensões. Vocês poderão aprofundar e ajustar essa compreensão nas sessões.'
-      : 'Este mapa reúne suas respostas e a leitura revisada pela profissional. A versão resumida oferece um panorama; a aprofundada mostra mais detalhes e explica os conceitos. É um retrato para compreender seu funcionamento e conversar sobre ele, sem definir quem você é.',
+      ? 'Este é seu mapa inicial: um retrato das respostas que você já registrou, disponível sem esperar pelo primeiro encontro. Uma leitura visual com aprofundamento sob toque para explorar dimensões, conceitos e recursos. Vocês poderão aprofundar e ajustar essa compreensão nas sessões.'
+      : 'Este mapa reúne suas respostas e a leitura revisada pela profissional. Uma leitura visual única com aprofundamento sob toque para compreender conceitos, hipóteses e recursos, sem definir quem você é.',
     integration: '',
     history: '',
     dimensions,

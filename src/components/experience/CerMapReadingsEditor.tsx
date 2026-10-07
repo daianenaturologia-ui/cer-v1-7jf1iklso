@@ -89,17 +89,17 @@ export function CerMapReadingsEditor({
     }
   }
   return (
-    <section className="border rounded-xl p-4 space-y-4" aria-label="Duas versões do Mapa CER">
+    <section className="border rounded-xl p-4 space-y-4" aria-label="Mapa CER digital interativo">
       <div className="space-y-2">
-        <h3 className="font-serif text-lg">Versões resumida e aprofundada</h3>
+        <h3 className="font-serif text-lg">Mapa CER digital interativo</h3>
         <p className="text-sm text-muted-foreground">
-          Organize as respostas compartilhadas e redija sua leitura. Confira as duas versões na
+          Organize as respostas compartilhadas e redija sua leitura. Confira o mapa interativo na
           prévia antes de marcar a revisão. Respostas privadas não entram neste documento.
         </p>
       </div>
       {!snapshot ? (
         <Button disabled={busy} onClick={() => void prepare()}>
-          Preparar as duas versões
+          Preparar o Mapa CER
         </Button>
       ) : (
         <>
@@ -117,7 +117,7 @@ export function CerMapReadingsEditor({
             <fieldset key={dimension.id} className="border rounded-lg p-3 space-y-3">
               <legend className="text-sm font-semibold px-1">{dimension.title}</legend>
               <label className="block text-sm space-y-1">
-                <span>Síntese em linguagem simples · ambas as versões</span>
+                <span>Síntese em linguagem simples · leitura inicial</span>
                 <Textarea
                   value={dimension.summary}
                   onChange={(e) =>
@@ -131,7 +131,7 @@ export function CerMapReadingsEditor({
                 />
               </label>
               <label className="block text-sm space-y-1">
-                <span>Interpretação e contexto · versão aprofundada</span>
+                <span>Interpretação e contexto · leitura aprofundada</span>
                 <Textarea
                   value={dimension.interpretation}
                   onChange={(e) =>
@@ -192,7 +192,7 @@ export function CerMapReadingsEditor({
             />
           </label>
           <Button variant="outline" onClick={() => setPreview(!preview)}>
-            {preview ? 'Fechar prévia das duas versões' : 'Conferir as duas versões'}
+            {preview ? 'Fechar prévia do mapa' : 'Conferir prévia do mapa'}
           </Button>
           {preview && <CerMapReadingsView snapshot={snapshot} />}
           <label className="flex gap-2 items-start text-sm">
@@ -205,15 +205,15 @@ export function CerMapReadingsEditor({
               }}
             />
             <span>
-              Revisei as duas versões, suas explicações e referências para esta interagente.
+              Revisei o mapa interativo, suas explicações e referências para esta interagente.
             </span>
           </label>
           <Button disabled={busy} onClick={save}>
             {busy
               ? 'Salvando...'
               : reviewed
-                ? 'Revisar e salvar as duas versões'
-                : 'Salvar as duas versões como rascunho'}
+                ? 'Revisar e salvar o Mapa CER'
+                : 'Salvar como rascunho'}
           </Button>
           {initial?.reviewedAt && (
             <p className="text-xs text-muted-foreground">

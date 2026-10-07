@@ -20,14 +20,14 @@ const map = (id: string, text: string) => {
   } as any
 }
 describe('Documento comum às duas áreas', () => {
-  it('mostra a publicação compartilhada em duas versões sem usar respostas novas como interpretação', async () => {
+  it('mostra a publicação compartilhada em visão única interativa sem usar respostas novas como interpretação', async () => {
     vi.spyOn(cerMapService, 'getCurrentPublishedMap').mockResolvedValue(
       map('a', 'Leitura compartilhada'),
     )
     render(<SharedProfessionalCerMap enrollmentId="a" participantName="Teste" responses={[]} />)
-    expect(await screen.findByText('Leitura compartilhada')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Versão resumida' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Versão detalhada' })).toBeInTheDocument()
+    expect(await screen.findByTestId('cer-map-readings')).toBeInTheDocument()
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(screen.getByText('Meu Mapa CER · Teste')).toBeInTheDocument()
   })
   it('ignora retorno atrasado de outra pessoa', async () => {
     let resolveA!: (value: any) => void

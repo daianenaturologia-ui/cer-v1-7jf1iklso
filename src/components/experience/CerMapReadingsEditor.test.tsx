@@ -18,18 +18,14 @@ it('exige revisão explícita e retira a marca após nova edição', async () =>
       onSave={save}
     />,
   )
-  await userEvent.click(
-    screen.getByRole('button', { name: 'Salvar as duas versões como rascunho' }),
-  )
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar como rascunho' }))
   expect(save.mock.calls[0][1]).toBe(false)
   await userEvent.click(screen.getByRole('checkbox'))
-  await userEvent.click(screen.getByRole('button', { name: 'Revisar e salvar as duas versões' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Revisar e salvar o Mapa CER' }))
   expect(save.mock.calls[1][1]).toBe(true)
   await userEvent.type(screen.getByLabelText('Apresentação do mapa'), ' Nova frase')
   expect(screen.getByRole('checkbox')).not.toBeChecked()
-  expect(
-    screen.getByRole('button', { name: 'Salvar as duas versões como rascunho' }),
-  ).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Salvar como rascunho' })).toBeInTheDocument()
 })
 it('mantém edições quando falha ao salvar e informa a tentativa necessária', async () => {
   render(
@@ -44,10 +40,10 @@ it('mantém edições quando falha ao salvar e informa a tentativa necessária',
       }}
     />,
   )
-  await userEvent.type(screen.getByLabelText('Como as dimensões se relacionam'), 'Texto teste')
-  await userEvent.click(
-    screen.getByRole('button', { name: 'Salvar as duas versões como rascunho' }),
-  )
+  await userEvent.type(screen.getByLabelText('Apresentação do mapa'), 'Texto teste')
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar como rascunho' }))
   expect(screen.getByRole('alert')).toHaveTextContent('Falha de rede')
-  expect(screen.getByLabelText('Como as dimensões se relacionam')).toHaveValue('Texto teste')
+  expect(screen.getByLabelText('Apresentação do mapa')).toHaveValue(
+    buildCerMapReadings([], 'enr', 'Teste').overview + 'Texto teste',
+  )
 })

@@ -64,7 +64,7 @@ export function CerMapUpdateNotice({
           : 'Seu Mapa CER está disponível'}
       </h2>
       <p className="text-sm text-muted-foreground">
-        Uma leitura para compreender seu funcionamento, nas versões resumida e detalhada.
+        Uma leitura visual para compreender seu funcionamento, com aprofundamento sob clique.
       </p>
       <Button onClick={open}>Ver meu Mapa CER</Button>
     </section>

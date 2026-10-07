@@ -44,7 +44,7 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
     expect(screen.queryByText('CONTEÚDO AINDA PRIVADO')).not.toBeInTheDocument()
     expect(screen.getByText('Cobertura das dimensões (0 de 6)')).toBeInTheDocument()
   })
-  it('exibe exatamente o snapshot publicado e mantém explicações e referências nas duas versões', async () => {
+  it('exibe exatamente o snapshot publicado e aprofunda explicações e referências no diálogo ao clicar', async () => {
     const document = snapshot()
     document.dimensions[1].summaryRows = [
       { label: 'Resumo revisado', text: 'RESPOSTA DA VERSÃO PUBLICADA' },
@@ -58,11 +58,11 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
       <ParticipantIntegrativeMapView responses={[]} participantName="Teste" currentMap={map} />,
     )
     expect(screen.queryByText('RESPOSTA DA VERSÃO PUBLICADA')).not.toBeInTheDocument()
-    expect(screen.getAllByText('Como compreender esta dimensão')).toHaveLength(6)
-    expect(screen.getByText('Referências e fundamentos desta leitura')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: 'Versão detalhada' }))
-    expect(screen.queryByText('DETALHE DA VERSÃO PUBLICADA')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Abrir: Meu mundo emocional' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir: Meu mundo emocional' }))
+    expect(await screen.findByText('DETALHE DA VERSÃO PUBLICADA')).toBeInTheDocument()
     expect(screen.getByText('INTERPRETAÇÃO REVISADA')).toBeInTheDocument()
+    expect(screen.getByText('Referências e fontes de consulta')).toBeInTheDocument()
     rerender(
       <ParticipantIntegrativeMapView
         responses={
@@ -73,7 +73,6 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
       />,
     )
     expect(screen.queryByText('RESPOSTA NOVA PRIVADA')).not.toBeInTheDocument()
-    expect(screen.queryByText('DETALHE DA VERSÃO PUBLICADA')).not.toBeInTheDocument()
   })
   it('mantém publicações legadas literais sem inventar uma interpretação nova', () => {
     render(
@@ -94,7 +93,7 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
 })
 
 describe('Mapa inicial automático', () => {
-  it('abre duas versões sem encontro, exclui outras pessoas e não expõe leitura profissional em rascunho', async () => {
+  it('abre leitura interativa sem abas, exclui outras pessoas e não expõe leitura profissional em rascunho', async () => {
     const prompt = BUILD_07C_REGULACAO_PROMPTS.find(
       (p) => (p.schema_config as any).prompt_key === 'resposta_tendencia',
     )!
@@ -126,10 +125,11 @@ describe('Mapa inicial automático', () => {
       />,
     )
     expect(screen.getByTestId('participant-initial-map')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Versão resumida' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: 'Versão detalhada' }))
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ver dimensão completa' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Ver dimensão completa' }))
     for (const option of options)
-      expect(screen.getByText(new RegExp(option.title))).toBeInTheDocument()
+      expect(await screen.findByText(new RegExp(option.title))).toBeInTheDocument()
     expect(screen.queryByText('NOTA PROFISSIONAL PRIVADA')).not.toBeInTheDocument()
     expect(screen.queryByText('OUTRA PESSOA')).not.toBeInTheDocument()
     expect(screen.queryByText(/compartilhado após o primeiro encontro/)).not.toBeInTheDocument()

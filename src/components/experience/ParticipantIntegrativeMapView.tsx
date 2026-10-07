@@ -159,8 +159,9 @@ export function ParticipantIntegrativeMapView({
       </ul>
       {trail}
       <p className="text-sm text-muted-foreground">
-        O mapa terá uma versão resumida e outra aprofundada, ambas com explicações e referências.
-        Enquanto as respostas são carregadas, você pode consultá-las nos panoramas de cada dimensão.
+        O mapa terá uma leitura visual integrada com aprofundamento sob clique, explicações e
+        referências. Enquanto as respostas são carregadas, você pode consultá-las nos panoramas de
+        cada dimensão.
       </p>
     </div>
   )
