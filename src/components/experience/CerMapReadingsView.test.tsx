@@ -204,5 +204,18 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
         name: /Reação Luta.*Relatada por você/i,
       }),
     ).toBeInTheDocument()
+
+    // 4. Rótulos visíveis dos comportamentos exibem categorias curtas e NÃO exibem '%'
+    expect(screen.getByText('Quase nunca')).toBeInTheDocument()
+    expect(screen.getByText('Algumas situações')).toBeInTheDocument()
+    expect(screen.getByText('Frequente')).toBeInTheDocument()
+    expect(screen.getByText('Sob pressão')).toBeInTheDocument()
+    expect(screen.getByText('Ainda não sei')).toBeInTheDocument()
+
+    // Comportamentos não devem ter rótulos de porcentagem (25%, 50%, 75%, 100%)
+    expect(screen.queryByText('25%')).not.toBeInTheDocument()
+    expect(screen.queryByText('50%')).not.toBeInTheDocument()
+    expect(screen.queryByText('75%')).not.toBeInTheDocument()
+    expect(screen.queryByText('100%')).not.toBeInTheDocument()
   })
 })

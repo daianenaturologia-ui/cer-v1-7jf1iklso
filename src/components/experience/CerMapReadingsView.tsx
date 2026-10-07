@@ -113,10 +113,18 @@ type CategoricalFrequency =
 
 const CATEGORY_SCALE_MAP: Record<
   CategoricalFrequency,
-  { label: string; heightPercent: number; color: string; badge: string; isUnknown?: boolean }
+  {
+    label: string
+    shortLabel: string
+    heightPercent: number
+    color: string
+    badge: string
+    isUnknown?: boolean
+  }
 > = {
   quase_nunca: {
     label: 'Quase nunca acontece comigo',
+    shortLabel: 'Quase nunca',
     heightPercent: 25,
     color: 'bg-emerald-500/80',
     badge:
@@ -124,24 +132,28 @@ const CATEGORY_SCALE_MAP: Record<
   },
   algumas_situacoes: {
     label: 'Aparece em algumas situações',
+    shortLabel: 'Algumas situações',
     heightPercent: 50,
     color: 'bg-teal-500/80',
     badge: 'bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300',
   },
   com_frequencia: {
     label: 'Repete-se com frequência',
+    shortLabel: 'Frequente',
     heightPercent: 75,
     color: 'bg-amber-500/85',
     badge: 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200',
   },
   sob_pressao: {
     label: 'Aparece com muita força quando estou sob pressão',
+    shortLabel: 'Sob pressão',
     heightPercent: 100,
     color: 'bg-rose-500/85',
     badge: 'bg-rose-50 text-rose-900 border-rose-200 dark:bg-rose-950/40 dark:text-rose-200',
   },
   desconhecido: {
     label: 'Ainda não sei dizer',
+    shortLabel: 'Ainda não sei',
     heightPercent: 15,
     color: 'bg-stone-300 dark:bg-stone-600',
     badge: 'bg-stone-100 text-stone-700 border-stone-200 dark:bg-stone-800 dark:text-stone-300',
@@ -149,6 +161,7 @@ const CATEGORY_SCALE_MAP: Record<
   },
   ausente: {
     label: 'Não informado',
+    shortLabel: 'Não informado',
     heightPercent: 0,
     color: 'bg-transparent',
     badge:
@@ -1171,11 +1184,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                   aria-label={`${p.narrativeLabel}: categoria ${config.label}. Toque para abrir detalhes.`}
                 >
                   <span className="text-[10px] sm:text-xs text-muted-foreground font-medium mb-1 text-center line-clamp-1 group-hover:text-foreground">
-                    {freq === 'ausente'
-                      ? '—'
-                      : freq === 'desconhecido'
-                        ? '?'
-                        : config.heightPercent + '%'}
+                    {config.shortLabel}
                   </span>
                   <div className="w-full max-w-[28px] sm:max-w-[40px] bg-muted/40 rounded-t-md h-32 relative overflow-hidden flex items-end">
                     <div
@@ -1207,11 +1216,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                   aria-label={`${p.narrativeLabel}: categoria ${config.label}. Toque para abrir detalhes.`}
                 >
                   <span className="text-[10px] sm:text-xs text-muted-foreground font-medium mb-1 text-center line-clamp-1 group-hover:text-foreground">
-                    {freq === 'ausente'
-                      ? '—'
-                      : freq === 'desconhecido'
-                        ? '?'
-                        : config.heightPercent + '%'}
+                    {config.shortLabel}
                   </span>
                   <div className="w-full max-w-[28px] sm:max-w-[40px] bg-muted/40 rounded-t-md h-32 relative overflow-hidden flex items-end">
                     <div
