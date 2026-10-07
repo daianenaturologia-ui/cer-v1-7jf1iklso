@@ -218,4 +218,54 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     expect(screen.queryByText('75%')).not.toBeInTheDocument()
     expect(screen.queryByText('100%')).not.toBeInTheDocument()
   })
+
+  it('renderiza o SVG circular com três segmentos táteis dos doshas quando há percentuais válidos e permite abrir dialogs com teclado e clique', async () => {
+    const demoSnapshot = createDemoCerMapReading('demo-enr-01')
+    render(<CerMapReadingsView snapshot={demoSnapshot} />)
+
+    // SVG donut deve existir no DOM com role="img" e testid
+    const donutSvg = screen.getByTestId('cer-dosha-donut')
+    expect(donutSvg).toBeInTheDocument()
+
+    // Três fatias com seus respectivos testids e roles
+    const vataSlice = screen.getByTestId('dosha-slice-vata')
+    const pittaSlice = screen.getByTestId('dosha-slice-pitta')
+    const kaphaSlice = screen.getByTestId('dosha-slice-kapha')
+
+    expect(vataSlice).toBeInTheDocument()
+    expect(pittaSlice).toBeInTheDocument()
+    expect(kaphaSlice).toBeInTheDocument()
+
+    expect(vataSlice).toHaveAttribute('aria-label', expect.stringContaining('Dosha Vata'))
+    expect(pittaSlice).toHaveAttribute('aria-label', expect.stringContaining('Dosha Pitta'))
+    expect(kaphaSlice).toHaveAttribute('aria-label', expect.stringContaining('Dosha Kapha'))
+
+    // 1. Interação via clique no segmento Pitta abre o mesmo modal do Pitta
+    await userEvent.click(pittaSlice)
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Dosha Pitta' })).toBeInTheDocument()
+    expect(screen.getByText(/Transformação e calor/i)).toBeInTheDocument()
+
+    // Fechar por Escape e verificar devolução de foco para o segmento Pitta
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+    expect(document.activeElement).toBe(pittaSlice)
+
+    // 2. Interação via teclado Enter no segmento Kapha abre o modal do Kapha
+    fireEvent.keyDown(kaphaSlice, { key: 'Enter', code: 'Enter' })
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Dosha Kapha' })).toBeInTheDocument()
+    expect(screen.getByText(/Sustentação e estabilidade/i)).toBeInTheDocument()
+
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+    expect(document.activeElement).toBe(kaphaSlice)
+
+    // 3. Interação via teclado Espaço no segmento Vata abre o modal do Vata
+    fireEvent.keyDown(vataSlice, { key: ' ', code: 'Space' })
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Dosha Vata' })).toBeInTheDocument()
+    expect(screen.getByText(/Movimento e variabilidade/i)).toBeInTheDocument()
+
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+    expect(document.activeElement).toBe(vataSlice)
+  })
 })

@@ -237,12 +237,16 @@ const REGULATION_REACTIONS = [
 
 export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadingsViewProps) {
   const [activeDialog, setActiveDialog] = useState<DialogState | null>(null)
-  const triggerRef = useRef<HTMLElement | null>(null)
+  const triggerRef = useRef<HTMLElement | SVGElement | null>(null)
 
-  const openDialog = (state: DialogState, trigger?: HTMLElement | null) => {
+  const openDialog = (state: DialogState, trigger?: HTMLElement | SVGElement | null) => {
     if (trigger) {
       triggerRef.current = trigger
-    } else if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+    } else if (
+      typeof document !== 'undefined' &&
+      (document.activeElement instanceof HTMLElement ||
+        document.activeElement instanceof SVGElement)
+    ) {
       triggerRef.current = document.activeElement
     }
     setActiveDialog(state)
@@ -448,7 +452,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
 
   const openDoshaDialog = (
     doshaName: 'Vata' | 'Pitta' | 'Kapha',
-    e?: React.MouseEvent<HTMLElement>,
+    e?: React.MouseEvent<HTMLElement | SVGElement>,
   ) => {
     const concepts = {
       Vata: {
@@ -1019,14 +1023,194 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         {/* Doshas: pizza ou composição circular neutra */}
         <div className="space-y-4 pt-1">
           {doshaPercents ? (
-            <div className="flex flex-col items-center justify-center p-4 bg-muted/20 rounded-lg">
-              <span className="text-xs font-semibold text-foreground mb-2">
+            <div className="flex flex-col items-center justify-center p-4 bg-muted/20 rounded-lg space-y-3">
+              <span className="text-xs font-semibold text-foreground">
                 Distribuição Constitucional Registrada
               </span>
-              <div className="flex gap-4">
-                <span className="text-xs font-medium">Vata: {doshaPercents.vata}%</span>
-                <span className="text-xs font-medium">Pitta: {doshaPercents.pitta}%</span>
-                <span className="text-xs font-medium">Kapha: {doshaPercents.kapha}%</span>
+
+              {/* Gráfico circular / pizza SVG de 180-200px com segmentos táteis e acessíveis */}
+              {(() => {
+                const total = doshaPercents.vata + doshaPercents.pitta + doshaPercents.kapha
+                const vNorm = total > 0 ? (doshaPercents.vata / total) * 100 : 33.33
+                const pNorm = total > 0 ? (doshaPercents.pitta / total) * 100 : 33.33
+                const kNorm = total > 0 ? (doshaPercents.kapha / total) * 100 : 33.34
+
+                // Centro (100, 100), raio externo 82, raio interno (donut sutil) 36
+                const cx = 100
+                const cy = 100
+                const rOut = 82
+                const rIn = 36
+
+                const toRad = (deg: number) => (deg * Math.PI) / 180
+                const polarToCartesian = (
+                  centerX: number,
+                  centerY: number,
+                  radius: number,
+                  angleInDegrees: number,
+                ) => {
+                  const rad = toRad(angleInDegrees)
+                  return {
+                    x: centerX + radius * Math.cos(rad),
+                    y: centerY + radius * Math.sin(rad),
+                  }
+                }
+
+                const createDonutSlicePath = (startAngle: number, endAngle: number) => {
+                  // Ajusta ângulo se fatia for quase círculo completo
+                  const angleDiff = Math.min(endAngle - startAngle, 359.999)
+                  const actualEnd = startAngle + angleDiff
+                  const largeArcFlag = angleDiff > 180 ? 1 : 0
+
+                  const p1 = polarToCartesian(cx, cy, rOut, startAngle)
+                  const p2 = polarToCartesian(cx, cy, rOut, actualEnd)
+                  const p3 = polarToCartesian(cx, cy, rIn, actualEnd)
+                  const p4 = polarToCartesian(cx, cy, rIn, startAngle)
+
+                  return [
+                    `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}`,
+                    `A ${rOut} ${rOut} 0 ${largeArcFlag} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`,
+                    `L ${p3.x.toFixed(2)} ${p3.y.toFixed(2)}`,
+                    `A ${rIn} ${rIn} 0 ${largeArcFlag} 0 ${p4.x.toFixed(2)} ${p4.y.toFixed(2)}`,
+                    'Z',
+                  ].join(' ')
+                }
+
+                // Inicia no topo (-90 graus)
+                const a0 = -90
+                const a1 = a0 + (vNorm / 100) * 360
+                const a2 = a1 + (pNorm / 100) * 360
+                const a3 = a0 + 360
+
+                const slices = [
+                  {
+                    name: 'Vata' as const,
+                    percent: doshaPercents.vata,
+                    startAngle: a0,
+                    endAngle: a1,
+                    fill: '#7ba4b5', // tom botânico suave para Vata (ar/éter)
+                    stroke: '#668f9f',
+                    textColor: '#1f3e4d',
+                    label: `Dosha Vata: ${doshaPercents.vata}%`,
+                  },
+                  {
+                    name: 'Pitta' as const,
+                    percent: doshaPercents.pitta,
+                    startAngle: a1,
+                    endAngle: a2,
+                    fill: '#e09867', // tom botânico terracota/âmbar suave para Pitta (fogo/transformação)
+                    stroke: '#c87f50',
+                    textColor: '#4d260f',
+                    label: `Dosha Pitta: ${doshaPercents.pitta}%`,
+                  },
+                  {
+                    name: 'Kapha' as const,
+                    percent: doshaPercents.kapha,
+                    startAngle: a2,
+                    endAngle: a3,
+                    fill: '#88a878', // tom botânico sálvia/musgo suave para Kapha (terra/água)
+                    stroke: '#729262',
+                    textColor: '#213c19',
+                    label: `Dosha Kapha: ${doshaPercents.kapha}%`,
+                  },
+                ]
+
+                return (
+                  <div className="relative flex items-center justify-center my-1">
+                    <svg
+                      width="190"
+                      height="190"
+                      viewBox="0 0 200 200"
+                      className="overflow-visible select-none drop-shadow-xs"
+                      role="img"
+                      aria-label={`Distribuição dos doshas: Vata ${doshaPercents.vata}%, Pitta ${doshaPercents.pitta}%, Kapha ${doshaPercents.kapha}%`}
+                      data-testid="cer-dosha-donut"
+                    >
+                      <g role="group">
+                        {slices.map((slice) => {
+                          const pathD = createDonutSlicePath(slice.startAngle, slice.endAngle)
+                          const midAngle = (slice.startAngle + slice.endAngle) / 2
+                          const labelPos = polarToCartesian(cx, cy, (rOut + rIn) / 2, midAngle)
+                          return (
+                            <g key={slice.name}>
+                              <path
+                                d={pathD}
+                                fill={slice.fill}
+                                stroke="hsl(var(--card))"
+                                strokeWidth="2.5"
+                                className="cursor-pointer transition-all duration-200 hover:opacity-90 hover:brightness-105 focus:outline-none focus:stroke-primary focus:stroke-[3.5]"
+                                tabIndex={0}
+                                role="button"
+                                aria-label={`Dosha ${slice.name} (${slice.percent}%). Toque para abrir detalhes.`}
+                                data-testid={`dosha-slice-${slice.name.toLowerCase()}`}
+                                onClick={(e) => openDoshaDialog(slice.name, e)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault()
+                                    openDoshaDialog(
+                                      slice.name,
+                                      e as unknown as React.MouseEvent<SVGElement>,
+                                    )
+                                  }
+                                }}
+                              />
+                              {/* Percentual no miolo do segmento quando couber */}
+                              <text
+                                x={labelPos.x}
+                                y={labelPos.y + 3.5}
+                                textAnchor="middle"
+                                className="text-[10px] font-sans font-semibold pointer-events-none fill-stone-900 select-none"
+                                aria-hidden="true"
+                              >
+                                {slice.percent}%
+                              </text>
+                            </g>
+                          )
+                        })}
+                      </g>
+                      {/* Círculo central estético com ícone sutil */}
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={rIn - 2}
+                        className="fill-card stroke-border/60"
+                        strokeWidth="1.5"
+                      />
+                      <text
+                        x={cx}
+                        y={cy + 3}
+                        textAnchor="middle"
+                        className="text-[9px] font-serif uppercase tracking-widest fill-muted-foreground select-none pointer-events-none"
+                        aria-hidden="true"
+                      >
+                        CER
+                      </text>
+                    </svg>
+                  </div>
+                )
+              })()}
+
+              <div className="flex flex-wrap justify-center gap-4 text-xs">
+                <span className="font-medium inline-flex items-center gap-1.5">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: '#7ba4b5' }}
+                  />
+                  Vata: {doshaPercents.vata}%
+                </span>
+                <span className="font-medium inline-flex items-center gap-1.5">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: '#e09867' }}
+                  />
+                  Pitta: {doshaPercents.pitta}%
+                </span>
+                <span className="font-medium inline-flex items-center gap-1.5">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: '#88a878' }}
+                  />
+                  Kapha: {doshaPercents.kapha}%
+                </span>
               </div>
             </div>
           ) : (
