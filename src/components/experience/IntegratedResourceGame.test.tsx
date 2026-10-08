@@ -150,3 +150,25 @@ describe('Jogo de conexões', () => {
     expect(screen.getByRole('button', { name: 'Selecionar força: Apoio' })).toBeInTheDocument()
   })
 })
+
+it('só oferece passagem à agenda para conexão com estratégia salva', async () => {
+  const user = userEvent.setup()
+  render(<IntegratedResourceGame snapshot={snapshot()} />)
+  await user.click(await screen.findByRole('button', { name: 'Selecionar força: Criatividade' }))
+  await user.click(screen.getByRole('button', { name: 'Conectar força a: Começar' }))
+  expect(screen.queryByRole('button', { name: /Levar Criatividade para minha agenda/ })).toBeNull()
+  await user.type(
+    screen.getByRole('textbox', { name: 'Como usar Criatividade diante de Começar' }),
+    'Um pequeno passo',
+  )
+  expect(screen.queryByRole('button', { name: /Levar Criatividade para minha agenda/ })).toBeNull()
+  await user.click(screen.getByRole('button', { name: 'Salvar meu exercício' }))
+  await screen.findByRole('button', {
+    name: 'Levar Criatividade para minha agenda diante de Começar',
+  })
+  await user.type(
+    screen.getByRole('textbox', { name: 'Como usar Criatividade diante de Começar' }),
+    ' com apoio',
+  )
+  expect(screen.queryByRole('button', { name: /Levar Criatividade para minha agenda/ })).toBeNull()
+})
