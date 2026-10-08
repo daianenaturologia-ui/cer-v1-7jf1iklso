@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react'
+import { AyurvedaPersonalReading } from './AyurvedaPersonalReading'
 import type {
   CerMapReadingSnapshot,
   CerMapReadingRow,
@@ -17,12 +18,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
 import {
   Sparkles,
   Info,
@@ -358,14 +353,13 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
   }
 
   const isDemoSnapshot =
-    snapshot.participantName?.toLowerCase().includes('mariana') ||
     snapshot.overview?.toLowerCase().includes('dados fictícios') ||
     snapshot.overview?.toLowerCase().includes('fictício') ||
     snapshot.overview?.toLowerCase().includes('ficticio')
 
-  const renderElementReadingSections = (reading: CerMapElementReading) => (
+  const renderElementReadingSections = (reading: CerMapElementReading, showDemoNote = true) => (
     <div className="space-y-3.5 pt-2 border-t border-border/50 text-xs">
-      {isDemoSnapshot && (
+      {isDemoSnapshot && showDemoNote && (
         <div className="rounded-md border border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 text-[11px] text-amber-900 dark:text-amber-200">
           <span className="font-semibold">Exemplo fictício para explorar o Mapa CER</span>
         </div>
@@ -617,7 +611,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
             {elementReading ? (
-              renderElementReadingSections(elementReading)
+              renderElementReadingSections(elementReading, false)
             ) : (
               <>
                 <p>{info.desc}</p>
@@ -676,7 +670,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
             {elementReading ? (
-              renderElementReadingSections(elementReading)
+              renderElementReadingSections(elementReading, false)
             ) : (
               <>
                 <p>
@@ -723,7 +717,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
             {elementReading ? (
-              renderElementReadingSections(elementReading)
+              renderElementReadingSections(elementReading, false)
             ) : (
               <>
                 <p>
@@ -988,165 +982,18 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             : undefined,
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-            {isDemoSnapshot && !isReviewed && (
+            {isDemoSnapshot && !isReviewed && dimId !== 'corpo' && (
               <div className="rounded-md border border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 text-[11px] text-amber-900 dark:text-amber-200">
                 <span className="font-semibold">Exemplo fictício para explorar o Mapa CER</span>
               </div>
             )}
 
             {dimId === 'corpo' ? (
-              <div className="space-y-4 pt-1">
-                {/* ABERTURA GLOBAL LEIGA (substitui o conceito genérico antigo para a dimensão Corpo) */}
-                <div className="space-y-1.5 text-xs text-foreground/90 leading-relaxed bg-muted/20 p-3 rounded-lg border border-border/40">
-                  <p>
-                    O Ayurveda é uma tradição de cuidado que observa como as características do
-                    corpo e seus ritmos se combinam. Aqui, essa lente ajuda você a conhecer
-                    tendências e conversar sobre o que mudou. Não precisamos encaixar você em uma
-                    caixa: o ponto de partida é a sua experiência.
-                  </p>
-                </div>
-
-                {/* ACORDEÃO GLOBAL EDUCATIVO: DOSHAS, COMBINAÇÕES E CONCEITOS (INICIALMENTE ABERTO) */}
-                <Accordion
-                  type="single"
-                  collapsible
-                  defaultValue="doshas-explicacao"
-                  className="w-full border rounded-lg px-3 py-1 bg-card/60"
-                >
-                  <AccordionItem value="doshas-explicacao" className="border-b-0">
-                    <AccordionTrigger className="text-xs font-semibold uppercase tracking-wider text-foreground hover:no-underline py-2.5">
-                      Entenda os doshas e suas combinações
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-3.5 text-xs text-foreground/90 pt-1 pb-3">
-                      <p className="leading-relaxed">
-                        Na tradição ayurvédica, doshas são três princípios usados para descrever o
-                        funcionamento do corpo. Todos nós temos Vata, Pitta e Kapha; o que muda é
-                        como essas características se combinam. Eles não são substâncias medidas em
-                        um exame.
-                      </p>
-
-                      {/* Três pequenos cards responsivos para os doshas */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                        <div className="rounded-lg border border-border/60 p-2.5 bg-muted/20 space-y-1">
-                          <span className="font-semibold text-foreground block text-[11px]">
-                            Vata — movimento e variabilidade
-                          </span>
-                          <p className="text-[11px] text-muted-foreground leading-relaxed">
-                            Reúne qualidades de leveza, secura e frio. Na leitura tradicional, pode
-                            aparecer em características como estrutura leve, pele seca e ritmos
-                            variáveis.
-                          </p>
-                        </div>
-                        <div className="rounded-lg border border-border/60 p-2.5 bg-muted/20 space-y-1">
-                          <span className="font-semibold text-foreground block text-[11px]">
-                            Pitta — transformação e calor
-                          </span>
-                          <p className="text-[11px] text-muted-foreground leading-relaxed">
-                            Reúne qualidades de calor e intensidade. Na leitura tradicional, pode
-                            aparecer em maior sensibilidade ao calor e apetite intenso.
-                          </p>
-                        </div>
-                        <div className="rounded-lg border border-border/60 p-2.5 bg-muted/20 space-y-1">
-                          <span className="font-semibold text-foreground block text-[11px]">
-                            Kapha — sustentação e estabilidade
-                          </span>
-                          <p className="text-[11px] text-muted-foreground leading-relaxed">
-                            Reúne qualidades de firmeza, umidade e constância. Na leitura
-                            tradicional, pode aparecer em estrutura mais sólida e ritmos estáveis.
-                          </p>
-                        </div>
-                      </div>
-
-                      <p className="text-[11px] text-muted-foreground italic leading-relaxed">
-                        Esses são exemplos gerais da tradição, não características que estamos
-                        atribuindo automaticamente a você. Um sinal isolado pode ter diferentes
-                        explicações.
-                      </p>
-
-                      {/* Sete combinações básicas */}
-                      <div className="space-y-1.5 pt-1 border-t border-border/40">
-                        <h5 className="font-semibold text-xs text-foreground">
-                          Sete combinações básicas
-                        </h5>
-                        <p className="text-[11px] text-muted-foreground">
-                          Três predominâncias simples (Vata, Pitta, Kapha); três duplas (Vata–Pitta,
-                          Vata–Kapha, Pitta–Kapha); e uma tripla (Vata–Pitta–Kapha).
-                        </p>
-                        <p className="leading-relaxed">
-                          Uma combinação dupla reúne características dos dois princípios. Quando
-                          existe base para distinguir predominância, o primeiro nome indica maior
-                          destaque na leitura. Se as respostas convergem de modo semelhante, não há
-                          razão para forçar uma ordem. Ter características dos três não confirma,
-                          por si só, uma constituição tridosha equilibrada.
-                        </p>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-
-                {/* Prakriti, Vikriti, Ponte e Agni/Ama como bloco próprio após o acordeão e antes da leitura pessoal */}
-                <div className="space-y-2.5 pt-1 rounded-lg border border-border/50 bg-card/40 p-3 text-xs text-foreground/90">
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-foreground block">
-                      Prakriti — seu ponto de partida:
-                    </span>
-                    <p className="text-muted-foreground leading-relaxed">
-                      É a constituição na perspectiva ayurvédica: a combinação de características
-                      que você reconhece há bastante tempo, especialmente em períodos em que se
-                      sentia relativamente bem. No CER, trabalhamos com uma hipótese constitucional
-                      tradicional construída a partir do seu relato. Não é um teste genético, e o
-                      questionário não confirma sozinho sua constituição.
-                    </p>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-foreground block">
-                      Vikriti — seu momento atual:
-                    </span>
-                    <p className="text-muted-foreground leading-relaxed">
-                      É a leitura do estado atual e de possíveis diferenças em relação à sua base
-                      habitual. Para compreendê-lo, precisamos saber o que mudou, há quanto tempo,
-                      com que frequência e em qual contexto. Sono, alimentação, condições de saúde,
-                      ambiente e medicamentos podem ser relevantes nessa conversa. A história de
-                      vida ajuda a contextualizar a experiência, mas não é, por si só, Vikriti nem
-                      prova a causa de um sintoma.
-                    </p>
-                  </div>
-
-                  <p className="leading-relaxed text-foreground/90">
-                    Uma característica habitual não é automaticamente um desequilíbrio. Quando os
-                    registros não permitem comparar a base com o presente, a leitura atual permanece
-                    em observação.
-                  </p>
-
-                  <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
-                    Agni observa, pela lente tradicional, o padrão de fome e digestão. Ama descreve
-                    processamento incompleto nessa tradição. Seus indicadores devem ser lidos junto
-                    dos relatos e do contexto; não medem metabolismo ou toxinas.
-                  </p>
-                </div>
-
-                {/* SÍNTESE E LEITURA PESSOAL */}
-                {dim.summary && (
-                  <div className="space-y-1">
-                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                      Síntese da leitura
-                    </h4>
-                    <p className="text-xs text-foreground whitespace-pre-wrap">{dim.summary}</p>
-                  </div>
-                )}
-
-                {dim.interpretation && (
-                  <div className="space-y-1">
-                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                      {interpretationTitle}
-                    </h4>
-                    <p className="text-xs text-foreground whitespace-pre-wrap">
-                      {dim.interpretation}
-                    </p>
-                  </div>
-                )}
-              </div>
+              <AyurvedaPersonalReading
+                dimension={dim}
+                participantName={snapshot.participantName}
+                interpretationTitle={interpretationTitle}
+              />
             ) : (
               <>
                 <div className="rounded-lg bg-muted/30 p-3 space-y-1">
