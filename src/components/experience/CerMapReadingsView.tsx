@@ -3,6 +3,7 @@ import type {
   CerMapReadingSnapshot,
   CerMapReadingRow,
   CerMapReference,
+  CerMapElementReading,
 } from '@/types/cerMapReadings'
 import { LIFE_HORIZONS } from '@/services/lifeDirections'
 import { lifeTimeLabel } from '@/services/lifeTimeline'
@@ -348,6 +349,123 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     return { reported: isPresent, detail: row.text }
   }
 
+  const isDemoSnapshot =
+    snapshot.participantName?.toLowerCase().includes('mariana') ||
+    snapshot.overview?.toLowerCase().includes('dados fictícios') ||
+    snapshot.overview?.toLowerCase().includes('fictício') ||
+    snapshot.overview?.toLowerCase().includes('ficticio')
+
+  const renderElementReadingSections = (reading: CerMapElementReading) => (
+    <div className="space-y-3.5 pt-2 border-t border-border/50 text-xs">
+      {isDemoSnapshot && (
+        <div className="rounded-md border border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 text-[11px] text-amber-900 dark:text-amber-200">
+          <span className="font-semibold">Exemplo fictício para explorar o Mapa CER</span>
+        </div>
+      )}
+
+      {reading.summary && (
+        <div className="rounded-lg bg-muted/40 p-3 space-y-1">
+          <h4 className="font-semibold text-xs uppercase tracking-wider text-primary">
+            Síntese do elemento
+          </h4>
+          <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+            {reading.summary}
+          </p>
+        </div>
+      )}
+
+      {reading.observations?.length > 0 && (
+        <div className="space-y-1.5">
+          <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+            O que aparece nas suas respostas
+          </h4>
+          <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+            {reading.observations.map((obs, idx) => (
+              <li key={idx} className="leading-relaxed">
+                {obs}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {reading.interpretation && (
+        <div className="space-y-1.5">
+          <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+            Uma leitura possível
+          </h4>
+          <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+            {reading.interpretation}
+          </p>
+        </div>
+      )}
+
+      {(reading.resources?.length > 0 || reading.costs?.length > 0) && (
+        <div className="space-y-2 pt-1">
+          <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+            Recursos e pontos de atenção
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {reading.resources?.length > 0 && (
+              <div className="border rounded-lg p-2.5 bg-card space-y-1">
+                <span className="font-semibold text-[11px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
+                  Recursos essenciais
+                </span>
+                <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground text-[11px]">
+                  {reading.resources.map((res, idx) => (
+                    <li key={idx}>{res}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {reading.costs?.length > 0 && (
+              <div className="border rounded-lg p-2.5 bg-card space-y-1">
+                <span className="font-semibold text-[11px] uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
+                  Pontos de atenção e custos
+                </span>
+                <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground text-[11px]">
+                  {reading.costs.map((c, idx) => (
+                    <li key={idx}>{c}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {reading.connections?.length > 0 && (
+        <div className="space-y-1.5 pt-1">
+          <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+            Como se conecta ao conjunto
+          </h4>
+          <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+            {reading.connections.map((conn, idx) => (
+              <li key={idx} className="leading-relaxed">
+                {conn}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {reading.questions?.length > 0 && (
+        <div className="space-y-1.5 pt-1 rounded-lg bg-primary/5 border border-primary/20 p-3">
+          <h4 className="font-semibold text-xs uppercase tracking-wider text-primary">
+            Para explorar na conversa
+          </h4>
+          <ul className="list-disc pl-4 space-y-1 text-foreground/90 font-serif italic text-xs">
+            {reading.questions.map((q, idx) => (
+              <li key={idx} className="leading-relaxed">
+                {q}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+
   // Referências para modal
   const renderReferencesList = (refs: CerMapReference[]) => (
     <div className="space-y-3 pt-3 border-t text-xs">
@@ -454,6 +572,9 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     doshaName: 'Vata' | 'Pitta' | 'Kapha',
     e?: React.MouseEvent<HTMLElement | SVGElement>,
   ) => {
+    const elementKey = doshaName.toLowerCase()
+    const elementReading = snapshot.elementReadings?.[elementKey]
+
     const concepts = {
       Vata: {
         principle: 'Movimento e variabilidade',
@@ -487,6 +608,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Corpo & Fisiologia',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            {elementReading && renderElementReadingSections(elementReading)}
+
             <p>{info.desc}</p>
             <div className="rounded-lg bg-muted/30 p-3 space-y-1 text-xs">
               <span className="font-semibold text-foreground block">Referencial tradicional</span>
@@ -528,6 +651,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
   }
 
   const openAgniDialog = (e?: React.MouseEvent<HTMLElement>) => {
+    const elementReading = snapshot.elementReadings?.['agni']
     openDialog(
       {
         title: 'Agni · Fogo Digestivo',
@@ -535,6 +659,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Ayurveda',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            {elementReading && renderElementReadingSections(elementReading)}
             <p>
               Na tradição ayurvédica, Agni é a capacidade de digerir, assimilar e transformar tanto
               alimentos quanto estímulos do mundo. É um aspecto central da nutrição e da saúde
@@ -566,6 +691,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
   }
 
   const openAmaDialog = (e?: React.MouseEvent<HTMLElement>) => {
+    const elementReading = snapshot.elementReadings?.['ama']
     openDialog(
       {
         title: 'Ama · Digestão Incompleta',
@@ -573,6 +699,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Ayurveda',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            {elementReading && renderElementReadingSections(elementReading)}
             <p>
               Ama descreve produtos ou estados de processamento incompleto na tradição ayurvédica. A
               palavra &ldquo;toxinas&rdquo; é uma tradução aproximada e coloquial: a toxicologia
@@ -614,6 +741,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     const canonical = CER_PROTECTION_PATTERNS[patternKey]
     const content = getCerProtectionPatternContent(patternKey)
     const row = getPatternRow(patternKey)
+    const elementReading = snapshot.elementReadings?.[patternKey]
 
     openDialog(
       {
@@ -622,6 +750,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Mente & Emoções',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            {elementReading && renderElementReadingSections(elementReading)}
+
             {content?.shortDescription && <p>{content.shortDescription}</p>}
 
             {content?.commonThoughts?.length ? (
@@ -733,6 +863,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     e?: React.MouseEvent<HTMLElement>,
   ) => {
     const status = getRegulationStatus(item)
+    const elementReading = snapshot.elementReadings?.[item.id]
+
     openDialog(
       {
         title: `${item.title} (${item.subtitle})`,
@@ -740,6 +872,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Regulação & Padrões de Resposta',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            {elementReading && renderElementReadingSections(elementReading)}
             <p>{item.concept}</p>
             <div className="rounded-lg bg-muted/20 p-3 space-y-2 text-xs">
               <h4 className="font-semibold text-foreground">
@@ -842,6 +975,100 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
   }
 
   const openIntegratedNodeDialog = (nodeKey: string, e?: React.MouseEvent<HTMLElement>) => {
+    const elementReading = snapshot.elementReadings?.[nodeKey]
+
+    // Se temos leitura própria no snapshot para o nó, exibimos seu modal específico com título e conteúdo dedicados
+    if (elementReading) {
+      const titles: Record<string, { title: string; subtitle: string; tag: string }> = {
+        centro: {
+          title: 'Meu funcionamento em conjunto',
+          subtitle: 'Integração das dimensões do seu ser',
+          tag: 'Método CER',
+        },
+        corpo: {
+          title: 'Nó Corpo & Ritmo',
+          subtitle: 'Sinais biológicos, digestão, sono e sobrecarga cotidiana',
+          tag: 'Funcionamento em Conjunto',
+        },
+        pensamentos: {
+          title: 'Nó Pensamentos',
+          subtitle: 'Antecipação preventiva, planejamento e diálogo interno',
+          tag: 'Funcionamento em Conjunto',
+        },
+        emocoes: {
+          title: 'Nó Emoções',
+          subtitle: 'Sensibilidade afetiva sentida no corpo, ansiedade e entusiasmo',
+          tag: 'Funcionamento em Conjunto',
+        },
+        protecao: {
+          title: 'Nó Padrões de Proteção',
+          subtitle: 'Estratégias adaptativas de defesa e função protetiva',
+          tag: 'Funcionamento em Conjunto',
+        },
+        relacoes: {
+          title: 'Nó Relações & Vínculos',
+          subtitle: 'Limites, reciprocidade, pedido de ajuda e cuidado',
+          tag: 'Funcionamento em Conjunto',
+        },
+        vida_cotidiana: {
+          title: 'Nó Vida Cotidiana & Sentido',
+          subtitle: 'Valores, presença, descanso, intimidade e ritmo de vida',
+          tag: 'Funcionamento em Conjunto',
+        },
+      }
+
+      const meta = titles[nodeKey] || {
+        title: `Nó ${nodeKey}`,
+        subtitle: 'Leitura individual no funcionamento conjunto',
+        tag: 'Funcionamento em Conjunto',
+      }
+
+      openDialog(
+        {
+          title: meta.title,
+          subtitle: meta.subtitle,
+          tag: meta.tag,
+          content: (
+            <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+              {renderElementReadingSections(elementReading)}
+
+              {nodeKey === 'centro' && snapshot.integration && (
+                <div className="space-y-1.5 pt-2 border-t">
+                  <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                    Síntese global integrada
+                  </h4>
+                  <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+                    {snapshot.integration}
+                  </p>
+                </div>
+              )}
+
+              {nodeKey === 'centro' && !!snapshot.lifeDirections?.length && (
+                <div className="border-t pt-3 space-y-2">
+                  <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                    Seus objetivos no centro do mapa
+                  </h4>
+                  {snapshot.lifeDirections.map((dir) => (
+                    <div key={dir.id} className="text-xs border rounded p-2.5">
+                      <span className="font-medium block">{dir.title}</span>
+                      {dir.meaning && (
+                        <span className="text-muted-foreground block text-[11px] mt-0.5">
+                          Sentido: {dir.meaning}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ),
+        },
+        e?.currentTarget,
+      )
+      return
+    }
+
+    // Fallback estrito para snapshots legados sem elementReadings
     switch (nodeKey) {
       case 'centro':
         openDialog(
@@ -898,6 +1125,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
   }
 
   const openHistoryDialog = (e?: React.MouseEvent<HTMLElement>) => {
+    const elementReading = snapshot.elementReadings?.['historia']
+
     openDialog(
       {
         title: 'Sua história e seu funcionamento hoje',
@@ -905,6 +1134,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Linha da Vida',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            {elementReading && renderElementReadingSections(elementReading)}
+
             <p>
               {snapshot.history ||
                 'A relação entre sua história e seu funcionamento ainda será aprofundada em conversa e na Linha da Vida. As respostas das dimensões não permitem afirmar como um padrão se formou.'}

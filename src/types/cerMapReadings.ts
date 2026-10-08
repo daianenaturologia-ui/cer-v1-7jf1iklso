@@ -27,6 +27,17 @@ export interface CerMapReadingDimension {
 }
 
 /** A reviewed, versioned document; never re-derived when the participant opens it. */
+export interface CerMapElementReading {
+  summary: string
+  observations: string[]
+  interpretation: string
+  resources: string[]
+  costs: string[]
+  connections: string[]
+  questions: string[]
+  sourceResponseIds?: string[]
+}
+
 export interface CerMapReadingSnapshot {
   schemaVersion: 1
   enrollmentId: string
@@ -46,6 +57,7 @@ export interface CerMapReadingSnapshot {
   lifeDirections?: LifeDirection[]
   lifeEvents?: LifeEvent[]
   lifeConnections?: { eventId: string; responseId: string; text: string; question: string }[]
+  elementReadings?: Record<string, CerMapElementReading>
   dimensions: CerMapReadingDimension[]
   references: CerMapReference[]
   reviewedBy?: string

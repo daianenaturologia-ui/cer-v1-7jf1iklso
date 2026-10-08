@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { CerMapReadingsView } from './CerMapReadingsView'
 import { buildCerMapReadings, isCerMapReadingSnapshot } from '@/services/cerMapReadings'
 import { createDemoCerMapReading } from '@/services/demoCerMapReading'
+import type { CerMapReadingSnapshot } from '@/types/cerMapReadings'
 
 describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
   it('renderiza o mapa interativo em visão única sem abas de versão resumida/detalhada', () => {
@@ -267,5 +268,232 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
 
     fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
     expect(document.activeElement).toBe(vataSlice)
+  })
+
+  it('exibe a interpretação personalizada e blocos curtos integrados no modal ao clicar em Prestativo sem vazar para Hipervigilante', async () => {
+    const demoSnapshot = createDemoCerMapReading('demo-enr-01')
+    render(<CerMapReadingsView snapshot={demoSnapshot} />)
+
+    // 1. Clicar no botão do padrão Prestativo
+    const prestativoBtn = screen.getByRole('button', {
+      name: /Prestativo: categoria Aparece com muita força quando estou sob pressão/i,
+    })
+    await userEvent.click(prestativoBtn)
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Prestativo' })).toBeInTheDocument()
+
+    // 2. Verifica blocos curtos estruturados
+    expect(screen.getByText('Exemplo fictício para explorar o Mapa CER')).toBeInTheDocument()
+    expect(screen.getByText('O que aparece nas suas respostas')).toBeInTheDocument()
+    expect(screen.getByText('Uma leitura possível')).toBeInTheDocument()
+    expect(screen.getByText('Recursos e pontos de atenção')).toBeInTheDocument()
+    expect(screen.getByText('Como se conecta ao conjunto')).toBeInTheDocument()
+    expect(screen.getByText('Para explorar na conversa')).toBeInTheDocument()
+
+    // 3. Verifica conteúdo específico e acolhedor de Prestativo
+    expect(
+      screen.getByText(
+        /Talvez você perceba o que o outro precisa antes de perceber seu próprio cansaço/i,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /O que você teme que aconteça se, diante de uma demanda externa, você pausar e não assumir a tarefa de imediato\?/i,
+      ),
+    ).toBeInTheDocument()
+
+    // 4. NÃO vazar conteúdo de Hipervigilante (ex: mandíbula/prevenir qualquer risco)
+    expect(screen.queryByText(/Tensão na mandíbula/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Antecipar e prevenir qualquer risco/i)).not.toBeInTheDocument()
+
+    // Fechar modal
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+
+    // 5. Agora clicar no Hipervigilante e verificar que recebe o conteúdo próprio dele
+    const hipervigilanteBtn = screen.getByRole('button', {
+      name: /Hipervigilante: categoria Aparece com muita força quando estou sob pressão/i,
+    })
+    await userEvent.click(hipervigilanteBtn)
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Hipervigilante' })).toBeInTheDocument()
+    expect(
+      screen.getByText(/radar de segurança que se ativa em ambientes de pressão/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Como você pode diferenciar hoje um risco real e iminente de uma antecipação/i,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(
+        /Talvez você perceba o que o outro precisa antes de perceber seu próprio cansaço/i,
+      ),
+    ).not.toBeInTheDocument()
+  })
+
+  it('exibe a síntese/ciclo integrativo no Centro e conteúdo específico diferenciado em cada nó', async () => {
+    const demoSnapshot = createDemoCerMapReading('demo-enr-01')
+    render(<CerMapReadingsView snapshot={demoSnapshot} />)
+
+    // 1. Abrir o Centro ("Meu funcionamento em conjunto")
+    const centroBtn = screen.getByRole('button', {
+      name: /Meu funcionamento em conjunto\. Toque para abrir síntese/i,
+    })
+    await userEvent.click(centroBtn)
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Meu funcionamento em conjunto' }),
+    ).toBeInTheDocument()
+
+    // Conteúdo da síntese e ciclo integrativo com distinção entre relato e hipótese
+    expect(
+      screen.getByText(
+        /Mariana, suas respostas mostram capacidade de perceber nuances, planejar e cuidar/i,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Mariana, em qual ponto desse ciclo você mais se reconhece — e qual parte dele não descreve a sua experiência real\?/i,
+      ),
+    ).toBeInTheDocument()
+
+    // Fechar por Escape
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+
+    // 2. Abrir o Nó "Pensamentos" e verificar conteúdo específico (não o mesmo texto genérico)
+    const pensamentosBtn = screen.getByRole('button', {
+      name: /Nó Pensamentos\. Toque para abrir leitura individual/i,
+    })
+    await userEvent.click(pensamentosBtn)
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Nó Pensamentos' })).toBeInTheDocument()
+    expect(
+      screen.getByText(/Cálculo de passos futuros para não falhar nem deixar desmoronar/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Sua mente é um instrumento poderoso de organização e lucidez/i),
+    ).toBeInTheDocument()
+
+    // Fechar por Escape
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+
+    // 3. Abrir o Nó "Relações & Vínculos" e verificar conteúdo específico
+    const relacoesBtn = screen.getByRole('button', {
+      name: /Nó Relações & Vínculos\. Toque para abrir leitura individual/i,
+    })
+    await userEvent.click(relacoesBtn)
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Nó Relações & Vínculos' })).toBeInTheDocument()
+    expect(
+      screen.getByText(/Círculo íntimo seleto com alto nível de dedicação e lealdade profunda/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Aprender a pedir ajuda antes do esgotamento e praticar o dizer "não"/i),
+    ).toBeInTheDocument()
+  })
+
+  it('explicita ausência de marcos na História sem inventar traumas ou infância, e preserva fallback em mapas sem elementReadings', async () => {
+    // 1. Snapshot Demo com História cuidadosa
+    const demoSnapshot = createDemoCerMapReading('demo-enr-01')
+    const { unmount } = render(<CerMapReadingsView snapshot={demoSnapshot} />)
+
+    const historiaBtn = screen.getByRole('button', {
+      name: /Sua história e seu funcionamento hoje\. Toque para abrir conexões/i,
+    })
+    await userEvent.click(historiaBtn)
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Sua história e seu funcionamento hoje' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Até aqui, há características corporais reconhecidas há anos e relatos do seu funcionamento atual/i,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Ainda faltam marcos compartilhados da Linha da Vida para relacionar esse retrato a acontecimentos específicos/i,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Não sabemos quando você aprendeu a assumir tantas demandas/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Quando você começou a sentir que precisava dar conta de tudo\?/i),
+    ).toBeInTheDocument()
+
+    // Não inventa traumas familiares
+    expect(screen.queryByText(/pais rígidos/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/infância traumática/i)).not.toBeInTheDocument()
+
+    unmount()
+
+    // 2. Snapshot Legado/Real SEM elementReadings: preserva comportamento anterior e NUNCA vaza os dados de Mariana
+    const legacySnapshot: CerMapReadingSnapshot = {
+      schemaVersion: 1,
+      enrollmentId: 'real-enr-99',
+      participantName: 'Joana Silva',
+      generatedAt: '2025-05-01T10:00:00Z',
+      sourceResponseIds: ['resp-01'],
+      overview: 'Mapa consolidado real.',
+      integration: 'Integração real personalizada.',
+      history: 'Histórico pessoal registrado em sessão.',
+      dimensions: [
+        {
+          id: 'corpo',
+          title: 'Corpo & Fisiologia',
+          explanation: 'Conceito da dimensão corpo.',
+          summary: 'Resumo corpo real.',
+          interpretation: 'Interpretação corpo real.',
+          summaryRows: [],
+          detailedRows: [],
+          referenceIds: [],
+        },
+        {
+          id: 'mente',
+          title: 'Mente & Emoções',
+          explanation: 'Conceito da dimensão mente.',
+          summary: 'Resumo mente real.',
+          interpretation: 'Interpretação mente real.',
+          summaryRows: [],
+          detailedRows: [
+            {
+              label: 'prestativo',
+              text: 'Repete-se com frequência',
+            },
+          ],
+          referenceIds: [],
+        },
+      ],
+      references: [],
+      // elementReadings ausente intencionalmente!
+    }
+
+    render(<CerMapReadingsView snapshot={legacySnapshot} />)
+
+    // Clicar em Prestativo no mapa legado
+    const legacyPrestativoBtn = screen.getByRole('button', {
+      name: /Prestativo: categoria Repete-se com frequência/i,
+    })
+    await userEvent.click(legacyPrestativoBtn)
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    // Não pode conter aviso fictício nem o texto interpretativo de Mariana
+    expect(screen.queryByText('Exemplo fictício para explorar o Mapa CER')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(
+        /Talvez você perceba o que o outro precisa antes de perceber seu próprio cansaço/i,
+      ),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText(/O que aparece nas suas respostas/i)).not.toBeInTheDocument()
+
+    // Preserva o conteúdo padrão conceitual existente
+    expect(screen.getByText(/Pensamentos comuns quando ativo/i)).toBeInTheDocument()
   })
 })
