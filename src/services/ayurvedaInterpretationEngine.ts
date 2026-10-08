@@ -80,9 +80,14 @@ export interface AyurvedaInterpretationResult {
 export const AYURVEDA_NON_DIAGNOSTIC_DISCLAIMER =
   'Esta leitura constitui uma hipótese interpretativa de trabalho baseada no Método CER, elaborada para apoiar o raciocínio profissional e o planejamento do cuidado. Não representa diagnóstico nosológico, médico ou prescritivo definitivo. Todas as hipóteses devem ser validadas e aprofundadas em sessão com a interagente.'
 
-function extractValueAndKey(resp: ExperienceResponseRecord): { value: any; key: string } {
+const EXCLUDED_OPTION_IDS = new Set(['dont_know', 'refusal', 'unknown'])
+
+function extractChoiceValuesAndKey(resp: ExperienceResponseRecord): {
+  values: string[]
+  key: string
+  isExplicitUnsureOrRefusal: boolean
+} {
   const structured = resp.structured_value as any
-  let value: any = structured
   let key =
     (resp as any).prompt_key ||
     structured?.prompt_key ||
@@ -90,12 +95,59 @@ function extractValueAndKey(resp: ExperienceResponseRecord): { value: any; key: 
     (resp as any).canonical_prompt_id ||
     ''
 
-  if (structured && typeof structured === 'object') {
-    if (structured.value !== undefined) value = structured.value
-    else if (structured.selectedOptionId !== undefined) value = structured.selectedOptionId
-    else if (structured.choice !== undefined) value = structured.choice
+  const metadata = structured?.metadata || {}
+  const isExplicitUnsureOrRefusal =
+    metadata.explicit_unsure === true ||
+    metadata.explicit_refusal === true ||
+    metadata.unsure === true ||
+    metadata.refusal === true ||
+    (resp as any).metadata?.explicit_unsure === true ||
+    (resp as any).metadata?.explicit_refusal === true
+
+  if (isExplicitUnsureOrRefusal) {
+    return { values: [], key, isExplicitUnsureOrRefusal: true }
   }
-  return { value, key }
+
+  const rawCandidates: any[] = []
+
+  if (structured && typeof structured === 'object') {
+    if (Array.isArray(structured.selectedOptionIds)) {
+      rawCandidates.push(...structured.selectedOptionIds)
+    }
+    if (Array.isArray(structured.value)) {
+      rawCandidates.push(...structured.value)
+    } else if (structured.value !== undefined && structured.value !== null) {
+      rawCandidates.push(structured.value)
+    }
+    if (structured.selectedOptionId !== undefined && structured.selectedOptionId !== null) {
+      rawCandidates.push(structured.selectedOptionId)
+    }
+    if (structured.choice !== undefined && structured.choice !== null) {
+      if (Array.isArray(structured.choice)) {
+        rawCandidates.push(...structured.choice)
+      } else {
+        rawCandidates.push(structured.choice)
+      }
+    }
+  } else if (structured !== undefined && structured !== null) {
+    rawCandidates.push(structured)
+  }
+
+  const values: string[] = []
+  const seen = new Set<string>()
+
+  for (const item of rawCandidates) {
+    if (item === undefined || item === null) continue
+    const str = String(item).trim()
+    if (!str) continue
+    if (EXCLUDED_OPTION_IDS.has(str)) continue
+    if (!seen.has(str)) {
+      seen.add(str)
+      values.push(str)
+    }
+  }
+
+  return { values, key, isExplicitUnsureOrRefusal: false }
 }
 
 export function buildAyurvedaInterpretation(
@@ -261,13 +313,24 @@ export function buildAyurvedaInterpretation(
   const sortedC2 = [...filteredC2Responses].sort(compareDeterministically)
 
   // Mapeamento das respostas literais ativas
-  const answersMap = new Map<string, { value: any; freeText?: string }>()
+  const answersMap = new Map<
+    string,
+    { values: string[]; isExplicitUnsureOrRefusal: boolean; freeText?: string }
+  >()
   for (const r of [...sortedC1, ...sortedC2]) {
-    const { value, key } = extractValueAndKey(r)
+    const { values, key, isExplicitUnsureOrRefusal } = extractChoiceValuesAndKey(r)
     const baseKey = getChapter1BasePromptId(getChapter2BasePromptId(key))
-    if (value !== undefined && value !== null) {
-      answersMap.set(baseKey, { value, freeText: r.free_text })
-    }
+    answersMap.set(baseKey, { values, isExplicitUnsureOrRefusal, freeText: r.free_text })
+  }
+
+  const getActiveValues = (promptDef: { id: string; key: string }): string[] => {
+    const entry = answersMap.get(promptDef.id) || answersMap.get(promptDef.key)
+    if (!entry || entry.isExplicitUnsureOrRefusal) return []
+    return entry.values
+  }
+
+  const hasAnyMatch = (actual: string[], expected: string[]): boolean => {
+    return expected.some((exp) => actual.includes(exp))
   }
 
   // Coletores de evidências para Prakriti (natureza habitual / estrutural)
@@ -280,179 +343,164 @@ export function buildAyurvedaInterpretation(
   const vikritiPitta: DoshaEvidence[] = []
   const vikritiKapha: DoshaEvidence[] = []
 
-  // 1. Estrutura corporal habitual (Cap 1)
-  const p1Structure =
-    answersMap.get(AYV_C1_PROMPTS.P1_STRUCTURE.id) ||
-    answersMap.get(AYV_C1_PROMPTS.P1_STRUCTURE.key)
-  if (p1Structure) {
-    const val = String(p1Structure.value)
-    if (val === 'slender' || val === 'light_narrow' || val === 'leve_longilinea') {
-      prakritiVata.push({
-        dosha: 'Vata',
-        category: 'Estrutura corporal',
-        sourceQuestionTitle: 'Estrutura corporal habitual',
-        literalText: 'Estrutura mais leve, longilínea ou óssea aparente',
-        observation: 'Conformação habitual com predomínio de leveza e menor densidade de tecidos.',
-      })
-    } else if (val === 'medium' || val === 'intermediate' || val === 'moderada_proporcional') {
-      prakritiPitta.push({
-        dosha: 'Pitta',
-        category: 'Estrutura corporal',
-        sourceQuestionTitle: 'Estrutura corporal habitual',
-        literalText: 'Estrutura média, proporcional ou musculatura definida',
-        observation: 'Conformação habitual equilibrada com moderado desenvolvimento muscular.',
-      })
-    } else if (val === 'broad' || val === 'broad_solid' || val === 'larga_robusta') {
-      prakritiKapha.push({
-        dosha: 'Kapha',
-        category: 'Estrutura corporal',
-        sourceQuestionTitle: 'Estrutura corporal habitual',
-        literalText: 'Estrutura mais larga, densa ou com tendência a reter volume',
-        observation: 'Conformação habitual com solidez de base, estabilidade e densidade tecidual.',
-      })
+  const pushDedupedByCategory = (list: DoshaEvidence[], item: DoshaEvidence) => {
+    if (!list.some((existing) => existing.category === item.category)) {
+      list.push(item)
     }
+  }
+
+  // 1. Estrutura corporal habitual (Cap 1)
+  const p1Vals = getActiveValues(AYV_C1_PROMPTS.P1_STRUCTURE)
+  if (hasAnyMatch(p1Vals, ['slender', 'light_narrow', 'leve_longilinea'])) {
+    pushDedupedByCategory(prakritiVata, {
+      dosha: 'Vata',
+      category: 'Estrutura corporal',
+      sourceQuestionTitle: 'Estrutura corporal habitual',
+      literalText: 'Estrutura mais leve, longilínea ou óssea aparente',
+      observation: 'Conformação habitual com predomínio de leveza e menor densidade de tecidos.',
+    })
+  }
+  if (hasAnyMatch(p1Vals, ['medium', 'intermediate', 'moderada_proporcional'])) {
+    pushDedupedByCategory(prakritiPitta, {
+      dosha: 'Pitta',
+      category: 'Estrutura corporal',
+      sourceQuestionTitle: 'Estrutura corporal habitual',
+      literalText: 'Estrutura média, proporcional ou musculatura definida',
+      observation: 'Conformação habitual equilibrada com moderado desenvolvimento muscular.',
+    })
+  }
+  if (hasAnyMatch(p1Vals, ['broad', 'broad_solid', 'larga_robusta'])) {
+    pushDedupedByCategory(prakritiKapha, {
+      dosha: 'Kapha',
+      category: 'Estrutura corporal',
+      sourceQuestionTitle: 'Estrutura corporal habitual',
+      literalText: 'Estrutura mais larga, densa ou com tendência a reter volume',
+      observation: 'Conformação habitual com solidez de base, estabilidade e densidade tecidual.',
+    })
   }
 
   // 2. Pele habitual (Cap 1)
-  const p2Skin =
-    answersMap.get(AYV_C1_PROMPTS.P2_SKIN.id) || answersMap.get(AYV_C1_PROMPTS.P2_SKIN.key)
-  if (p2Skin) {
-    const val = String(p2Skin.value)
-    if (val === 'dry' || val === 'dry_rough' || val === 'thin_reactive' || val === 'seca_fina') {
-      prakritiVata.push({
-        dosha: 'Vata',
-        category: 'Pele habitual',
-        sourceQuestionTitle: 'Pele habitual',
-        literalText: 'Tendência ao ressecamento, aspereza ou espessura fina',
-        observation: 'Qualidade tátil seca e fria característica de Vata.',
-      })
-    } else if (val === 'warm' || val === 'warm_sensitive' || val === 'oleosa_sensivel_quente') {
-      prakritiPitta.push({
-        dosha: 'Pitta',
-        category: 'Pele habitual',
-        sourceQuestionTitle: 'Pele habitual',
-        literalText: 'Tendência a calor, rubor, oleosidade na zona central ou sensibilidade',
-        observation: 'Predomínio de vascularização, calor e tendência inflamatória cutânea.',
-      })
-    } else if (val === 'smooth' || val === 'soft_oily' || val === 'macia_espessa_hidratada') {
-      prakritiKapha.push({
-        dosha: 'Kapha',
-        category: 'Pele habitual',
-        sourceQuestionTitle: 'Pele habitual',
-        literalText: 'Pele macia, espessa, bem hidratada e fria ao toque',
-        observation: 'Lubrificação natural abundante e integridade de barreira.',
-      })
-    }
+  const p2Vals = getActiveValues(AYV_C1_PROMPTS.P2_SKIN)
+  if (hasAnyMatch(p2Vals, ['dry', 'dry_rough', 'thin_reactive', 'seca_fina'])) {
+    pushDedupedByCategory(prakritiVata, {
+      dosha: 'Vata',
+      category: 'Pele habitual',
+      sourceQuestionTitle: 'Pele habitual',
+      literalText: 'Tendência ao ressecamento, aspereza ou espessura fina',
+      observation: 'Qualidade tátil seca e fria característica de Vata.',
+    })
+  }
+  if (hasAnyMatch(p2Vals, ['warm', 'warm_sensitive', 'oleosa_sensivel_quente'])) {
+    pushDedupedByCategory(prakritiPitta, {
+      dosha: 'Pitta',
+      category: 'Pele habitual',
+      sourceQuestionTitle: 'Pele habitual',
+      literalText: 'Tendência a calor, rubor, oleosidade na zona central ou sensibilidade',
+      observation: 'Predomínio de vascularização, calor e tendência inflamatória cutânea.',
+    })
+  }
+  if (hasAnyMatch(p2Vals, ['smooth', 'soft_oily', 'macia_espessa_hidratada'])) {
+    pushDedupedByCategory(prakritiKapha, {
+      dosha: 'Kapha',
+      category: 'Pele habitual',
+      sourceQuestionTitle: 'Pele habitual',
+      literalText: 'Pele macia, espessa, bem hidratada e fria ao toque',
+      observation: 'Lubrificação natural abundante e integridade de barreira.',
+    })
   }
 
   // 3. Cabelo habitual (Cap 1)
-  const p3Hair =
-    answersMap.get(AYV_C1_PROMPTS.P3_HAIR.id) || answersMap.get(AYV_C1_PROMPTS.P3_HAIR.key)
-  if (p3Hair) {
-    const val = String(p3Hair.value)
-    if (
-      val === 'dry_brittle' ||
-      val === 'dry_tangled' ||
-      val === 'fine_delicate' ||
-      val === 'fino_seco'
-    ) {
-      prakritiVata.push({
-        dosha: 'Vata',
-        category: 'Cabelo habitual',
-        sourceQuestionTitle: 'Cabelo habitual',
-        literalText: 'Fios finos, secos ou com tendência ao arrepiado/quebra',
-        observation: 'Nutrição periférica variável ou menor oleosidade do couro cabeludo.',
-      })
-    } else if (val === 'fine_oily' || val === 'oily_roots' || val === 'oleoso_fino_precoce') {
-      prakritiPitta.push({
-        dosha: 'Pitta',
-        category: 'Cabelo habitual',
-        sourceQuestionTitle: 'Cabelo habitual',
-        literalText:
-          'Fios médios a finos, oleosidade rápida ou tendência a clareamento/queda precoce',
-        observation: 'Calor metabólico afetando os folículos pilosos.',
-      })
-    } else if (val === 'thick_wavy' || val === 'thick_dense' || val === 'espesso_abundante') {
-      prakritiKapha.push({
-        dosha: 'Kapha',
-        category: 'Cabelo habitual',
-        sourceQuestionTitle: 'Cabelo habitual',
-        literalText: 'Fios espessos, abundantes, brilhantes e resistentes',
-        observation: 'Força tecidual de sustentação e oleosidade equilibrada de proteção.',
-      })
-    }
+  const p3Vals = getActiveValues(AYV_C1_PROMPTS.P3_HAIR)
+  if (hasAnyMatch(p3Vals, ['dry_brittle', 'dry_tangled', 'fine_delicate', 'fino_seco'])) {
+    pushDedupedByCategory(prakritiVata, {
+      dosha: 'Vata',
+      category: 'Cabelo habitual',
+      sourceQuestionTitle: 'Cabelo habitual',
+      literalText: 'Fios finos, secos ou com tendência ao arrepiado/quebra',
+      observation: 'Nutrição periférica variável ou menor oleosidade do couro cabeludo.',
+    })
+  }
+  if (hasAnyMatch(p3Vals, ['fine_oily', 'oily_roots', 'oleoso_fino_precoce'])) {
+    pushDedupedByCategory(prakritiPitta, {
+      dosha: 'Pitta',
+      category: 'Cabelo habitual',
+      sourceQuestionTitle: 'Cabelo habitual',
+      literalText:
+        'Fios médios a finos, oleosidade rápida ou tendência a clareamento/queda precoce',
+      observation: 'Calor metabólico afetando os folículos pilosos.',
+    })
+  }
+  if (hasAnyMatch(p3Vals, ['thick_wavy', 'thick_dense', 'espesso_abundante'])) {
+    pushDedupedByCategory(prakritiKapha, {
+      dosha: 'Kapha',
+      category: 'Cabelo habitual',
+      sourceQuestionTitle: 'Cabelo habitual',
+      literalText: 'Fios espessos, abundantes, brilhantes e resistentes',
+      observation: 'Força tecidual de sustentação e oleosidade equilibrada de proteção.',
+    })
   }
 
   // 4. Temperatura e sensibilidade ao clima (Cap 1)
-  const p4Temp =
-    answersMap.get(AYV_C1_PROMPTS.P4_TEMPERATURE.id) ||
-    answersMap.get(AYV_C1_PROMPTS.P4_TEMPERATURE.key)
-  if (p4Temp) {
-    const val = String(p4Temp.value)
-    if (val === 'chilly' || val === 'cold_easily' || val === 'sente_frio_facilidade') {
-      prakritiVata.push({
-        dosha: 'Vata',
-        category: 'Regulação térmica',
-        sourceQuestionTitle: 'Temperatura corporal habitual',
-        literalText: 'Sente frio com facilidade, extremidades frias',
-        observation: 'Sensibilidade marcante a temperaturas baixas e vento.',
-      })
-    } else if (val === 'warm' || val === 'heat_easily' || val === 'sente_calor_intolerancia') {
-      prakritiPitta.push({
-        dosha: 'Pitta',
-        category: 'Regulação térmica',
-        sourceQuestionTitle: 'Temperatura corporal habitual',
-        literalText: 'Sente calor com facilidade, desconforto em ambientes quentes',
-        observation: 'Termogênese basal elevada e desconforto ao calor direto.',
-      })
-    } else if (val === 'adaptable' || val === 'stable' || val === 'tolera_bem_prefere_calor_seco') {
-      prakritiKapha.push({
-        dosha: 'Kapha',
-        category: 'Regulação térmica',
-        sourceQuestionTitle: 'Temperatura corporal habitual',
-        literalText: 'Tolera temperaturas com estabilidade, mas desfavorece clima frio e úmido',
-        observation: 'Estabilidade térmica com aversão a umidade acumulada.',
-      })
-    }
+  const p4Vals = getActiveValues(AYV_C1_PROMPTS.P4_TEMPERATURE)
+  if (hasAnyMatch(p4Vals, ['chilly', 'cold_easily', 'sente_frio_facilidade'])) {
+    pushDedupedByCategory(prakritiVata, {
+      dosha: 'Vata',
+      category: 'Regulação térmica',
+      sourceQuestionTitle: 'Temperatura corporal habitual',
+      literalText: 'Sente frio com facilidade, extremidades frias',
+      observation: 'Sensibilidade marcante a temperaturas baixas e vento.',
+    })
+  }
+  if (hasAnyMatch(p4Vals, ['warm', 'heat_easily', 'sente_calor_intolerancia'])) {
+    pushDedupedByCategory(prakritiPitta, {
+      dosha: 'Pitta',
+      category: 'Regulação térmica',
+      sourceQuestionTitle: 'Temperatura corporal habitual',
+      literalText: 'Sente calor com facilidade, desconforto em ambientes quentes',
+      observation: 'Termogênese basal elevada e desconforto ao calor direto.',
+    })
+  }
+  if (hasAnyMatch(p4Vals, ['adaptable', 'stable', 'tolera_bem_prefere_calor_seco'])) {
+    pushDedupedByCategory(prakritiKapha, {
+      dosha: 'Kapha',
+      category: 'Regulação térmica',
+      sourceQuestionTitle: 'Temperatura corporal habitual',
+      literalText: 'Tolera temperaturas com estabilidade, mas desfavorece clima frio e úmido',
+      observation: 'Estabilidade térmica com aversão a umidade acumulada.',
+    })
   }
 
   // 5. Fome e Digestão habitual (Cap 2)
-  const p1Hunger =
-    answersMap.get(AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id) ||
-    answersMap.get(AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key)
-  const hungerVal = p1Hunger ? String(p1Hunger.value) : ''
+  const hungerVals = getActiveValues(AYV_C2_PROMPTS.P1_HUNGER_PATTERN)
   if (
-    hungerVal === 'irregular' ||
-    hungerVal === 'variable_intensity' ||
-    hungerVal === 'changes_routine_emotion' ||
-    hungerVal === 'variavel_imprevisivel'
+    hasAnyMatch(hungerVals, [
+      'irregular',
+      'variable_intensity',
+      'changes_routine_emotion',
+      'variavel_imprevisivel',
+    ])
   ) {
-    vikritiVata.push({
+    pushDedupedByCategory(vikritiVata, {
       dosha: 'Vata',
       category: 'Ritmo da fome',
       sourceQuestionTitle: 'Padrão da fome habitual',
       literalText: 'Fome variável, imprevisível ou oscilante ao longo do dia',
       observation: 'Ritmo irregular sugerindo instabilidade de Vata sobre o sistema digestivo.',
     })
-  } else if (
-    hungerVal === 'intense' ||
-    hungerVal === 'sudden_intense' ||
-    hungerVal === 'intensa_urgente'
-  ) {
-    vikritiPitta.push({
+  }
+  if (hasAnyMatch(hungerVals, ['intense', 'sudden_intense', 'intensa_urgente'])) {
+    pushDedupedByCategory(vikritiPitta, {
       dosha: 'Pitta',
       category: 'Ritmo da fome',
       sourceQuestionTitle: 'Padrão da fome habitual',
       literalText: 'Fome forte, pontual e que provoca irritação se atrasada',
       observation: 'Agudeza e intensidade no apetite com rápida necessidade de combustível.',
     })
-  } else if (
-    hungerVal === 'low_stable' ||
-    hungerVal === 'light_slow' ||
-    hungerVal === 'long_without_hunger' ||
-    hungerVal === 'lenta_tardia'
+  }
+  if (
+    hasAnyMatch(hungerVals, ['low_stable', 'light_slow', 'long_without_hunger', 'lenta_tardia'])
   ) {
-    vikritiKapha.push({
+    pushDedupedByCategory(vikritiKapha, {
       dosha: 'Kapha',
       category: 'Ritmo da fome',
       sourceQuestionTitle: 'Padrão da fome habitual',
@@ -462,24 +510,19 @@ export function buildAyurvedaInterpretation(
   }
 
   // 6. Eliminação intestinal (Cap 2)
-  const p6Bowel =
-    answersMap.get(AYV_C2_PROMPTS.P6_BOWEL_RHYTHM.id) ||
-    answersMap.get(AYV_C2_PROMPTS.P6_BOWEL_RHYTHM.key)
-  const bowelVal = p6Bowel ? String(p6Bowel.value) : ''
-  const p7Stool =
-    answersMap.get(AYV_C2_PROMPTS.P7_STOOL_PATTERN.id) ||
-    answersMap.get(AYV_C2_PROMPTS.P7_STOOL_PATTERN.key)
-  const stoolVal = p7Stool ? String(p7Stool.value) : ''
+  const bowelVals = getActiveValues(AYV_C2_PROMPTS.P6_BOWEL_RHYTHM)
+  const stoolVals = getActiveValues(AYV_C2_PROMPTS.P7_STOOL_PATTERN)
 
   if (
-    bowelVal === 'constipated' ||
-    bowelVal === 'skips_days' ||
-    bowelVal === 'alternates_constip_loose' ||
-    bowelVal === 'irregular' ||
-    stoolVal === 'hard_dry' ||
-    stoolVal === 'dry_hard_difficult'
+    hasAnyMatch(bowelVals, [
+      'constipated',
+      'skips_days',
+      'alternates_constip_loose',
+      'irregular',
+    ]) ||
+    hasAnyMatch(stoolVals, ['hard_dry', 'dry_hard_difficult'])
   ) {
-    vikritiVata.push({
+    pushDedupedByCategory(vikritiVata, {
       dosha: 'Vata',
       category: 'Eliminação intestinal',
       sourceQuestionTitle: 'Ritmo intestinal e apresentação das fezes',
@@ -488,15 +531,10 @@ export function buildAyurvedaInterpretation(
     })
   }
   if (
-    bowelVal === 'loose' ||
-    bowelVal === 'multiple_daily' ||
-    bowelVal === 'frequent' ||
-    stoolVal === 'soft_poorly_formed' ||
-    stoolVal === 'very_loose_watery' ||
-    stoolVal === 'soft_loose' ||
-    stoolVal === 'ardor'
+    hasAnyMatch(bowelVals, ['loose', 'multiple_daily', 'frequent']) ||
+    hasAnyMatch(stoolVals, ['soft_poorly_formed', 'very_loose_watery', 'soft_loose', 'ardor'])
   ) {
-    vikritiPitta.push({
+    pushDedupedByCategory(vikritiPitta, {
       dosha: 'Pitta',
       category: 'Eliminação intestinal',
       sourceQuestionTitle: 'Ritmo intestinal e apresentação das fezes',
@@ -504,8 +542,11 @@ export function buildAyurvedaInterpretation(
       observation: 'Calor e fluidez aumentada acelerando o trânsito entérico.',
     })
   }
-  if (bowelVal === 'sluggish' || stoolVal === 'sticky_incomplete' || stoolVal === 'heavy_sticky') {
-    vikritiKapha.push({
+  if (
+    hasAnyMatch(bowelVals, ['sluggish']) ||
+    hasAnyMatch(stoolVals, ['sticky_incomplete', 'heavy_sticky'])
+  ) {
+    pushDedupedByCategory(vikritiKapha, {
       dosha: 'Kapha',
       category: 'Eliminação intestinal',
       sourceQuestionTitle: 'Ritmo intestinal e apresentação das fezes',
@@ -515,24 +556,20 @@ export function buildAyurvedaInterpretation(
   }
 
   // 7. Sono e Disposição (Cap 2)
-  const p8Sleep =
-    answersMap.get(AYV_C2_PROMPTS.P8_SLEEP_PATTERN.id) ||
-    answersMap.get(AYV_C2_PROMPTS.P8_SLEEP_PATTERN.key)
-  const sleepVal = p8Sleep ? String(p8Sleep.value) : ''
-  const p9Wake =
-    answersMap.get(AYV_C2_PROMPTS.P9_WAKING.id) || answersMap.get(AYV_C2_PROMPTS.P9_WAKING.key)
-  const wakeVal = p9Wake ? String(p9Wake.value) : ''
+  const sleepVals = getActiveValues(AYV_C2_PROMPTS.P8_SLEEP_PATTERN)
+  const wakeVals = getActiveValues(AYV_C2_PROMPTS.P9_WAKING)
 
   if (
-    sleepVal === 'light_interrupted' ||
-    sleepVal === 'light_wakes_easy' ||
-    sleepVal === 'difficulty_falling_asleep' ||
-    sleepVal === 'wakes_night' ||
-    sleepVal === 'insonia_inicial' ||
-    wakeVal === 'tired_insufficient' ||
-    wakeVal === 'fatigued_unrefreshed'
+    hasAnyMatch(sleepVals, [
+      'light_interrupted',
+      'light_wakes_easy',
+      'difficulty_falling_asleep',
+      'wakes_night',
+      'insonia_inicial',
+    ]) ||
+    hasAnyMatch(wakeVals, ['tired_insufficient', 'fatigued_unrefreshed'])
   ) {
-    vikritiVata.push({
+    pushDedupedByCategory(vikritiVata, {
       dosha: 'Vata',
       category: 'Sono e ritmo vigília',
       sourceQuestionTitle: 'Padrão do sono e despertar',
@@ -541,11 +578,9 @@ export function buildAyurvedaInterpretation(
     })
   }
   if (
-    sleepVal === 'moderate_hot' ||
-    sleepVal === 'quick_wake_little_sleep' ||
-    sleepVal === 'acorda_calor_pesadelos'
+    hasAnyMatch(sleepVals, ['moderate_hot', 'quick_wake_little_sleep', 'acorda_calor_pesadelos'])
   ) {
-    vikritiPitta.push({
+    pushDedupedByCategory(vikritiPitta, {
       dosha: 'Pitta',
       category: 'Sono e ritmo vigília',
       sourceQuestionTitle: 'Padrão do sono e despertar',
@@ -554,12 +589,10 @@ export function buildAyurvedaInterpretation(
     })
   }
   if (
-    sleepVal === 'deep_excessive' ||
-    sleepVal === 'long_sleep_hard_to_wake' ||
-    wakeVal === 'heavy_body_slow_start' ||
-    wakeVal === 'heavy_groggy'
+    hasAnyMatch(sleepVals, ['deep_excessive', 'long_sleep_hard_to_wake']) ||
+    hasAnyMatch(wakeVals, ['heavy_body_slow_start', 'heavy_groggy'])
   ) {
-    vikritiKapha.push({
+    pushDedupedByCategory(vikritiKapha, {
       dosha: 'Kapha',
       category: 'Sono e ritmo vigília',
       sourceQuestionTitle: 'Padrão do sono e despertar',
@@ -642,91 +675,152 @@ export function buildAyurvedaInterpretation(
   }
 
   // 8. Leitura de Agni (Fogo Digestivo)
-  const p3PostMeal =
-    answersMap.get(AYV_C2_PROMPTS.P3_POST_MEAL.id) ||
-    answersMap.get(AYV_C2_PROMPTS.P3_POST_MEAL.key)
-  const postMealVal = p3PostMeal ? String(p3PostMeal.value) : ''
-  const p5HeavyFood =
-    answersMap.get(AYV_C2_PROMPTS.P5_FOOD_DEMANDS.id) ||
-    answersMap.get(AYV_C2_PROMPTS.P5_FOOD_DEMANDS.key)
-  const heavyFoodVal = p5HeavyFood ? String(p5HeavyFood.value) : ''
+  const postMealVals = getActiveValues(AYV_C2_PROMPTS.P3_POST_MEAL)
+  const heavyFoodVals = getActiveValues(AYV_C2_PROMPTS.P5_FOOD_DEMANDS)
 
-  const agniEvidences: string[] = []
+  // Sinais de Vishama Agni (Vata)
+  const vishamaEvidences: string[] = []
+  if (
+    hasAnyMatch(hungerVals, [
+      'irregular',
+      'variable_intensity',
+      'changes_routine_emotion',
+      'variavel_imprevisivel',
+    ])
+  ) {
+    vishamaEvidences.push('Padrão de fome irregular ou imprevisível')
+  }
+  if (hasAnyMatch(postMealVals, ['bloating_gas', 'distended_gassy', 'distensao_gases'])) {
+    vishamaEvidences.push('Distensão e gases pós-prandiais')
+  }
+
+  // Sinais de Tikshna Agni (Pitta)
+  const tikshnaEvidences: string[] = []
+  if (hasAnyMatch(hungerVals, ['intense', 'sudden_intense', 'intensa_urgente'])) {
+    tikshnaEvidences.push('Fome intensa e necessidade urgente de alimentação')
+  }
+  if (
+    hasAnyMatch(postMealVals, ['heat_burning_acidity', 'burning_heartburn', 'queimacao_refluxo'])
+  ) {
+    tikshnaEvidences.push('Sensação de queimação ou refluxo após refeições')
+  }
+
+  // Sinais de Manda Agni (Kapha)
+  const mandaEvidences: string[] = []
+  if (
+    hasAnyMatch(hungerVals, ['low_stable', 'light_slow', 'long_without_hunger', 'lenta_tardia'])
+  ) {
+    mandaEvidences.push('Apetite reduzido ou tardio')
+  }
+  if (
+    hasAnyMatch(postMealVals, [
+      'heavy_slow_digestion',
+      'sleepy_energy_drop',
+      'heavy_drowsy',
+      'peso_sono',
+    ])
+  ) {
+    mandaEvidences.push('Sensação acentuada de peso e sonolência pós-prandial')
+  }
+
+  // Sinais de estabilidade / Sama Agni
+  const isHungerExplicitlyRegular = hasAnyMatch(hungerVals, [
+    'regular_hours',
+    'regular',
+    'regular_predictable',
+    'horarios_regulares',
+  ])
+  const isPostMealExplicitlyComfortable = hasAnyMatch(postMealVals, [
+    'light_comfortable',
+    'comfortable_stable',
+    'light_good_energy',
+    'leve_confortavel',
+    'sem_desconforto',
+  ])
+
+  const matchingDysfunctionalTypes: Array<{
+    type: 'Vishama Agni' | 'Tikshna Agni' | 'Manda Agni'
+    name: string
+    evidences: string[]
+  }> = []
+
+  if (vishamaEvidences.length > 0) {
+    matchingDysfunctionalTypes.push({
+      type: 'Vishama Agni',
+      name: 'Vishama (irregular/Vata)',
+      evidences: vishamaEvidences,
+    })
+  }
+  if (tikshnaEvidences.length > 0) {
+    matchingDysfunctionalTypes.push({
+      type: 'Tikshna Agni',
+      name: 'Tikshna (hiperativo/Pitta)',
+      evidences: tikshnaEvidences,
+    })
+  }
+  if (mandaEvidences.length > 0) {
+    matchingDysfunctionalTypes.push({
+      type: 'Manda Agni',
+      name: 'Manda (hipoativo/Kapha)',
+      evidences: mandaEvidences,
+    })
+  }
+
   let agniType: AgniReading['type'] = 'Indefinido / Em observação'
   let agniDesc = ''
   let agniConf: AgniReading['confidence'] = 'Em observação'
+  let agniEvidences: string[] = []
 
-  if (
-    hungerVal === 'irregular' ||
-    hungerVal === 'variable_intensity' ||
-    postMealVal === 'bloating_gas' ||
-    postMealVal === 'distended_gassy' ||
-    postMealVal === 'distensao_gases'
-  ) {
-    agniType = 'Vishama Agni'
-    agniDesc =
-      'Agni irregular e oscilante (típico de influência de Vata): ora a digestão é rápida, ora causa gases, distensão e instabilidade.'
-    if (hungerVal === 'irregular' || hungerVal === 'variable_intensity') {
-      agniEvidences.push('Padrão de fome irregular ou imprevisível')
+  // COERÊNCIA DE AGNI:
+  // 1) Se sinais indicam TIPOS DISTINTOS de Agni -> Indefinido / Em observação (não priorizar por ordem de if/else)
+  if (matchingDysfunctionalTypes.length > 1) {
+    agniType = 'Indefinido / Em observação'
+    const typeNames = matchingDysfunctionalTypes.map((t) => t.name).join(' e ')
+    agniDesc = `Sinais mistos de digestão e apetite combinando características de ${typeNames}. A coexistência de manifestações distintas requer observação longitudinal e exploração detalhada em sessão.`
+    // Consolida todas as evidências encontradas sem duplicar strings idênticas
+    agniEvidences = Array.from(new Set(matchingDysfunctionalTypes.flatMap((t) => t.evidences)))
+    agniConf = 'Em observação'
+  } else if (matchingDysfunctionalTypes.length === 1) {
+    const single = matchingDysfunctionalTypes[0]
+    // Também verificar se há conflito com sinais estáveis declarados (ex: fome regular + azia severa)
+    // Se há sinal disfuncional, o tipo disfuncional predomina se não houver múltiplos tipos disfuncionais
+    if (single.type === 'Vishama Agni') {
+      agniType = 'Vishama Agni'
+      agniDesc =
+        'Agni irregular e oscilante (típico de influência de Vata): ora a digestão é rápida, ora causa gases, distensão e instabilidade.'
+      agniEvidences = single.evidences
+      agniConf = agniEvidences.length >= 2 ? 'Alta' : 'Moderada'
+    } else if (single.type === 'Tikshna Agni') {
+      agniType = 'Tikshna Agni'
+      agniDesc =
+        'Agni hiperativo e rápido (típico de influência de Pitta): digestão acelerada com tendência a acidez, azia ou irritação quando há jejum prolongado.'
+      agniEvidences = single.evidences
+      agniConf = agniEvidences.length >= 2 ? 'Alta' : 'Moderada'
+    } else if (single.type === 'Manda Agni') {
+      agniType = 'Manda Agni'
+      agniDesc =
+        'Agni hipoativo e lento (típico de influência de Kapha): digestão pesada, sonolência acentuada após comer e apetite de início tardio.'
+      agniEvidences = single.evidences
+      agniConf = agniEvidences.length >= 2 ? 'Alta' : 'Moderada'
     }
-    if (
-      postMealVal === 'bloating_gas' ||
-      postMealVal === 'distended_gassy' ||
-      postMealVal === 'distensao_gases'
-    ) {
-      agniEvidences.push('Distensão e gases pós-prandiais')
-    }
-    agniConf = agniEvidences.length >= 2 ? 'Alta' : 'Moderada'
   } else if (
-    hungerVal === 'intense' ||
-    hungerVal === 'sudden_intense' ||
-    postMealVal === 'heat_burning_acidity' ||
-    postMealVal === 'burning_heartburn' ||
-    postMealVal === 'queimacao_refluxo'
+    isHungerExplicitlyRegular &&
+    isPostMealExplicitlyComfortable &&
+    matchingDysfunctionalTypes.length === 0
   ) {
-    agniType = 'Tikshna Agni'
-    agniDesc =
-      'Agni hiperativo e rápido (típico de influência de Pitta): digestão acelerada com tendência a acidez, azia ou irritação quando há jejum prolongado.'
-    if (hungerVal === 'intense' || hungerVal === 'sudden_intense') {
-      agniEvidences.push('Fome intensa e necessidade urgente de alimentação')
-    }
-    if (
-      postMealVal === 'heat_burning_acidity' ||
-      postMealVal === 'burning_heartburn' ||
-      postMealVal === 'queimacao_refluxo'
-    ) {
-      agniEvidences.push('Sensação de queimação ou refluxo após refeições')
-    }
-    agniConf = agniEvidences.length >= 2 ? 'Alta' : 'Moderada'
-  } else if (
-    hungerVal === 'low_stable' ||
-    hungerVal === 'light_slow' ||
-    postMealVal === 'heavy_slow_digestion' ||
-    postMealVal === 'sleepy_energy_drop' ||
-    postMealVal === 'heavy_drowsy' ||
-    postMealVal === 'peso_sono'
-  ) {
-    agniType = 'Manda Agni'
-    agniDesc =
-      'Agni hipoativo e lento (típico de influência de Kapha): digestão pesada, sonolência acentuada após comer e apetite de início tardio.'
-    if (hungerVal === 'low_stable' || hungerVal === 'light_slow') {
-      agniEvidences.push('Apetite reduzido ou tardio')
-    }
-    if (
-      postMealVal === 'heavy_slow_digestion' ||
-      postMealVal === 'sleepy_energy_drop' ||
-      postMealVal === 'heavy_drowsy' ||
-      postMealVal === 'peso_sono'
-    ) {
-      agniEvidences.push('Sensação acentuada de peso e sonolência pós-prandial')
-    }
-    agniConf = agniEvidences.length >= 2 ? 'Alta' : 'Moderada'
-  } else if (hungerVal && postMealVal) {
+    // Sama Agni: exige fome EXPLICITAMENTE regular E pós-refeição EXPLICITAMENTE sem desconforto,
+    // SEM sinais conflitantes (e sem valores genéricos truthy / dont_know / refusal)
     agniType = 'Sama Agni'
     agniDesc =
       'Agni equilibrado: fome regular nos horários habituais e digestão sem desconforto, queimação ou sonolência excessiva.'
-    agniEvidences.push('Fome previsível e sensação pós-refeição estável')
+    agniEvidences = ['Fome previsível e sensação pós-refeição estável']
     agniConf = 'Moderada'
+  } else {
+    // Sem sinais suficientes ou dados não conclusivos
+    agniType = 'Indefinido / Em observação'
+    agniDesc = 'Sem dados canônicos suficientes para caracterização do fogo digestivo.'
+    agniEvidences = []
+    agniConf = 'Em observação'
   }
 
   // 9. Leitura de Ama (Toxinas / Sobrecarga metabólica)
@@ -734,29 +828,32 @@ export function buildAyurvedaInterpretation(
   const amaCategoryMap = new Map<string, string>()
 
   if (
-    postMealVal === 'heavy_slow_digestion' ||
-    postMealVal === 'sleepy_energy_drop' ||
-    postMealVal === 'heavy_drowsy' ||
-    postMealVal === 'bloating_gas' ||
-    heavyFoodVal === 'fatty_heavy' ||
-    heavyFoodVal === 'very_heavy'
+    hasAnyMatch(postMealVals, [
+      'heavy_slow_digestion',
+      'sleepy_energy_drop',
+      'heavy_drowsy',
+      'bloating_gas',
+    ]) ||
+    hasAnyMatch(heavyFoodVals, ['fatty_heavy', 'very_heavy'])
   ) {
     amaCategoryMap.set(
       'Digestão e sensação pós-refeição',
       'Digestão pesada, gases excessivos ou inércia pós-prandial',
     )
   }
-  if (stoolVal === 'sticky_incomplete' || stoolVal === 'heavy_sticky' || stoolVal === 'foul_odor') {
+  if (hasAnyMatch(stoolVals, ['sticky_incomplete', 'heavy_sticky', 'foul_odor'])) {
     amaCategoryMap.set(
       'Eliminação intestinal',
       'Fezes com muco, aderentes ao vaso ou com sensação de evacuação incompleta',
     )
   }
   if (
-    wakeVal === 'heavy_body_slow_start' ||
-    wakeVal === 'tired_insufficient' ||
-    wakeVal === 'heavy_groggy' ||
-    wakeVal === 'fatigued_unrefreshed'
+    hasAnyMatch(wakeVals, [
+      'heavy_body_slow_start',
+      'tired_insufficient',
+      'heavy_groggy',
+      'fatigued_unrefreshed',
+    ])
   ) {
     amaCategoryMap.set(
       'Disposição matinal e energia',
