@@ -528,6 +528,43 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     // Fechar modal
     fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
 
+    // 1b. Abrir "Meu mundo emocional"
+    const mundoEmocionalBtn = screen.getByRole('button', {
+      name: /Abrir: Meu mundo emocional/i,
+    })
+    await userEvent.click(mundoEmocionalBtn)
+
+    const mundoEmocionalDialog = await screen.findByRole('dialog')
+    expect(mundoEmocionalDialog).toBeInTheDocument()
+    const mundoEmocionalText = mundoEmocionalDialog.textContent || ''
+
+    // Leitura própria do elementReading presente (conteúdo específico de mundo emocional)
+    expect(mundoEmocionalText).toContain(
+      'vivacidade afetiva sentida no corpo, ansiedade e entusiasmo',
+    )
+    expect(mundoEmocionalText).toContain('Seu universo emocional é rico e dinâmico')
+
+    // Aviso demo presente
+    expect(mundoEmocionalText).toContain('Exemplo fictício para explorar o Mapa CER')
+    expect(mundoEmocionalText).toContain('Uma leitura possível')
+
+    // Ausência de IDs técnicos crus visíveis
+    expect(mundoEmocionalText).not.toContain('hiper_realizador')
+    expect(mundoEmocionalText).not.toContain('evitativo')
+    expect(mundoEmocionalText).not.toContain('vitima')
+    expect(mundoEmocionalText).not.toContain('hiper_racional')
+    expect(mundoEmocionalText).not.toContain('critico')
+
+    // Ausência de título falso de revisão no snapshot demo não revisado
+    expect(mundoEmocionalText).not.toContain('Interpretação revisada em conversa')
+
+    // Sem duplicação de blocos genéricos
+    expect(mundoEmocionalText).not.toContain('Como compreender esta dimensão')
+    expect(mundoEmocionalText).not.toContain('Respostas compartilhadas nesta versão')
+
+    // Fechar modal
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+
     // 2. Abrir Centro
     const centroBtn = screen.getByRole('button', {
       name: /Meu funcionamento em conjunto\. Toque para abrir síntese/i,

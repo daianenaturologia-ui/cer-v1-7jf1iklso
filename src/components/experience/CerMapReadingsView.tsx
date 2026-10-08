@@ -942,10 +942,24 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     )
   }
 
+  const formatFriendlyRowLabel = (label: string): string => {
+    let clean = label
+    for (const [key, pat] of Object.entries(CER_PROTECTION_PATTERNS)) {
+      if (clean.includes(key)) {
+        clean = clean.split(key).join(pat.baseName)
+      }
+    }
+    return clean
+  }
+
   const openDimensionDialog = (dimId: string, e?: React.MouseEvent<HTMLElement>) => {
     const dim = snapshot.dimensions.find((d) => d.id === dimId)
     if (!dim) return
     const refs = snapshot.references.filter((r) => dim.referenceIds.includes(r.id))
+    const isReviewed = Boolean(snapshot.reviewedAt && snapshot.reviewedBy)
+    const interpretationTitle = isReviewed
+      ? 'Interpretação revisada em conversa'
+      : 'Uma leitura possível'
 
     openDialog(
       {
@@ -954,6 +968,12 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Dimensão CER',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+            {isDemoSnapshot && !isReviewed && (
+              <div className="rounded-md border border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 text-[11px] text-amber-900 dark:text-amber-200">
+                <span className="font-semibold">Exemplo fictício para explorar o Mapa CER</span>
+              </div>
+            )}
+
             <div className="rounded-lg bg-muted/30 p-3 space-y-1">
               <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
                 Como compreender esta dimensão
@@ -973,7 +993,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             {dim.interpretation && (
               <div className="space-y-1">
                 <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Interpretação revisada em conversa
+                  {interpretationTitle}
                 </h4>
                 <p className="text-xs text-foreground whitespace-pre-wrap">{dim.interpretation}</p>
               </div>
@@ -987,7 +1007,9 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                 <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                   {dim.detailedRows.map((r, i) => (
                     <div key={i} className="text-xs border-b pb-1.5 last:border-b-0">
-                      <span className="font-medium text-foreground block">{r.label}</span>
+                      <span className="font-medium text-foreground block">
+                        {formatFriendlyRowLabel(r.label)}
+                      </span>
                       <span className="text-muted-foreground whitespace-pre-wrap">{r.text}</span>
                     </div>
                   ))}
@@ -1005,6 +1027,32 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
       },
       e?.currentTarget,
     )
+  }
+
+  const openEmotionalWorldDialog = (e?: React.MouseEvent<HTMLElement>) => {
+    const elementReading =
+      snapshot.elementReadings?.['emocoes'] ||
+      snapshot.elementReadings?.['mundo_emocional'] ||
+      snapshot.elementReadings?.['mente']
+
+    if (elementReading) {
+      openDialog(
+        {
+          title: 'Meu mundo emocional',
+          subtitle: 'Sensibilidade afetiva sentida no corpo, ansiedade e entusiasmo',
+          tag: 'Mente e Emoções',
+          content: (
+            <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
+              {renderElementReadingSections(elementReading)}
+            </div>
+          ),
+        },
+        e?.currentTarget,
+      )
+      return
+    }
+
+    openDimensionDialog('mente', e)
   }
 
   const openIntegratedNodeDialog = (nodeKey: string, e?: React.MouseEvent<HTMLElement>) => {
@@ -1567,7 +1615,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             type="button"
             variant="outline"
             size="sm"
-            onClick={(e) => openDimensionDialog('mente', e)}
+            onClick={(e) => openEmotionalWorldDialog(e)}
             className="text-xs min-h-[44px] self-start sm:self-auto border-primary/30 text-foreground"
             aria-label="Abrir: Meu mundo emocional"
           >
