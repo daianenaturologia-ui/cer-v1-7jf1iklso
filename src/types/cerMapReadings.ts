@@ -15,6 +15,21 @@ export interface CerMapReadingRow {
   sourcePromptKey?: string
 }
 
+export interface AyurvedaBodyReading {
+  currentDoshas: ('Vata' | 'Pitta' | 'Kapha')[]
+  currentSummary: string
+  currentFacts: string[]
+  constitutionEvidence: string[]
+  currentDigestive: boolean
+  agniType: string
+  amaPresence: string
+  agniSummary: string
+  agniEvidence: string[]
+  amaSummary: string
+  amaEvidence: string[]
+  digestiveReference: string
+}
+
 export interface CerMapReadingDimension {
   id: string
   title: string
@@ -25,6 +40,7 @@ export interface CerMapReadingDimension {
   detailedRows: CerMapReadingRow[]
   referenceIds: string[]
   /** Educational profile from the existing constitutional hypothesis; never inferred from chart percentages. */
+  ayurvedaReading?: AyurvedaBodyReading
   ayurvedaConstitution?: ('Vata' | 'Pitta' | 'Kapha')[]
 }
 

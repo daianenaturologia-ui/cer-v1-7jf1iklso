@@ -39,7 +39,7 @@ import type {
   SessionPreparationData,
 } from '@/types/cer'
 import { BUILD_07C_MENTE_PROMPTS } from './build07cPrompts'
-import { buildConscienciaQaFixture } from './conscienciaQaFixture'
+import { buildIntegratedAyurvedaQaFixture as buildConscienciaQaFixture } from './conscienciaQaFixture'
 import { createDemoCerMapReading } from './demoCerMapReading'
 
 export interface DemoUserAccount {

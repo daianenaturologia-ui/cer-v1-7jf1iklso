@@ -1234,3 +1234,74 @@ export function buildConscienciaQaFixture(
 
   return { responses, responseVersions }
 }
+
+/** Complete educational scenario shared by demo questionnaire and report. No real-person data. */
+export function buildIntegratedAyurvedaQaFixture(
+  enrollmentId = QA_FIXTURE_ENROLLMENT_ID,
+  userId = QA_FIXTURE_USER_ID,
+): ConscienciaQaFixtureData {
+  const fixture = buildConscienciaQaFixture(enrollmentId, userId)
+  for (const record of fixture.responses) {
+    const value = record.structured_value as any
+    if (record.id === 'qa-c1-p2') {
+      value.selectedOptionIds = ['dry_rough', 'warm_sensitive']
+      value.value = value.selectedOptionIds
+    }
+    if (record.id === 'qa-c1-p3') {
+      value.selectedOptionIds = ['fine_delicate', 'oily_roots']
+      value.value = value.selectedOptionIds
+    }
+  }
+  const entries: [string, unknown][] = [
+    ['ayv_c3_changed_domains', ['hunger_digestion', 'bowel', 'sleep']],
+    [
+      'ayv_c3_change_directions',
+      { hunger_digestion: 'irregular', bowel: 'different', sleep: 'irregular' },
+    ],
+    ['ayv_c3_started_change_at', 'last_month'],
+    ['ayv_c3_change_contexts', ['routine', 'stress']],
+    ...Object.entries({
+      hunger: ['variable_intensity', 'light_slow'],
+      post_meal: ['heavy_slow_digestion', 'bloating_gas'],
+      elimination: ['sticky_incomplete'],
+      sleep: ['light_wakes_easy'],
+    }).map(
+      ([area, current_states]) =>
+        [
+          `ayv_c3_current_${area}`,
+          {
+            area_key: area,
+            current_states,
+            comparison: 'different',
+            duration: 'last_month',
+            frequency: 'several_days',
+            contexts: ['routine', 'stress'],
+          },
+        ] as [string, unknown],
+    ),
+  ]
+  for (const [prompt, value] of entries)
+    fixture.responses.push({
+      id: `qa-integrated-${prompt}`,
+      enrollment_id: enrollmentId,
+      experience_id: 'exp-corpo-fisiologia-07b',
+      prompt_id: prompt,
+      respondent_user_id: userId,
+      response_type: 'ChoiceCards',
+      access_class: 'participant_shared',
+      version: 1,
+      prompt_version: 1,
+      status: 'saved',
+      created: '2025-05-18T10:00:00.000Z',
+      updated: '2025-05-18T10:00:00.000Z',
+      structured_value: { value, metadata: { prompt_key: prompt } },
+    } as ExperienceResponseRecord)
+  fixture.responses.push({
+    ...fixture.responses.at(-1)!,
+    id: 'qa-integrated-c3-completion',
+    prompt_id: 'ayv_c3_chapter_completion',
+    structured_value: { completed: true, metadata: { prompt_key: 'ayv_c3_chapter_completion' } },
+    updated: '2025-05-18T10:01:00.000Z',
+  })
+  return fixture
+}

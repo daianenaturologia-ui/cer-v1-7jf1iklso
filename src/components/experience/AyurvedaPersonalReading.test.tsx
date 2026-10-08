@@ -62,34 +62,34 @@ describe('Leitura pessoal ayurvédica', () => {
       expect(text).not.toContain('Kapha é tradicionalmente associado à constância')
   })
 
-  it('aprofundamento atual é educativo e não atribui Vikriti ou sintomas ausentes à pessoa', async () => {
+  it('não atribui Vikriti ausente nem repete perguntas do questionário', async () => {
     render(
       <AyurvedaPersonalReading
-        dimension={{
-          ...dimension,
-          ayurvedaConstitution: ['Vata', 'Pitta'],
-          summary: 'Seu momento atual permanece em observação.',
-        }}
+        dimension={{ ...dimension, ayurvedaConstitution: ['Vata', 'Pitta'] }}
         participantName="Mariana"
         interpretationTitle="Leitura"
       />,
     )
-    const trigger = screen.getByRole('button', {
-      name: 'Seu momento atual: o que mudou e o que pede cuidado',
-    })
-    expect(trigger).toHaveAttribute('aria-expanded', 'false')
-    await userEvent.click(trigger)
-    expect(
-      screen.getByText(
-        /São possibilidades educativas, não sintomas atribuídos automaticamente a você/,
-      ),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText(/Informações ausentes não significam que tudo esteja equilibrado/),
-    ).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Sua leitura registrada neste mapa' }))
-    expect(screen.getByText('Seu momento atual permanece em observação.')).toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Seu momento atual: o que mudou e o que pede cuidado' }),
+    )
+    expect(screen.getByText(/Sem respostas atuais suficientes/)).toBeInTheDocument()
     expect(screen.queryByText(/sua Vikriti é Vata/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/neste exemplo fictício/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', {
+        name: /Trabalho, estudos|rotina possível|O que observar daqui|Sua leitura registrada/,
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Suas forças e potencialidades' }),
+    ).toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Sua constituição: conhecendo Vata–Pitta' }),
+    )
+    for (const title of ['Funcionamento físico', 'Funcionamento mental', 'Funcionamento emocional'])
+      expect(screen.getByText(title)).toBeInTheDocument()
+    expect(screen.getByTestId('ayurveda-personal-reading').textContent).not.toMatch(
+      /Sua fome costuma|Você tolera|Quando há tempo|Consegue explicar/,
+    )
   })
 })

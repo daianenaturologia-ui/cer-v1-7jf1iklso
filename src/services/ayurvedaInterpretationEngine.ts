@@ -1,3 +1,5 @@
+import { buildAyurvedaBodyReading } from './ayurvedaBodyReading'
+import { completedCurrentResponses, interpretCurrentBody } from './ayurvedaCurrentInterpretation'
 /**
  * Motor de Interpretação Profissional de Corpo & Fisiologia (Ayurveda CER).
  *
@@ -72,6 +74,7 @@ export interface AyurvedaInterpretationResult {
   vikritiHypothesis: {
     summary: string
     primaryImbalance?: string
+    doshas?: ('Vata' | 'Pitta' | 'Kapha')[]
     confidence: 'Alta' | 'Moderada' | 'Em observação'
     evidencesVata: DoshaEvidence[]
     evidencesPitta: DoshaEvidence[]
@@ -731,9 +734,11 @@ export function buildAyurvedaInterpretation(
   //    - C3 concluído com no_current_changes -> "não relatou mudança; não afirmar ausência de doença"
   //    - C3 com dont_know/refusal -> "momento atual não caracterizado"
 
-  const c3Derivation = deriveChapter3Status(allResponses)
+  const c3Derivation = deriveChapter3Status(completedCurrentResponses(allResponses))
   const c3IsCompleted = c3Derivation.status === 'completed'
-  const c3State = c3IsCompleted ? loadChapter3State(allResponses) : undefined
+  const c3State = c3IsCompleted
+    ? loadChapter3State(completedCurrentResponses(allResponses))
+    : undefined
 
   let vikritiSummary = ''
   if (!c3IsCompleted) {
@@ -764,11 +769,17 @@ export function buildAyurvedaInterpretation(
   }
 
   // Vikriti ativa não é inferida do C2 habitual:
-  const primaryVikriti: string | undefined = undefined
-  let vikritiConfidence: 'Alta' | 'Moderada' | 'Em observação' = 'Em observação'
-  const currentVikritiVata: DoshaEvidence[] = []
-  const currentVikritiPitta: DoshaEvidence[] = []
-  const currentVikritiKapha: DoshaEvidence[] = []
+  const currentReading = interpretCurrentBody(allResponses)
+  if (currentReading.doshas.length || currentReading.facts.length)
+    vikritiSummary = currentReading.summary
+  const primaryVikriti: string | undefined =
+    currentReading.doshas.length === 1 ? currentReading.doshas[0] : undefined
+  const vikritiConfidence: 'Alta' | 'Moderada' | 'Em observação' = currentReading.doshas.length
+    ? 'Moderada'
+    : 'Em observação'
+  const currentVikritiVata: DoshaEvidence[] = currentReading.evidences.Vata
+  const currentVikritiPitta: DoshaEvidence[] = currentReading.evidences.Pitta
+  const currentVikritiKapha: DoshaEvidence[] = currentReading.evidences.Kapha
 
   // 8. Leitura de Agni (Fogo Digestivo)
   const postMealVals = getActiveValues(AYV_C2_PROMPTS.P3_POST_MEAL)
@@ -827,6 +838,7 @@ export function buildAyurvedaInterpretation(
     'horarios_regulares',
   ])
   const isPostMealExplicitlyComfortable = hasAnyMatch(postMealVals, [
+    'light_satisfied',
     'light_comfortable',
     'comfortable_stable',
     'light_good_energy',
@@ -1206,7 +1218,7 @@ export function buildAyurvedaInterpretation(
     activeRevisionNumber = selectedC2Rev
   }
 
-  return {
+  const result: AyurvedaInterpretationResult = {
     hasCompletedRevision: true,
     ...(activeRevisionNumber !== undefined ? { activeRevisionNumber } : {}),
     prakritiHypothesis: {
@@ -1221,6 +1233,7 @@ export function buildAyurvedaInterpretation(
     vikritiHypothesis: {
       summary: vikritiSummary,
       primaryImbalance: primaryVikriti,
+      doshas: currentReading.doshas,
       confidence: vikritiConfidence,
       evidencesVata: currentVikritiVata,
       evidencesPitta: currentVikritiPitta,
@@ -1245,4 +1258,26 @@ export function buildAyurvedaInterpretation(
     sessionQuestions,
     disclaimer: AYURVEDA_NON_DIAGNOSTIC_DISCLAIMER,
   }
+  const body = buildAyurvedaBodyReading(result, allResponses)
+  if (body.currentDigestive) {
+    result.agniReading = {
+      type:
+        body.agniType === 'Agni com sinais mistos'
+          ? 'Indefinido / Em observação'
+          : (body.agniType as AgniReading['type']),
+      title: body.agniType,
+      description: body.agniSummary,
+      evidences: body.agniEvidence,
+      confidence: 'Moderada',
+    }
+    result.amaReading = {
+      presence: body.amaPresence as AmaReading['presence'],
+      categoriesInvolved: body.amaEvidence.map((text) =>
+        text.startsWith('Fezes') ? 'Eliminação intestinal' : 'Digestão e sensação pós-refeição',
+      ),
+      evidences: body.amaEvidence,
+      rationale: body.amaSummary,
+    }
+  }
+  return result
 }

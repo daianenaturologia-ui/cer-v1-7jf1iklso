@@ -451,7 +451,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         </div>
       )}
 
-      {reading.questions?.length > 0 && (
+      {showDemoNote && reading.questions?.length > 0 && (
         <div className="space-y-1.5 pt-1 rounded-lg bg-primary/5 border border-primary/20 p-3">
           <h4 className="font-semibold text-xs uppercase tracking-wider text-primary">
             Para explorar na conversa
@@ -1025,7 +1025,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
               </>
             )}
 
-            {!hasCustomDemoReading && (
+            {!hasCustomDemoReading && dimId !== 'corpo' && (
               <div className="space-y-2 pt-1 border-t">
                 <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
                   Respostas compartilhadas nesta versão
@@ -1336,6 +1336,25 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             Ver leitura completa da dimensão <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </div>
+
+        {dimCorpo && (dimCorpo.summary || dimCorpo.ayurvedaReading) && (
+          <div
+            className="space-y-2 text-sm leading-relaxed"
+            aria-label="Síntese de Corpo e Fisiologia"
+          >
+            {dimCorpo.summary && <p>{dimCorpo.summary}</p>}
+            {dimCorpo.ayurvedaReading && (
+              <>
+                <p>
+                  <strong>Agni:</strong> {dimCorpo.ayurvedaReading.agniType}.
+                </p>
+                <p>
+                  <strong>Ama:</strong> {dimCorpo.ayurvedaReading.amaPresence}.
+                </p>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Doshas: pizza ou composição circular neutra */}
         <div className="space-y-4 pt-1">

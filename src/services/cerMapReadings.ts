@@ -1,3 +1,4 @@
+import { buildAyurvedaBodyReading } from './ayurvedaBodyReading'
 import { validateLifeDirection } from '@/services/lifeDirections'
 import type {
   CerMapItemRecord,
@@ -163,6 +164,7 @@ export function buildCerMapReadings(
     )
     let detailedRows: CerMapReadingRow[] = []
     let summaryRows: CerMapReadingRow[] = []
+    let ayurvedaReading: import('@/types/cerMapReadings').AyurvedaBodyReading | undefined
     let ayurvedaConstitution: ('Vata' | 'Pitta' | 'Kapha')[] | undefined
     if (meta.id === 'corpo') {
       const synthesis = buildChapter4Synthesis(dimensionResponses)
@@ -181,7 +183,8 @@ export function buildCerMapReadings(
         })),
       ]
       const reading = buildAyurvedaInterpretation(dimensionResponses)
-      if (reading.hasCompletedRevision && !options.literalOnly) {
+      if (reading.hasCompletedRevision) {
+        ayurvedaReading = buildAyurvedaBodyReading(reading, dimensionResponses)
         const hypothesis = reading.prakritiHypothesis
         const recognized = ['Vata', 'Pitta', 'Kapha'] as const
         const tendencies = [hypothesis.primaryTendency, hypothesis.secondaryTendency].filter(
@@ -227,11 +230,11 @@ export function buildCerMapReadings(
           { label: 'Vikriti · hipótese do momento', text: reading.vikritiHypothesis.summary },
           {
             label: 'Agni · leitura da digestão',
-            text: `${reading.agniReading.type}. ${reading.agniReading.description}`,
+            text: ayurvedaReading.agniSummary,
           },
           {
             label: 'Ama · leitura tradicional',
-            text: `${reading.amaReading.presence}. ${reading.amaReading.rationale}`,
+            text: ayurvedaReading.amaSummary,
           },
         ]
       }
@@ -291,11 +294,16 @@ export function buildCerMapReadings(
       id: meta.id,
       title: meta.title,
       explanation: meta.explanation,
-      summary: '',
-      interpretation: '',
+      summary: ayurvedaReading
+        ? `${participantName}, ${ayurvedaConstitution?.length ? `sua hipótese constitucional é ${ayurvedaConstitution.join('–')}.` : 'suas respostas ainda não sustentam uma combinação constitucional definida.'} ${ayurvedaReading.currentDoshas.length ? `No momento atual, os relatos sugerem alterações de ${ayurvedaReading.currentDoshas.join('–')}.` : 'A hipótese do momento atual permanece em observação.'}`
+        : '',
+      interpretation: ayurvedaReading
+        ? `${ayurvedaReading.currentSummary}\n\n${ayurvedaReading.agniSummary}\n\n${ayurvedaReading.amaSummary}`
+        : '',
       summaryRows,
       detailedRows,
       referenceIds: [...meta.refs],
+      ...(ayurvedaReading ? { ayurvedaReading } : {}),
       ...(ayurvedaConstitution ? { ayurvedaConstitution } : {}),
     }
   })
@@ -407,6 +415,26 @@ export function isCerMapReadingSnapshot(value: unknown): value is CerMapReadingS
         (d.ayurvedaConstitution === undefined ||
           (Array.isArray(d.ayurvedaConstitution) &&
             d.ayurvedaConstitution.every((value) => ['Vata', 'Pitta', 'Kapha'].includes(value)))) &&
+        (d.ayurvedaReading === undefined ||
+          (d.ayurvedaReading &&
+            Array.isArray(d.ayurvedaReading.currentDoshas) &&
+            d.ayurvedaReading.currentDoshas.every((value) =>
+              ['Vata', 'Pitta', 'Kapha'].includes(value),
+            ) &&
+            [
+              d.ayurvedaReading.currentFacts,
+              d.ayurvedaReading.constitutionEvidence,
+              d.ayurvedaReading.agniEvidence,
+              d.ayurvedaReading.amaEvidence,
+            ].every((value) => Array.isArray(value) && strings(value)) &&
+            strings([
+              d.ayurvedaReading.agniType,
+              d.ayurvedaReading.amaPresence,
+              d.ayurvedaReading.currentSummary,
+              d.ayurvedaReading.agniSummary,
+              d.ayurvedaReading.amaSummary,
+              d.ayurvedaReading.digestiveReference,
+            ]))) &&
         Array.isArray(d.referenceIds) &&
         strings(d.referenceIds),
     ) &&

@@ -8,37 +8,33 @@ import {
 } from '@/components/ui/accordion'
 
 type Dosha = 'Vata' | 'Pitta' | 'Kapha'
-
-const profiles: Record<
-  Dosha,
-  { principle: string; body: string; resources: string; question: string }
-> = {
-  Vata: {
-    principle: 'movimento e variabilidade',
-    body: 'Na descrição tradicional de Vata, aparecem tendências como estrutura corporal mais leve, ressecamento e maior sensibilidade ao frio. Fome, sono e disposição podem ter ritmos variáveis.',
-    resources:
-      'Vata é tradicionalmente associado à criatividade, à rapidez das ideias e à abertura para possibilidades. Você pode explorar se reconhece esses recursos e quais condições ajudam a utilizá-los com conforto.',
-    question:
-      'Quando surgem muitas ideias ou mudanças, o que ajuda você a escolher um caminho e encontrar continuidade?',
-  },
-  Pitta: {
-    principle: 'transformação e calor',
-    body: 'Na descrição tradicional de Pitta, aparecem tendências como estrutura corporal intermediária, maior sensibilidade ao calor, transpiração e fome mais intensa. A pele pode ser sensível.',
-    resources:
-      'Pitta é tradicionalmente associado à clareza, ao discernimento e à capacidade de direcionar esforços. Observe se você reconhece esses recursos e como consegue usá-los respeitando seus limites.',
-    question:
-      'Como sua vontade de realizar conversa com seus limites? Quando o desejo de fazer bem começa a trazer pressa ou cobrança?',
-  },
-  Kapha: {
-    principle: 'sustentação e estabilidade',
-    body: 'Na descrição tradicional de Kapha, aparecem tendências como estrutura corporal mais sólida, maior constância dos ritmos e sono mais profundo. Isso não permite presumir seu peso, sua saúde ou sua disposição.',
-    resources:
-      'Kapha é tradicionalmente associado à constância, à paciência e à capacidade de sustentar processos. Explore onde você reconhece esses recursos e o que ajuda a abrir espaço para o novo.',
-    question:
-      'O que na sua rotina oferece segurança e o que poderia ganhar movimento? Que primeiro passo torna uma mudança mais possível?',
-  },
-}
-
+const profiles: Record<Dosha, { body: string; mind: string; emotion: string; strengths: string }> =
+  {
+    Vata: {
+      body: 'Vata reúne movimento, leveza e variabilidade. Na descrição tradicional, pode aparecer em uma estrutura mais leve, pele ou cabelos com tendência ao ressecamento e sensibilidade ao frio. Fome, disposição e sono podem mudar mais entre um dia e outro. Essa variabilidade ajuda a compreender por que regularidade e recuperação costumam ter valor para esse perfil.',
+      mind: 'No funcionamento mental descrito pela tradição, Vata se relaciona à rapidez para perceber estímulos, fazer associações e imaginar caminhos. A abertura para o novo favorece criatividade e adaptação; com excesso de estímulos, essa mesma mobilidade pode se tornar dispersão e dificuldade para desacelerar.',
+      emotion:
+        'Na experiência emocional descrita para esse perfil, sensibilidade e mudanças rápidas podem coexistir. Em períodos de maior exigência, insegurança e inquietação são tendências tradicionais possíveis. Elas não constituem um diagnóstico de ansiedade nem substituem a leitura da sua história.',
+      strengths:
+        'As potencialidades tradicionalmente associadas a Vata são criatividade, flexibilidade, sensibilidade e capacidade de enxergar alternativas. A força desse movimento está em abrir caminhos e responder ao novo.',
+    },
+    Pitta: {
+      body: 'Pitta reúne transformação, intensidade e calor. A descrição tradicional inclui fome mais intensa, maior sensibilidade a ambientes quentes e pele que pode reagir com calor ou vermelhidão. O organismo é descrito com maior intensidade dos ritmos; isso não significa medir seu metabolismo nem concluir que sua digestão está sempre boa.',
+      mind: 'Pitta é associado à clareza para compreender, comparar, decidir e direcionar esforços. Essa capacidade favorece organização e discernimento. Sob maior exigência, a busca de precisão pode se estreitar em cobrança, impaciência ou dificuldade para aceitar imprevistos.',
+      emotion:
+        'Na descrição tradicional, entusiasmo e determinação podem vir acompanhados de intensidade emocional. Quando há desgaste, frustração e irritabilidade são tendências possíveis. A presença delas na sua vida precisa de relatos específicos; a constituição não determina sua personalidade.',
+      strengths:
+        'As potencialidades tradicionalmente associadas a Pitta são discernimento, foco, iniciativa e capacidade de transformar uma intenção em ação. Essa força ajuda a dar direção e sentido ao esforço.',
+    },
+    Kapha: {
+      body: 'Kapha reúne sustentação, estabilidade e continuidade. A descrição tradicional inclui estrutura mais sólida, maior constância dos ritmos e sono mais profundo. Essa sustentação pode favorecer resistência e recuperação; quando se altera, a experiência pode ganhar peso e lentidão. O perfil não permite presumir seu peso corporal ou sua saúde.',
+      mind: 'Kapha é associado à capacidade de manter atenção, consolidar aprendizados e continuar processos. A continuidade favorece memória e consistência. Sob maior exigência, pode haver dificuldade para sair de um ritmo conhecido e incorporar mudanças.',
+      emotion:
+        'A descrição tradicional valoriza estabilidade, paciência e disponibilidade afetiva. Em períodos de desgaste, recolhimento e apego ao que oferece segurança são tendências possíveis. O modo como você vive os vínculos depende da sua história, além dessa lente.',
+      strengths:
+        'As potencialidades tradicionalmente associadas a Kapha são constância, paciência, sustentação e capacidade de construir continuidade. Essa força ajuda a manter o que tem valor ao longo do tempo.',
+    },
+  }
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
     <AccordionItem value={id}>
@@ -51,25 +47,35 @@ function Section({ id, title, children }: { id: string; title: string; children:
     </AccordionItem>
   )
 }
-
-/** Shared by both map views. Educational possibilities stay separate from recorded observations. */
+function Evidence({ items }: { items: string[] }) {
+  return items.length ? (
+    <div className="space-y-2 rounded-lg bg-primary/5 p-3">
+      <h4 className="font-semibold">O que suas respostas mostram</h4>
+      {[...new Set(items)].map((text, i) => (
+        <p key={i}>{text}</p>
+      ))}
+    </div>
+  ) : null
+}
 export function AyurvedaPersonalReading({
   dimension,
   participantName,
-  interpretationTitle,
+  interpretationTitle: _interpretationTitle,
 }: {
   dimension: CerMapReadingDimension
   participantName: string
   interpretationTitle: string
 }) {
-  const doshas = [
-    ...new Set(Array.isArray(dimension.ayurvedaConstitution) ? dimension.ayurvedaConstitution : []),
-  ].filter((d) => ['Vata', 'Pitta', 'Kapha'].includes(d))
+  const doshas = [...new Set(dimension.ayurvedaConstitution || [])].filter((d) =>
+    ['Vata', 'Pitta', 'Kapha'].includes(d),
+  )
   const pair = doshas.join('–')
-  const isVataPitta = doshas.length === 2 && doshas.includes('Vata') && doshas.includes('Pitta')
-  const isVataKapha = doshas.length === 2 && doshas.includes('Vata') && doshas.includes('Kapha')
-  const isPittaKapha = doshas.length === 2 && doshas.includes('Pitta') && doshas.includes('Kapha')
-
+  const reading = dimension.ayurvedaReading
+  const vp = doshas.length === 2 && doshas.includes('Vata') && doshas.includes('Pitta')
+  const vk =
+    reading?.currentDoshas.length === 2 &&
+    reading.currentDoshas.includes('Vata') &&
+    reading.currentDoshas.includes('Kapha')
   return (
     <div className="space-y-4" data-testid="ayurveda-personal-reading">
       <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-2">
@@ -86,28 +92,28 @@ export function AyurvedaPersonalReading({
             Essa tradição descreve três princípios de funcionamento, chamados{' '}
             <strong>doshas</strong>:
           </p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>
-              <strong>Vata:</strong> associado ao movimento e à variabilidade.
-            </li>
-            <li>
-              <strong>Pitta:</strong> associado à transformação e ao calor.
-            </li>
-            <li>
-              <strong>Kapha:</strong> associado à sustentação e à estabilidade.
-            </li>
-          </ul>
+          <p>
+            <strong>Vata:</strong> associado ao movimento e à variabilidade. <strong>Pitta:</strong>{' '}
+            associado à transformação e ao calor. <strong>Kapha:</strong> associado à sustentação e
+            à estabilidade.
+          </p>
           <p>
             Na perspectiva ayurvédica, todas as pessoas apresentam os três doshas, em combinações
             diferentes. Eles ajudam a interpretar tendências do corpo e aspectos da experiência
             mental e emocional. Não são medidas biológicas nem definições fixas de personalidade.
           </p>
-          <h4 className="font-semibold">Sete combinações básicas</h4>
+          <h4 className="font-semibold">Um jeito de compreender suas combinações</h4>
           <p>
-            Vata, Pitta, Kapha; Vata–Pitta, Vata–Kapha, Pitta–Kapha; e Vata–Pitta–Kapha. Uma
-            combinação reúne qualidades dos princípios envolvidos. A ordem só indica predominância
-            quando há informações que sustentem essa distinção. Um empate de respostas não confirma
-            uma constituição tridosha equilibrada.
+            Imagine que movimento, transformação e sustentação estão presentes em você, mas não
+            aparecem sempre com a mesma intensidade. Em algumas constituições, um desses princípios
+            se destaca; em outras, dois ou os três compõem a base. Por isso falamos em Vata, Pitta,
+            Kapha, Vata–Pitta, Vata–Kapha, Pitta–Kapha e Vata–Pitta–Kapha.
+          </p>
+          <p>
+            O nome da combinação ajuda a reunir as características que se repetem no seu
+            funcionamento. Ele ganha sentido quando lemos essas características em conjunto. A ordem
+            dos nomes só indica predominância quando as respostas permitem essa distinção; uma
+            contagem empatada, sozinha, não confirma equilíbrio entre os três.
           </p>
         </Section>
         <Section id="base-atual" title="Prakriti e Vikriti: sua base e seu momento">
@@ -132,9 +138,8 @@ export function AyurvedaPersonalReading({
             fez algo errado: seu corpo responde às condições em que vive.
           </p>
           <p>
-            Por isso, investigamos duas perguntas diferentes:{' '}
-            <strong>“Como você costuma funcionar?”</strong> e{' '}
-            <strong>“O que mudou no seu funcionamento?”</strong>
+            O questionário separou seu funcionamento habitual das mudanças atuais. A leitura a
+            seguir reúne essas respostas para explicar sua base e o que pede cuidado neste momento.
           </p>
         </Section>
         <Section id="uso-cer" title="Como usamos essa leitura no CER">
@@ -155,241 +160,165 @@ export function AyurvedaPersonalReading({
           </p>
         </Section>
       </Accordion>
-
       <div className="space-y-2">
         <h3 className="font-semibold">{participantName}, vamos conhecer seu jeito de funcionar?</h3>
-        {doshas.length > 0 ? (
-          <p>
-            Pela lente do Ayurveda, sua hipótese constitucional permite explorar a combinação{' '}
-            <strong>{pair}</strong>: {doshas.map((d) => profiles[d].principle).join('; ')}.
-          </p>
-        ) : (
-          <p>
-            Ainda precisamos conhecer melhor suas tendências de base para oferecer uma leitura
-            constitucional mais pessoal. Enquanto isso, podemos olhar para o que você já
-            compartilhou e para as perguntas que ajudam nessa descoberta.
-          </p>
-        )}
         <p>
-          Você pode se reconhecer em alguns trechos, discordar de outros e acrescentar o que estiver
-          faltando. Sua experiência é o que dá sentido a este mapa.
+          {doshas.length
+            ? `Suas respostas sustentam uma hipótese constitucional ${pair}. A leitura reúne suas características de base e explica como elas se relacionam com seu momento atual.`
+            : 'Ainda precisamos conhecer melhor suas tendências de base para definir uma hipótese constitucional. O resultado disponível é a descrição do que você já compartilhou, sem preencher lacunas com características presumidas.'}
+        </p>
+        <p>
+          Sua experiência é o centro deste mapa. As características tradicionais do perfil ajudam a
+          compreender tendências; os trechos sobre o seu momento se apoiam nas respostas
+          registradas.
         </p>
       </div>
-
       <Accordion type="multiple" className="rounded-lg border bg-card/60 px-4">
         {doshas.length > 0 && (
           <Section id="constituicao" title={`Sua constituição: conhecendo ${pair}`}>
-            {isVataPitta && (
+            {vp && (
+              <>
+                <p>
+                  Vata–Pitta combina a abertura para perceber e imaginar com a capacidade de
+                  compreender e direcionar. É a imagem de um funcionamento que encontra caminhos e
+                  busca transformá-los em realização. Curiosidade, sensibilidade e determinação
+                  podem se encontrar nessa constituição.
+                </p>
+                <p>
+                  Essa combinação reúne qualidades diferentes: Vata tende à variabilidade e ao frio;
+                  Pitta, à intensidade e ao calor. Por isso, um mesmo perfil pode apresentar
+                  ressecamento e sensibilidade da pele, fome mais intensa em alguns momentos e
+                  ritmos variáveis em outros. A combinação não exige que você sinta frio e calor ao
+                  mesmo tempo, nem que apresente todas essas características.
+                </p>
+              </>
+            )}
+            {!vp && (
               <p>
-                Talvez você reconheça em si uma mistura de curiosidade, sensibilidade e vontade de
-                fazer as coisas acontecerem. Uma parte sua percebe possibilidades e se movimenta
-                entre ideias. Outra parte procura clareza e um caminho para realizar o que importa.
-                Essa é uma imagem tradicional para explorar como você encontra possibilidades e o
-                que ajuda a transformá-las em algo concreto.
+                Na constituição {pair}, os princípios envolvidos se combinam. Suas qualidades ajudam
+                a compreender tanto os recursos desse perfil quanto as áreas que tendem a sentir
+                mais as mudanças de ritmo e as exigências da vida.
               </p>
             )}
-            {isVataKapha && (
-              <p>
-                Essa combinação reúne movimento e estabilidade. Pode ser interessante explorar como
-                sua abertura para possibilidades conversa com sua necessidade de continuidade e
-                segurança. Você pode gostar de descobrir caminhos novos e precisar de tempo ou apoio
-                para incorporá-los à vida.
-              </p>
-            )}
-            {isPittaKapha && (
-              <p>
-                Essa combinação reúne transformação e sustentação. Pode ser interessante explorar
-                como sua vontade de direcionar e realizar conversa com os recursos que ajudam você a
-                continuar. Ter um objetivo claro e construir um caminho consistente podem fazer
-                sentido para você.
-              </p>
-            )}
-            {doshas.length === 3 && (
-              <p>
-                Uma hipótese envolvendo os três princípios convida a observar a variedade das suas
-                tendências. Ela não significa equilíbrio perfeito nem ausência de necessidades de
-                cuidado.
-              </p>
-            )}
+            <h4 className="font-semibold">Funcionamento físico</h4>
             {doshas.map((d) => (
-              <p key={d}>{profiles[d].resources}</p>
+              <p key={`body-${d}`}>{profiles[d].body}</p>
             ))}
-            <p>
-              Sua constituição não conta toda a sua história. Seus valores, aprendizados, vínculos e
-              condições de vida também participam de quem você é. As possibilidades descritas aqui
-              precisam encontrar sentido na sua experiência.
-            </p>
+            <h4 className="font-semibold">Funcionamento mental</h4>
+            {doshas.map((d) => (
+              <p key={`mind-${d}`}>{profiles[d].mind}</p>
+            ))}
+            {vp && (
+              <p>
+                No encontro entre os dois princípios, a rapidez para criar pode ganhar direção e
+                análise. Quando há sobrecarga, a quantidade de ideias e a exigência de resolver bem
+                podem se reforçar: fica mais difícil desacelerar e aceitar que o corpo precisa de
+                recuperação. Essa é uma tendência descrita para o perfil, e não uma conclusão
+                automática sobre seus pensamentos.
+              </p>
+            )}
+            <h4 className="font-semibold">Funcionamento emocional</h4>
+            {doshas.map((d) => (
+              <p key={`emotion-${d}`}>{profiles[d].emotion}</p>
+            ))}
+            {vp && (
+              <p>
+                A sensibilidade de Vata e a intensidade de Pitta podem formar uma experiência
+                emocional viva: perceber muito e reagir com força. Em períodos de maior equilíbrio,
+                isso pode favorecer interesse, entusiasmo e presença; sob desgaste, inquietação e
+                irritabilidade podem coexistir. Esses movimentos precisam ser diferenciados dos
+                resultados específicos de Mente & Emoções.
+              </p>
+            )}
+            <Evidence items={reading?.constitutionEvidence || []} />
           </Section>
         )}
-        {doshas.length > 0 && (
-          <Section id="corpo" title="Como essas tendências podem aparecer no corpo">
-            {doshas.map((d) => (
-              <p key={d}>{profiles[d].body}</p>
-            ))}
+        <Section id="recursos" title="Suas forças e potencialidades">
+          {doshas.length ? (
+            doshas.map((d) => <p key={d}>{profiles[d].strengths}</p>)
+          ) : (
             <p>
-              Em uma combinação, características diferentes podem coexistir. Você não precisa
-              apresentar todas elas, e uma característica isolada não define sua constituição.
+              Ainda não há uma hipótese constitucional suficiente para vincular potencialidades a um
+              perfil. Isso não significa ausência de forças; significa que este resultado não
+              permite descrevê-las a partir dos doshas.
             </p>
+          )}
+          {vp && (
             <p>
-              Sua fome costuma ser previsível? O que acontece quando adia uma refeição? Você tolera
-              melhor o frio ou o calor? Seu sono muda conforme a fase da vida? Como fica sua energia
-              depois de um dia cheio?
+              Na combinação Vata–Pitta, a criatividade encontra discernimento: perceber alternativas
+              e dar forma a elas são forças que podem trabalhar juntas. A sensibilidade amplia a
+              percepção; a iniciativa ajuda a transformar o que importa em algo concreto. O desgaste
+              pode reduzir o acesso a esses recursos, sem apagar suas capacidades.
             </p>
-            <p>
-              Essas respostas ajudam a conhecer suas necessidades para além do nome da constituição.
-            </p>
-          </Section>
-        )}
-        <Section id="recursos" title="Suas possibilidades quando você está bem">
+          )}
           <p>
-            Observe situações em que suas capacidades aparecem com mais naturalidade. É quando tem
-            liberdade para criar? Quando entende o propósito da tarefa? Quando há tempo suficiente,
-            apoio ou um ambiente tranquilo?
-          </p>
-          <p>
-            Conhecer suas forças também significa conhecer as condições que permitem usá-las sem se
-            esgotar. Ter muitas ideias pode ser um recurso precioso. Escolher quais merecem sua
-            atenção agora ajuda esse recurso a se tornar uma realização possível.
-          </p>
-          {doshas.map((d) => (
-            <p key={d}>{profiles[d].question}</p>
-          ))}
-          <p>
-            Se uma atividade que começou com prazer passa a trazer pressa ou cobrança, vale observar
-            o momento em que isso muda. Esses padrões precisam ser compreendidos na sua história, e
-            não concluídos a partir dos doshas.
+            Essas são potencialidades tradicionais da constituição. Seus talentos, aprendizados e
+            recursos pessoais também são construídos na sua história e aparecem nas demais dimensões
+            do CER.
           </p>
         </Section>
         <Section id="atual" title="Seu momento atual: o que mudou e o que pede cuidado">
           <p>
-            Sua constituição e seu estado atual são duas camadas diferentes. Uma mudança no
-            funcionamento não significa que você deixou de ser quem era. Também não podemos concluir
-            que um dosha esteja baixo apenas porque ele não aparece entre as alterações destacadas.
+            {reading?.currentSummary ||
+              'A hipótese de Vikriti permanece em observação neste registro. Sem respostas atuais suficientes, não é possível atribuir uma combinação de desequilíbrio à pessoa.'}
           </p>
+          <Evidence items={reading?.currentFacts || []} />
+          {vk && (
+            <>
+              <p>
+                Na leitura Vata–Kapha do momento atual, a variabilidade e a lentidão aparecem
+                juntas. Os sinais associados a Vata descrevem irregularidade, ressecamento ou
+                dificuldade de sustentar repouso; os associados a Kapha descrevem peso, digestão
+                lenta ou dificuldade de mobilização. As manifestações efetivamente relatadas estão
+                descritas acima.
+              </p>
+              {vp && (
+                <p>
+                  Para uma constituição Vata–Pitta, isso significa que sua base de movimento e
+                  transformação está convivendo com alterações de ritmo e maior peso ou lentidão. A
+                  fome variável, o desconforto digestivo e a recuperação do sono podem interferir no
+                  acesso à energia e à continuidade. A clareza e a vontade de realizar não
+                  necessariamente acompanham a disposição do corpo no mesmo ritmo. Essa leitura não
+                  transforma a dificuldade em falta de vontade e não conclui que Pitta esteja baixo.
+                </p>
+              )}
+              <p>
+                Uma combinação de doshas não muda sua identidade nem determina a causa dos sinais. A
+                hipótese reúne mudanças atuais para orientar o cuidado; saúde, medicamentos e
+                contexto de vida continuam participando da interpretação.
+              </p>
+            </>
+          )}
+        </Section>
+        <Section id="digestao" title="Agni e Ama: o que suas respostas dizem sobre a digestão">
           <p>
-            Quando a leitura atual permanece em observação, isso significa que precisamos
-            compreender melhor o que mudou, há quanto tempo, com que frequência e em qual contexto.
-            Informações ausentes não significam que tudo esteja equilibrado.
+            Agni é o nome tradicional dado à digestão e transformação. Aqui, a leitura vem das
+            respostas sobre fome e sensação após comer; Ama considera a convergência dos sinais
+            digestivos e de eliminação. Ambos são interpretados pelas respostas, separadamente da
+            constituição.
           </p>
+          {reading ? (
+            <>
+              <p className="text-xs text-muted-foreground">{reading.digestiveReference}</p>
+              <h4 className="font-semibold">Seu Agni</h4>
+              <p>{reading.agniSummary}</p>
+              <Evidence items={reading.agniEvidence} />
+              <h4 className="font-semibold">Sua leitura de Ama</h4>
+              <p>{reading.amaSummary}</p>
+              <Evidence items={reading.amaEvidence} />
+            </>
+          ) : (
+            <p>
+              {dimension.interpretation ||
+                'Este registro ainda não contém uma leitura estruturada de Agni e Ama. As respostas compartilhadas foram preservadas; a ausência dessa leitura não significa digestão equilibrada.'}
+            </p>
+          )}
           <p>
-            Na linguagem tradicional, alterações de Vata podem orientar a investigação de
-            irregularidade, inquietação, ressecamento ou dificuldade de repousar; alterações de
-            Pitta, de calor, queimação ou intensidade; e alterações de Kapha, de lentidão, sensação
-            de peso ou dificuldade de mobilização. São possibilidades educativas, não sintomas
-            atribuídos automaticamente a você.
-          </p>
-          <p>
-            Quando alterações de Vata e Kapha coexistem, uma experiência a investigar é estar
-            inquieta e, ao mesmo tempo, com pouca disposição: pensar no que deseja fazer e encontrar
-            dificuldade para começar, ou passar por aceleração seguida de maior esforço. Isso não
-            define a causa do cansaço, da concentração ou do humor.
-          </p>
-          <p>
-            Sono, alimentação, condições de saúde, medicamentos, demandas e experiências emocionais
-            também precisam entrar na conversa. Você não precisa transformar uma dificuldade em uma
-            conclusão sobre seu valor ou sua capacidade.
+            O valor dessa leitura está em explicar o padrão registrado: o ritmo da fome, o conforto
+            após comer e a eliminação. Agni não mede metabolismo em laboratório, e Ama não
+            corresponde à detecção de toxinas no organismo.
           </p>
         </Section>
-        <Section id="digestao" title="Fome e digestão: conhecer seu ritmo antes dos cuidados">
-          <p>
-            O Ayurveda chama de Agni a capacidade de digestão e transformação. Nesta leitura,
-            interessa investigar o ritmo da sua fome e como você se sente ao comer.
-          </p>
-          <p>
-            Sua fome varia muito? Você chega às refeições com fome ou come principalmente pelo
-            horário? Sente desconforto, estufamento ou peso depois? Há diferenças entre dias
-            tranquilos e dias mais exigentes?
-          </p>
-          <p>
-            A constituição ou a combinação do momento não basta para definir seu Agni. Também não
-            permite afirmar a presença de Ama, um conceito tradicional relacionado à transformação
-            incompleta, sem outros elementos. Esses conceitos não são medidas laboratoriais de
-            metabolismo ou toxinas.
-          </p>
-          <p>
-            O mais útil é construir uma descrição clara do que você realmente vive. É a partir dela
-            que poderemos pensar em cuidados adequados.
-          </p>
-        </Section>
-        <Section id="cotidiano" title="Trabalho, estudos e relações: observar sua experiência">
-          <p>
-            Seu mapa pode ajudar a investigar o espaço para se interessar e a estrutura para
-            conseguir continuar. Experimente observar se poucas prioridades claras, tarefas em
-            etapas e um lugar para registrar ideias tornam suas atividades mais possíveis.
-          </p>
-          <p>
-            Uma ideia nova não precisa se transformar imediatamente em um compromisso. Você pode
-            anotá-la e voltar a ela depois. Observe quais horários favorecem sua concentração, sem
-            esperar o mesmo rendimento durante o dia inteiro.
-          </p>
-          <p>
-            Sua constituição não define seu estilo de vínculo. Quando está cansada, precisa de
-            silêncio ou companhia? Consegue explicar o que precisa antes de ultrapassar seu limite?
-            Reconhecer essas necessidades ajuda a comunicá-las.
-          </p>
-          <p>
-            Você pode dizer: “Quero conversar sobre isso, mas preciso de uma pausa para conseguir
-            estar presente”. Essas descobertas vêm da sua vida e podem ser aprofundadas nas outras
-            dimensões do CER.
-          </p>
-        </Section>
-        <Section id="rotina" title="Construir uma rotina possível e viver com leveza">
-          <p>
-            Qual organização oferece apoio sem aumentar sua cobrança? Comece tirando da cabeça
-            aquilo que está tentando lembrar. Coloque no papel, escolha o que importa nesta semana e
-            distribua as tarefas em horários possíveis.
-          </p>
-          <p>
-            Deixe espaço entre compromissos. Refeições, descanso e imprevistos também precisam caber
-            na agenda. Se uma tarefa não acontecer no horário previsto, observe o motivo e encontre
-            outro momento. Esse ajuste traz informação sobre sua realidade.
-          </p>
-          <p>
-            Durante cada atividade, perceba como você está. Há tensão? Pressa? Algum conforto que
-            possa acrescentar? Uma música agradável, uma pausa breve ou um ambiente acolhedor podem
-            fazer parte da experiência. Você pode aprender a realizar e cultivar momentos bons
-            dentro da vida que já está vivendo.
-          </p>
-        </Section>
-        <Section id="acompanhar" title="O que observar daqui para frente">
-          <p>
-            Escolha poucos sinais importantes: como acorda e como sua energia muda; fome e conforto
-            digestivo; sono após dias exigentes; situações que trazem presença ou esgotamento; o que
-            facilita começar e continuar uma atividade.
-          </p>
-          <p>
-            Não é necessário monitorar tudo. Escolha o suficiente para reconhecer padrões e perceber
-            mudanças. Sintomas persistentes ou que estejam limitando sua vida também precisam de
-            avaliação de saúde.
-          </p>
-          <p>
-            O valor desta leitura está no que ela ajuda você a perceber. Os cuidados serão
-            construídos considerando suas condições de saúde e o que cabe na sua rotina.
-          </p>
-          <p>
-            <strong>
-              O que aqui se parece comigo? O que não se parece? E o que eu gostaria de compreender
-              melhor sobre mim?
-            </strong>{' '}
-            Suas respostas serão parte do próximo passo.
-          </p>
-        </Section>
-        {(dimension.summary || dimension.interpretation) && (
-          <Section id="leitura-registrada" title="Sua leitura registrada neste mapa">
-            {dimension.summary && (
-              <>
-                <h4 className="font-semibold">Síntese da leitura</h4>
-                <p className="whitespace-pre-wrap">{dimension.summary}</p>
-              </>
-            )}
-            {dimension.interpretation && (
-              <>
-                <h4 className="font-semibold">{interpretationTitle}</h4>
-                <p className="whitespace-pre-wrap">{dimension.interpretation}</p>
-              </>
-            )}
-          </Section>
-        )}
       </Accordion>
     </div>
   )

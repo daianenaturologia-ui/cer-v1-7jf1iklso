@@ -1,5 +1,5 @@
 import { buildCerMapReadings } from './cerMapReadings'
-import { buildConscienciaQaFixture } from './conscienciaQaFixture'
+import { buildIntegratedAyurvedaQaFixture as buildConscienciaQaFixture } from './conscienciaQaFixture'
 import type { CerMapReadingSnapshot, CerMapElementReading } from '@/types/cerMapReadings'
 
 export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapReadingSnapshot {
@@ -94,11 +94,6 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
     if (dim.id === 'corpo') {
       return {
         ...dim,
-        ayurvedaConstitution: ['Vata', 'Pitta'] as ('Vata' | 'Pitta')[],
-        summary:
-          'Mariana, sua leitura constitucional explora a combinação Vata–Pitta: movimento e variabilidade junto de transformação e calor. Vamos conhecer essas tendências e observar o que faz sentido na sua experiência, sem esperar que todos os traços descrevam você.',
-        interpretation:
-          'As características habituais que você compartilhou — estrutura leve, pele seca, cabelo fino e sensibilidade ao frio — ajudam a explorar características tradicionalmente associadas a Vata. A participação de Pitta no gráfico não deve ser tomada como confirmação por esses relatos. A fome variável e a digestão pesada pedem leitura conjunta, por isso Agni permanece em observação. Sua leitura atual permanece em observação. Vamos compreender melhor o que mudou em relação ao seu habitual, há quanto tempo e em quais situações, antes de propor uma hipótese de Vikriti.\n\nSinais de tensão na mandíbula ou nos ombros e respiração superficial descritos sob momentos de sobrecarga pertencem a dimensões distintas da sua experiência. Embora possam coincidir no tempo, cabe investigar em conjunto como essas percepções dialogam, sem concluir uma causalidade direta entre corpo e mente.\n\nPodemos descobrir juntas quais condições ajudam você a encontrar conforto e continuidade, respeitando seu momento e sem transformar o cuidado em regras rígidas.',
         summaryRows: [...doshaRows, ...dim.summaryRows],
         detailedRows: [...doshaRows, ...dim.detailedRows],
       }
@@ -993,6 +988,53 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
 
   const historyText =
     'Até aqui, há características corporais reconhecidas há anos e relatos do seu funcionamento atual. Ainda faltam marcos compartilhados da Linha da Vida para relacionar esse retrato a acontecimentos específicos. Não sabemos quando você aprendeu a assumir tantas demandas, o que ajudou ou o que foi difícil. Tendências corporais históricas não equivalem a uma história relacional já contada, e os marcos significativos serão explorados no tempo certo em diálogo.'
+
+  const body = dimensions.find((d) => d.id === 'corpo')?.ayurvedaReading
+  if (body) {
+    for (const [key, dosha] of [
+      ['vata', 'Vata'],
+      ['pitta', 'Pitta'],
+      ['kapha', 'Kapha'],
+    ] as const) {
+      const baseline = body.constitutionEvidence.filter((e) => e.startsWith(dosha))
+      const current = body.currentDoshas.includes(dosha)
+      elementReadings[key] = {
+        ...elementReadings[key],
+        summary: baseline.length
+          ? `Seus relatos habituais sustentam a participação de ${dosha} na hipótese constitucional.`
+          : `${dosha} está presente na leitura do momento atual, sem definir sua constituição de base.`,
+        observations: baseline.length ? baseline : body.currentFacts,
+        interpretation: baseline.length
+          ? `As características habituais registradas abaixo se aproximam das qualidades tradicionais de ${dosha}. Elas são lidas em conjunto com os outros princípios para formar sua hipótese constitucional.${current ? ` No momento atual, também há mudanças associadas a ${dosha}, descritas na leitura de Vikriti.` : ''}`
+          : body.currentSummary,
+        questions: [],
+        connections: [],
+        costs: [],
+        resources: [],
+      }
+    }
+
+    elementReadings.agni = {
+      ...elementReadings.agni,
+      summary: body.agniSummary,
+      interpretation: body.agniSummary,
+      observations: body.agniEvidence,
+      questions: [],
+      connections: [],
+      costs: [],
+      resources: [],
+    }
+    elementReadings.ama = {
+      ...elementReadings.ama,
+      summary: body.amaSummary,
+      interpretation: body.amaSummary,
+      observations: body.amaEvidence,
+      questions: [],
+      connections: [],
+      costs: [],
+      resources: [],
+    }
+  }
 
   return {
     ...snapshot,
