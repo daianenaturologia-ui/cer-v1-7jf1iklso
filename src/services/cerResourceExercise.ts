@@ -116,12 +116,10 @@ export const resourceExerciseService = {
         throw new Error('Registro inválido. Seus dados foram preservados.')
       return record
     }
-    const records = await pb
-      .collection('cer_resource_exercises')
-      .getFullList({
-        filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
-        requestKey: null,
-      })
+    const records = await pb.collection('cer_resource_exercises').getFullList({
+      filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
+      requestKey: null,
+    })
     if (!records.length) return null
     const r = records[0]
     validateResourceExercise(r.exercise, enrollmentId)

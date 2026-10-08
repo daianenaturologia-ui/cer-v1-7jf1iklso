@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T20:11:19.066Z",
+  "generatedAt": "2026-10-08T21:49:52.806Z",
   "collections": [
     {
       "name": "users",
@@ -7244,57 +7244,6 @@
         }
       ],
       "indexes": ["CREATE INDEX idx_planner_notes_enrollment ON cer_planner_notes (enrollment_id)"]
-    },
-    {
-      "name": "cer_resource_exercises",
-      "type": "base",
-      "apiRules": {
-        "list": "@request.auth.id != '' && @request.auth.status = 'active' && owner_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
-        "view": "@request.auth.id != '' && @request.auth.status = 'active' && owner_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
-        "create": "@request.auth.id != '' && @request.auth.status = 'active' && owner_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && @request.body.revision = 1",
-        "update": "@request.auth.id != '' && @request.auth.status = 'active' && owner_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && @request.body.owner_id:changed = false && @request.body.enrollment_id:changed = false",
-        "delete": null
-      },
-      "fields": [
-        {
-          "name": "enrollment_id",
-          "type": "relation",
-          "required": true,
-          "system": false,
-          "collectionRef": "enrollments"
-        },
-        {
-          "name": "owner_id",
-          "type": "relation",
-          "required": true,
-          "system": false,
-          "collectionRef": "users"
-        },
-        {
-          "name": "revision",
-          "type": "number",
-          "required": true,
-          "system": false
-        },
-        {
-          "name": "exercise",
-          "type": "json",
-          "required": true,
-          "system": false
-        },
-        {
-          "name": "created",
-          "type": "autodate",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "updated",
-          "type": "autodate",
-          "required": false,
-          "system": false
-        }
-      ]
     }
   ]
 }
