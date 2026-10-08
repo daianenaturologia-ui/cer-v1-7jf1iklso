@@ -236,18 +236,18 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
 
     agni: {
       summary:
-        'Digestão pesada, fome irregular e retorno de apetite variável relatados, lidos na tradição como irregularidade do fogo digestivo a explorar em conversa.',
+        'Fome irregular, apetite variável e digestão pesada no padrão habitual. Esses sinais pedem uma leitura conjunta, sem definir um único tipo de Agni.',
       observations: [
-        'Fome irregular no cotidiano',
-        'Retorno da fome variável entre as refeições',
-        'Digestão percebida como pesada',
-        'Alimentos gordurosos ou pesados exigem mais do organismo',
-        'Eliminação intestinal com ritmo irregular',
+        'Fome irregular no padrão habitual',
+        'Retorno variável do apetite',
+        'Peso habitual após refeições',
+        'Alimentos gordurosos/pesados mais exigentes no relato',
+        'Eliminação irregular no padrão habitual',
       ],
       interpretation:
-        'Na visão ayurvédica, Agni representa a capacidade digestiva e de assimilação de nutrientes e estímulos. A alternância entre fome imprevisível, retorno de apetite variável e digestão pesada é tradicionalmente descrita como uma dinâmica irregular de Agni (Vishama Agni). Essa leitura não constitui um diagnóstico clínico nem uma prescrição de conduta, servindo como ponto de partida para dialogar com a profissional sobre sua experiência alimentar.',
+        'Na tradição ayurvédica, Agni representa os processos de digestão e transformação. Neste exemplo, a fome e o retorno do apetite variáveis aparecem junto à digestão pesada. Há sinais associados a mais de um padrão tradicional, por isso a leitura permanece em observação. Precisamos explorar duração, frequência e contexto antes de propor uma hipótese mais específica. Esses relatos habituais não comprovam um desequilíbrio atual nem medem metabolismo ou toxinas.',
       resources: [
-        'Capacidade de descrever com clareza os sinais corporais de apetite, digestão e ritmo intestinal',
+        'Você relatou sinais de apetite, digestão e ritmo intestinal que podem ser explorados na conversa.',
       ],
       costs: [
         'Sensação de peso pós-refeição relatada',
