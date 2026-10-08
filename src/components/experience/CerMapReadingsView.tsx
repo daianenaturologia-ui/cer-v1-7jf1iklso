@@ -37,6 +37,7 @@ import {
 } from 'lucide-react'
 import { CER_PROTECTION_PATTERNS } from '@/services/cerProtectionPatterns'
 import { getCerProtectionPatternContent } from '@/services/cerProtectionPatternContent'
+import { cn } from '@/lib/utils'
 
 export interface CerMapReadingsViewProps {
   snapshot: CerMapReadingSnapshot
@@ -48,6 +49,7 @@ interface DialogState {
   subtitle?: string
   tag?: string
   content: React.ReactNode
+  dialogClassName?: string
 }
 
 /**
@@ -980,6 +982,10 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         title: dim.title,
         subtitle: 'Conceito, leitura pessoal e recursos',
         tag: 'Dimensão CER',
+        dialogClassName:
+          dimId === 'corpo'
+            ? 'w-[95vw] max-w-3xl sm:max-w-3xl p-5 sm:p-7 max-h-[85vh] overflow-y-auto'
+            : undefined,
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
             {isDemoSnapshot && !isReviewed && (
@@ -988,16 +994,9 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
               </div>
             )}
 
-            <div className="rounded-lg bg-muted/30 p-3 space-y-1">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Como compreender esta dimensão
-              </h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">{dim.explanation}</p>
-            </div>
-
             {dimId === 'corpo' ? (
               <div className="space-y-4 pt-1">
-                {/* ABERTURA GLOBAL LEIGA */}
+                {/* ABERTURA GLOBAL LEIGA (substitui o conceito genérico antigo para a dimensão Corpo) */}
                 <div className="space-y-1.5 text-xs text-foreground/90 leading-relaxed bg-muted/20 p-3 rounded-lg border border-border/40">
                   <p>
                     O Ayurveda é uma tradição de cuidado que observa como as características do
@@ -1081,53 +1080,51 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                           por si só, uma constituição tridosha equilibrada.
                         </p>
                       </div>
-
-                      {/* Prakriti, Vikriti, Ponte e Agni/Ama */}
-                      <div className="space-y-2 pt-1 border-t border-border/40">
-                        <div className="space-y-0.5">
-                          <span className="font-semibold text-foreground block">
-                            Prakriti — seu ponto de partida:
-                          </span>
-                          <p className="text-muted-foreground leading-relaxed">
-                            É a constituição na perspectiva ayurvédica: a combinação de
-                            características que você reconhece há bastante tempo, especialmente em
-                            períodos em que se sentia relativamente bem. No CER, trabalhamos com uma
-                            hipótese constitucional tradicional construída a partir do seu relato.
-                            Não é um teste genético, e o questionário não confirma sozinho sua
-                            constituição.
-                          </p>
-                        </div>
-
-                        <div className="space-y-0.5">
-                          <span className="font-semibold text-foreground block">
-                            Vikriti — seu momento atual:
-                          </span>
-                          <p className="text-muted-foreground leading-relaxed">
-                            É a leitura do estado atual e de possíveis diferenças em relação à sua
-                            base habitual. Para compreendê-lo, precisamos saber o que mudou, há
-                            quanto tempo, com que frequência e em qual contexto. Sono, alimentação,
-                            condições de saúde, ambiente e medicamentos podem ser relevantes nessa
-                            conversa. A história de vida ajuda a contextualizar a experiência, mas
-                            não é, por si só, Vikriti nem prova a causa de um sintoma.
-                          </p>
-                        </div>
-
-                        <p className="leading-relaxed text-foreground/90">
-                          Uma característica habitual não é automaticamente um desequilíbrio. Quando
-                          os registros não permitem comparar a base com o presente, a leitura atual
-                          permanece em observação.
-                        </p>
-
-                        <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
-                          Agni observa, pela lente tradicional, o padrão de fome e digestão. Ama
-                          descreve processamento incompleto nessa tradição. Seus indicadores devem
-                          ser lidos junto dos relatos e do contexto; não medem metabolismo ou
-                          toxinas.
-                        </p>
-                      </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
+
+                {/* Prakriti, Vikriti, Ponte e Agni/Ama como bloco próprio após o acordeão e antes da leitura pessoal */}
+                <div className="space-y-2.5 pt-1 rounded-lg border border-border/50 bg-card/40 p-3 text-xs text-foreground/90">
+                  <div className="space-y-0.5">
+                    <span className="font-semibold text-foreground block">
+                      Prakriti — seu ponto de partida:
+                    </span>
+                    <p className="text-muted-foreground leading-relaxed">
+                      É a constituição na perspectiva ayurvédica: a combinação de características
+                      que você reconhece há bastante tempo, especialmente em períodos em que se
+                      sentia relativamente bem. No CER, trabalhamos com uma hipótese constitucional
+                      tradicional construída a partir do seu relato. Não é um teste genético, e o
+                      questionário não confirma sozinho sua constituição.
+                    </p>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <span className="font-semibold text-foreground block">
+                      Vikriti — seu momento atual:
+                    </span>
+                    <p className="text-muted-foreground leading-relaxed">
+                      É a leitura do estado atual e de possíveis diferenças em relação à sua base
+                      habitual. Para compreendê-lo, precisamos saber o que mudou, há quanto tempo,
+                      com que frequência e em qual contexto. Sono, alimentação, condições de saúde,
+                      ambiente e medicamentos podem ser relevantes nessa conversa. A história de
+                      vida ajuda a contextualizar a experiência, mas não é, por si só, Vikriti nem
+                      prova a causa de um sintoma.
+                    </p>
+                  </div>
+
+                  <p className="leading-relaxed text-foreground/90">
+                    Uma característica habitual não é automaticamente um desequilíbrio. Quando os
+                    registros não permitem comparar a base com o presente, a leitura atual permanece
+                    em observação.
+                  </p>
+
+                  <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
+                    Agni observa, pela lente tradicional, o padrão de fome e digestão. Ama descreve
+                    processamento incompleto nessa tradição. Seus indicadores devem ser lidos junto
+                    dos relatos e do contexto; não medem metabolismo ou toxinas.
+                  </p>
+                </div>
 
                 {/* SÍNTESE E LEITURA PESSOAL */}
                 {dim.summary && (
@@ -1152,6 +1149,13 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
               </div>
             ) : (
               <>
+                <div className="rounded-lg bg-muted/30 p-3 space-y-1">
+                  <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                    Como compreender esta dimensão
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{dim.explanation}</p>
+                </div>
+
                 {dim.summary && (
                   <div className="space-y-1">
                     <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
@@ -2168,7 +2172,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
       {/* DIÁLOGO CONTROLADO ÚNICO */}
       <Dialog open={Boolean(activeDialog)} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent
-          className="max-w-xl max-h-[85vh] overflow-y-auto"
+          className={cn('max-w-xl max-h-[85vh] overflow-y-auto', activeDialog?.dialogClassName)}
           onCloseAutoFocus={(e) => {
             if (triggerRef.current) {
               e.preventDefault()

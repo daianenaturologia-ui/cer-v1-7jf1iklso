@@ -792,4 +792,56 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     expect(text).toContain('Habitualmente · Sono')
     expect(text).toContain('Sono profundo e regular.')
   })
+
+  it('Microbloco 2D: diálogo Corpo possui largura responsiva max-w-3xl, sem duplicação de abertura e conceitos fora do acordeão', async () => {
+    const demoSnapshot = createDemoCerMapReading('demo-enr-01')
+    render(<CerMapReadingsView snapshot={demoSnapshot} />)
+
+    const corpoBtn = screen.getByRole('button', {
+      name: /Ver leitura completa da dimensão Corpo/i,
+    })
+    await userEvent.click(corpoBtn)
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.className).toContain('max-w-3xl')
+
+    // (b) Sem duplicação de abertura: dim.explanation genérica antiga NÃO aparece junto da nova abertura
+    expect(dialog.textContent).toContain(
+      'O Ayurveda é uma tradição de cuidado que observa como as características',
+    )
+    expect(dialog.textContent).not.toContain('Como compreender esta dimensão')
+
+    // (a) Prakriti, Vikriti, ponte e Agni/Ama estão FORA do acordeão colapsável.
+    // Quando fechamos o acordeão clicando no trigger, esses textos permanecem no diálogo!
+    const accordionTrigger = screen.getByRole('button', {
+      name: /Entenda os doshas e suas combinações/i,
+    })
+    await userEvent.click(accordionTrigger)
+
+    // Prakriti/Vikriti/ponte/Agni-Ama continuam presentes e visíveis no diálogo após colapsar o acordeão
+    expect(dialog.textContent).toContain('Prakriti — seu ponto de partida:')
+    expect(dialog.textContent).toContain('Vikriti — seu momento atual:')
+    expect(dialog.textContent).toContain(
+      'Uma característica habitual não é automaticamente um desequilíbrio.',
+    )
+    expect(dialog.textContent).toContain(
+      'Agni observa, pela lente tradicional, o padrão de fome e digestão.',
+    )
+    expect(dialog.textContent).toContain('Ama descreve processamento incompleto nessa tradição.')
+
+    // Leitura pessoal também continua visível
+    expect(dialog.textContent).toContain('Síntese da leitura')
+
+    // (c) Verificar que outra dimensão NÃO recebe max-w-3xl
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+
+    const regulacaoBtn = screen.getByRole('button', {
+      name: /Ver leitura completa da dimensão Regulação/i,
+    })
+    await userEvent.click(regulacaoBtn)
+    const regDialog = await screen.findByRole('dialog')
+    expect(regDialog.className).not.toContain('max-w-3xl')
+    // Na dimensão Regulação, "Como compreender esta dimensão" continua existindo normalmente
+    expect(regDialog.textContent).toContain('Como compreender esta dimensão')
+  })
 })
