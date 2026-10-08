@@ -15,6 +15,8 @@ import {
   AYV_C3_OPERATIONAL_REFERENCE_TEXT,
   AYV_C3_CONTEXT_PROMPT_INSTRUCTION,
   AYV_C3_AREA_DEFINITIONS,
+  AYV_C3_STARTED_OPTIONS,
+  AYV_C3_CURRENT_DURATION_OPTIONS,
 } from './ayurvedaChapter3'
 
 const response = (
@@ -266,6 +268,23 @@ describe('Capítulo 3 — mudanças atuais', () => {
       expect(compIds).toContain('hard_to_compare')
       expect(compIds).toContain('dont_know')
       expect(compIds).toContain('refusal')
+    })
+
+    it('microbloco 3C: opções de duração do novo bloco têm refusal sem alterar AYV_C3_STARTED_OPTIONS legado', () => {
+      // AYV_C3_STARTED_OPTIONS legado NÃO possui refusal
+      expect(
+        (AYV_C3_STARTED_OPTIONS as readonly { id: string }[]).find((o) => o.id === 'refusal'),
+      ).toBeUndefined()
+      expect(
+        (AYV_C3_STARTED_OPTIONS as readonly { id: string }[]).find((o) => o.id === 'dont_know'),
+      ).toBeDefined()
+
+      // AYV_C3_CURRENT_DURATION_OPTIONS do novo bloco POSSUI refusal com rótulo 'Prefiro não responder'
+      const durRefusal = AYV_C3_CURRENT_DURATION_OPTIONS.find((o) => o.id === 'refusal')
+      expect(durRefusal).toBeDefined()
+      expect(durRefusal?.label).toBe('Prefiro não responder')
+      expect(durRefusal?.exclusive).toBe(true)
+      expect(durRefusal?.epistemic).toBe('refusal')
     })
   })
 })

@@ -39,6 +39,7 @@ import {
   loadChapter3State,
   AYV_C3_AREA_DEFINITIONS,
   AYV_C3_COMPARISON_OPTIONS,
+  AYV_C3_CURRENT_DURATION_OPTIONS,
   AYV_C3_FREQUENCY_OPTIONS,
   AYV_C3_OPERATIONAL_REFERENCE_TEXT,
   AYV_C3_CONTEXT_PROMPT_INSTRUCTION,
@@ -649,7 +650,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                   const isDiff = rec.comparison === 'different'
                   const durLabel =
                     isDiff && rec.duration
-                      ? AYV_C3_STARTED_OPTIONS.find((d) => d.id === rec.duration)?.label ||
+                      ? AYV_C3_CURRENT_DURATION_OPTIONS.find((d) => d.id === rec.duration)?.label ||
                         rec.duration
                       : null
                   const freqLabel =
@@ -903,6 +904,11 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                 className="gap-1 text-xs"
                 onClick={() => setShowCurrentBodyBlock((open) => !open)}
                 aria-expanded={showCurrentBodyBlock}
+                aria-label={
+                  showCurrentBodyBlock
+                    ? 'Recolher Como meu corpo está agora'
+                    : 'Abrir Como meu corpo está agora'
+                }
               >
                 {showCurrentBodyBlock ? (
                   <>
@@ -955,6 +961,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                             className="h-7 text-xs gap-1 px-2"
                             onClick={() => setOpenAreaId(isOpen ? null : areaId)}
                             aria-expanded={isOpen}
+                            aria-label={isOpen ? `Fechar ${def.title}` : `Preencher ${def.title}`}
                           >
                             {isOpen ? 'Fechar' : 'Preencher'}
                             {isOpen ? (
@@ -972,8 +979,9 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                                 {def.questionText}
                               </label>
                               <p className="text-[11px] text-muted-foreground">
-                                Escolha até {def.maxStates} opções onde fizer sentido. Opções de
-                                incerteza e recusa são exclusivas.
+                                Você pode escolher até 2 opções. Se escolher &apos;Não sei
+                                identificar&apos; ou &apos;Prefiro não responder&apos;, essa será
+                                sua única resposta.
                               </p>
                               <div className="grid gap-2 sm:grid-cols-2">
                                 {def.options.map((option) => (
@@ -1017,7 +1025,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                                     {def.title.toLowerCase()}?
                                   </label>
                                   <div className="grid gap-2 sm:grid-cols-2">
-                                    {AYV_C3_STARTED_OPTIONS.map((sOption) => (
+                                    {AYV_C3_CURRENT_DURATION_OPTIONS.map((sOption) => (
                                       <React.Fragment key={sOption.id}>
                                         {optionButton(
                                           rec.duration === sOption.id,

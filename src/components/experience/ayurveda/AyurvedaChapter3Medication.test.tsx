@@ -253,7 +253,7 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
 
     // Abre a área de Fome
     const preencherBtns = screen.getAllByRole('button', { name: /Preencher/i })
-    await user.click(preencherBtns[0]) // Fome
+    await user.click(screen.getByRole('button', { name: 'Preencher Fome' }))
     expect(screen.getByText('Como está sua fome nestes últimos 14 dias?')).toBeInTheDocument()
 
     // Seleciona um estado de fome
@@ -326,9 +326,8 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
     await user.click(screen.getByRole('button', { name: 'Não percebo mudanças importantes agora' }))
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
 
-    await user.click(screen.getByRole('button', { name: /Abrir/i }))
-    const preencherBtns = screen.getAllByRole('button', { name: /Preencher/i })
-    await user.click(preencherBtns[3]) // Sono
+    await user.click(screen.getByRole('button', { name: 'Abrir Como meu corpo está agora' }))
+    await user.click(screen.getByRole('button', { name: 'Preencher Sono' }))
 
     await user.click(screen.getByRole('button', { name: 'Diferente do meu habitual' }))
     await user.click(screen.getByRole('button', { name: 'Nas últimas semanas' }))
@@ -346,5 +345,93 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
     // Detalhes condicionais não devem ser exibidos na revisão para sono
     expect(screen.queryByText(/Duração da mudança:/)).toBeNull()
     expect(screen.queryByText(/Frequência:/)).toBeNull()
+  })
+
+  it('Microbloco 3C: acessibilidade (aria-labels das áreas e bloco geral), frase de uso presente sem frase técnica, e recusa persistindo na duração', async () => {
+    const user = userEvent.setup()
+    const props = {
+      enrollmentId: 'enrollment-demo',
+      experienceId: 'exp-corpo-fisiologia-07b',
+      respondentUserId: 'participant-demo',
+      onBackToHub: () => {},
+    }
+    render(<AyurvedaChapter3Flow {...props} />)
+
+    await screen.findByText('O que está diferente agora')
+    await user.click(screen.getByRole('button', { name: 'Não percebo mudanças importantes agora' }))
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+
+    // 1. Bloco geral recolhível: aria-label explícito "Abrir Como meu corpo está agora"
+    const openBlockBtn = screen.getByRole('button', { name: 'Abrir Como meu corpo está agora' })
+    expect(openBlockBtn).toHaveAttribute('aria-expanded', 'false')
+    await user.click(openBlockBtn)
+
+    // Estado aberto: aria-label "Recolher Como meu corpo está agora"
+    expect(
+      screen.getByRole('button', { name: 'Recolher Como meu corpo está agora' }),
+    ).toHaveAttribute('aria-expanded', 'true')
+
+    // 2. Acessibilidade de cada área: botões com aria-label específico "Preencher <Área>"
+    expect(screen.getByRole('button', { name: 'Preencher Fome' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Preencher Sensação após comer / digestão' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Preencher Eliminação intestinal' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Preencher Sono' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Preencher Sensação de temperatura' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Preencher Pele' })).toBeInTheDocument()
+
+    // Abrir Fome -> aria-label passa a ser "Fechar Fome"
+    await user.click(screen.getByRole('button', { name: 'Preencher Fome' }))
+    expect(screen.getByRole('button', { name: 'Fechar Fome' })).toBeInTheDocument()
+
+    // 3. Frase de uso presente e frase técnica ausente
+    expect(
+      screen.getByText(
+        "Você pode escolher até 2 opções. Se escolher 'Não sei identificar' ou 'Prefiro não responder', essa será sua única resposta.",
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Opções de incerteza e recusa são exclusivas/i)).toBeNull()
+
+    // 4. Recusa na duração: disponível no novo bloco e persiste no registro
+    await user.click(
+      screen.getByRole('button', { name: 'Aparece em horários relativamente previsíveis' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Diferente do meu habitual' }))
+
+    // Em duração, a opção "Prefiro não responder" deve existir
+    const durationRefusalBtn = screen.getByRole('button', { name: 'Prefiro não responder' })
+    expect(durationRefusalBtn).toBeInTheDocument()
+    await user.click(durationRefusalBtn)
+
+    await waitFor(() =>
+      expect(experienceResponseService.saveResponse).toHaveBeenCalledWith(
+        expect.objectContaining({
+          promptId: 'ayv_c3_current_hunger',
+          structuredValue: expect.objectContaining({
+            value: expect.objectContaining({
+              area_key: 'hunger',
+              comparison: 'different',
+              duration: 'refusal',
+            }),
+          }),
+        }),
+      ),
+    )
+
+    // Preenche medicamentos para prosseguir à revisão
+    await user.click(
+      screen.getByRole('button', { name: 'Não uso medicamentos ou suplementos atualmente' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Revisar' }))
+
+    // 5. Na revisão: o valor refusal aparece literalmente como "Prefiro não responder"
+    expect(screen.getByText('Como meu corpo está agora (últimos 14 dias)')).toBeInTheDocument()
+    expect(screen.getByText(/Duração da mudança:/)).toBeInTheDocument()
+    expect(screen.getByText(/Prefiro não responder/)).toBeInTheDocument()
   })
 })

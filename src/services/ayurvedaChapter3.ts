@@ -157,6 +157,11 @@ export type AyurvedaC3ComparisonOption =
   | 'dont_know'
   | 'refusal'
 
+export const AYV_C3_CURRENT_DURATION_OPTIONS = [
+  ...AYV_C3_STARTED_OPTIONS,
+  { id: 'refusal', label: 'Prefiro não responder', exclusive: true, epistemic: 'refusal' },
+] as const
+
 export const AYV_C3_FREQUENCY_OPTIONS = [
   { id: 'few_days', label: 'Em poucos dias' },
   { id: 'several_days', label: 'Em vários dias' },
