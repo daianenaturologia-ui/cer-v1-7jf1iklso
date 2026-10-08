@@ -84,7 +84,9 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
     // Verificação de Prakriti / Vikriti
     expect(ayv.hasCompletedRevision).toBe(true)
     expect(ayv.prakritiHypothesis.primaryTendency).toBe('Vata')
-    expect(ayv.vikritiHypothesis.primaryImbalance).toBe('Vata')
+    // Microbloco 1B-c: C2 é funcionamento habitual_adult e não pode virar Vikriti ativa (primaryImbalance indefinido, confidence 'Em observação')
+    expect(ayv.vikritiHypothesis.confidence).toBe('Em observação')
+    expect(ayv.vikritiHypothesis.primaryImbalance).toBeUndefined()
 
     // Verificação de Agni
     expect(ayv.agniReading.type).toBe('Vishama Agni')

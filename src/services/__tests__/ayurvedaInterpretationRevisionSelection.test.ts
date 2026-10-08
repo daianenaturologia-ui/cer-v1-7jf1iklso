@@ -134,13 +134,11 @@ describe('MICROBLOCO 1B-a: Seleção Canônica de Revisões no Motor de Interpre
 
     expect(result.hasCompletedRevision).toBe(true)
     expect(result.activeRevisionNumber).toBe(2)
-    // Deve usar a evidência de Pitta da rev2 e não a de Vata da rev1
-    expect(
-      result.vikritiHypothesis.evidencesPitta.some((e) => e.category === 'Ritmo da fome'),
-    ).toBe(true)
-    expect(result.vikritiHypothesis.evidencesVata.some((e) => e.category === 'Ritmo da fome')).toBe(
-      false,
-    )
+    // Microbloco 1B-c: C2 é habitual e não gera Vikriti ativa, mas a revisão selecionada (rev2)
+    // define a leitura ativa (ex.: Agni Tikshna pela rev2 em vez de Vishama pela rev1)
+    expect(result.agniReading.type).toBe('Tikshna Agni')
+    expect(result.vikritiHypothesis.confidence).toBe('Em observação')
+    expect(result.vikritiHypothesis.primaryImbalance).toBeUndefined()
   })
 
   // 3. Mesmo conjunto de registros com ordem do array INVERTIDA → mesmo resultado determinístico
@@ -285,10 +283,9 @@ describe('MICROBLOCO 1B-a: Seleção Canônica de Revisões no Motor de Interpre
     expect(
       result.prakritiHypothesis.evidencesKapha.some((e) => e.category === 'Estrutura corporal'),
     ).toBe(true)
-    // C2 usa rev1 (Pitta)
-    expect(
-      result.vikritiHypothesis.evidencesPitta.some((e) => e.category === 'Ritmo da fome'),
-    ).toBe(true)
+    // C2 usa rev1 (Pitta no Agni: Tikshna Agni; e C2 habitual não contamina Vikriti com evidências agudas)
+    expect(result.agniReading.type).toBe('Tikshna Agni')
+    expect(result.vikritiHypothesis.confidence).toBe('Em observação')
   })
 
   // 6. Duplicados da mesma revisão com timestamps/ordem diferentes → desempate determinístico

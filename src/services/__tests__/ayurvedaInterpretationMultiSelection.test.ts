@@ -66,8 +66,9 @@ describe('MICROBLOCO 1B-b: Normalização Multi-Seleção e Coerência de Agni',
     ]
   }
 
-  // 1. Duas escolhas de fome (ex. ['regular_hours','sudden_intense']) geram a evidência Pitta de fome esperada
-  it('1. Duas escolhas de fome (regular_hours e sudden_intense em array) geram evidência Pitta de fome esperada', () => {
+  // 1. Duas escolhas de fome (ex. ['regular_hours','sudden_intense']) processam multi-seleção de C2
+  // NOTA 1B-c: C2 é habitual e não vira Vikriti ativa (arrays de evidências atuais vazios, confidence 'Em observação')
+  it('1. Duas escolhas de fome (regular_hours e sudden_intense em array) normalizam valores e alimentam leitura de Agni Pitta', () => {
     const responses = makeCompletedC2Baseline([
       makeRecord({
         id: 'c2-hunger',
@@ -81,13 +82,16 @@ describe('MICROBLOCO 1B-b: Normalização Multi-Seleção e Coerência de Agni',
     const result = buildAyurvedaInterpretation(responses)
 
     expect(result.hasCompletedRevision).toBe(true)
-    expect(
-      result.vikritiHypothesis.evidencesPitta.some((e) => e.category === 'Ritmo da fome'),
-    ).toBe(true)
+    // Microbloco 1B-c: C2 é habitual e não vira evidência de Vikriti aguda/ativa
+    expect(result.vikritiHypothesis.evidencesPitta).toHaveLength(0)
+    expect(result.vikritiHypothesis.confidence).toBe('Em observação')
+    // A escolha súbita/intensa é capturada no Agni correspondente (Tikshna)
+    expect(result.agniReading.type).toBe('Tikshna Agni')
   })
 
-  // 2. Duas escolhas de eliminação e de sono no formato selectedOptionIds (plural) geram as evidências esperadas
-  it('2. Duas escolhas de eliminação e de sono no formato selectedOptionIds (plural) geram as evidências esperadas', () => {
+  // 2. Duas escolhas de eliminação e de sono no formato selectedOptionIds (plural) processam multi-seleção
+  // NOTA 1B-c: Sinais do C2 são funcionamento habitual; Vikriti permanece em observação sem primaryImbalance
+  it('2. Duas escolhas de eliminação e de sono no formato selectedOptionIds (plural) normalizam corretamente sem virar Vikriti ativa', () => {
     const responses = makeCompletedC2Baseline([
       makeRecord({
         id: 'c2-bowel',
@@ -111,14 +115,10 @@ describe('MICROBLOCO 1B-b: Normalização Multi-Seleção e Coerência de Agni',
 
     const result = buildAyurvedaInterpretation(responses)
 
-    expect(
-      result.vikritiHypothesis.evidencesVata.some((e) => e.category === 'Eliminação intestinal'),
-    ).toBe(true)
-    expect(
-      result.vikritiHypothesis.evidencesVata.some((e) => e.category === 'Sono e ritmo vigília'),
-    ).toBe(true)
-    // Com 2 categorias distintas em Vata, primaryImbalance deve convergir
-    expect(result.vikritiHypothesis.primaryImbalance).toBe('Vata')
+    // Microbloco 1B-c: C2 é habitual_adult; não vira desequilíbrio ativo nem primaryImbalance
+    expect(result.vikritiHypothesis.confidence).toBe('Em observação')
+    expect(result.vikritiHypothesis.primaryImbalance).toBeUndefined()
+    expect(result.vikritiHypothesis.evidencesVata).toHaveLength(0)
   })
 
   // 3. Pós-refeição com duas escolhas (ex. ['heavy_slow_digestion','bloating_gas']) alimenta Agni/Ama conforme mapeamentos
@@ -156,7 +156,8 @@ describe('MICROBLOCO 1B-b: Normalização Multi-Seleção e Coerência de Agni',
   })
 
   // 4. Formato singular legado (selectedOptionId / value string) continua funcionando como antes
-  it('4. Formato singular legado (selectedOptionId e value string) continua funcionando perfeitamente', () => {
+  // NOTA 1B-c: C2 não vira Vikriti ativa; a extração normaliza e alimenta Agni e atenção
+  it('4. Formato singular legado (selectedOptionId e value string) continua funcionando perfeitamente na extração de escolhas', () => {
     const responses = makeCompletedC2Baseline([
       makeRecord({
         id: 'c2-hunger-legacy-string',
@@ -176,12 +177,10 @@ describe('MICROBLOCO 1B-b: Normalização Multi-Seleção e Coerência de Agni',
 
     const result = buildAyurvedaInterpretation(responses)
 
-    expect(
-      result.vikritiHypothesis.evidencesPitta.some((e) => e.category === 'Ritmo da fome'),
-    ).toBe(true)
-    expect(
-      result.vikritiHypothesis.evidencesPitta.some((e) => e.category === 'Sono e ritmo vigília'),
-    ).toBe(true)
+    // Microbloco 1B-c: C2 habitual alimenta Agni (intense -> Tikshna Agni) sem gerar Vikriti ativa
+    expect(result.agniReading.type).toBe('Tikshna Agni')
+    expect(result.vikritiHypothesis.confidence).toBe('Em observação')
+    expect(result.vikritiHypothesis.primaryImbalance).toBeUndefined()
   })
 
   // 5. Inversão da ordem das opções no array produz resultado idêntico (toEqual)

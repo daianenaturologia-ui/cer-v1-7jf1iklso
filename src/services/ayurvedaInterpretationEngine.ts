@@ -24,6 +24,15 @@ import {
   getResponseRevisionNumber,
   AYV_C2_PROMPTS,
 } from '@/services/ayurvedaChapter2'
+import {
+  deriveChapter3Status,
+  loadChapter3State,
+  chapter3Label,
+  AYV_C3_DOMAIN_OPTIONS,
+  AYV_C3_DIRECTION_OPTIONS,
+  AYV_C3_CONTEXT_OPTIONS,
+  AYV_C3_MEDICATION_STATUS_OPTIONS,
+} from '@/services/ayurvedaChapter3'
 
 export interface DoshaEvidence {
   dosha: 'Vata' | 'Pitta' | 'Kapha'
@@ -182,7 +191,8 @@ export function buildAyurvedaInterpretation(
       presence: 'Não evidenciada',
       categoriesInvolved: [],
       evidences: [],
-      rationale: 'Nenhum acúmulo ou sobrecarga metabólica identificada nos registros.',
+      rationale:
+        'Dados insuficientes para avaliação clínica de sobrecarga metabólica nos registros.',
     },
     generalConfidence: 'Em observação',
     perceivedResources: [],
@@ -646,33 +656,55 @@ export function buildAyurvedaInterpretation(
   }
 
   // Vikriti
-  const vataVikritiCategories = countDistinctCategories(vikritiVata)
-  const pittaVikritiCategories = countDistinctCategories(vikritiPitta)
-  const kaphaVikritiCategories = countDistinctCategories(vikritiKapha)
+  // REGRA DE TEMPORALIDADE (C2 é habitual_adult):
+  // 1. Os sinais do Capítulo 2 NÃO podem ser lançados como evidências de Vikriti ATUAL
+  //    nem descritos como "oscilação funcional ativa".
+  //    Vikriti fica com confidence "Em observação", SEM primaryImbalance e com os arrays
+  //    de evidências atuais VAZIOS (evidencesVata: [], evidencesPitta: [], evidencesKapha: []).
+  // 2. Resumo da Vikriti distingue 4 estados conforme o Capítulo 3:
+  //    - C3 ausente ou incompleto -> "faltam dados atuais"
+  //    - C3 concluído com mudanças relatadas -> "mudanças relatadas precisam de detalhamento"
+  //    - C3 concluído com no_current_changes -> "não relatou mudança; não afirmar ausência de doença"
+  //    - C3 com dont_know/refusal -> "momento atual não caracterizado"
 
-  const vikritiScores = [
-    { dosha: 'Vata', count: vataVikritiCategories },
-    { dosha: 'Pitta', count: pittaVikritiCategories },
-    { dosha: 'Kapha', count: kaphaVikritiCategories },
-  ].sort((a, b) => b.count - a.count)
-
-  let primaryVikriti: string | undefined = undefined
-  let vikritiConfidence: 'Alta' | 'Moderada' | 'Em observação' = 'Em observação'
-
-  if (vikritiScores[0].count >= 2) {
-    primaryVikriti = vikritiScores[0].dosha
-    vikritiConfidence = vikritiScores[0].count >= 3 ? 'Alta' : 'Moderada'
-  } else {
-    vikritiConfidence = 'Em observação'
-  }
+  const c3Derivation = deriveChapter3Status(allResponses)
+  const c3IsCompleted = c3Derivation.status === 'completed'
+  const c3State = c3IsCompleted ? loadChapter3State(allResponses) : undefined
 
   let vikritiSummary = ''
-  if (!primaryVikriti) {
+  if (!c3IsCompleted) {
+    // C3 ausente ou incompleto
     vikritiSummary =
-      'Não há convergência suficiente entre as perguntas de ritmo biológico para apontar desequilíbrio ativo significativo. Ritmos em estado relativamente equilibrado ou respostas dispersas.'
+      'Leitura de Vikriti em observação: faltam dados atuais estruturados (Capítulo 3 não preenchido ou incompleto). Os ritmos relatados no Capítulo 2 refletem funcionamento habitual e não caracterizam desvio agudo ativo.'
   } else {
-    vikritiSummary = `Evidências convergentes indicam oscilação funcional ativa no eixo de ${primaryVikriti}, refletida em sintomas congruentes de ritmo fisiológico.`
+    const domains = c3State?.changed_domains || []
+    const hasDontKnowOrRefusal = domains.some((d) => d === 'dont_know' || d === 'refusal')
+    const hasNoCurrentChanges = domains.includes('no_current_changes')
+    const hasActualChanges = domains.filter(
+      (d) => d !== 'no_current_changes' && d !== 'dont_know' && d !== 'refusal',
+    )
+
+    if (hasDontKnowOrRefusal) {
+      vikritiSummary =
+        'Momento atual não caracterizado no Capítulo 3 (opção por não identificar ou não responder). Isto não equivale a equilíbrio ou ausência de desvios; convite a explorar o momento presente em sessão.'
+    } else if (hasNoCurrentChanges) {
+      vikritiSummary =
+        'Participante relatou não perceber mudanças importantes em relação ao padrão habitual no momento atual. Isto reflete ausência relatada de alterações, sem afirmar ausência de doença ou desequilíbrio clínico.'
+    } else if (hasActualChanges.length > 0) {
+      vikritiSummary =
+        'Mudanças relatadas no Capítulo 3 precisam de detalhamento e contextualização clínica em sessão antes de qualquer inferência de dosha ou desequilíbrio ativo.'
+    } else {
+      vikritiSummary =
+        'Leitura de Vikriti em observação: faltam dados atuais estruturados para caracterização de desequilíbrio ativo.'
+    }
   }
+
+  // Vikriti ativa não é inferida do C2 habitual:
+  const primaryVikriti: string | undefined = undefined
+  let vikritiConfidence: 'Alta' | 'Moderada' | 'Em observação' = 'Em observação'
+  const currentVikritiVata: DoshaEvidence[] = []
+  const currentVikritiPitta: DoshaEvidence[] = []
+  const currentVikritiKapha: DoshaEvidence[] = []
 
   // 8. Leitura de Agni (Fogo Digestivo)
   const postMealVals = getActiveValues(AYV_C2_PROMPTS.P3_POST_MEAL)
@@ -771,35 +803,33 @@ export function buildAyurvedaInterpretation(
   let agniConf: AgniReading['confidence'] = 'Em observação'
   let agniEvidences: string[] = []
 
-  // COERÊNCIA DE AGNI:
-  // 1) Se sinais indicam TIPOS DISTINTOS de Agni -> Indefinido / Em observação (não priorizar por ordem de if/else)
+  // COERÊNCIA DE AGNI (Linguagem de padrão habitual e conceito tradicional do Ayurveda):
+  const hasAgniInputs = hungerVals.length > 0 || postMealVals.length > 0
+
   if (matchingDysfunctionalTypes.length > 1) {
     agniType = 'Indefinido / Em observação'
     const typeNames = matchingDysfunctionalTypes.map((t) => t.name).join(' e ')
-    agniDesc = `Sinais mistos de digestão e apetite combinando características de ${typeNames}. A coexistência de manifestações distintas requer observação longitudinal e exploração detalhada em sessão.`
-    // Consolida todas as evidências encontradas sem duplicar strings idênticas
+    agniDesc = `Sinais habituais mistos de digestão e apetite combinando características tradicionais de ${typeNames}. A coexistência dessas manifestações no padrão habitual requer observação longitudinal e exploração detalhada em sessão.`
     agniEvidences = Array.from(new Set(matchingDysfunctionalTypes.flatMap((t) => t.evidences)))
     agniConf = 'Em observação'
   } else if (matchingDysfunctionalTypes.length === 1) {
     const single = matchingDysfunctionalTypes[0]
-    // Também verificar se há conflito com sinais estáveis declarados (ex: fome regular + azia severa)
-    // Se há sinal disfuncional, o tipo disfuncional predomina se não houver múltiplos tipos disfuncionais
     if (single.type === 'Vishama Agni') {
       agniType = 'Vishama Agni'
       agniDesc =
-        'Agni irregular e oscilante (típico de influência de Vata): ora a digestão é rápida, ora causa gases, distensão e instabilidade.'
+        'Padrão habitual sugestivo de Vishama Agni (fogo digestivo irregular/Vata no conceito tradicional): apetite oscilante e digestão variável com propensão habitual a gases e distensão.'
       agniEvidences = single.evidences
       agniConf = agniEvidences.length >= 2 ? 'Alta' : 'Moderada'
     } else if (single.type === 'Tikshna Agni') {
       agniType = 'Tikshna Agni'
       agniDesc =
-        'Agni hiperativo e rápido (típico de influência de Pitta): digestão acelerada com tendência a acidez, azia ou irritação quando há jejum prolongado.'
+        'Padrão habitual sugestivo de Tikshna Agni (fogo digestivo agudo/Pitta no conceito tradicional): apetite intenso com digestão acelerada e propensão habitual a calor e acidez pós-prandial.'
       agniEvidences = single.evidences
       agniConf = agniEvidences.length >= 2 ? 'Alta' : 'Moderada'
     } else if (single.type === 'Manda Agni') {
       agniType = 'Manda Agni'
       agniDesc =
-        'Agni hipoativo e lento (típico de influência de Kapha): digestão pesada, sonolência acentuada após comer e apetite de início tardio.'
+        'Padrão habitual sugestivo de Manda Agni (fogo digestivo lento/Kapha no conceito tradicional): apetite de início tardio e digestão pesada com propensão habitual a sonolência após refeições.'
       agniEvidences = single.evidences
       agniConf = agniEvidences.length >= 2 ? 'Alta' : 'Moderada'
     }
@@ -808,17 +838,21 @@ export function buildAyurvedaInterpretation(
     isPostMealExplicitlyComfortable &&
     matchingDysfunctionalTypes.length === 0
   ) {
-    // Sama Agni: exige fome EXPLICITAMENTE regular E pós-refeição EXPLICITAMENTE sem desconforto,
-    // SEM sinais conflitantes (e sem valores genéricos truthy / dont_know / refusal)
     agniType = 'Sama Agni'
     agniDesc =
-      'Agni equilibrado: fome regular nos horários habituais e digestão sem desconforto, queimação ou sonolência excessiva.'
+      'Padrão habitual sugestivo de Sama Agni (fogo digestivo equilibrado no conceito tradicional): fome regular nos horários habituais e digestão sem desconforto, queimação ou sonolência excessiva.'
     agniEvidences = ['Fome previsível e sensação pós-refeição estável']
     agniConf = 'Moderada'
-  } else {
-    // Sem sinais suficientes ou dados não conclusivos
+  } else if (!hasAgniInputs) {
     agniType = 'Indefinido / Em observação'
-    agniDesc = 'Sem dados canônicos suficientes para caracterização do fogo digestivo.'
+    agniDesc =
+      'Dados insuficientes para caracterização do padrão habitual do fogo digestivo (Agni).'
+    agniEvidences = []
+    agniConf = 'Em observação'
+  } else {
+    agniType = 'Indefinido / Em observação'
+    agniDesc =
+      'Manifestação de desarmonia digestiva não evidenciada com os dados disponíveis sobre o padrão habitual; relatos não sustentam sinalização específica, sem que isso comprove ausência clínica.'
     agniEvidences = []
     agniConf = 'Em observação'
   }
@@ -867,16 +901,26 @@ export function buildAyurvedaInterpretation(
   let amaPresence: AmaReading['presence'] = 'Não evidenciada'
   let amaRationale = ''
 
+  const hasAmaInputs =
+    postMealVals.length > 0 ||
+    heavyFoodVals.length > 0 ||
+    stoolVals.length > 0 ||
+    wakeVals.length > 0
+
   if (amaCategoriesList.length >= 2) {
     amaPresence = 'Sinalizada'
-    amaRationale = `Sinais convergentes de sobrecarga e acúmulo identificados em ${amaCategoriesList.length} categorias distintas: ${amaCategoriesList.join(' e ')}.`
+    amaRationale = `Sinais habituais convergentes associados ao conceito tradicional de Ama (acúmulo de resíduos digestivos não assimilados) identificados em ${amaCategoriesList.length} categorias distintas: ${amaCategoriesList.join(' e ')}.`
   } else if (amaCategoriesList.length === 1) {
     amaPresence = 'Possível / Limítrofe'
-    amaRationale = `Evidência isolada em "${amaCategoriesList[0]}". Pelo critério de convergência do Método CER, um achado isolado não sustenta sinalização de Ama, permanecendo sob observação clínica.`
+    amaRationale = `Evidência isolada no padrão habitual em "${amaCategoriesList[0]}". Pelo critério tradicional de convergência do Método CER, um achado isolado não sustenta sinalização de Ama, permanecendo como ponto de observação.`
+  } else if (!hasAmaInputs) {
+    amaPresence = 'Não evidenciada'
+    amaRationale =
+      'Dados insuficientes para avaliação clínica de sobrecarga digestiva tradicional (Ama).'
   } else {
     amaPresence = 'Não evidenciada'
     amaRationale =
-      'Nenhum sinal clínico de acúmulo ou sobrecarga metabólica evidente nos relatos registrados.'
+      'Presença de Ama não evidenciada com os dados disponíveis no padrão habitual; relatos não sustentam a sinalização tradicional, o que não prova ausência clínica.'
   }
 
   // 10. Recursos percebidos e Pontos de atenção
@@ -884,36 +928,131 @@ export function buildAyurvedaInterpretation(
   const attentionPoints: string[] = []
   const sessionQuestions: string[] = []
 
+  // REGRA 6: REMOVER recursos pessoais deduzidos apenas por ter concluído o questionário
+  // (ex.: "percepção clara", "capacidade de..."): usar registro literal da pessoa ou convite neutro.
   if (c1Completed) {
-    perceivedResources.push(
-      'Percepção corporal habitual clara e registrada com clareza nos aspectos estruturais',
-    )
+    perceivedResources.push('Registro do padrão físico habitual preenchido no Capítulo 1')
   }
   if (c2Completed) {
-    perceivedResources.push(
-      'Capacidade de auto-observação dos ritmos de digestão, eliminação e sono',
-    )
+    perceivedResources.push('Registro de ritmos biológicos cotidianos preenchido no Capítulo 2')
   }
   if (primaryPrakriti) {
     perceivedResources.push(
-      `Identificação de traços funcionais de base compatíveis com ${primaryPrakriti}`,
+      `Traços estruturais de base compatíveis com tendência ${primaryPrakriti}`,
     )
   }
 
-  if (primaryVikriti) {
+  // P12 do C2: Confiança histórica
+  // many_years/mostly_habitual_recent_changes NÃO comprovam desequilíbrio;
+  // mainly_present NÃO comprova diferença da constituição.
+  // Formular como pergunta/convite, não como conclusão.
+  const p12Vals = getActiveValues(AYV_C2_PROMPTS.P12_HISTORICAL_CONFIDENCE)
+  if (hasAnyMatch(p12Vals, ['many_years'])) {
     attentionPoints.push(
-      `Oscilação em ritmo de ${primaryVikriti} com convergência em múltiplos momentos`,
+      'Referência histórica relatada como habitual de muitos anos; convite para explorar em sessão se esse funcionamento de longo prazo sempre foi confortável ou se foi se normalizando ao longo do tempo.',
+    )
+  } else if (hasAnyMatch(p12Vals, ['mostly_habitual_recent_changes'])) {
+    attentionPoints.push(
+      'Relato de funcionamento habitual com mudanças recentes; convite para explorar em sessão a linha do tempo dessas alterações sem assumi-las previamente como desequilíbrio.',
+    )
+    sessionQuestions.push(
+      'Quais foram as primeiras coisas que você notou mudando em relação ao seu funcionamento de costume?',
+    )
+  } else if (hasAnyMatch(p12Vals, ['mainly_present'])) {
+    attentionPoints.push(
+      'Relato baseado principalmente no momento atual; falta melhor referência histórica comparativa para distinguir a constituição de base (Prakriti) de variações recentes.',
+    )
+    sessionQuestions.push(
+      'Como seu corpo e seus ritmos costumavam funcionar em fases mais estáveis ou anteriores da sua vida?',
+    )
+  } else if (hasAnyMatch(p12Vals, ['mixture_past_present', 'hard_to_remember'])) {
+    attentionPoints.push(
+      'Dificuldade ou mistura na delimitação temporal do padrão habitual; recomenda-se construir a linha do tempo em diálogo durante a sessão.',
+    )
+    sessionQuestions.push(
+      'Ao pensar na sua história de vida, você consegue identificar períodos em que seu corpo funcionava de forma diferente de hoje?',
     )
   }
+
   if (amaPresence === 'Sinalizada') {
     attentionPoints.push(
-      `Indícios de sobrecarga digestiva (Ama) presentes em mais de um sistema biológico`,
+      'Sinais habituais associados à sobrecarga digestiva tradicional (Ama) identificados em mais de uma categoria',
     )
   }
-  if (agniType === 'Vishama Agni' || agniType === 'Manda Agni') {
-    attentionPoints.push(
-      `Irregularidade ou lentidão no poder de digestão e assimilação (${agniType})`,
+  if (agniType === 'Vishama Agni' || agniType === 'Manda Agni' || agniType === 'Tikshna Agni') {
+    attentionPoints.push(`Padrão habitual do fogo digestivo caracterizado como ${agniType}`)
+  }
+
+  // INTEGRAÇÃO CONSERVADORA DO CAPÍTULO 3 (SÓ QUANDO CONCLUÍDO)
+  // Regra 4: contexto, domínios, direções e medicação entram como PONTOS PARA CONVERSA / perguntas,
+  // nunca como evidência de dosha e nunca com causa medicamentosa inferida.
+  if (c3IsCompleted && c3State) {
+    const domains = c3State.changed_domains || []
+    const hasSpecialExit = domains.some((d) =>
+      ['no_current_changes', 'dont_know', 'refusal'].includes(d),
     )
+
+    if (!hasSpecialExit && domains.length > 0) {
+      const domainLabels = domains.map((d) => chapter3Label(AYV_C3_DOMAIN_OPTIONS, d))
+      attentionPoints.push(
+        `Áreas com alterações relatadas no momento atual: ${domainLabels.join(', ')} (ponto para diálogo em sessão, sem inferência dosha automática).`,
+      )
+
+      // Direções relatadas
+      if (c3State.change_directions) {
+        const dirEntries = Object.entries(c3State.change_directions)
+        if (dirEntries.length > 0) {
+          const dirSummaries = dirEntries.map(([dom, dir]) => {
+            const domLabel = chapter3Label(AYV_C3_DOMAIN_OPTIONS, dom)
+            const dirLabel = chapter3Label(AYV_C3_DIRECTION_OPTIONS, dir)
+            return `${domLabel}: ${dirLabel}`
+          })
+          attentionPoints.push(
+            `Direções percebidas nas mudanças: ${dirSummaries.join('; ')} (ponto de conversa para contextualizar a intensidade).`,
+          )
+        }
+      }
+
+      // Contextos associados relatados
+      if (c3State.change_contexts && c3State.change_contexts.length > 0) {
+        const contextsNotExcluded = c3State.change_contexts.filter(
+          (c) => !['none_identified', 'dont_know', 'refusal'].includes(c),
+        )
+        if (contextsNotExcluded.length > 0) {
+          const ctxLabels = contextsNotExcluded.map((c) => chapter3Label(AYV_C3_CONTEXT_OPTIONS, c))
+          attentionPoints.push(
+            `Contextos de vida associados às mudanças relatadas: ${ctxLabels.join(', ')} (explorar como esses fatores podem estar modulando a rotina).`,
+          )
+        }
+      }
+
+      sessionQuestions.push(
+        `Você mencionou mudanças atuais em ${domainLabels.slice(0, 3).join(', ')}. O que mais se destaca no seu dia a dia quando você observa essas alterações?`,
+      )
+    }
+
+    // Medicação no C3: entra estritamente como ponto de atenção/conversa, SEM causa medicamentosa inferida
+    const medStatus = c3State.medication_status
+    if (medStatus && medStatus !== 'no_use') {
+      const medStatusLabel = chapter3Label(AYV_C3_MEDICATION_STATUS_OPTIONS, medStatus)
+      attentionPoints.push(
+        `Uso de medicamentos ou suplementos relatado (${medStatusLabel}); ponto de atenção e conversa para contextualização conjunta, sem inferência de nexo causal.`,
+      )
+
+      if (c3State.medication_items && c3State.medication_items.length > 0) {
+        const medNames = c3State.medication_items
+          .map((m) => m.name)
+          .filter(Boolean)
+          .join(', ')
+        if (medNames) {
+          attentionPoints.push(`Substâncias registradas para diálogo em sessão: ${medNames}.`)
+        }
+      }
+
+      sessionQuestions.push(
+        'Você faz uso de medicamentos ou suplementos: como eles se integram à sua rotina atual e aos seus ritmos corporais?',
+      )
+    }
   }
 
   if (attentionPoints.length === 0) {
@@ -928,12 +1067,7 @@ export function buildAyurvedaInterpretation(
   }
   if (amaPresence === 'Sinalizada') {
     sessionQuestions.push(
-      'Você percebeu sensação de peso, saburra lingual ou falta de disposição em horários específicos da manhã?',
-    )
-  }
-  if (primaryVikriti) {
-    sessionQuestions.push(
-      `Quando você sente maior estabilidade em relação aos ritmos de ${primaryVikriti}? O que costuma ajudar?`,
+      'Você percebe sensação de peso, saburra lingual ou falta de disposição em horários específicos da manhã?',
     )
   }
   sessionQuestions.push(
@@ -941,10 +1075,9 @@ export function buildAyurvedaInterpretation(
   )
 
   const generalConfidence: 'Alta' | 'Moderada' | 'Em observação' =
-    prakritiConfidence === 'Alta' &&
-    (vikritiConfidence === 'Alta' || vikritiConfidence === 'Moderada')
+    prakritiConfidence === 'Alta'
       ? 'Alta'
-      : prakritiConfidence !== 'Em observação' || vikritiConfidence !== 'Em observação'
+      : prakritiConfidence !== 'Em observação'
         ? 'Moderada'
         : 'Em observação'
 
@@ -981,9 +1114,9 @@ export function buildAyurvedaInterpretation(
       summary: vikritiSummary,
       primaryImbalance: primaryVikriti,
       confidence: vikritiConfidence,
-      evidencesVata: vikritiVata,
-      evidencesPitta: vikritiPitta,
-      evidencesKapha: vikritiKapha,
+      evidencesVata: currentVikritiVata,
+      evidencesPitta: currentVikritiPitta,
+      evidencesKapha: currentVikritiKapha,
     },
     agniReading: {
       type: agniType,
