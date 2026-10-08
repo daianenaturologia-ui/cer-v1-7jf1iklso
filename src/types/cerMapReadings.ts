@@ -42,6 +42,27 @@ export interface CerMapReadingDimension {
   /** Educational profile from the existing constitutional hypothesis; never inferred from chart percentages. */
   ayurvedaReading?: AyurvedaBodyReading
   ayurvedaConstitution?: ('Vata' | 'Pitta' | 'Kapha')[]
+  personalSections?: CerPersonalSection[]
+  insights?: CerResourceInsight[]
+}
+
+export interface CerPersonalSection {
+  title: string
+  text: string
+  sourceResponseIds: string[]
+}
+
+export interface CerResourceInsight {
+  id: string
+  kind: 'strength' | 'difficulty'
+  label: string
+  description: string
+  origins: {
+    dimensionId: string
+    label: string
+    basis: 'response' | 'reference' | 'professional'
+    sourceResponseIds: string[]
+  }[]
 }
 
 /** A reviewed, versioned document; never re-derived when the participant opens it. */

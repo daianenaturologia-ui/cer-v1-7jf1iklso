@@ -93,7 +93,7 @@ describe('Componente ProfessionalIntegrativeMapView (UI do Mapa Integrativo)', (
     // Bloco 6: Ayurveda Conciso
     expect(screen.getByText(/6. Bloco Ayurveda Conciso/i)).toBeInTheDocument()
     expect(screen.getByText(/Hipótese de Prakriti/i)).toBeInTheDocument()
-    expect(screen.getAllByText(/Vishama Agni/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Leitura de Agni:/i).length).toBeGreaterThan(0)
 
     // Bloco 7: Prioridades para a Escuta Profissional
     expect(

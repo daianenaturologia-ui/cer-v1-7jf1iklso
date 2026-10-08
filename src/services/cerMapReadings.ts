@@ -18,6 +18,7 @@ import { resolveExperienceId } from './experienceEngine'
 import { movementReportValues } from './movementFrequency'
 import { CER_PROTECTION_PATTERNS } from './cerProtectionPatterns'
 import { formatPromptResponse } from '@/components/experience/formatPromptResponse'
+import { buildPersonalDimensionReading } from './cerPersonalReadings'
 
 export const CER_READING_DIMENSIONS = [
   {
@@ -26,7 +27,7 @@ export const CER_READING_DIMENSIONS = [
     title: 'Corpo & Fisiologia',
     refs: ['prakriti', 'agni', 'ama', 'ayurveda-evidence'],
     explanation:
-      'O Ayurveda distingue características reconhecidas há mais tempo (Prakriti) e mudanças do momento (Vikriti). Os doshas — Vata, Pitta e Kapha — são princípios tradicionais ligados a movimento, transformação e sustentação. Agni é a leitura tradicional da digestão; Ama descreve processamento incompleto nessa tradição. São hipóteses para conversar com a profissional, não resultados de exames.',
+      'O Ayurveda distingue características reconhecidas há mais tempo (Prakriti) e mudanças do momento (Vikriti). Os doshas — Vata, Pitta e Kapha — são princípios tradicionais ligados a movimento, transformação e sustentação. Agni é a leitura tradicional da digestão; Ama descreve processamento incompleto nessa tradição. Essa leitura considera suas tendências junto com sua história e seu cotidiano.',
   },
   {
     id: 'mente',
@@ -158,6 +159,7 @@ export function buildCerMapReadings(
       ['participant_shared', 'shared_care'].includes(response.access_class) &&
       !['draft', 'superseded', 'discarded'].includes(response.status),
   )
+  const elementReadings: Record<string, import('@/types/cerMapReadings').CerMapElementReading> = {}
   const dimensions = CER_READING_DIMENSIONS.map((meta) => {
     const dimensionResponses = shared.filter(
       (response) => resolveExperienceId(response.experience_id) === meta.experienceId,
@@ -290,13 +292,20 @@ export function buildCerMapReadings(
     }
     if (meta.id === 'corpo') detailedRows = [...summaryRows, ...detailedRows]
     if (!summaryRows.length) summaryRows = detailedRows.slice(0, 3)
+    const personal =
+      meta.id === 'corpo'
+        ? undefined
+        : buildPersonalDimensionReading(meta.id, promptSets[meta.id], dimensionResponses)
+    if (personal) Object.assign(elementReadings, personal.elements)
     return {
       id: meta.id,
       title: meta.title,
       explanation: meta.explanation,
       summary: ayurvedaReading
         ? `${participantName}, ${ayurvedaConstitution?.length ? `sua hipótese constitucional é ${ayurvedaConstitution.join('–')}.` : 'suas respostas ainda não sustentam uma combinação constitucional definida.'} ${ayurvedaReading.currentDoshas.length ? `No momento atual, os relatos sugerem alterações de ${ayurvedaReading.currentDoshas.join('–')}.` : 'A hipótese do momento atual permanece em observação.'}`
-        : '',
+        : personal?.sections.length
+          ? `${participantName}, suas respostas permitem conhecer como esta dimensão participa da sua vida. A leitura abaixo reúne suas experiências, os recursos que você reconheceu e o que pede mais cuidado.`
+          : '',
       interpretation: ayurvedaReading
         ? `${ayurvedaReading.currentSummary}\n\n${ayurvedaReading.agniSummary}\n\n${ayurvedaReading.amaSummary}`
         : '',
@@ -305,6 +314,8 @@ export function buildCerMapReadings(
       referenceIds: [...meta.refs],
       ...(ayurvedaReading ? { ayurvedaReading } : {}),
       ...(ayurvedaConstitution ? { ayurvedaConstitution } : {}),
+      ...(personal?.sections.length ? { personalSections: personal.sections } : {}),
+      ...(personal?.insights.length ? { insights: personal.insights } : {}),
     }
   })
   return {
@@ -316,9 +327,19 @@ export function buildCerMapReadings(
     overview: options.literalOnly
       ? 'Este é seu mapa inicial: um retrato das respostas que você já registrou, disponível sem esperar pelo primeiro encontro. Uma leitura visual com aprofundamento sob toque para explorar dimensões, conceitos e recursos. Vocês poderão aprofundar e ajustar essa compreensão nas sessões.'
       : 'Este mapa reúne suas respostas e a leitura revisada pela profissional. Uma leitura visual única com aprofundamento sob toque para compreender conceitos, hipóteses e recursos, sem definir quem você é.',
-    integration: '',
+    integration: dimensions.some((d) => d.personalSections?.length)
+      ? `${participantName}, este mapa aproxima suas experiências em ${dimensions
+          .filter((d) => d.personalSections?.length || d.ayurvedaReading)
+          .map((d) => d.title)
+          .join(', ')}. Cada dimensão acrescenta uma parte do seu funcionamento.
+
+${dimensions.flatMap((d) => d.insights || []).some((i) => i.kind === 'strength' && i.origins.some((o) => o.basis === 'response')) ? 'Você já reconheceu recursos e condições que ajudam. Reuni-los torna mais fácil escolher o que mobilizar em um momento difícil.' : 'As potencialidades apresentadas oferecem recursos para reconhecer na sua experiência e desenvolver ao longo do percurso.'} Os pontos de atenção indicam onde oferecer apoio, ajustar exigências ou criar condições mais favoráveis.
+
+Usar uma força de forma estratégica inclui escolher sua intensidade, considerar os limites do momento e recorrer a pessoas e condições externas. As conexões abaixo ajudam a transformar essa leitura em caminhos possíveis para os objetivos que importam para você.`
+      : '',
     history: '',
     dimensions,
+    ...(Object.keys(elementReadings).length ? { elementReadings } : {}),
     references: structuredClone(CER_MAP_REFERENCES),
   }
 }
@@ -412,6 +433,33 @@ export function isCerMapReadingSnapshot(value: unknown): value is CerMapReadingS
         strings([d.id, d.title, d.explanation, d.summary, d.interpretation]) &&
         rows(d.summaryRows) &&
         rows(d.detailedRows) &&
+        (d.personalSections === undefined ||
+          (Array.isArray(d.personalSections) &&
+            d.personalSections.every(
+              (section) =>
+                section &&
+                strings([section.title, section.text]) &&
+                Array.isArray(section.sourceResponseIds) &&
+                section.sourceResponseIds.every((id) => s.sourceResponseIds.includes(id)),
+            ))) &&
+        (d.insights === undefined ||
+          (Array.isArray(d.insights) &&
+            d.insights.every(
+              (item) =>
+                item &&
+                strings([item.id, item.label, item.description]) &&
+                ['strength', 'difficulty'].includes(item.kind) &&
+                Array.isArray(item.origins) &&
+                item.origins.every(
+                  (o) =>
+                    o &&
+                    o.dimensionId === d.id &&
+                    typeof o.label === 'string' &&
+                    ['response', 'reference', 'professional'].includes(o.basis) &&
+                    Array.isArray(o.sourceResponseIds) &&
+                    o.sourceResponseIds.every((id) => s.sourceResponseIds.includes(id)),
+                ),
+            ))) &&
         (d.ayurvedaConstitution === undefined ||
           (Array.isArray(d.ayurvedaConstitution) &&
             d.ayurvedaConstitution.every((value) => ['Vata', 'Pitta', 'Kapha'].includes(value)))) &&

@@ -1,8 +1,16 @@
 import React, { useState, useRef } from 'react'
 import { AyurvedaPersonalReading } from './AyurvedaPersonalReading'
+import { IntegratedResourceGame } from './IntegratedResourceGame'
+import { useOptionalAuth } from '@/contexts/AuthContext'
+import { patternResources } from '@/services/cerPersonalReadings'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import type {
   CerMapReadingSnapshot,
-  CerMapReadingRow,
   CerMapReference,
   CerMapElementReading,
 } from '@/types/cerMapReadings'
@@ -27,7 +35,6 @@ import {
   Compass,
   ArrowRight,
   Shield,
-  HelpCircle,
   ExternalLink,
 } from 'lucide-react'
 import { CER_PROTECTION_PATTERNS } from '@/services/cerProtectionPatterns'
@@ -226,7 +233,7 @@ const REGULATION_REACTIONS = [
     subtitle: 'Pausa ou suspensão',
     description: 'Ficar em dúvida, paralisada ou sem saber o que falar.',
     concept:
-      'A resposta de Paralisação (compasso de espera) ocorre quando o ambiente traz imprevisibilidade ou intensidade tamanha que suspender a ação torna-se a proteção mais segura. Não indica fraqueza moral nem déficit de caráter.',
+      'Em momentos intensos, pode ficar difícil falar, decidir ou agir. A leitura da Paralisação ajuda a reconhecer esse intervalo e as condições de tempo, apoio e recuperação que favorecem retomar a resposta.',
   },
   {
     id: 'submissao',
@@ -240,6 +247,7 @@ const REGULATION_REACTIONS = [
 ] as const
 
 export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadingsViewProps) {
+  const auth = useOptionalAuth()
   const [activeDialog, setActiveDialog] = useState<DialogState | null>(null)
   const triggerRef = useRef<HTMLElement | SVGElement | null>(null)
 
@@ -264,9 +272,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
   const dimCorpo = snapshot.dimensions?.find((d) => d?.id === 'corpo')
   const dimMente = snapshot.dimensions?.find((d) => d?.id === 'mente')
   const dimRegulacao = snapshot.dimensions?.find((d) => d?.id === 'regulacao')
-  const dimRelacoes = snapshot.dimensions?.find((d) => d?.id === 'relacoes')
-  const dimSexualidade = snapshot.dimensions?.find((d) => d?.id === 'sexualidade')
-  const dimSentido = snapshot.dimensions?.find((d) => d?.id === 'sentido')
 
   // Verificação estrita de percentuais de dosha no snapshot publicado
   const doshaPercents = (() => {
@@ -328,28 +333,24 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
 
   // Extração das respostas de Regulação
   const getRegulationStatus = (item: (typeof REGULATION_REACTIONS)[number]) => {
-    const row = dimRegulacao?.detailedRows.find((r) => {
-      const lbl = (r.label || '').toLowerCase()
-      const key = r.sourcePromptKey || ''
-      const text = (r.text || '').toLowerCase()
-      return (
-        lbl.includes('resposta') ||
-        lbl.includes('tende') ||
-        lbl.includes(item.id) ||
-        lbl.includes(item.title.toLowerCase()) ||
-        key === 'resposta_tendencia' ||
-        text.includes(item.title.toLowerCase())
-      )
-    })
+    const row = dimRegulacao?.detailedRows.find(
+      (r) =>
+        r.sourcePromptKey === 'resposta_tendencia' ||
+        /resposta.*tendência|resposta.*tendencia/i.test(r.label),
+    )
     if (!row) return { reported: false, detail: undefined }
-    const text = (row.text || '').toLowerCase()
-    const isPresent =
-      text.includes(item.id) ||
-      text.includes(item.title.toLowerCase()) ||
-      text.includes(item.subtitle.toLowerCase()) ||
-      text.includes(item.description.slice(0, 15).toLowerCase()) ||
-      (row.label || '').toLowerCase().includes(item.title.toLowerCase())
-    return { reported: isPresent, detail: row.text }
+    const phrases: Record<string, string[]> = {
+      luta: ['Tentar resolver e controlar imediatamente', 'Luta:'],
+      fuga: ['Me afastar, calar ou buscar distância física', 'Fuga:'],
+      paralisacao: ['Ficar em dúvida, paralisada', 'Paralisação:'],
+      submissao: ['Ceder, concordar ou tentar acalmar', 'Submissão:'],
+    }
+    return {
+      reported: phrases[item.id].some((phrase) =>
+        row.text.toLowerCase().includes(phrase.toLowerCase()),
+      ),
+      detail: row.text,
+    }
   }
 
   const isDemoSnapshot =
@@ -357,14 +358,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     snapshot.overview?.toLowerCase().includes('fictício') ||
     snapshot.overview?.toLowerCase().includes('ficticio')
 
-  const renderElementReadingSections = (reading: CerMapElementReading, showDemoNote = true) => (
+  const renderElementReadingSections = (reading: CerMapElementReading, _showDemoNote = true) => (
     <div className="space-y-3.5 pt-2 border-t border-border/50 text-xs">
-      {isDemoSnapshot && showDemoNote && (
-        <div className="rounded-md border border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 text-[11px] text-amber-900 dark:text-amber-200">
-          <span className="font-semibold">Exemplo fictício para explorar o Mapa CER</span>
-        </div>
-      )}
-
       {reading.summary && (
         <div className="rounded-lg bg-muted/40 p-3 space-y-1">
           <h4 className="font-semibold text-xs uppercase tracking-wider text-primary">
@@ -394,7 +389,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
       {reading.interpretation && (
         <div className="space-y-1.5">
           <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-            Uma leitura possível
+            Como suas respostas se conectam
           </h4>
           <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
             {reading.interpretation}
@@ -411,7 +406,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             {reading.resources?.length > 0 && (
               <div className="border rounded-lg p-2.5 bg-card space-y-1">
                 <span className="font-semibold text-[11px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
-                  Recursos essenciais
+                  Forças e potencialidades
                 </span>
                 <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground text-[11px]">
                   {reading.resources.map((res, idx) => (
@@ -445,21 +440,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             {reading.connections.map((conn, idx) => (
               <li key={idx} className="leading-relaxed">
                 {conn}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {showDemoNote && reading.questions?.length > 0 && (
-        <div className="space-y-1.5 pt-1 rounded-lg bg-primary/5 border border-primary/20 p-3">
-          <h4 className="font-semibold text-xs uppercase tracking-wider text-primary">
-            Para explorar na conversa
-          </h4>
-          <ul className="list-disc pl-4 space-y-1 text-foreground/90 font-serif italic text-xs">
-            {reading.questions.map((q, idx) => (
-              <li key={idx} className="leading-relaxed">
-                {q}
               </li>
             ))}
           </ul>
@@ -760,7 +740,28 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     const canonical = CER_PROTECTION_PATTERNS[patternKey]
     const content = getCerProtectionPatternContent(patternKey)
     const row = getPatternRow(patternKey)
-    const elementReading = snapshot.elementReadings?.[patternKey]
+    const profile = patternResources[patternKey]
+    const active =
+      row &&
+      ['algumas_situacoes', 'com_frequencia', 'sob_pressao'].includes(
+        resolveCategoricalFrequency(row.text),
+      )
+    const elementReading =
+      snapshot.reviewedAt && snapshot.reviewedBy
+        ? snapshot.elementReadings?.[patternKey]
+        : row && profile
+          ? {
+              summary: `Você marcou: ${row.text}.`,
+              observations: [],
+              interpretation: active
+                ? profile.text
+                : 'Sua resposta registra este movimento sem destacá-lo como uma dificuldade frequente. Você pode conhecer o conceito sem acrescentá-lo à sua lista pessoal.',
+              resources: active ? [profile.strength.join(': ')] : [],
+              costs: active ? [profile.difficulty.join(': ')] : [],
+              connections: [],
+              questions: [],
+            }
+          : snapshot.elementReadings?.[patternKey]
 
     openDialog(
       {
@@ -815,7 +816,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                   <div className="border rounded p-2.5 bg-card">
                     <span className="font-semibold text-foreground block mb-1">
-                      Recursos essenciais
+                      Forças e potencialidades
                     </span>
                     <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
                       {(content?.strengths || ['Sensibilidade', 'Responsabilidade', 'Capacidade'])
@@ -955,7 +956,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     const isReviewed = Boolean(snapshot.reviewedAt && snapshot.reviewedBy)
     const interpretationTitle = isReviewed
       ? 'Interpretação revisada em conversa'
-      : 'Uma leitura possível'
+      : 'Como suas respostas se conectam'
     const elementReading = snapshot.elementReadings?.[dimId]
     const hasCustomDemoReading = Boolean(
       isDemoSnapshot &&
@@ -976,18 +977,61 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             : undefined,
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-            {isDemoSnapshot && !isReviewed && dimId !== 'corpo' && (
-              <div className="rounded-md border border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 text-[11px] text-amber-900 dark:text-amber-200">
-                <span className="font-semibold">Exemplo fictício para explorar o Mapa CER</span>
-              </div>
-            )}
-
             {dimId === 'corpo' ? (
               <AyurvedaPersonalReading
                 dimension={dim}
                 participantName={snapshot.participantName}
                 interpretationTitle={interpretationTitle}
               />
+            ) : dim.personalSections?.length ? (
+              <div className="space-y-4">
+                <p className="leading-relaxed">{dim.explanation}</p>
+                <p className="leading-relaxed">{dim.summary}</p>
+                <Accordion type="multiple" className="rounded-xl border px-4">
+                  {dim.personalSections.map((section, i) => (
+                    <AccordionItem key={`${i}-${section.title}`} value={`section-${i}`}>
+                      <AccordionTrigger className="text-left font-serif">
+                        {section.title}
+                      </AccordionTrigger>
+                      <AccordionContent className="whitespace-pre-wrap text-sm leading-relaxed">
+                        {section.text}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                  {!!dim.insights?.length && (
+                    <AccordionItem value="resources">
+                      <AccordionTrigger className="text-left font-serif">
+                        Suas forças e o que pede cuidado
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          {(['strength', 'difficulty'] as const).map((kind) => (
+                            <div key={kind}>
+                              <h4 className="font-semibold mb-2">
+                                {kind === 'strength'
+                                  ? 'Forças e potencialidades'
+                                  : 'Pontos de atenção'}
+                              </h4>
+                              <ul className="space-y-2">
+                                {dim.insights
+                                  ?.filter((i) => i.kind === kind)
+                                  .map((i) => (
+                                    <li key={i.id}>
+                                      <span className="font-medium">{i.label}</span>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        {i.description}
+                                      </p>
+                                    </li>
+                                  ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                </Accordion>
+              </div>
             ) : (
               <>
                 <div className="rounded-lg bg-muted/30 p-3 space-y-1">
@@ -1019,7 +1063,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
               </>
             )}
 
-            {!hasCustomDemoReading && dimId !== 'corpo' && (
+            {!hasCustomDemoReading && !dim.personalSections?.length && dimId !== 'corpo' && (
               <div className="space-y-2 pt-1 border-t">
                 <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
                   Respostas compartilhadas nesta versão
@@ -1052,6 +1096,10 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
   }
 
   const openEmotionalWorldDialog = (e?: React.MouseEvent<HTMLElement>) => {
+    if (dimMente?.personalSections?.length) {
+      openDimensionDialog('mente', e)
+      return
+    }
     const elementReading =
       snapshot.elementReadings?.['emocoes'] ||
       snapshot.elementReadings?.['mundo_emocional'] ||
@@ -1078,6 +1126,46 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
   }
 
   const openIntegratedNodeDialog = (nodeKey: string, e?: React.MouseEvent<HTMLElement>) => {
+    if (nodeKey === 'centro') {
+      openDialog(
+        {
+          title: 'Meu funcionamento em conjunto',
+          subtitle: 'Seus recursos a serviço do que importa',
+          tag: 'Método CER',
+          dialogClassName:
+            'w-[95vw] max-w-5xl sm:max-w-5xl p-5 sm:p-7 max-h-[85vh] overflow-y-auto',
+          content: (
+            <div className="space-y-5">
+              {!!snapshot.integration && (
+                <details className="rounded-xl border p-3">
+                  <summary className="font-serif cursor-pointer">Sua síntese integrada</summary>
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed mt-3">
+                    {snapshot.integration}
+                  </p>
+                </details>
+              )}
+              {!!snapshot.lifeDirections?.length && (
+                <div className="space-y-2">
+                  <h3 className="font-serif">O que você deseja construir</h3>
+                  {snapshot.lifeDirections.map((d) => (
+                    <p key={d.id} className="text-sm">
+                      {d.title}
+                    </p>
+                  ))}
+                </div>
+              )}
+              <IntegratedResourceGame
+                key={snapshot.enrollmentId}
+                snapshot={snapshot}
+                readOnly={!auth?.isInteragente || !!auth?.isProfissional}
+              />
+            </div>
+          ),
+        },
+        e?.currentTarget,
+      )
+      return
+    }
     const elementReading = snapshot.elementReadings?.[nodeKey]
 
     // Se temos leitura própria no snapshot para o nó, exibimos seu modal específico com título e conteúdo dedicados

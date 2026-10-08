@@ -42,7 +42,9 @@ export function formatPromptResponse(
     source
   const labelFor = (item: unknown): string => {
     if (typeof item !== 'string' && typeof item !== 'number' && typeof item !== 'boolean') return ''
-    const option = config?.options?.find((option: any) => option.id === item)
+    const option = [...(config?.options || []), ...(config?.option_set?.items || [])].find(
+      (option: any) => option.id === item,
+    )
     const legacyIndex = Array.isArray(value) ? value.indexOf(item) : -1
     const storedLabel =
       legacyIndex >= 0 &&

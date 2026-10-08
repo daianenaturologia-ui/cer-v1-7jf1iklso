@@ -296,3 +296,6 @@ export const useAuth = (): AuthContextType => {
   }
   return context
 }
+
+/** Read-only consumers may render outside authentication, but never gain write access. */
+export const useOptionalAuth = () => useContext(AuthContext)

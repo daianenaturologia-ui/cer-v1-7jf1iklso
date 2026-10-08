@@ -186,7 +186,8 @@ describe('Telas Profissionais da Dimensão Consciência', () => {
     expect(buttons).toHaveLength(6)
 
     // O Mapa Integrativo Profissional está presente na seção (área de leitura)
-    expect(screen.getByText('Mapa Integrativo Profissional da Consciência')).toBeInTheDocument()
+    expect(screen.getByText('Mapa CER')).toBeInTheDocument()
+    expect(await screen.findByTestId('cer-map-readings')).toBeInTheDocument()
 
     // Clicando em cada dimensão para abrir
     for (const btn of buttons) {

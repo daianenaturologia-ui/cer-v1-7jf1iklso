@@ -206,6 +206,44 @@ onRecordUpdateRequest((e) => {
         )
     }
     for (const dimension of snapshot.dimensions) {
+      if (
+        dimension.personalSections !== undefined &&
+        (!Array.isArray(dimension.personalSections) ||
+          !dimension.personalSections.every(
+            (section) =>
+              section &&
+              typeof section.title === 'string' &&
+              typeof section.text === 'string' &&
+              Array.isArray(section.sourceResponseIds) &&
+              section.sourceResponseIds.every((id) => snapshot.sourceResponseIds.includes(id)),
+          ))
+      )
+        throw new BadRequestError('Fonte inválida para a leitura pessoal.')
+      if (
+        dimension.insights !== undefined &&
+        (!Array.isArray(dimension.insights) ||
+          !dimension.insights.every(
+            (item) =>
+              item &&
+              typeof item.id === 'string' &&
+              typeof item.label === 'string' &&
+              typeof item.description === 'string' &&
+              ['strength', 'difficulty'].includes(item.kind) &&
+              Array.isArray(item.origins) &&
+              item.origins.every(
+                (o) =>
+                  o &&
+                  o.dimensionId === dimension.id &&
+                  typeof o.label === 'string' &&
+                  ['response', 'reference', 'professional'].includes(o.basis) &&
+                  Array.isArray(o.sourceResponseIds) &&
+                  o.sourceResponseIds.every((id) => snapshot.sourceResponseIds.includes(id)),
+              ),
+          ))
+      )
+        throw new BadRequestError('Fonte inválida para as forças e pontos de atenção.')
+    }
+    for (const dimension of snapshot.dimensions) {
       for (const row of [...dimension.summaryRows, ...dimension.detailedRows]) {
         if (!row.sourceResponseId) continue
         const response = e.app.findRecordById('experience_responses', row.sourceResponseId)
