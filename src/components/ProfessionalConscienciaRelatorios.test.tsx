@@ -82,8 +82,8 @@ describe('Telas Profissionais da Dimensão Consciência', () => {
     )
 
     expect(
-      screen.getByText(/Hipótese Profissional de Trabalho \(Não-Diagnóstica\)/i),
-    ).toBeInTheDocument()
+      screen.queryByText(/Hipótese Profissional de Trabalho \(Não-Diagnóstica\)/i),
+    ).not.toBeInTheDocument()
     expect(screen.getByText(/Hipótese de Prakriti/i)).toBeInTheDocument()
     expect(screen.getByText(/Hipótese de Vikriti/i)).toBeInTheDocument()
     expect(screen.getByText(/Leitura de Agni/i)).toBeInTheDocument()

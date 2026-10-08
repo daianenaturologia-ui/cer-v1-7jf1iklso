@@ -1145,7 +1145,7 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
                   variant="outline"
                   className="text-[10px] font-mono border-primary/30 text-primary"
                 >
-                  Mínimo 2 Dimensões por Hipótese · Não Diagnóstico
+                  Mínimo 2 Dimensões por Hipótese
                 </Badge>
               </div>
               <CardDescription className="text-xs">
@@ -1254,9 +1254,8 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
               <div className="p-2.5 rounded-lg border border-border/40 bg-muted/20 text-[10px] text-muted-foreground flex items-start gap-1.5">
                 <Info className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                 <span>
-                  Aviso epistemológico: Nenhuma hipótese integrativa é diagnóstica. Todas constituem
-                  formulações de trabalho para direcionar a escuta colaborativa e devem ser checadas
-                  com a interagente.
+                  As hipóteses reúnem evidências de diferentes dimensões para orientar a escuta
+                  colaborativa e aprofundar a compreensão com a interagente.
                 </span>
               </div>
             </CardContent>
