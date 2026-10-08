@@ -15,11 +15,13 @@ import type { ExperienceResponseRecord } from '@/types/cer'
 import {
   migrateLegacyChapter1Responses,
   getChapter1BasePromptId,
+  getChapter1ResponseRevisionNumber,
   AYV_C1_PROMPTS,
 } from '@/services/ayurvedaChapter1'
 import {
   migrateLegacyChapter2Responses,
   getChapter2BasePromptId,
+  getResponseRevisionNumber,
   AYV_C2_PROMPTS,
 } from '@/services/ayurvedaChapter2'
 
@@ -144,43 +146,123 @@ export function buildAyurvedaInterpretation(
   const migratedC1 = migrateLegacyChapter1Responses(allResponses).migratedResponses
   const migratedC2 = migrateLegacyChapter2Responses(allResponses).migratedResponses
 
-  // Verifica se há pelo menos um capítulo concluído canonicamente
-  const c1Completion = migratedC1.find((r) => {
-    const bId = getChapter1BasePromptId((r as any).prompt_id || '')
-    const bKey = getChapter1BasePromptId((r as any).prompt_key || '')
-    return (
-      bId === AYV_C1_PROMPTS.CHAPTER_COMPLETION.id || bKey === AYV_C1_PROMPTS.CHAPTER_COMPLETION.key
-    )
-  })
-  const c1Completed = Boolean(
-    c1Completion &&
-    ((c1Completion.structured_value as any)?.completed === true ||
-      (c1Completion.structured_value as any)?.value?.completed === true ||
-      (c1Completion.structured_value as any)?.status === 'completed'),
+  // Helper local para obter timestamp numérico determinístico
+  const getRecordTimestamp = (r: ExperienceResponseRecord): number => {
+    const raw =
+      (r as any).updated || (r as any).created || (r as any).structured_value?.metadata?.answered_at
+    if (raw) {
+      const parsed = Date.parse(raw)
+      if (!Number.isNaN(parsed)) return parsed
+    }
+    return 0
+  }
+
+  // Helper local para obter ID determinístico
+  const getRecordId = (r: ExperienceResponseRecord): string => {
+    return String((r as any).id || (r as any).prompt_id || '')
+  }
+
+  // Seleção INDEPENDENTE por capítulo da maior revisão CONCLUÍDA válida (1B-a)
+  const getLatestCompletedRevision = (
+    responses: ExperienceResponseRecord[],
+    completionId: string,
+    completionKey: string,
+    getRevFn: (r: ExperienceResponseRecord) => number,
+    getBaseFn: (s: string) => string,
+  ): number | null => {
+    const completedRevs = new Set<number>()
+    for (const r of responses) {
+      const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id || ''
+      const promptKey =
+        (r as any).prompt_key ||
+        (r.structured_value as any)?.metadata?.prompt_key ||
+        (r.structured_value as any)?.prompt_key ||
+        ''
+      const baseId = getBaseFn(promptId)
+      const baseKey = getBaseFn(promptKey)
+
+      if (baseId === completionId || baseKey === completionKey) {
+        const sVal = (r as any).structured_value
+        const isCompleted =
+          sVal?.completed === true ||
+          sVal?.value?.completed === true ||
+          sVal?.status === 'completed'
+        if (isCompleted) {
+          completedRevs.add(getRevFn(r))
+        }
+      }
+    }
+    return completedRevs.size > 0 ? Math.max(...Array.from(completedRevs)) : null
+  }
+
+  const selectedC1Rev = getLatestCompletedRevision(
+    migratedC1,
+    AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+    AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
+    getChapter1ResponseRevisionNumber,
+    getChapter1BasePromptId,
   )
 
-  const c2Completion = migratedC2.find((r) => {
-    const bId = getChapter2BasePromptId((r as any).prompt_id || '')
-    const bKey = getChapter2BasePromptId((r as any).prompt_key || '')
-    return (
-      bId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id || bKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
-    )
-  })
-  const c2Completed = Boolean(
-    c2Completion &&
-    ((c2Completion.structured_value as any)?.completed === true ||
-      (c2Completion.structured_value as any)?.value?.completed === true ||
-      (c2Completion.structured_value as any)?.status === 'completed'),
+  const selectedC2Rev = getLatestCompletedRevision(
+    migratedC2,
+    AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+    AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
+    getResponseRevisionNumber,
+    getChapter2BasePromptId,
   )
 
-  // Guardrail: Nenhuma interpretação quando não há revisão concluída
+  const c1Completed = selectedC1Rev !== null
+  const c2Completed = selectedC2Rev !== null
+
+  // Guardrail: Nenhuma interpretação quando nenhum capítulo possui revisão concluída válida
   if (!c1Completed && !c2Completed) {
     return emptyResult
   }
 
+  // Filtragem estrita: apenas respostas pertencentes à revisão selecionada de cada capítulo
+  // Se o capítulo não tem revisão concluída, respostas daquele capítulo NÃO entram.
+  const filteredC1Responses = c1Completed
+    ? migratedC1.filter((r) => {
+        const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id || ''
+        const promptKey =
+          (r as any).prompt_key || (r.structured_value as any)?.metadata?.prompt_key || ''
+        const isC1 =
+          (typeof promptId === 'string' && promptId.startsWith('ayv_c1_')) ||
+          (typeof promptKey === 'string' && promptKey.startsWith('ayv_c1_'))
+        return isC1 && getChapter1ResponseRevisionNumber(r) === selectedC1Rev
+      })
+    : []
+
+  const filteredC2Responses = c2Completed
+    ? migratedC2.filter((r) => {
+        const promptId = (r as any).prompt_id || (r as any).canonical_prompt_id || ''
+        const promptKey =
+          (r as any).prompt_key || (r.structured_value as any)?.metadata?.prompt_key || ''
+        const isC2 =
+          (typeof promptId === 'string' && promptId.startsWith('ayv_c2_')) ||
+          (typeof promptKey === 'string' && promptKey.startsWith('ayv_c2_'))
+        return isC2 && getResponseRevisionNumber(r) === selectedC2Rev
+      })
+    : []
+
+  // Ordenação determinística: mais antigos primeiro (timestamp ascendente, desempate por id)
+  // de forma que iterações determinísticas sobrescrevam com registros mais recentes ou preservem ordem idêntica,
+  // tornando o resultado estritamente invariante à ordem de entrada no array allResponses.
+  const compareDeterministically = (
+    a: ExperienceResponseRecord,
+    b: ExperienceResponseRecord,
+  ): number => {
+    const timeDiff = getRecordTimestamp(a) - getRecordTimestamp(b)
+    if (timeDiff !== 0) return timeDiff
+    return getRecordId(a).localeCompare(getRecordId(b))
+  }
+
+  const sortedC1 = [...filteredC1Responses].sort(compareDeterministically)
+  const sortedC2 = [...filteredC2Responses].sort(compareDeterministically)
+
   // Mapeamento das respostas literais ativas
   const answersMap = new Map<string, { value: any; freeText?: string }>()
-  for (const r of [...migratedC1, ...migratedC2]) {
+  for (const r of [...sortedC1, ...sortedC2]) {
     const { value, key } = extractValueAndKey(r)
     const baseKey = getChapter1BasePromptId(getChapter2BasePromptId(key))
     if (value !== undefined && value !== null) {
@@ -769,9 +851,26 @@ export function buildAyurvedaInterpretation(
         ? 'Moderada'
         : 'Em observação'
 
+  // Determinação determinística e canônica de activeRevisionNumber (1B-a):
+  // Se ambos selecionados têm o MESMO número, usar esse número.
+  // Se diferem ou apenas um concluiu, se C1 e C2 diferem omitir o campo (opcional);
+  // se apenas um completou, usar o número daquele capítulo concluído.
+  let activeRevisionNumber: number | undefined
+  if (selectedC1Rev !== null && selectedC2Rev !== null) {
+    if (selectedC1Rev === selectedC2Rev) {
+      activeRevisionNumber = selectedC1Rev
+    } else {
+      activeRevisionNumber = undefined
+    }
+  } else if (selectedC1Rev !== null) {
+    activeRevisionNumber = selectedC1Rev
+  } else if (selectedC2Rev !== null) {
+    activeRevisionNumber = selectedC2Rev
+  }
+
   return {
     hasCompletedRevision: true,
-    activeRevisionNumber: c1Completed ? 1 : 2,
+    ...(activeRevisionNumber !== undefined ? { activeRevisionNumber } : {}),
     prakritiHypothesis: {
       summary: prakritiSummary,
       primaryTendency: primaryPrakriti,
