@@ -727,10 +727,10 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             ) : (
               <>
                 <p>
-                  Ama descreve sinais de processamento incompleto na tradição ayurvédica. A
-                  sensação de peso após comer e a eliminação pegajosa ou incompleta ajudam a observar
-                  como esse processo está terminando. Junto com Agni, essa leitura explica o ritmo
-                  da digestão e o conforto que permanece depois da refeição.
+                  Ama descreve sinais de processamento incompleto na tradição ayurvédica. A sensação
+                  de peso após comer e a eliminação pegajosa ou incompleta ajudam a observar como
+                  esse processo está terminando. Junto com Agni, essa leitura explica o ritmo da
+                  digestão e o conforto que permanece depois da refeição.
                 </p>
                 {amaRow && (
                   <div className="border-t pt-3 space-y-1">
@@ -1218,8 +1218,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Tendências pessoais, experiências e contexto atual podem participar desse retrato.
-                  Prakriti e Vikriti acrescentam a perspectiva ayurvédica à compreensão do corpo;
-                  a Linha da Vida acrescenta os acontecimentos e aprendizados do seu percurso.
+                  Prakriti e Vikriti acrescentam a perspectiva ayurvédica à compreensão do corpo; a
+                  Linha da Vida acrescenta os acontecimentos e aprendizados do seu percurso.
                 </p>
                 {!!snapshot.lifeConnections?.length && (
                   <div className="border-t pt-3 space-y-2">
@@ -2022,8 +2022,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
       <footer className="pt-4 border-t border-border/40 text-xs text-muted-foreground space-y-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <span>
-            Você pode reconhecer, discordar ou trazer outra experiência para a conversa.
-            Sua experiência ajuda a aprofundar e atualizar este mapa.
+            Você pode reconhecer, discordar ou trazer outra experiência para a conversa. Sua
+            experiência ajuda a aprofundar e atualizar este mapa.
           </span>
           <span className="font-mono text-[10px] shrink-0">CER • Cuidado em Relação</span>
         </div>

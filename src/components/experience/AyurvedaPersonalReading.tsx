@@ -100,7 +100,8 @@ export function AyurvedaPersonalReading({
           <p>
             Na perspectiva ayurvédica, todas as pessoas apresentam os três doshas, em combinações
             diferentes. Eles ajudam a interpretar tendências do corpo e aspectos da experiência
-            mental e emocional. Essa combinação é uma maneira de compreender como suas qualidades se encontram.
+            mental e emocional. Essa combinação é uma maneira de compreender como suas qualidades se
+            encontram.
           </p>
           <h4 className="font-semibold">Um jeito de compreender suas combinações</h4>
           <p>
@@ -150,8 +151,8 @@ export function AyurvedaPersonalReading({
           </p>
           <p>
             O questionário é o ponto de partida dessa leitura. As respostas ajudam a reconhecer
-            tendências e necessidades; os encontros permitem aprofundar o que elas significam na
-            sua vida e acompanhar as mudanças ao longo do cuidado.
+            tendências e necessidades; os encontros permitem aprofundar o que elas significam na sua
+            vida e acompanhar as mudanças ao longo do cuidado.
           </p>
           <p>
             Se quiser aprofundar essa descoberta, converse com Daiane. Juntas, vocês poderão
@@ -228,9 +229,9 @@ export function AyurvedaPersonalReading({
                 isso pode favorecer interesse, entusiasmo e presença; sob desgaste, inquietação e
                 irritabilidade podem coexistir. Essa leitura complementa Mente & Emoções: aqui,
                 conhecemos as tendências pela lente ayurvédica; naquela dimensão, suas respostas
-                mostram como você vive e expressa as emoções, conversa consigo e reage às exigências.
-                Juntas, as duas leituras ajudam a reconhecer os recursos e os momentos em que você
-                precisa de apoio.
+                mostram como você vive e expressa as emoções, conversa consigo e reage às
+                exigências. Juntas, as duas leituras ajudam a reconhecer os recursos e os momentos
+                em que você precisa de apoio.
               </p>
             )}
             <Evidence items={reading?.constitutionEvidence || []} />
@@ -238,9 +239,9 @@ export function AyurvedaPersonalReading({
         )}
         <Section id="recursos" title="Suas forças e potencialidades">
           <p>
-            Suas potencialidades são ferramentas que você pode mobilizar: capacidades, qualidades
-            e aprendizados que ajudam a enfrentar dificuldades internas e externas e a caminhar
-            em direção aos seus objetivos. Reconhecê-las torna mais fácil escolher como agir quando
+            Suas potencialidades são ferramentas que você pode mobilizar: capacidades, qualidades e
+            aprendizados que ajudam a enfrentar dificuldades internas e externas e a caminhar em
+            direção aos seus objetivos. Reconhecê-las torna mais fácil escolher como agir quando
             algo parece difícil, em vez de olhar apenas para o que está faltando.
           </p>
           {doshas.length ? (
@@ -266,8 +267,8 @@ export function AyurvedaPersonalReading({
             do CER.
           </p>
           <p>
-            Quando construirmos sua rotina, essas forças poderão ser usadas de forma estratégica.
-            A criatividade pode ajudar a encontrar um caminho menor diante de uma tarefa que parece
+            Quando construirmos sua rotina, essas forças poderão ser usadas de forma estratégica. A
+            criatividade pode ajudar a encontrar um caminho menor diante de uma tarefa que parece
             grande; o discernimento, a escolher uma prioridade quando há ideias demais; a
             sensibilidade, a reconhecer o momento de uma pausa; a iniciativa, a transformar uma
             intenção em um primeiro passo. O objetivo é colocar suas capacidades a serviço de uma
@@ -286,10 +287,10 @@ export function AyurvedaPersonalReading({
               'A hipótese de Vikriti permanece em observação neste registro. Sem respostas atuais suficientes, não é possível atribuir uma combinação de desequilíbrio à pessoa.'}
           </p>
           <p>
-            Vikriti mostra como seu funcionamento se apresenta neste período, em comparação com
-            a base que costuma acompanhar você. Por isso, os mesmos doshas podem participar de
-            duas leituras diferentes: na Prakriti, descrevem suas tendências de base; na Vikriti,
-            ajudam a reconhecer as mudanças que estão dificultando seu conforto e seu ritmo.
+            Vikriti mostra como seu funcionamento se apresenta neste período, em comparação com a
+            base que costuma acompanhar você. Por isso, os mesmos doshas podem participar de duas
+            leituras diferentes: na Prakriti, descrevem suas tendências de base; na Vikriti, ajudam
+            a reconhecer as mudanças que estão dificultando seu conforto e seu ritmo.
           </p>
           <Evidence items={reading?.currentFacts || []} />
           {vk && (
@@ -304,11 +305,11 @@ export function AyurvedaPersonalReading({
               <p>
                 Esses dois movimentos podem parecer opostos e, ainda assim, acontecer juntos:
                 dificuldade para encontrar um ritmo estável e sensação de que o corpo demora a
-                recuperar leveza. Quando a fome oscila ou demora a surgir, o conforto digestivo fica mais difícil
-                de antecipar. Se isso se soma a sono leve ou eliminação incompleta, a recuperação
-                também pode perder continuidade. Os sinais presentes no seu caso estão nos registros
-                acima. Esse conjunto ajuda a compreender por que disponibilidade de energia e recuperação
-                podem se tornar menos previsíveis ao longo do dia.
+                recuperar leveza. Quando a fome oscila ou demora a surgir, o conforto digestivo fica
+                mais difícil de antecipar. Se isso se soma a sono leve ou eliminação incompleta, a
+                recuperação também pode perder continuidade. Os sinais presentes no seu caso estão
+                nos registros acima. Esse conjunto ajuda a compreender por que disponibilidade de
+                energia e recuperação podem se tornar menos previsíveis ao longo do dia.
               </p>
               {vp && (
                 <p>
@@ -316,14 +317,15 @@ export function AyurvedaPersonalReading({
                   transformação está convivendo com alterações de ritmo e maior peso ou lentidão. A
                   fome variável, o desconforto digestivo e a recuperação do sono podem interferir no
                   acesso à energia e à continuidade. A clareza e a vontade de realizar não
-                  necessariamente acompanham a disposição do corpo no mesmo ritmo. É possível ter intenção e clareza e, ainda assim, precisar de
-                  mais recuperação para conseguir sustentar o que deseja fazer.
+                  necessariamente acompanham a disposição do corpo no mesmo ritmo. É possível ter
+                  intenção e clareza e, ainda assim, precisar de mais recuperação para conseguir
+                  sustentar o que deseja fazer.
                 </p>
               )}
               <p>
-                A leitura de Vikriti ajuda a dar prioridade ao que está pedindo cuidado agora.
-                Sua história, suas condições de saúde, os medicamentos e o contexto da rotina
-                ajudam a compreender como essas mudanças se instalaram e o que favorece a recuperação.
+                A leitura de Vikriti ajuda a dar prioridade ao que está pedindo cuidado agora. Sua
+                história, suas condições de saúde, os medicamentos e o contexto da rotina ajudam a
+                compreender como essas mudanças se instalaram e o que favorece a recuperação.
               </p>
             </>
           )}
@@ -338,13 +340,13 @@ export function AyurvedaPersonalReading({
           <p>
             Pense no processo que começa quando a fome chega e continua depois da refeição. Agni
             descreve a qualidade desse percurso: apetite, ritmo e conforto para digerir e assimilar.
-            Sama se relaciona à regularidade; Vishama, à oscilação; Tikshna, à intensidade e ao calor;
-            Manda, à lentidão. Mais de uma característica pode coexistir, como acontece quando a
-            fome varia e as refeições também são seguidas de peso.
+            Sama se relaciona à regularidade; Vishama, à oscilação; Tikshna, à intensidade e ao
+            calor; Manda, à lentidão. Mais de uma característica pode coexistir, como acontece
+            quando a fome varia e as refeições também são seguidas de peso.
           </p>
           <p>
-            Ama acrescenta outra informação: como o processamento parece estar se completando.
-            Na leitura ayurvédica, a combinação de peso após comer e eliminação pegajosa ou incompleta
+            Ama acrescenta outra informação: como o processamento parece estar se completando. Na
+            leitura ayurvédica, a combinação de peso após comer e eliminação pegajosa ou incompleta
             chama atenção para um processo que está encontrando dificuldade para terminar com
             conforto. Observar Agni e Ama em conjunto ajuda a compreender tanto o ritmo da digestão
             quanto o que permanece como desconforto depois dela.
@@ -366,9 +368,9 @@ export function AyurvedaPersonalReading({
             </p>
           )}
           <p>
-            Lidas juntas, essas informações ajudam a compreender a sequência entre o apetite,
-            o conforto após comer e a eliminação. Quando esse processo se torna irregular ou pesado,
-            o cuidado pode começar por devolver espaço, ritmo e recuperação à alimentação cotidiana.
+            Lidas juntas, essas informações ajudam a compreender a sequência entre o apetite, o
+            conforto após comer e a eliminação. Quando esse processo se torna irregular ou pesado, o
+            cuidado pode começar por devolver espaço, ritmo e recuperação à alimentação cotidiana.
           </p>
         </Section>
       </Accordion>

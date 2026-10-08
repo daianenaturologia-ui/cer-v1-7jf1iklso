@@ -146,7 +146,6 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
                 ))}
               </div>
             </div>
-
           </CardContent>
         </Card>
       </div>
@@ -1355,8 +1354,6 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
                       </p>
                     </div>
                   </div>
-
-
                 </div>
               ) : (
                 <p className="text-muted-foreground italic py-2">
@@ -1512,7 +1509,6 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
                   </div>
                 </div>
               )}
-
             </CardContent>
           </Card>
         </div>
