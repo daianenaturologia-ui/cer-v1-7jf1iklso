@@ -622,9 +622,25 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     expect(corpoDialog).toBeInTheDocument()
     const corpoText = corpoDialog.textContent || ''
 
-    // Presença da leitura e síntese personalizadas
+    // Presença da leitura e síntese personalizadas e explicação global leiga de Corpo
     expect(corpoText).toContain('Exemplo fictício para explorar o Mapa CER')
     expect(corpoText).toContain('Como compreender esta dimensão')
+    expect(corpoText).toContain('O Ayurveda é uma tradição de cuidado que observa')
+    expect(corpoText).toContain('Entenda os doshas e suas combinações')
+    expect(corpoText).toContain('Vata — movimento e variabilidade')
+    expect(corpoText).toContain('Pitta — transformação e calor')
+    expect(corpoText).toContain('Kapha — sustentação e estabilidade')
+    expect(corpoText).toContain('Sete combinações básicas')
+    expect(corpoText).toContain('Vata–Pitta, Vata–Kapha, Pitta–Kapha')
+    expect(corpoText).toContain('Prakriti — seu ponto de partida')
+    expect(corpoText).toContain('Vikriti — seu momento atual')
+    expect(corpoText).toContain('Agni observa, pela lente tradicional')
+    expect(corpoText).toContain(
+      'Mariana, neste exemplo fictício, o gráfico ilustra uma combinação Vata–Pitta',
+    )
+    expect(corpoText).toContain(
+      'Os percentuais são ilustrativos, não foram calculados a partir de uma avaliação real',
+    )
     expect(corpoText).toContain('Síntese da leitura')
     expect(corpoText).toContain('Uma leitura possível')
 
@@ -681,5 +697,99 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     expect(sentidoText).toContain('Exemplo fictício para explorar o Mapa CER')
     expect(sentidoText).toContain('Sentido & Conexão')
     expect(sentidoText).toContain('Bússola interna orientada por coerência ética')
+  })
+
+  it('exibe explicação leiga dos doshas SOMENTE na dimensão Corpo e nunca em outras dimensões', async () => {
+    const demo = createDemoCerMapReading()
+    render(<CerMapReadingsView snapshot={demo} />)
+
+    // 1. Abrir Sexualidade
+    const sexualidadeBtn = screen.getByRole('button', {
+      name: /Abrir dimensão: Sexualidade & Intimidade/i,
+    })
+    await userEvent.click(sexualidadeBtn)
+    const sexDialog = await screen.findByRole('dialog')
+    const sexText = sexDialog.textContent || ''
+
+    expect(sexText).not.toContain('Entenda os doshas e suas combinações')
+    expect(sexText).not.toContain('Vata — movimento e variabilidade')
+    expect(sexText).not.toContain('Sete combinações básicas')
+
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+
+    // 2. Abrir Corpo e validar presença
+    const corpoBtn = screen.getByRole('button', {
+      name: /Ver leitura completa da dimensão Corpo/i,
+    })
+    await userEvent.click(corpoBtn)
+    const corpoDialog = await screen.findByRole('dialog')
+    const corpoText = corpoDialog.textContent || ''
+
+    expect(corpoText).toContain('Entenda os doshas e suas combinações')
+    expect(corpoText).toContain('Vata — movimento e variabilidade')
+    expect(corpoText).toContain('Pitta — transformação e calor')
+    expect(corpoText).toContain('Kapha — sustentação e estabilidade')
+    expect(corpoText).toContain('Sete combinações básicas')
+  })
+
+  it('no mapa real (não-demo), exibe explicação global sem atribuir o perfil Mariana e preserva fallback de rows', async () => {
+    const realSnapshot = {
+      schemaVersion: 1,
+      enrollmentId: 'real-enr-42',
+      participantName: 'Carlos Eduardo',
+      generatedAt: '2025-05-01T10:00:00Z',
+      sourceResponseIds: ['resp-corpo-01'],
+      overview: 'Mapa consolidado de Carlos.',
+      integration: '',
+      history: '',
+      dimensions: [
+        {
+          id: 'corpo',
+          title: 'Corpo & Fisiologia',
+          explanation: 'Conceito da dimensão corpo no modelo CER.',
+          summary: 'Síntese real do participante Carlos.',
+          interpretation: 'Leitura elaborada para Carlos.',
+          summaryRows: [],
+          detailedRows: [
+            {
+              label: 'Habitualmente · Sono',
+              text: 'Sono profundo e regular.',
+            },
+          ],
+          referenceIds: [],
+        },
+      ],
+      references: [],
+    }
+
+    render(<CerMapReadingsView snapshot={realSnapshot as any} />)
+
+    const corpoBtn = screen.getByRole('button', {
+      name: /Ver leitura completa da dimensão Corpo/i,
+    })
+    await userEvent.click(corpoBtn)
+
+    const dialog = await screen.findByRole('dialog')
+    const text = dialog.textContent || ''
+
+    // Explicação global leiga e doshas presentes
+    expect(text).toContain('O Ayurveda é uma tradição de cuidado que observa')
+    expect(text).toContain('Entenda os doshas e suas combinações')
+    expect(text).toContain('Sete combinações básicas')
+    expect(text).toContain('Prakriti — seu ponto de partida')
+    expect(text).toContain('Vikriti — seu momento atual')
+
+    // Conteúdo próprio de Carlos presente
+    expect(text).toContain('Síntese real do participante Carlos.')
+    expect(text).toContain('Leitura elaborada para Carlos.')
+
+    // NÃO deve conter o texto personalizado de Mariana
+    expect(text).not.toContain('Mariana, neste exemplo fictício')
+    expect(text).not.toContain('Exemplo fictício para explorar o Mapa CER')
+
+    // Preserva fallback de respostas compartilhadas para dados reais
+    expect(text).toContain('Respostas compartilhadas nesta versão')
+    expect(text).toContain('Habitualmente · Sono')
+    expect(text).toContain('Sono profundo e regular.')
   })
 })
