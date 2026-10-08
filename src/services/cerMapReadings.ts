@@ -34,7 +34,7 @@ export const CER_READING_DIMENSIONS = [
     title: 'Mente & Emoções',
     refs: ['emotion', 'cer'],
     explanation:
-      'Emoções, pensamentos e maneiras de agir influenciam uns aos outros. Aqui observamos o que costuma se repetir, o que ajuda e o que traz desgaste. Os Padrões de Proteção CER descrevem movimentos do seu funcionamento; não definem sua personalidade nem explicam sozinhos sua história.',
+      'Emoções, pensamentos e maneiras de agir influenciam uns aos outros. Aqui observamos o que costuma se repetir, o que ajuda e o que traz desgaste. Os Padrões de Proteção CER ajudam a reconhecer recursos, dificuldades e modos de responder às exigências da vida.',
   },
   {
     id: 'regulacao',
@@ -42,7 +42,7 @@ export const CER_READING_DIMENSIONS = [
     title: 'Regulação & Padrões de Resposta',
     refs: ['stress', 'emotion', 'cer'],
     explanation:
-      'Diante de situações difíceis, podemos agir, nos afastar, ficar sem reação ou ceder. Mais de uma resposta pode aparecer. Entender o contexto, os sinais, o que acontece depois e os recursos disponíveis ajuda a reconhecer a sequência. Essas escolhas não comprovam um estado do sistema nervoso nem a existência de trauma.',
+      'Diante de situações difíceis, podemos agir, nos afastar, ficar sem reação ou ceder. Mais de uma resposta pode aparecer. Entender o contexto, os sinais, o que acontece depois e os recursos disponíveis ajuda a reconhecer a sequência. Essa leitura ajuda a reconhecer caminhos de proteção e recuperação no seu cotidiano.',
   },
   {
     id: 'relacoes',
@@ -50,7 +50,7 @@ export const CER_READING_DIMENSIONS = [
     title: 'Relações & Vínculos',
     refs: ['attachment'],
     explanation:
-      'Proximidade, confiança, limites e apoio podem mudar conforme a relação e o momento. O mapa de órbitas registra proximidade percebida, sem medir qualidade ou amor. As respostas ajudam a investigar seus movimentos nos vínculos; não determinam um estilo de apego fixo.',
+      'Proximidade, confiança, limites e apoio podem mudar conforme a relação e o momento. O mapa de órbitas registra a proximidade que você percebe. As respostas ajudam a compreender como busca conexão, preserva sua autonomia e encontra apoio nos vínculos.',
   },
   {
     id: 'sexualidade',

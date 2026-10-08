@@ -9,7 +9,7 @@ export const CER_MAP_REFERENCES: CerMapReference[] = [
     url: 'https://www.carakasamhitaonline.com/index.php/Deha_prakriti',
     kind: 'tradição',
     scope:
-      'Referencial ayurvédico de constituição e doshas. Não equivale a um teste genético nem confirma uma constituição por questionário.',
+      'Referencial ayurvédico de constituição, doshas e tendências de funcionamento.',
   },
   {
     id: 'agni',
@@ -17,7 +17,7 @@ export const CER_MAP_REFERENCES: CerMapReference[] = [
     url: 'https://www.carakasamhitaonline.com/index.php/Agni',
     kind: 'tradição',
     scope:
-      'Referencial tradicional para observar fome, digestão e transformação; não é uma medida laboratorial.',
+      'Referencial tradicional para observar fome, digestão e transformação.',
   },
   {
     id: 'ama',
@@ -25,7 +25,7 @@ export const CER_MAP_REFERENCES: CerMapReference[] = [
     url: 'https://carakasamhitaonline.com/index.php?title=Ama',
     kind: 'tradição',
     scope:
-      'Conceito tradicional de processamento incompleto. Não deve ser traduzido como toxinas comprovadas no organismo.',
+      'Referencial tradicional sobre sinais de processamento incompleto.',
   },
   {
     id: 'ayurveda-evidence',
@@ -33,7 +33,7 @@ export const CER_MAP_REFERENCES: CerMapReference[] = [
     url: 'https://www.nccih.nih.gov/health/ayurvedic-medicine-in-depth',
     kind: 'institucional',
     scope:
-      'Apresenta o estado e os limites das evidências científicas sobre Ayurveda; não valida os resultados deste mapa.',
+      'Apresenta o estado das evidências científicas sobre Ayurveda.',
   },
   {
     id: 'emotion',
@@ -42,7 +42,7 @@ export const CER_MAP_REFERENCES: CerMapReference[] = [
     url: 'https://pubmed.ncbi.nlm.nih.gov/9457784/',
     kind: 'pesquisa',
     scope:
-      'Estudo sobre estratégias de regulação e seus efeitos. Não identifica um padrão individual a partir de uma escolha.',
+      'Estudo sobre estratégias de regulação emocional e seus efeitos.',
   },
   {
     id: 'stress',
@@ -51,7 +51,7 @@ export const CER_MAP_REFERENCES: CerMapReference[] = [
     url: 'https://pubmed.ncbi.nlm.nih.gov/9428819/',
     kind: 'pesquisa',
     scope:
-      'Discute adaptação ao estresse e sobrecarga. Não permite concluir trauma ou um estado autonômico específico pelas respostas.',
+      'Discute adaptação ao estresse e sobrecarga.',
   },
   {
     id: 'attachment',
@@ -60,7 +60,7 @@ export const CER_MAP_REFERENCES: CerMapReference[] = [
     url: 'https://pubmed.ncbi.nlm.nih.gov/29510301/',
     kind: 'pesquisa',
     scope:
-      'Discute desenvolvimento e variação do apego. A história e os vínculos precisam ser investigados; uma resposta não define um estilo fixo.',
+      'Discute desenvolvimento e variação do apego ao longo da vida e dos vínculos.',
   },
   {
     id: 'sexual-health',
@@ -77,7 +77,7 @@ export const CER_MAP_REFERENCES: CerMapReference[] = [
     url: 'https://pubmed.ncbi.nlm.nih.gov/11392867/',
     kind: 'pesquisa',
     scope:
-      'Referencial sobre autonomia, competência e vínculo. Não define o propósito ou a espiritualidade de uma pessoa.',
+      'Referencial sobre autonomia, competência, vínculo e motivação.',
   },
   {
     id: 'cer',
@@ -85,6 +85,6 @@ export const CER_MAP_REFERENCES: CerMapReference[] = [
       'Método CER — Consciência, Equilíbrio e Realização. Conteúdo autoral de Daiane: organização integrativa e Padrões de Proteção CER.',
     kind: 'método',
     scope:
-      'Estrutura de compreensão e diálogo do método. As referências científicas apoiam conceitos específicos; não constituem validação psicométrica do questionário CER.',
+      'Estrutura de compreensão e diálogo do Método CER.',
   },
 ]

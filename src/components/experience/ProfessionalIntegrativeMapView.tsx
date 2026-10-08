@@ -30,7 +30,6 @@ import {
 import type { ExperienceResponseRecord } from '@/types/cer'
 import {
   buildProfessionalIntegrativeMap,
-  INTEGRATIVE_NON_DIAGNOSTIC_DISCLAIMER,
   type ProfessionalIntegrativeMapResult,
   type IntegrativeCerHypothesis,
   type CrossCuttingResource,
@@ -148,11 +147,6 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
               </div>
             </div>
 
-            {/* Aviso de Não Diagnóstico */}
-            <div className="p-3 rounded-lg border border-border/40 bg-muted/20 text-[11px] text-muted-foreground flex items-start gap-2">
-              <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-              <span>{INTEGRATIVE_NON_DIAGNOSTIC_DISCLAIMER}</span>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -1362,9 +1356,7 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
                     </div>
                   </div>
 
-                  <p className="text-[10px] text-muted-foreground italic">
-                    {mapData.ayurvedaConcise.disclaimer}
-                  </p>
+
                 </div>
               ) : (
                 <p className="text-muted-foreground italic py-2">
@@ -1521,11 +1513,6 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
                 </div>
               )}
 
-              {/* Aviso Legal de Encerramento */}
-              <div className="p-3 rounded-lg border border-border/40 bg-muted/20 text-[11px] text-muted-foreground flex items-start gap-2">
-                <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span>{mapData.disclaimer}</span>
-              </div>
             </CardContent>
           </Card>
         </div>

@@ -2,7 +2,6 @@ import React from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
-  ShieldAlert,
   Flame,
   AlertTriangle,
   HelpCircle,
@@ -15,7 +14,6 @@ import {
 import type { ExperienceResponseRecord } from '@/types/cer'
 import {
   buildAyurvedaInterpretation,
-  AYURVEDA_NON_DIAGNOSTIC_DISCLAIMER,
   type DoshaEvidence,
 } from '@/services/ayurvedaInterpretationEngine'
 
@@ -63,19 +61,6 @@ export const ProfessionalAyurvedaInterpretationView: React.FC<
 
   return (
     <div className="space-y-5" data-testid="ayurveda-interpretative-section">
-      {/* Aviso Não-Diagnóstico Obrigatório */}
-      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-xs">
-        <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="font-semibold text-foreground">
-            Hipótese Profissional de Trabalho (Não-Diagnóstica)
-          </p>
-          <p className="text-muted-foreground leading-relaxed">
-            {AYURVEDA_NON_DIAGNOSTIC_DISCLAIMER}
-          </p>
-        </div>
-      </div>
-
       {/* Visão Geral da Confiança Epistêmica */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="p-3 rounded-xl border border-border/60 bg-muted/20 space-y-1">

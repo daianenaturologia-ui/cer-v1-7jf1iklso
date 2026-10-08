@@ -208,7 +208,7 @@ const REGULATION_REACTIONS = [
     subtitle: 'Resolver e intervir',
     description: 'Tentar resolver e controlar imediatamente; falar firme, agir rápido.',
     concept:
-      'A resposta de Luta (mobilização ativa) é uma tentativa de restabelecer a segurança e o controle através da ação afirmativa e direta. Não indica agressividade patológica nem descontrole neurológico; trata-se de um movimento relacional e adaptativo de defesa e resolução.',
+      'A resposta de Luta (mobilização ativa) é uma tentativa de restabelecer a segurança e o controle através da ação afirmativa e direta. Esse movimento reúne recursos de defesa, iniciativa e resolução, que podem ser ajustados conforme a situação.',
   },
   {
     id: 'fuga',
@@ -235,7 +235,7 @@ const REGULATION_REACTIONS = [
     subtitle: 'Apaziguar e ceder',
     description: 'Ceder, concordar ou tentar acalmar os outros para evitar atrito.',
     concept:
-      'A resposta de Submissão ou apaziguamento é uma estratégia relacional inteligente de preservação do vínculo e contenção do conflito imediato. Não é diagnóstico fisiológico nem submissão definitiva: a pessoa busca proteger a conexão em momentos de alta sensibilidade.',
+      'A resposta de Submissão ou apaziguamento é uma estratégia relacional inteligente de preservação do vínculo e contenção do conflito imediato. A pessoa busca proteger a conexão em momentos de alta sensibilidade; reconhecer esse recurso ajuda a equilibrar vínculo e expressão das próprias necessidades.',
   },
 ] as const
 
@@ -512,6 +512,20 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
               ações e relações influenciam-se mutuamente. O mapa apoia suas escolhas e será ajustado
               com sua experiência.
             </p>
+            <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+              <h4 className="font-serif font-semibold">Como compreender esta leitura</h4>
+              <p>
+                O Mapa CER reúne suas respostas, leituras iniciais e referências de cuidado para
+                apoiar o autoconhecimento. Ele não estabelece diagnósticos, define uma personalidade
+                fixa nem substitui uma avaliação clínica. Os conceitos ayurvédicos são uma lente
+                tradicional: doshas não são medidas genéticas, Agni não é um exame de metabolismo e
+                Ama não significa toxinas detectadas no organismo. As descrições de proteção e
+                sobrevivência ajudam a compreender respostas, sem comprovar trauma, estado do
+                sistema nervoso ou causa histórica. As fontes fundamentam os conceitos utilizados;
+                não constituem validação clínica ou psicométrica deste questionário. A leitura ganha
+                precisão quando é conversada com você e integrada à sua história, saúde e cotidiano.
+              </p>
+            </div>
             <div className="grid gap-3 pt-2">
               <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
                 <h4 className="font-serif font-semibold text-foreground text-sm">1. Consciência</h4>
@@ -582,19 +596,19 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         principle: 'Movimento e variabilidade',
         desc: 'Princípio tradicional ligado ao fluxo, criatividade, rapidez de percepção e adaptação. Quando instável, manifesta-se em secura, ritmo imprevisível e dispersão.',
         ayurvedaContext:
-          'Daiane escolheu esta tradição de cuidado originada na Índia como lente integrativa do biotipo. Doshas são princípios tradicionais: Vata representa movimento e variabilidade. Prakriti é a constituição de referência; Vikriti é o estado atual ou mudanças temporárias. Não são genética medida nem exames laboratoriais.',
+          'Daiane escolheu esta tradição de cuidado originada na Índia como lente integrativa do biotipo. Doshas são princípios tradicionais: Vata representa movimento e variabilidade. Prakriti é a constituição de referência; Vikriti é o estado atual ou mudanças temporárias.',
       },
       Pitta: {
         principle: 'Transformação e calor',
         desc: 'Princípio tradicional ligado à digestão, foco, discernimento e metabolismo. Quando elevado, manifesta-se em calor corporal, sensibilidade térmica e agudeza.',
         ayurvedaContext:
-          'Daiane escolheu esta tradição de cuidado originada na Índia como lente integrativa do biotipo. Doshas são princípios tradicionais: Pitta representa transformação e calor. Prakriti é a constituição de referência; Vikriti é o estado atual. Não são marcadores inflamatórios químicos nem exames laboratoriais.',
+          'Daiane escolheu esta tradição de cuidado originada na Índia como lente integrativa do biotipo. Doshas são princípios tradicionais: Pitta representa transformação e calor. Prakriti é a constituição de referência; Vikriti é o estado atual.',
       },
       Kapha: {
         principle: 'Sustentação e estabilidade',
         desc: 'Princípio tradicional ligado à resistência tecidual, lubricidade, estabilidade emocional e calma. Quando acumulado, manifesta-se em lentidão ou retenção.',
         ayurvedaContext:
-          'Daiane escolheu esta tradição de cuidado originada na Índia como lente integrativa do biotipo. Doshas são princípios tradicionais: Kapha representa sustentação e estabilidade. Prakriti é a constituição de referência; Vikriti é o estado atual. Não equivale a peso medido nem exames.',
+          'Daiane escolheu esta tradição de cuidado originada na Índia como lente integrativa do biotipo. Doshas são princípios tradicionais: Kapha representa sustentação e estabilidade. Prakriti é a constituição de referência; Vikriti é o estado atual.',
       },
     }
 
@@ -679,14 +693,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                   saúde integrativa: investigamos a fome, o conforto após comer, a eliminação e a
                   regularidade.
                 </p>
-                <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
-                  <span className="font-semibold text-foreground block">Limites da leitura</span>
-                  <p>
-                    Agni não é uma enzima específica nem um resultado de exame laboratorial de
-                    sangue. As consequências e o resultado específico provêm exclusivamente da
-                    leitura disponível no seu percurso de cuidado.
-                  </p>
-                </div>
                 {agniRow && (
                   <div className="border-t pt-3 space-y-1">
                     <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
@@ -721,22 +727,11 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             ) : (
               <>
                 <p>
-                  Ama descreve produtos ou estados de processamento incompleto na tradição
-                  ayurvédica. A palavra &ldquo;toxinas&rdquo; é uma tradução aproximada e coloquial:
-                  a toxicologia biomédica investiga substâncias identificáveis em dose e exposição
-                  concretas; já Ama é uma categoria tradicional ampla de peso ou lentidão no sistema
-                  digestivo, não equivalendo a uma substância detectada no sangue.
+                  Ama descreve sinais de processamento incompleto na tradição ayurvédica. A
+                  sensação de peso após comer e a eliminação pegajosa ou incompleta ajudam a observar
+                  como esse processo está terminando. Junto com Agni, essa leitura explica o ritmo
+                  da digestão e o conforto que permanece depois da refeição.
                 </p>
-                <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
-                  <span className="font-semibold text-foreground block">Cuidado com mitos</span>
-                  <p>
-                    Algumas propostas ayurvédicas incluem práticas de purificação após avaliação
-                    cuidadosa, não um detox obrigatório nem com eficácia presumida. A
-                    &ldquo;desintoxicação mental ou emocional&rdquo; é uma metáfora para elaborar
-                    experiências e reduzir a sobrecarga; emoções não são toxinas. Não se conclui
-                    doença nem acúmulo patológico pela pontuação.
-                  </p>
-                </div>
                 {amaRow && (
                   <div className="border-t pt-3 space-y-1">
                     <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
@@ -876,8 +871,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
 
                 <p className="text-[11px] text-muted-foreground/80 pt-2 border-t">
                   Referência: Modelo dos Padrões de Proteção CER, adaptado a partir do trabalho de
-                  Shirzad Chamine (Positive Intelligence). Não constitui psicometria formal nem
-                  diagnóstico clínico individual.
+                  Shirzad Chamine (Positive Intelligence).
                 </p>
               </>
             )}
@@ -1224,8 +1218,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Tendências pessoais, experiências e contexto atual podem participar desse retrato.
-                  Prakriti e Vikriti são leituras ayurvédicas, e não equivalências diretas entre
-                  genética e história de vida.
+                  Prakriti e Vikriti acrescentam a perspectiva ayurvédica à compreensão do corpo;
+                  a Linha da Vida acrescenta os acontecimentos e aprendizados do seu percurso.
                 </p>
                 {!!snapshot.lifeConnections?.length && (
                   <div className="border-t pt-3 space-y-2">
@@ -2028,8 +2022,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
       <footer className="pt-4 border-t border-border/40 text-xs text-muted-foreground space-y-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <span>
-            Você pode reconhecer, discordar ou trazer outra experiência para a conversa. Este mapa
-            não é um diagnóstico nem um destino fixo.
+            Você pode reconhecer, discordar ou trazer outra experiência para a conversa.
+            Sua experiência ajuda a aprofundar e atualizar este mapa.
           </span>
           <span className="font-mono text-[10px] shrink-0">CER • Cuidado em Relação</span>
         </div>

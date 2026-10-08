@@ -14,20 +14,20 @@ const profiles: Record<Dosha, { body: string; mind: string; emotion: string; str
       body: 'Vata reúne movimento, leveza e variabilidade. Na descrição tradicional, pode aparecer em uma estrutura mais leve, pele ou cabelos com tendência ao ressecamento e sensibilidade ao frio. Fome, disposição e sono podem mudar mais entre um dia e outro. Essa variabilidade ajuda a compreender por que regularidade e recuperação costumam ter valor para esse perfil.',
       mind: 'No funcionamento mental descrito pela tradição, Vata se relaciona à rapidez para perceber estímulos, fazer associações e imaginar caminhos. A abertura para o novo favorece criatividade e adaptação; com excesso de estímulos, essa mesma mobilidade pode se tornar dispersão e dificuldade para desacelerar.',
       emotion:
-        'Na experiência emocional descrita para esse perfil, sensibilidade e mudanças rápidas podem coexistir. Em períodos de maior exigência, insegurança e inquietação são tendências tradicionais possíveis. Elas não constituem um diagnóstico de ansiedade nem substituem a leitura da sua história.',
+        'Na experiência emocional descrita para esse perfil, sensibilidade e mudanças rápidas podem coexistir. Em períodos de maior exigência, insegurança e inquietação são tendências tradicionais possíveis. A sensibilidade que ajuda você a perceber o ambiente também pode pedir mais tempo de recolhimento e recuperação quando a vida fica exigente.',
       strengths:
         'As potencialidades tradicionalmente associadas a Vata são criatividade, flexibilidade, sensibilidade e capacidade de enxergar alternativas. A força desse movimento está em abrir caminhos e responder ao novo.',
     },
     Pitta: {
-      body: 'Pitta reúne transformação, intensidade e calor. A descrição tradicional inclui fome mais intensa, maior sensibilidade a ambientes quentes e pele que pode reagir com calor ou vermelhidão. O organismo é descrito com maior intensidade dos ritmos; isso não significa medir seu metabolismo nem concluir que sua digestão está sempre boa.',
+      body: 'Pitta reúne transformação, intensidade e calor. A descrição tradicional inclui fome mais intensa, maior sensibilidade a ambientes quentes e pele que pode reagir com calor ou vermelhidão. Essa intensidade pode tornar mais perceptíveis tanto a disposição para agir quanto o desconforto quando os horários de alimentação e descanso se afastam das suas necessidades.',
       mind: 'Pitta é associado à clareza para compreender, comparar, decidir e direcionar esforços. Essa capacidade favorece organização e discernimento. Sob maior exigência, a busca de precisão pode se estreitar em cobrança, impaciência ou dificuldade para aceitar imprevistos.',
       emotion:
-        'Na descrição tradicional, entusiasmo e determinação podem vir acompanhados de intensidade emocional. Quando há desgaste, frustração e irritabilidade são tendências possíveis. A presença delas na sua vida precisa de relatos específicos; a constituição não determina sua personalidade.',
+        'Na descrição tradicional, entusiasmo e determinação podem vir acompanhados de intensidade emocional. Quando há desgaste, frustração e irritabilidade são tendências possíveis. A mesma intensidade que sustenta o entusiasmo pode tornar mais difícil lidar com atrasos, limites e expectativas frustradas.',
       strengths:
         'As potencialidades tradicionalmente associadas a Pitta são discernimento, foco, iniciativa e capacidade de transformar uma intenção em ação. Essa força ajuda a dar direção e sentido ao esforço.',
     },
     Kapha: {
-      body: 'Kapha reúne sustentação, estabilidade e continuidade. A descrição tradicional inclui estrutura mais sólida, maior constância dos ritmos e sono mais profundo. Essa sustentação pode favorecer resistência e recuperação; quando se altera, a experiência pode ganhar peso e lentidão. O perfil não permite presumir seu peso corporal ou sua saúde.',
+      body: 'Kapha reúne sustentação, estabilidade e continuidade. A descrição tradicional inclui estrutura mais sólida, maior constância dos ritmos e sono mais profundo. Essa sustentação pode favorecer resistência e recuperação; quando se altera, a experiência pode ganhar peso e lentidão. A continuidade costuma ser um recurso valioso, especialmente quando há espaço para alternar movimento e recuperação.',
       mind: 'Kapha é associado à capacidade de manter atenção, consolidar aprendizados e continuar processos. A continuidade favorece memória e consistência. Sob maior exigência, pode haver dificuldade para sair de um ritmo conhecido e incorporar mudanças.',
       emotion:
         'A descrição tradicional valoriza estabilidade, paciência e disponibilidade afetiva. Em períodos de desgaste, recolhimento e apego ao que oferece segurança são tendências possíveis. O modo como você vive os vínculos depende da sua história, além dessa lente.',
@@ -100,7 +100,7 @@ export function AyurvedaPersonalReading({
           <p>
             Na perspectiva ayurvédica, todas as pessoas apresentam os três doshas, em combinações
             diferentes. Eles ajudam a interpretar tendências do corpo e aspectos da experiência
-            mental e emocional. Não são medidas biológicas nem definições fixas de personalidade.
+            mental e emocional. Essa combinação é uma maneira de compreender como suas qualidades se encontram.
           </p>
           <h4 className="font-semibold">Um jeito de compreender suas combinações</h4>
           <p>
@@ -116,7 +116,7 @@ export function AyurvedaPersonalReading({
             contagem empatada, sozinha, não confirma equilíbrio entre os três.
           </p>
         </Section>
-        <Section id="base-atual" title="Prakriti e Vikriti: sua base e seu momento">
+        <Section id="base-atual" title="Entenda Prakriti e Vikriti: sua base e seu momento">
           <h4 className="font-semibold">Prakriti: suas tendências de base</h4>
           <p>
             Prakriti é o nome dado à sua constituição original. Para explorar essa hipótese,
@@ -149,9 +149,9 @@ export function AyurvedaPersonalReading({
             suas condições de saúde e sua realidade cotidiana.
           </p>
           <p>
-            Este questionário oferece uma avaliação inicial. Ele não substitui uma consulta
-            aprofundada nem estabelece uma definição definitiva. Quando faltarem informações, o mapa
-            indicará o que ainda precisamos compreender.
+            O questionário é o ponto de partida dessa leitura. As respostas ajudam a reconhecer
+            tendências e necessidades; os encontros permitem aprofundar o que elas significam na
+            sua vida e acompanhar as mudanças ao longo do cuidado.
           </p>
           <p>
             Se quiser aprofundar essa descoberta, converse com Daiane. Juntas, vocês poderão
@@ -161,7 +161,7 @@ export function AyurvedaPersonalReading({
         </Section>
       </Accordion>
       <div className="space-y-2">
-        <h3 className="font-semibold">{participantName}, vamos conhecer seu jeito de funcionar?</h3>
+        <h3 className="font-semibold">{participantName}, sua constituição e seu momento atual</h3>
         <p>
           {doshas.length
             ? `Suas respostas sustentam uma hipótese constitucional ${pair}. A leitura reúne suas características de base e explica como elas se relacionam com seu momento atual.`
@@ -213,8 +213,8 @@ export function AyurvedaPersonalReading({
                 No encontro entre os dois princípios, a rapidez para criar pode ganhar direção e
                 análise. Quando há sobrecarga, a quantidade de ideias e a exigência de resolver bem
                 podem se reforçar: fica mais difícil desacelerar e aceitar que o corpo precisa de
-                recuperação. Essa é uma tendência descrita para o perfil, e não uma conclusão
-                automática sobre seus pensamentos.
+                recuperação. Conhecer esse encontro ajuda a perceber quando a criatividade e a
+                exigência começam a disputar o espaço que você precisa para descansar.
               </p>
             )}
             <h4 className="font-semibold">Funcionamento emocional</h4>
@@ -226,14 +226,23 @@ export function AyurvedaPersonalReading({
                 A sensibilidade de Vata e a intensidade de Pitta podem formar uma experiência
                 emocional viva: perceber muito e reagir com força. Em períodos de maior equilíbrio,
                 isso pode favorecer interesse, entusiasmo e presença; sob desgaste, inquietação e
-                irritabilidade podem coexistir. Esses movimentos precisam ser diferenciados dos
-                resultados específicos de Mente & Emoções.
+                irritabilidade podem coexistir. Essa leitura complementa Mente & Emoções: aqui,
+                conhecemos as tendências pela lente ayurvédica; naquela dimensão, suas respostas
+                mostram como você vive e expressa as emoções, conversa consigo e reage às exigências.
+                Juntas, as duas leituras ajudam a reconhecer os recursos e os momentos em que você
+                precisa de apoio.
               </p>
             )}
             <Evidence items={reading?.constitutionEvidence || []} />
           </Section>
         )}
         <Section id="recursos" title="Suas forças e potencialidades">
+          <p>
+            Suas potencialidades são ferramentas que você pode mobilizar: capacidades, qualidades
+            e aprendizados que ajudam a enfrentar dificuldades internas e externas e a caminhar
+            em direção aos seus objetivos. Reconhecê-las torna mais fácil escolher como agir quando
+            algo parece difícil, em vez de olhar apenas para o que está faltando.
+          </p>
           {doshas.length ? (
             doshas.map((d) => <p key={d}>{profiles[d].strengths}</p>)
           ) : (
@@ -256,11 +265,31 @@ export function AyurvedaPersonalReading({
             recursos pessoais também são construídos na sua história e aparecem nas demais dimensões
             do CER.
           </p>
+          <p>
+            Quando construirmos sua rotina, essas forças poderão ser usadas de forma estratégica.
+            A criatividade pode ajudar a encontrar um caminho menor diante de uma tarefa que parece
+            grande; o discernimento, a escolher uma prioridade quando há ideias demais; a
+            sensibilidade, a reconhecer o momento de uma pausa; a iniciativa, a transformar uma
+            intenção em um primeiro passo. O objetivo é colocar suas capacidades a serviço de uma
+            vida possível e dos objetivos que importam para você.
+          </p>
+          <p>
+            Uma força também precisa de medida: foco pode se tornar cobrança quando ocupa todo o
+            espaço, e disponibilidade pode virar sobrecarga quando seus limites desaparecem. Usar
+            suas potencialidades inclui escolher a intensidade, reconhecer suas necessidades e
+            recorrer a apoio quando for preciso.
+          </p>
         </Section>
         <Section id="atual" title="Seu momento atual: o que mudou e o que pede cuidado">
           <p>
             {reading?.currentSummary ||
               'A hipótese de Vikriti permanece em observação neste registro. Sem respostas atuais suficientes, não é possível atribuir uma combinação de desequilíbrio à pessoa.'}
+          </p>
+          <p>
+            Vikriti mostra como seu funcionamento se apresenta neste período, em comparação com
+            a base que costuma acompanhar você. Por isso, os mesmos doshas podem participar de
+            duas leituras diferentes: na Prakriti, descrevem suas tendências de base; na Vikriti,
+            ajudam a reconhecer as mudanças que estão dificultando seu conforto e seu ritmo.
           </p>
           <Evidence items={reading?.currentFacts || []} />
           {vk && (
@@ -272,20 +301,29 @@ export function AyurvedaPersonalReading({
                 lenta ou dificuldade de mobilização. As manifestações efetivamente relatadas estão
                 descritas acima.
               </p>
+              <p>
+                Esses dois movimentos podem parecer opostos e, ainda assim, acontecer juntos:
+                dificuldade para encontrar um ritmo estável e sensação de que o corpo demora a
+                recuperar leveza. Quando a fome oscila ou demora a surgir, o conforto digestivo fica mais difícil
+                de antecipar. Se isso se soma a sono leve ou eliminação incompleta, a recuperação
+                também pode perder continuidade. Os sinais presentes no seu caso estão nos registros
+                acima. Esse conjunto ajuda a compreender por que disponibilidade de energia e recuperação
+                podem se tornar menos previsíveis ao longo do dia.
+              </p>
               {vp && (
                 <p>
                   Para uma constituição Vata–Pitta, isso significa que sua base de movimento e
                   transformação está convivendo com alterações de ritmo e maior peso ou lentidão. A
                   fome variável, o desconforto digestivo e a recuperação do sono podem interferir no
                   acesso à energia e à continuidade. A clareza e a vontade de realizar não
-                  necessariamente acompanham a disposição do corpo no mesmo ritmo. Essa leitura não
-                  transforma a dificuldade em falta de vontade e não conclui que Pitta esteja baixo.
+                  necessariamente acompanham a disposição do corpo no mesmo ritmo. É possível ter intenção e clareza e, ainda assim, precisar de
+                  mais recuperação para conseguir sustentar o que deseja fazer.
                 </p>
               )}
               <p>
-                Uma combinação de doshas não muda sua identidade nem determina a causa dos sinais. A
-                hipótese reúne mudanças atuais para orientar o cuidado; saúde, medicamentos e
-                contexto de vida continuam participando da interpretação.
+                A leitura de Vikriti ajuda a dar prioridade ao que está pedindo cuidado agora.
+                Sua história, suas condições de saúde, os medicamentos e o contexto da rotina
+                ajudam a compreender como essas mudanças se instalaram e o que favorece a recuperação.
               </p>
             </>
           )}
@@ -296,6 +334,20 @@ export function AyurvedaPersonalReading({
             respostas sobre fome e sensação após comer; Ama considera a convergência dos sinais
             digestivos e de eliminação. Ambos são interpretados pelas respostas, separadamente da
             constituição.
+          </p>
+          <p>
+            Pense no processo que começa quando a fome chega e continua depois da refeição. Agni
+            descreve a qualidade desse percurso: apetite, ritmo e conforto para digerir e assimilar.
+            Sama se relaciona à regularidade; Vishama, à oscilação; Tikshna, à intensidade e ao calor;
+            Manda, à lentidão. Mais de uma característica pode coexistir, como acontece quando a
+            fome varia e as refeições também são seguidas de peso.
+          </p>
+          <p>
+            Ama acrescenta outra informação: como o processamento parece estar se completando.
+            Na leitura ayurvédica, a combinação de peso após comer e eliminação pegajosa ou incompleta
+            chama atenção para um processo que está encontrando dificuldade para terminar com
+            conforto. Observar Agni e Ama em conjunto ajuda a compreender tanto o ritmo da digestão
+            quanto o que permanece como desconforto depois dela.
           </p>
           {reading ? (
             <>
@@ -314,9 +366,9 @@ export function AyurvedaPersonalReading({
             </p>
           )}
           <p>
-            O valor dessa leitura está em explicar o padrão registrado: o ritmo da fome, o conforto
-            após comer e a eliminação. Agni não mede metabolismo em laboratório, e Ama não
-            corresponde à detecção de toxinas no organismo.
+            Lidas juntas, essas informações ajudam a compreender a sequência entre o apetite,
+            o conforto após comer e a eliminação. Quando esse processo se torna irregular ou pesado,
+            o cuidado pode começar por devolver espaço, ritmo e recuperação à alimentação cotidiana.
           </p>
         </Section>
       </Accordion>

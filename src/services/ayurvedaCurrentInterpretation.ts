@@ -127,15 +127,15 @@ export function interpretCurrentBody(responses: ExperienceResponseRecord[]) {
     evidences[d].map((e) => `${e.sourceQuestionTitle}: ${e.literalText}`),
   )
   const summary = doshas.length
-    ? `Suas respostas atuais sugerem alterações de ${doshas.join('–')}, com sinais convergentes em áreas diferentes do corpo: ${[...new Set(basis)].join('; ')}. Esta é uma hipótese ayurvédica inicial, não um diagnóstico médico.`
+    ? `Suas respostas atuais sugerem alterações de ${doshas.join('–')}, com sinais convergentes em áreas diferentes do corpo: ${[...new Set(basis)].join('; ')}.`
     : conflicting
       ? 'Há registros que não concordam: ausência geral de mudanças e mudanças específicas em algumas áreas. Por isso, a hipótese de Vikriti permanece em observação; os relatos específicos foram preservados.'
       : !completed.length
         ? 'Leitura de Vikriti em observação: faltam dados atuais de um capítulo concluído. Os relatos habituais descrevem sua base e não comprovam mudança recente.'
         : blocked
           ? domains.includes('no_current_changes')
-            ? 'Você não relatou mudanças importantes em relação ao habitual. Isso descreve sua percepção atual, sem afirmar ausência de doença ou desequilíbrio.'
-            : 'Seu momento atual não foi caracterizado nas respostas compartilhadas. Isso não equivale a equilíbrio; sua escolha de não responder ou sua incerteza foi respeitada.'
+            ? 'Você não relatou mudanças importantes em relação ao habitual. Sua percepção atual mostra continuidade dos ritmos que reconhece como habituais.'
+            : 'Seu momento atual ainda precisa ser caracterizado. Os campos que você preferiu deixar em aberto foram preservados dessa forma.'
           : 'Há mudanças relatadas que ainda não sustentam uma combinação de doshas: faltam sinais convergentes em duas áreas distintas, com comparação, duração e frequência definidas. A leitura descreve os sinais registrados e mantém a hipótese de Vikriti em observação.'
   const usable = (id: AyurvedaC3AreaId) => {
     const values = getCurrentAreaRecordFromState(state, id)?.current_states || []

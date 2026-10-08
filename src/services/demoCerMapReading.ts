@@ -169,7 +169,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Fome irregular e eliminação intestinal com ritmo variável',
       ],
       interpretation:
-        'Na tradição ayurvédica, o princípio Vata representa movimento, leveza e variabilidade. Os sinais relatados — constituição estreita habitual, pele seca, pés e mãos frios, fome oscilante e eliminação irregular — alinham-se conceitualmente a essas qualidades tradicionais. Podemos usar essa lente para explorar suas necessidades, sem transformar um dosha em uma definição da sua personalidade. O que você percebe como recurso e o que pede cuidado na sua vida?',
+        'Na tradição ayurvédica, o princípio Vata representa movimento, leveza e variabilidade. Os sinais relatados — constituição estreita habitual, pele seca, pés e mãos frios, fome oscilante e eliminação irregular — alinham-se conceitualmente a essas qualidades tradicionais. Essa lente ajuda a compreender suas necessidades de ritmo, recuperação e conforto.',
       resources: [
         'Capacidade de perceber e descrever com nitidez características corporais habituais',
       ],
@@ -218,7 +218,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Reconhecimento de ritmos habituais mantidos ao longo de muitos anos',
       ],
       interpretation:
-        'No Ayurveda, Kapha simboliza estabilidade, coesão estrutural e lubrificação dos tecidos. A sensação de peso após refeições e o corpo pesado ao despertar foram descritos no seu relato, mas não validam um diagnóstico de constituição Kapha. Traços relacionais, como lealdade ou dificuldade de dizer não, não devem ser atribuídos ao dosha; da mesma forma, o peso matinal é uma percepção a ser investigada sem inferir causa definitiva.',
+        'No Ayurveda, Kapha simboliza estabilidade, coesão estrutural e lubrificação dos tecidos. A sensação de peso após refeições e o corpo pesado ao despertar foram descritos no seu relato. Esses sinais ajudam a compreender as qualidades de peso e lentidão presentes no momento atual; a constituição de base é lida pelas características habituais.',
       resources: ['Percepção dos próprios ritmos e atenção às sensações corporais ao longo do dia'],
       costs: ['Sensação de peso corporal relatada ao despertar e após refeições mais densas'],
       connections: [
@@ -241,7 +241,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Eliminação irregular no padrão habitual',
       ],
       interpretation:
-        'Na tradição ayurvédica, Agni representa os processos de digestão e transformação. Nos seus relatos, a fome e o retorno do apetite variáveis aparecem junto à digestão pesada. Há sinais associados a mais de um padrão tradicional, por isso a leitura permanece em observação. Precisamos explorar duração, frequência e contexto antes de propor uma hipótese mais específica. Esses relatos habituais não comprovam um desequilíbrio atual nem medem metabolismo ou toxinas.',
+        'Na tradição ayurvédica, Agni representa os processos de digestão e transformação. Nos seus relatos, a fome e o retorno do apetite variáveis aparecem junto à digestão pesada. Há sinais associados a mais de um padrão tradicional, por isso a leitura permanece em observação. Precisamos explorar duração, frequência e contexto antes de propor uma hipótese mais específica. Os relatos atuais acrescentam as mudanças percebidas em comparação com esse funcionamento habitual.',
       resources: [
         'Você relatou sinais de apetite, digestão e ritmo intestinal que podem ser explorados na conversa.',
       ],
@@ -260,14 +260,14 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
 
     ama: {
       summary:
-        'Sensação de digestão pesada, corpo pesado ao despertar e eliminação pegajosa/incompleta relatadas; leitura tradicional de processamento incompleto sem diagnóstico.',
+        'Sensação de digestão pesada, corpo pesado ao despertar e eliminação pegajosa/incompleta relatadas; leitura tradicional de processamento incompleto.',
       observations: [
         'Digestão percebida como pesada',
         'Eliminação intestinal descrita como pegajosa ou incompleta',
         'Sensação de corpo pesado ao despertar',
       ],
       interpretation:
-        'Ama é uma categoria tradicional do Ayurveda que descreve sinais de processamento ou assimilação incompleta no trato digestivo. Não equivale a toxinas laboratoriais mensuráveis nem autoriza diagnósticos médicos ou protocolos prescritivos. Trata-se de uma chave de reflexão sobre como o organismo vem processando a rotina e os alimentos, a ser explorada de forma colaborativa com a profissional.',
+        'Ama é uma categoria tradicional do Ayurveda que descreve sinais de processamento ou assimilação incompleta no trato digestivo. Essa leitura ajuda a compreender como o corpo vem completando a digestão e a eliminação, e quais mudanças estão pedindo cuidado.',
       resources: [
         'Observação atenta de variações corporais ao longo do tempo para revisar conjuntamente com a profissional',
       ],
@@ -981,7 +981,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
 
   // Texto base aprofundado para overview, integration e history
   const overviewText =
-    'DADOS FICTÍCIOS — demonstração do Mapa CER interativo. Mariana, este retrato reúne a leitura das suas respostas aos percursos de Consciência, articulando sinais do corpo, movimentos da mente, padrões de regulação, vínculos, intimidade e sentido. As conclusões são hipóteses para serem conversadas e investigadas na sua experiência, sem se converterem em rótulos definitivos.'
+    'DADOS FICTÍCIOS — demonstração do Mapa CER interativo. Mariana, este retrato reúne a leitura das suas respostas aos percursos de Consciência, articulando sinais do corpo, movimentos da mente, padrões de regulação, vínculos, intimidade e sentido. Essa leitura reúne os fios do seu funcionamento para apoiar escolhas e caminhos de cuidado.'
 
   const integrationText =
     'Mariana, suas respostas mostram capacidade de perceber nuances, planejar e cuidar. Sob pressão, esses mesmos recursos parecem perder flexibilidade: você tenta prever, assume a frente e cobra de si que nada falhe. Isso pode trazer alívio imediato, mas você relata estafa e dificuldade para desacelerar. A direção a explorar não é deixar de ser responsável; é ampliar suas opções para que responsabilidade, apoio e descanso possam coexistir. O ciclo conjunto investiga a ligação entre demandas externas, antecipação preventiva, ação imediata de Luta, solicitação tardia de suporte e exaustão subsequente. Em qual ponto desse ciclo você mais se reconhece — e qual parte não descreve sua experiência?'

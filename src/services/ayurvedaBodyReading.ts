@@ -55,9 +55,9 @@ export function buildAyurvedaBodyReading(
                 : 'Indefinido / Em observação'
     agniSummary =
       traits.length > 1
-        ? `Seu Agni apresenta sinais mistos de ${traits.join(' e ')}. Isso significa que a fome e o conforto após comer não seguem um único ritmo: a leitura registra as características que coexistem, em vez de apagar esse resultado com um rótulo genérico.`
+        ? `Seu Agni apresenta sinais mistos de ${traits.join(' e ')}. ${[irregular && 'A fome ou o conforto digestivo oscilam, tornando mais difícil antecipar como seu corpo estará em cada refeição.', slow && 'Ao mesmo tempo, o apetite pode demorar a chegar ou a refeição deixar peso e sensação de digestão lenta.', hot && 'Também aparece intensidade no apetite ou calor e queimação depois de comer.'].filter(Boolean).join(' ')} A leitura reúne esses movimentos para explicar o ritmo que suas respostas mostram neste período.`
         : traits.length
-          ? `Seus relatos atuais sugerem um padrão de Agni com ${traits[0]}. ${irregular ? 'A fome ou o conforto digestivo variam, em vez de manter a mesma regularidade.' : slow ? 'O apetite demora a surgir ou a refeição é seguida de peso e digestão percebida como lenta.' : 'A fome se intensifica rapidamente ou há sensação de calor e queimação após comer.'}`
+          ? `Seus relatos atuais sugerem um padrão de Agni com ${traits[0]}. ${irregular ? 'A fome ou o conforto digestivo variam: em alguns momentos o corpo pede alimento, em outros o apetite ou a sensação após comer mudam. Isso torna mais difícil sustentar um ritmo confortável ao longo do dia.' : slow ? 'O apetite demora a surgir ou a refeição é seguida de peso e digestão percebida como lenta. O processo parece pedir mais tempo, e refeições próximas podem encontrar o corpo ainda ocupado com a anterior.' : 'A fome se intensifica rapidamente ou há sensação de calor e queimação após comer. Nessa leitura, intensidade e conforto precisam ser considerados juntos: sentir muita fome também pode vir acompanhado de sensibilidade digestiva.'}`
           : current.hunger.includes('regular_hours') && current.postMeal.includes('light_satisfied')
             ? 'Seus relatos atuais sugerem Sama Agni: fome previsível e sensação leve e confortável após comer. Esses dois registros sustentam a leitura tradicional de regularidade digestiva neste período.'
             : 'Seus relatos atuais descrevem fome e digestão, mas não convergem para um padrão único de Agni. As respostas específicas abaixo são o resultado disponível, sem atribuir manifestações que você não relatou.'
@@ -75,10 +75,10 @@ export function buildAyurvedaBodyReading(
           : 'Não evidenciada'
     amaSummary =
       heavy && sticky
-        ? 'Seus relatos atuais sinalizam Ama na leitura tradicional: peso após as refeições e alteração da eliminação aparecem em duas áreas diferentes. A combinação sugere dificuldade no processamento digestivo nessa lente; não corresponde à detecção de toxinas no organismo.'
+        ? 'Seus relatos atuais sinalizam Ama na leitura tradicional: peso após as refeições e alteração da eliminação aparecem em duas áreas diferentes. O corpo parece levar mais tempo para concluir o processamento com conforto: a refeição deixa peso, e a eliminação pode ser acompanhada da sensação de que algo ficou incompleto. Esse conjunto se soma à leitura de Agni e ajuda a compreender a experiência de lentidão que você relatou.'
         : amaEvidence.length
           ? 'Há um sinal associado a Ama em uma área. Ele merece atenção, mas ainda não há convergência em áreas diferentes para sinalizar esse padrão. Isso descreve o alcance dos registros atuais.'
-          : 'Os relatos atuais disponíveis não sinalizam Ama. Isso se refere aos sinais investigados neste período, sem concluir ausência de doença.'
+          : 'Os relatos atuais disponíveis não sinalizam Ama. A leitura se refere ao período e aos sinais que você compartilhou.'
   }
   return {
     currentDigestive,
