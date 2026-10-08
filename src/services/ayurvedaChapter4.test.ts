@@ -149,4 +149,66 @@ describe('Capítulo 4 — síntese descritiva', () => {
     })
     expect(JSON.stringify(synthesis.current)).not.toMatch(/ressecamento|oleosidade|queda/)
   })
+
+  it('incorpora as seis áreas atuais em bloco separado "Como meu corpo está agora" (últimos 14 dias)', () => {
+    const synthesis = buildChapter4Synthesis([
+      response(AYV_C3_PROMPTS.CURRENT_HUNGER.key, {
+        value: {
+          area_key: 'hunger',
+          current_states: ['regular_hours', 'sudden_intense'],
+          comparison: 'different',
+          duration: 'last_week',
+          frequency: 'several_days',
+          contexts: ['routine', 'stress'],
+        },
+      }),
+      response(AYV_C3_PROMPTS.CURRENT_SLEEP.key, {
+        value: {
+          area_key: 'sleep',
+          current_states: ['light_wakes_easy'],
+          comparison: 'same_as_usual',
+          // Detalhes que deveriam ser ignorados pois comparison não é different
+          duration: 'last_month',
+          frequency: 'almost_every_day',
+          contexts: ['climate'],
+        },
+      }),
+    ])
+
+    expect(synthesis.currentBody).toBeDefined()
+    expect(synthesis.currentBody?.title).toBe('Como meu corpo está agora')
+    expect(synthesis.currentBody?.referenceText).toBe('últimos 14 dias')
+    expect(synthesis.currentBody?.hasAnyData).toBe(true)
+
+    // Fome com múltiplas seleções e detalhes de different
+    const hungerItem = synthesis.currentBody?.items.find((i) => i.areaId === 'hunger')
+    expect(hungerItem).toBeDefined()
+    expect(hungerItem?.currentStates).toHaveLength(2)
+    expect(hungerItem?.currentStates).toContain('Aparece em horários relativamente previsíveis')
+    expect(hungerItem?.currentStates).toContain('Surge de repente e pode ficar muito intensa')
+    expect(hungerItem?.comparison).toBe('Diferente do meu habitual')
+    expect(hungerItem?.duration).toBe('Na última semana')
+    expect(hungerItem?.frequency).toBe('Em vários dias')
+    expect(hungerItem?.contexts).toContain('Mudança de rotina')
+    expect(hungerItem?.contexts).toContain('Estresse ou acontecimentos emocionais')
+
+    // Sono com same_as_usual omite detalhes obsoletos
+    const sleepItem = synthesis.currentBody?.items.find((i) => i.areaId === 'sleep')
+    expect(sleepItem).toBeDefined()
+    expect(sleepItem?.comparison).toBe('Parecido com meu habitual')
+    expect(sleepItem?.duration).toBeUndefined()
+    expect(sleepItem?.frequency).toBeUndefined()
+    expect(sleepItem?.contexts).toHaveLength(0)
+    expect(sleepItem?.summaryLines.some((l) => l.label.includes('Duração'))).toBe(false)
+  })
+
+  it('mantém integridade para registros legados sem o bloco novo', () => {
+    const synthesis = buildChapter4Synthesis([
+      response(AYV_C3_PROMPTS.DOMAINS.key, { value: ['sleep'] }),
+    ])
+
+    expect(synthesis.currentBody).toBeDefined()
+    expect(synthesis.currentBody?.hasAnyData).toBe(false)
+    expect(synthesis.currentBody?.items).toEqual([])
+  })
 })

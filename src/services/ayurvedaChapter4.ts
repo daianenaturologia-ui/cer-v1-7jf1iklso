@@ -55,10 +55,16 @@ export interface Chapter4LiteralItem {
   value: string
 }
 
+import {
+  buildAyurvedaCurrentBodyFactualBlock,
+  type AyurvedaCurrentBodyFactualBlock,
+} from './ayurvedaCurrentBodyFactual'
+
 export interface Chapter4Synthesis {
   historical: Chapter4LiteralItem[]
   habitual: Chapter4LiteralItem[]
   current: Chapter4LiteralItem[]
+  currentBody?: AyurvedaCurrentBodyFactualBlock
   questionsForSession: Chapter4LiteralItem[]
 }
 
@@ -240,6 +246,8 @@ export function buildChapter4Synthesis(responses: ExperienceResponseRecord[]): C
   }
   if (c3.optional_note) current.push({ title: 'Registro espontâneo', value: c3.optional_note })
 
+  const currentBody = buildAyurvedaCurrentBodyFactualBlock(c3)
+
   const questionResponses = [
     ...c1.filter(
       (response) =>
@@ -274,7 +282,7 @@ export function buildChapter4Synthesis(responses: ExperienceResponseRecord[]): C
     })
   }
 
-  return { historical, habitual, current, questionsForSession }
+  return { historical, habitual, current, currentBody, questionsForSession }
 }
 
 export function isChapter4Completed(responses: ExperienceResponseRecord[]) {

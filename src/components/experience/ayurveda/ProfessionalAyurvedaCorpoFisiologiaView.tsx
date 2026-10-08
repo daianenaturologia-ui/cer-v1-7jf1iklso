@@ -66,6 +66,7 @@ import {
   chapter3Label,
   deriveChapter3Status,
 } from '@/services/ayurvedaChapter3'
+import { buildAyurvedaCurrentBodyFactualBlock } from '@/services/ayurvedaCurrentBodyFactual'
 import { isChapter4Completed } from '@/services/ayurvedaChapter4'
 
 export interface ProfessionalAyurvedaCorpoFisiologiaViewProps {
@@ -1499,6 +1500,53 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
                     <p className="italic">“{c3DerivedStatus.state.optional_note}”</p>
                   </div>
                 )}
+
+                {/* Bloco Factual Profissional: Como meu corpo está agora (últimos 14 dias) */}
+                {(() => {
+                  const currentBodyBlock = buildAyurvedaCurrentBodyFactualBlock(
+                    c3DerivedStatus.state,
+                  )
+                  return (
+                    <div className="space-y-3 rounded-xl border border-primary/25 bg-primary/5 p-3.5 md:col-span-2">
+                      <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-primary/15 pb-2">
+                        <span className="text-xs font-semibold text-foreground">
+                          {currentBodyBlock.title}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          Referência temporal: {currentBodyBlock.referenceText}
+                        </span>
+                      </div>
+                      {currentBodyBlock.hasAnyData ? (
+                        <div className="grid gap-2.5 sm:grid-cols-2">
+                          {currentBodyBlock.items.map((item) => (
+                            <div
+                              key={item.areaId}
+                              className="space-y-1 rounded-lg border border-border/60 bg-background/80 p-2.5 text-xs"
+                            >
+                              <span className="block font-semibold text-foreground">
+                                {item.title}
+                              </span>
+                              {item.summaryLines.map((line, lIdx) => (
+                                <p key={lIdx} className="text-muted-foreground">
+                                  <strong className="text-foreground/90">{line.label}:</strong>{' '}
+                                  {line.value}
+                                </p>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs italic text-muted-foreground">
+                          Nenhum registro específico preenchido para este bloco nesta revisão.
+                        </p>
+                      )}
+                      <p className="text-[11px] leading-relaxed text-muted-foreground">
+                        Registro factual da percepção atual da interagente (últimos 14 dias),
+                        preservado separadamente da base habitual e sem presunção de causalidade.
+                      </p>
+                    </div>
+                  )
+                })()}
               </div>
             </>
           )}

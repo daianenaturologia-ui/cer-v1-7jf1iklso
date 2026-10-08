@@ -108,6 +108,42 @@ export const AyurvedaChapter4Flow: React.FC<Props> = ({
       {section('Características que você reconhece há mais tempo', synthesis.historical)}
       {section('Seus ritmos habituais', synthesis.habitual)}
       {section('O que está diferente agora', synthesis.current)}
+
+      {/* Bloco separado factual: Como meu corpo está agora (últimos 14 dias) */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2">
+          <div className="space-y-0.5">
+            <CardTitle className="font-serif text-base text-foreground">
+              {synthesis.currentBody?.title || 'Como meu corpo está agora'}
+            </CardTitle>
+            <span className="block text-[11px] text-muted-foreground">
+              Referência temporal: {synthesis.currentBody?.referenceText || 'últimos 14 dias'}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {synthesis.currentBody && synthesis.currentBody.hasAnyData ? (
+            synthesis.currentBody.items.map((item) => (
+              <div
+                key={item.areaId}
+                className="space-y-1 rounded-lg border border-border/60 bg-background/80 p-3 text-xs"
+              >
+                <span className="block font-semibold text-foreground">{item.title}</span>
+                {item.summaryLines.map((line, lIdx) => (
+                  <p key={lIdx} className="text-muted-foreground">
+                    <strong className="text-foreground/90">{line.label}:</strong> {line.value}
+                  </p>
+                ))}
+              </div>
+            ))
+          ) : (
+            <p className="text-xs italic text-muted-foreground">
+              Nenhuma informação registrada nesta parte.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="border-amber-500/30 bg-amber-500/5">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 font-serif text-base">
