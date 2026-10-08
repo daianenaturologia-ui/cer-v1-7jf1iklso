@@ -23,7 +23,7 @@ migrate(
             name: 'owner_id',
             type: 'relation',
             required: true,
-            collectionId: app.findCollectionByNameOrId('users').id,
+            collectionId: '_pb_users_auth_',
             maxSelect: 1,
           },
           { name: 'revision', type: 'number', required: true, min: 1, onlyInt: true },
