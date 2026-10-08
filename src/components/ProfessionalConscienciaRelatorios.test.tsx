@@ -81,6 +81,7 @@ describe('Telas Profissionais da Dimensão Consciência', () => {
       <ProfessionalAyurvedaInterpretationView responses={responses} participantName="Mariana" />,
     )
 
+    // Asserção canônica: reflete a AUSÊNCIA do título "Hipótese Profissional de Trabalho (Não-Diagnóstica)", removido do produto
     expect(
       screen.queryByText(/Hipótese Profissional de Trabalho \(Não-Diagnóstica\)/i),
     ).not.toBeInTheDocument()
