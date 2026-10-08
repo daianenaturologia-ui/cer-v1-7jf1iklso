@@ -163,6 +163,7 @@ export function buildCerMapReadings(
     )
     let detailedRows: CerMapReadingRow[] = []
     let summaryRows: CerMapReadingRow[] = []
+    let ayurvedaConstitution: ('Vata' | 'Pitta' | 'Kapha')[] | undefined
     if (meta.id === 'corpo') {
       const synthesis = buildChapter4Synthesis(dimensionResponses)
       detailedRows = [
@@ -181,6 +182,23 @@ export function buildCerMapReadings(
       ]
       const reading = buildAyurvedaInterpretation(dimensionResponses)
       if (reading.hasCompletedRevision && !options.literalOnly) {
+        const hypothesis = reading.prakritiHypothesis
+        const recognized = ['Vata', 'Pitta', 'Kapha'] as const
+        const tendencies = [hypothesis.primaryTendency, hypothesis.secondaryTendency].filter(
+          (value): value is 'Vata' | 'Pitta' | 'Kapha' =>
+            recognized.some((dosha) => dosha === value),
+        )
+        // A two-way tie is an unordered pair, never a fabricated predominance.
+        const tiedPair = hypothesis.summary.match(
+          /^Convergência entre (Vata|Pitta|Kapha) e (Vata|Pitta|Kapha),/,
+        )
+        if (hypothesis.confidence !== 'Em observação') {
+          ayurvedaConstitution = tiedPair
+            ? recognized.filter((dosha) => tiedPair.slice(1).includes(dosha))
+            : tendencies.length
+              ? tendencies
+              : undefined
+        }
         detailedRows.push(
           ...[
             ...reading.prakritiHypothesis.evidencesVata,
@@ -278,6 +296,7 @@ export function buildCerMapReadings(
       summaryRows,
       detailedRows,
       referenceIds: [...meta.refs],
+      ...(ayurvedaConstitution ? { ayurvedaConstitution } : {}),
     }
   })
   return {
@@ -385,6 +404,9 @@ export function isCerMapReadingSnapshot(value: unknown): value is CerMapReadingS
         strings([d.id, d.title, d.explanation, d.summary, d.interpretation]) &&
         rows(d.summaryRows) &&
         rows(d.detailedRows) &&
+        (d.ayurvedaConstitution === undefined ||
+          (Array.isArray(d.ayurvedaConstitution) &&
+            d.ayurvedaConstitution.every((value) => ['Vata', 'Pitta', 'Kapha'].includes(value)))) &&
         Array.isArray(d.referenceIds) &&
         strings(d.referenceIds),
     ) &&

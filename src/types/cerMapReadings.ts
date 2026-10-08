@@ -24,6 +24,8 @@ export interface CerMapReadingDimension {
   summaryRows: CerMapReadingRow[]
   detailedRows: CerMapReadingRow[]
   referenceIds: string[]
+  /** Educational profile from the existing constitutional hypothesis; never inferred from chart percentages. */
+  ayurvedaConstitution?: ('Vata' | 'Pitta' | 'Kapha')[]
 }
 
 /** A reviewed, versioned document; never re-derived when the participant opens it. */

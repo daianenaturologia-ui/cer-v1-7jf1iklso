@@ -55,7 +55,13 @@ describe('Documento das duas versões: respostas literais, privacidade e revisã
     expect(document.integration).toBe('')
     expect(document.history).toBe('')
     expect(document.dimensions.every((d) => d.summary === '' && d.interpretation === '')).toBe(true)
+    expect(document.dimensions[0].ayurvedaConstitution).toBeUndefined()
     expect(isCerMapReadingSnapshot(document)).toBe(true)
+    const malformed = structuredClone(document)
+    ;(malformed.dimensions[0] as any).ayurvedaConstitution = 'Vata'
+    expect(isCerMapReadingSnapshot(malformed)).toBe(false)
+    ;(malformed.dimensions[0] as any).ayurvedaConstitution = ['unknown']
+    expect(isCerMapReadingSnapshot(malformed)).toBe(false)
     expect(isCerMapReadingSnapshot({ ...document, references: [{}] })).toBe(false)
     expect(
       isCerMapReadingSnapshot({ ...document, dimensions: Array(6).fill(document.dimensions[0]) }),

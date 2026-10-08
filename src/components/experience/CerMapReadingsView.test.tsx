@@ -622,27 +622,14 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     expect(corpoDialog).toBeInTheDocument()
     const corpoText = corpoDialog.textContent || ''
 
-    // Presença da leitura e síntese personalizadas e explicação global leiga de Corpo
-    expect(corpoText).toContain('Exemplo fictício para explorar o Mapa CER')
-    expect(corpoText).toContain('Como compreender esta dimensão')
-    expect(corpoText).toContain('O Ayurveda é uma tradição de cuidado que observa')
-    expect(corpoText).toContain('Entenda os doshas e suas combinações')
-    expect(corpoText).toContain('Vata — movimento e variabilidade')
-    expect(corpoText).toContain('Pitta — transformação e calor')
-    expect(corpoText).toContain('Kapha — sustentação e estabilidade')
-    expect(corpoText).toContain('Sete combinações básicas')
-    expect(corpoText).toContain('Vata–Pitta, Vata–Kapha, Pitta–Kapha')
-    expect(corpoText).toContain('Prakriti — seu ponto de partida')
-    expect(corpoText).toContain('Vikriti — seu momento atual')
-    expect(corpoText).toContain('Agni observa, pela lente tradicional')
-    expect(corpoText).toContain(
-      'Mariana, neste exemplo fictício, o gráfico ilustra uma combinação Vata–Pitta',
-    )
-    expect(corpoText).toContain(
-      'Os percentuais são ilustrativos, não foram calculados a partir de uma avaliação real',
-    )
-    expect(corpoText).toContain('Síntese da leitura')
-    expect(corpoText).toContain('Uma leitura possível')
+    // A narrativa se dirige à pessoa; o detalhe fica sob escolha, sem rótulo fictício no texto.
+    expect(corpoText).toContain('Seu corpo pela lente do Ayurveda')
+    expect(corpoText).toContain('Mariana, vamos conhecer seu jeito de funcionar?')
+    expect(corpoText).toContain('Vata–Pitta')
+    expect(corpoText).not.toContain('neste exemplo fictício')
+    expect(corpoText).not.toContain('Os percentuais são ilustrativos')
+    expect(corpoText).not.toContain('Exemplo fictício para explorar o Mapa CER')
+    expect(corpoText).not.toContain('Como compreender esta dimensão')
 
     // Afirmar AUSÊNCIA do bloco "Respostas compartilhadas nesta versão" e de IDs técnicos / valores crus
     expect(corpoText).not.toContain('Respostas compartilhadas nesta versão')
@@ -726,10 +713,13 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     const corpoText = corpoDialog.textContent || ''
 
     expect(corpoText).toContain('Entenda os doshas e suas combinações')
-    expect(corpoText).toContain('Vata — movimento e variabilidade')
-    expect(corpoText).toContain('Pitta — transformação e calor')
-    expect(corpoText).toContain('Kapha — sustentação e estabilidade')
-    expect(corpoText).toContain('Sete combinações básicas')
+    expect(corpoText).toContain('Seu corpo pela lente do Ayurveda')
+    expect(corpoText).toContain('Vata–Pitta')
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Entenda os doshas e suas combinações' }),
+    )
+    expect(corpoDialog.textContent).toContain('associado à sustentação e à estabilidade')
+    expect(corpoDialog.textContent).toContain('Sete combinações básicas')
   })
 
   it('no mapa real (não-demo), exibe explicação global sem atribuir o perfil Mariana e preserva fallback de rows', async () => {
@@ -773,15 +763,15 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     const text = dialog.textContent || ''
 
     // Explicação global leiga e doshas presentes
-    expect(text).toContain('O Ayurveda é uma tradição de cuidado que observa')
+    expect(text).toContain('Seu corpo pela lente do Ayurveda')
     expect(text).toContain('Entenda os doshas e suas combinações')
-    expect(text).toContain('Sete combinações básicas')
-    expect(text).toContain('Prakriti — seu ponto de partida')
-    expect(text).toContain('Vikriti — seu momento atual')
+    expect(text).toContain('Prakriti e Vikriti: sua base e seu momento')
 
+    await userEvent.click(screen.getByRole('button', { name: 'Sua leitura registrada neste mapa' }))
+    const expandedText = dialog.textContent || ''
     // Conteúdo próprio de Carlos presente
-    expect(text).toContain('Síntese real do participante Carlos.')
-    expect(text).toContain('Leitura elaborada para Carlos.')
+    expect(expandedText).toContain('Síntese real do participante Carlos.')
+    expect(expandedText).toContain('Leitura elaborada para Carlos.')
 
     // NÃO deve conter o texto personalizado de Mariana
     expect(text).not.toContain('Mariana, neste exemplo fictício')
@@ -805,32 +795,22 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     const dialog = await screen.findByRole('dialog')
     expect(dialog.className).toContain('max-w-3xl')
 
-    // (b) Sem duplicação de abertura: dim.explanation genérica antiga NÃO aparece junto da nova abertura
-    expect(dialog.textContent).toContain(
-      'O Ayurveda é uma tradição de cuidado que observa como as características',
-    )
+    expect(dialog.textContent).toContain('Seu corpo pela lente do Ayurveda')
     expect(dialog.textContent).not.toContain('Como compreender esta dimensão')
-
-    // (a) Prakriti, Vikriti, ponte e Agni/Ama estão FORA do acordeão colapsável.
-    // Quando fechamos o acordeão clicando no trigger, esses textos permanecem no diálogo!
     const accordionTrigger = screen.getByRole('button', {
-      name: /Entenda os doshas e suas combinações/i,
+      name: 'Entenda os doshas e suas combinações',
     })
+    expect(accordionTrigger).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(accordionTrigger)
-
-    // Prakriti/Vikriti/ponte/Agni-Ama continuam presentes e visíveis no diálogo após colapsar o acordeão
-    expect(dialog.textContent).toContain('Prakriti — seu ponto de partida:')
-    expect(dialog.textContent).toContain('Vikriti — seu momento atual:')
-    expect(dialog.textContent).toContain(
-      'Uma característica habitual não é automaticamente um desequilíbrio.',
+    expect(dialog.textContent).toContain('Sete combinações básicas')
+    await userEvent.click(accordionTrigger)
+    expect(dialog.textContent).not.toContain('Sete combinações básicas')
+    expect(dialog.textContent).toContain('Mariana, vamos conhecer seu jeito de funcionar?')
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Prakriti e Vikriti: sua base e seu momento' }),
     )
-    expect(dialog.textContent).toContain(
-      'Agni observa, pela lente tradicional, o padrão de fome e digestão.',
-    )
-    expect(dialog.textContent).toContain('Ama descreve processamento incompleto nessa tradição.')
-
-    // Leitura pessoal também continua visível
-    expect(dialog.textContent).toContain('Síntese da leitura')
+    expect(dialog.textContent).toContain('Prakriti: suas tendências de base')
+    expect(dialog.textContent).toContain('Vikriti: o que pede cuidado agora')
 
     // (c) Verificar que outra dimensão NÃO recebe max-w-3xl
     fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })

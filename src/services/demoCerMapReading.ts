@@ -94,10 +94,11 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
     if (dim.id === 'corpo') {
       return {
         ...dim,
+        ayurvedaConstitution: ['Vata', 'Pitta'] as ('Vata' | 'Pitta')[],
         summary:
-          'Mariana, neste exemplo fictício, o gráfico ilustra uma combinação Vata–Pitta, com maior destaque visual para Vata e presença de Kapha. Vata–Pitta significa uma combinação dos princípios de movimento/variabilidade e transformação/calor; isso não significa que todos os traços desses perfis descrevam você. Os percentuais são ilustrativos, não foram calculados a partir de uma avaliação real.',
+          'Mariana, sua leitura constitucional explora a combinação Vata–Pitta: movimento e variabilidade junto de transformação e calor. Vamos conhecer essas tendências e observar o que faz sentido na sua experiência, sem esperar que todos os traços descrevam você.',
         interpretation:
-          'Os relatos habituais deste cenário — estrutura leve, pele seca, cabelo fino e sensibilidade ao frio — ajudam a explorar características tradicionalmente associadas a Vata. A participação de Pitta no gráfico não deve ser tomada como confirmação por esses relatos. A fome variável e a digestão pesada pedem leitura conjunta, por isso Agni permanece em observação. Como faltam dados atuais específicos para comparar com sua base, não podemos concluir um Vikriti.\n\nSinais de tensão na mandíbula ou nos ombros e respiração superficial descritos sob momentos de sobrecarga pertencem a dimensões distintas da sua experiência. Embora possam coincidir no tempo, cabe investigar em conjunto como essas percepções dialogam, sem concluir uma causalidade direta entre corpo e mente.\n\nNa perspectiva integrativa, o convite é explorar com a profissional formas de acolher esse ritmo habitual, investigando o que traz conforto e previsibilidade sem regras rígidas.',
+          'Você compartilhou características habituais — estrutura leve, pele seca, cabelo fino e sensibilidade ao frio — ajudam a explorar características tradicionalmente associadas a Vata. A participação de Pitta no gráfico não deve ser tomada como confirmação por esses relatos. A fome variável e a digestão pesada pedem leitura conjunta, por isso Agni permanece em observação. Sua leitura atual permanece em observação. Vamos compreender melhor o que mudou em relação ao seu habitual, há quanto tempo e em quais situações, antes de propor uma hipótese de Vikriti.\n\nSinais de tensão na mandíbula ou nos ombros e respiração superficial descritos sob momentos de sobrecarga pertencem a dimensões distintas da sua experiência. Embora possam coincidir no tempo, cabe investigar em conjunto como essas percepções dialogam, sem concluir uma causalidade direta entre corpo e mente.\n\nPodemos descobrir juntas quais condições ajudam você a encontrar conforto e continuidade, respeitando seu momento e sem transformar o cuidado em regras rígidas.',
         summaryRows: [...doshaRows, ...dim.summaryRows],
         detailedRows: [...doshaRows, ...dim.detailedRows],
       }
@@ -165,7 +166,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
     // ═════════════════════════════════════════════════════════════════════════
     vata: {
       summary:
-        'Características corporais habituais relatadas (estrutura leve, pele seca, sensibilidade ao frio, fome e eliminação irregulares) lidas à luz tradicional de Vata. Percentual de 45% puramente ilustrativo.',
+        'Características corporais habituais relatadas (estrutura leve, pele seca, sensibilidade ao frio, fome e eliminação irregulares) lidas à luz tradicional de Vata.',
       observations: [
         'Estrutura física leve e estreita reconhecida desde a juventude',
         'Pele seca ou áspera e cabelo fino relatados habitualmente',
@@ -173,7 +174,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Fome irregular e eliminação intestinal com ritmo variável',
       ],
       interpretation:
-        'Na tradição ayurvédica, o princípio Vata representa movimento, leveza e variabilidade. Os sinais relatados — constituição estreita habitual, pele seca, pés e mãos frios, fome oscilante e eliminação irregular — alinham-se conceitualmente a essas qualidades tradicionais. O percentual de 45% apresentado no gráfico é unicamente um exemplo visual demonstrativo, e não um cálculo laboratorial, medição biológica ou diagnóstico clínico. Não se deve associar traços de personalidade ou talentos intelectuais a um dosha.',
+        'Na tradição ayurvédica, o princípio Vata representa movimento, leveza e variabilidade. Os sinais relatados — constituição estreita habitual, pele seca, pés e mãos frios, fome oscilante e eliminação irregular — alinham-se conceitualmente a essas qualidades tradicionais. Podemos usar essa lente para explorar suas necessidades, sem transformar um dosha em uma definição da sua personalidade. O que você percebe como recurso e o que pede cuidado na sua vida?',
       resources: [
         'Capacidade de perceber e descrever com nitidez características corporais habituais',
       ],
@@ -192,14 +193,14 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
 
     pitta: {
       summary:
-        'Princípio tradicional de calor e transformação; dados da autoavaliação insuficientes para diagnosticar constituição ou excesso. Percentual de 35% ilustrativo.',
+        'Princípio tradicional de calor e transformação; dados da autoavaliação insuficientes para diagnosticar constituição ou excesso.',
       observations: [
         'Transpira pouco segundo o relato da autoavaliação',
         'Prefere bebidas mornas ou quentes e sente frio em extremidades',
         'Consegue esperar uma refeição sem grande desconforto imediato',
       ],
       interpretation:
-        'Na tradição ayurvédica, Pitta corresponde aos processos metabólicos, digestivos e de transformação térmica. O percentual de 35% exibido no gráfico é meramente didático e ilustrativo. Os dados relatados nesta autoavaliação — que registram pouca transpiração e ausência de queixas clássicas de queimação — são insuficientes para validar constituição predominante ou apontar excesso de Pitta. Características como foco ou irritabilidade não devem ser explicadas por causalidade humoral sem base empírica.',
+        'Na tradição ayurvédica, Pitta corresponde aos processos metabólicos, digestivos e de transformação térmica. Os dados relatados nesta autoavaliação — que registram pouca transpiração e ausência de queixas clássicas de queimação — são insuficientes para validar constituição predominante ou apontar excesso de Pitta. Se você reconhece momentos de foco, intensidade ou irritação, podemos compreender em que situações aparecem, considerando sua história e seu momento.',
       resources: ['Atenção às respostas corporais de digestão e temperatura quando questionada'],
       costs: [
         'Dados insuficientes no relato atual para mapear custos corporais específicos ligados a calor',
@@ -215,14 +216,14 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
 
     kapha: {
       summary:
-        'Princípio tradicional de estrutura e sustentação; sensação de peso relatada sem validação de constituição fixa. Percentual de 20% ilustrativo.',
+        'Princípio tradicional de estrutura e sustentação; sensação de peso relatada sem validação de constituição fixa.',
       observations: [
         'Sensação relatada de digestão pesada após determinadas refeições',
         'Sensação de corpo pesado ao despertar em alguns períodos',
         'Reconhecimento de ritmos habituais mantidos ao longo de muitos anos',
       ],
       interpretation:
-        'No Ayurveda, Kapha simboliza estabilidade, coesão estrutural e lubrificação dos tecidos. O percentual de 20% no gráfico compõe apenas o exemplo visual de navegação. A sensação de peso após refeições e o corpo pesado ao despertar foram descritos no seu relato, mas não validam um diagnóstico de constituição Kapha. Traços relacionais, como lealdade ou dificuldade de dizer não, não devem ser atribuídos ao dosha; da mesma forma, o peso matinal é uma percepção a ser investigada sem inferir causa definitiva.',
+        'No Ayurveda, Kapha simboliza estabilidade, coesão estrutural e lubrificação dos tecidos. A sensação de peso após refeições e o corpo pesado ao despertar foram descritos no seu relato, mas não validam um diagnóstico de constituição Kapha. Traços relacionais, como lealdade ou dificuldade de dizer não, não devem ser atribuídos ao dosha; da mesma forma, o peso matinal é uma percepção a ser investigada sem inferir causa definitiva.',
       resources: ['Percepção dos próprios ritmos e atenção às sensações corporais ao longo do dia'],
       costs: ['Sensação de peso corporal relatada ao despertar e após refeições mais densas'],
       connections: [
@@ -245,7 +246,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Eliminação irregular no padrão habitual',
       ],
       interpretation:
-        'Na tradição ayurvédica, Agni representa os processos de digestão e transformação. Neste exemplo, a fome e o retorno do apetite variáveis aparecem junto à digestão pesada. Há sinais associados a mais de um padrão tradicional, por isso a leitura permanece em observação. Precisamos explorar duração, frequência e contexto antes de propor uma hipótese mais específica. Esses relatos habituais não comprovam um desequilíbrio atual nem medem metabolismo ou toxinas.',
+        'Na tradição ayurvédica, Agni representa os processos de digestão e transformação. Nos seus relatos, a fome e o retorno do apetite variáveis aparecem junto à digestão pesada. Há sinais associados a mais de um padrão tradicional, por isso a leitura permanece em observação. Precisamos explorar duração, frequência e contexto antes de propor uma hipótese mais específica. Esses relatos habituais não comprovam um desequilíbrio atual nem medem metabolismo ou toxinas.',
       resources: [
         'Você relatou sinais de apetite, digestão e ritmo intestinal que podem ser explorados na conversa.',
       ],
