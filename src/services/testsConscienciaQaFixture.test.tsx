@@ -10,6 +10,13 @@ import {
   buildSexualidadeInterpretation,
   buildSentidoInterpretation,
 } from '@/services/universalDimensionInterpretationEngine'
+import {
+  AYV_C3_PROMPTS,
+  AYURVEDA_CHAPTER_3_ID,
+  AYURVEDA_CHAPTER_3_VERSION,
+  deriveChapter3Status,
+  loadChapter3State,
+} from '@/services/ayurvedaChapter3'
 
 const mockEnrollment: any = {
   id: 'demo-enr-01',
@@ -185,5 +192,191 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
       expect(screen.getByText('Ativar Cenário QA (6 Dimensões)')).toBeInTheDocument()
     })
     expect(demoAdapter.getActiveScenario()).toBe('default')
+  })
+
+  describe('Regressão Microbloco 3E — Persistência e Recuperação do Capítulo 3 no Cenário QA Ativo', () => {
+    const testEnrollmentId = 'demo-enr-01'
+    const experienceId = 'exp-corpo-fisiologia-07b'
+
+    it('1) Cenário QA ativo → salvar resposta de C3 via saveExperienceResponse → listExperienceResponses inclui novos prompts com fixture íntegro', () => {
+      demoAdapter.setActiveScenario('qa_consciencia_completa')
+      const initialResponses = demoAdapter.listExperienceResponses(testEnrollmentId, experienceId)
+      const initialCount = initialResponses.length
+      expect(initialCount).toBeGreaterThanOrEqual(15)
+
+      // Verificar que antes de salvar, nenhum prompt ayv_c3 existe
+      const initialC3 = initialResponses.filter(
+        (r) =>
+          r.prompt_id.startsWith('ayv_c3_') ||
+          (r as any).prompt_key?.startsWith('ayv_c3_') ||
+          (r.structured_value as any)?.metadata?.prompt_key?.startsWith('ayv_c3_'),
+      )
+      expect(initialC3.length).toBe(0)
+
+      // Salva respostas de C3 (caminho curto: sem mudanças atuais)
+      const now = new Date().toISOString()
+      demoAdapter.saveExperienceResponse({
+        enrollmentId: testEnrollmentId,
+        experienceId,
+        promptId: AYV_C3_PROMPTS.DOMAINS.id,
+        respondentUserId: 'user-mariana',
+        responseType: 'ChoiceCards',
+        promptVersion: 1,
+        promptKey: AYV_C3_PROMPTS.DOMAINS.key,
+        canonicalPromptId: AYV_C3_PROMPTS.DOMAINS.id,
+        stepOrder: AYV_C3_PROMPTS.DOMAINS.step_order,
+        accessClass: 'shared_care',
+        structuredValue: {
+          value: ['no_current_changes'],
+          selectedOptionIds: ['no_current_changes'],
+          chapter_id: AYURVEDA_CHAPTER_3_ID,
+          experience_version: AYURVEDA_CHAPTER_3_VERSION,
+          chapter_revision_number: 1,
+          metadata: {
+            prompt_key: AYV_C3_PROMPTS.DOMAINS.key,
+            canonical_prompt_id: AYV_C3_PROMPTS.DOMAINS.id,
+            domain: 'corpo_fisiologia',
+            option_ids: ['no_current_changes'],
+            time_layer: 'current',
+            stability: 'changed',
+            source: 'participant_self_report',
+            answered_at: now,
+            chapter_id: AYURVEDA_CHAPTER_3_ID,
+            chapter_revision_number: 1,
+          },
+        },
+      })
+
+      // Salva também resposta de área atual (ex: ayv_c3_current_hunger)
+      demoAdapter.saveExperienceResponse({
+        enrollmentId: testEnrollmentId,
+        experienceId,
+        promptId: AYV_C3_PROMPTS.CURRENT_HUNGER.id,
+        respondentUserId: 'user-mariana',
+        responseType: 'ChoiceCards',
+        promptVersion: 1,
+        promptKey: AYV_C3_PROMPTS.CURRENT_HUNGER.key,
+        canonicalPromptId: AYV_C3_PROMPTS.CURRENT_HUNGER.id,
+        stepOrder: AYV_C3_PROMPTS.CURRENT_HUNGER.step_order,
+        accessClass: 'shared_care',
+        structuredValue: {
+          area_key: 'hunger',
+          current_states: ['irregular_hunger'],
+          chapter_id: AYURVEDA_CHAPTER_3_ID,
+          experience_version: AYURVEDA_CHAPTER_3_VERSION,
+          chapter_revision_number: 1,
+          metadata: {
+            prompt_key: AYV_C3_PROMPTS.CURRENT_HUNGER.key,
+            canonical_prompt_id: AYV_C3_PROMPTS.CURRENT_HUNGER.id,
+            chapter_revision_number: 1,
+          },
+        },
+      })
+
+      // Salva conclusão explícita
+      demoAdapter.saveExperienceResponse({
+        enrollmentId: testEnrollmentId,
+        experienceId,
+        promptId: AYV_C3_PROMPTS.COMPLETION.id,
+        respondentUserId: 'user-mariana',
+        responseType: 'ChapterCompletion',
+        promptVersion: 1,
+        promptKey: AYV_C3_PROMPTS.COMPLETION.key,
+        canonicalPromptId: AYV_C3_PROMPTS.COMPLETION.id,
+        stepOrder: 5,
+        accessClass: 'shared_care',
+        structuredValue: {
+          completed: true,
+          completed_at: now,
+          chapter_id: AYURVEDA_CHAPTER_3_ID,
+          experience_version: AYURVEDA_CHAPTER_3_VERSION,
+          metadata: {
+            prompt_key: AYV_C3_PROMPTS.COMPLETION.key,
+            answered_at: now,
+            chapter_revision_number: 1,
+          },
+        },
+      })
+
+      const updatedResponses = demoAdapter.listExperienceResponses(testEnrollmentId, experienceId)
+      // Contém os registros originais do fixture + 3 novos registros de C3
+      expect(updatedResponses.length).toBe(initialCount + 3)
+
+      // Fixture íntegro: registros originais de C1/C2 continuam lá e inalterados
+      for (const orig of initialResponses) {
+        const found = updatedResponses.find((r) => r.id === orig.id)
+        expect(found).toBeDefined()
+        expect(found?.prompt_id).toBe(orig.prompt_id)
+      }
+
+      // Registros ayv_c3 estão presentes
+      const c3Saved = updatedResponses.filter(
+        (r) =>
+          r.prompt_id === AYV_C3_PROMPTS.DOMAINS.id ||
+          r.prompt_id === AYV_C3_PROMPTS.CURRENT_HUNGER.id ||
+          r.prompt_id === AYV_C3_PROMPTS.COMPLETION.id,
+      )
+      expect(c3Saved.length).toBe(3)
+    })
+
+    it('2) Após salvar, deriveChapter3Status reflete conclusão e loadChapter3State recupera as respostas salvas', () => {
+      demoAdapter.setActiveScenario('qa_consciencia_completa')
+      const responses = demoAdapter.listExperienceResponses(testEnrollmentId, experienceId)
+
+      const status = deriveChapter3Status(responses)
+      expect(status.status).toBe('completed')
+
+      const state = loadChapter3State(responses)
+      expect(state.changed_domains).toEqual(['no_current_changes'])
+      expect(state.current_hunger?.current_states).toEqual(['irregular_hunger'])
+    })
+
+    it('3) Isolamento: respostas salvas de OUTRO enrollment_id não aparecem na listagem', () => {
+      demoAdapter.setActiveScenario('qa_consciencia_completa')
+      const otherEnrollmentId = 'demo-enr-other-user'
+
+      demoAdapter.saveExperienceResponse({
+        enrollmentId: otherEnrollmentId,
+        experienceId,
+        promptId: 'ayv_c3_domains_other',
+        respondentUserId: 'user-other',
+        responseType: 'ChoiceCards',
+        promptVersion: 1,
+        structuredValue: { value: ['sleep'] },
+      })
+
+      const marianaResponses = demoAdapter.listExperienceResponses(testEnrollmentId, experienceId)
+      const otherInMariana = marianaResponses.filter(
+        (r) => r.enrollment_id === otherEnrollmentId || r.prompt_id === 'ayv_c3_domains_other',
+      )
+      expect(otherInMariana.length).toBe(0)
+
+      // Listagem de otherEnrollmentId não contém dados exclusivos de Mariana
+      const otherResponses = demoAdapter.listExperienceResponses(otherEnrollmentId, experienceId)
+      const marianaInOther = otherResponses.filter((r) => r.enrollment_id === testEnrollmentId)
+      expect(marianaInOther.length).toBe(0)
+    })
+
+    it('4) Cenário demo NORMAL (sem QA): comportamento inalterado (leitura do store como antes)', () => {
+      demoAdapter.setActiveScenario('default')
+      expect(demoAdapter.getActiveScenario()).toBe('default')
+
+      const normalResponses = demoAdapter.listExperienceResponses(testEnrollmentId, experienceId)
+      // No cenário default, vem apenas do store — sem fixture injetado
+      // Mariana tem as respostas de C3 salvas no store
+      const c3InDefault = normalResponses.filter(
+        (r) =>
+          r.prompt_id === AYV_C3_PROMPTS.DOMAINS.id ||
+          r.prompt_id === AYV_C3_PROMPTS.CURRENT_HUNGER.id ||
+          r.prompt_id === AYV_C3_PROMPTS.COMPLETION.id,
+      )
+      expect(c3InDefault.length).toBe(3)
+
+      // Nenhuma resposta de Mente, Regulação, etc. do fixture QA aparece no default
+      const menteResps = demoAdapter
+        .listExperienceResponses(testEnrollmentId)
+        .filter((r) => r.experience_id === 'exp-mente-emocoes-07c')
+      expect(menteResps.length).toBe(0)
+    })
   })
 })

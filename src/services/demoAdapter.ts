@@ -2004,10 +2004,47 @@ class DemoAdapter {
     enrollmentId?: string,
     experienceId?: string,
   ): ExperienceResponseRecord[] {
-    const sourceResponses =
-      this.activeScenario === 'qa_consciencia_completa'
-        ? buildConscienciaQaFixture(enrollmentId || DEMO_ENROLLMENT_ID).responses
-        : this.state.experienceResponses
+    let sourceResponses: ExperienceResponseRecord[]
+    if (this.activeScenario === 'qa_consciencia_completa') {
+      const targetEnrollment = enrollmentId || DEMO_ENROLLMENT_ID
+      const fixtureResponses = buildConscienciaQaFixture(targetEnrollment).responses
+      const storeResponses = (this.state.experienceResponses || []).filter(
+        (r) => r.enrollment_id === targetEnrollment,
+      )
+
+      // Deduplicação determinística: registros gravados explicitamente no store
+      // vencem sobre registros do fixture com a mesma chave.
+      // Preservar revisões distintas (não colapsar registros de revision diferentes).
+      const getDedupeKey = (r: ExperienceResponseRecord): string => {
+        const rev =
+          (r.structured_value as any)?.metadata?.chapter_revision_number ??
+          (r.structured_value as any)?.chapter_revision_number ??
+          r.version ??
+          ''
+        return `${r.enrollment_id}::${r.prompt_id}::${rev}`
+      }
+
+      const mergedMap = new Map<string, ExperienceResponseRecord>()
+      // 1. Fixture como base
+      for (const r of fixtureResponses) {
+        mergedMap.set(getDedupeKey(r), r)
+      }
+      // 2. Store vence sobre o fixture
+      for (const r of storeResponses) {
+        mergedMap.set(getDedupeKey(r), r)
+      }
+
+      sourceResponses = Array.from(mergedMap.values())
+      // Ordenação determinística: timestamp com desempate estável por id
+      sourceResponses.sort((a, b) => {
+        const timeA = new Date(a.updated || a.created || 0).getTime()
+        const timeB = new Date(b.updated || b.created || 0).getTime()
+        if (timeA !== timeB) return timeA - timeB
+        return a.id.localeCompare(b.id)
+      })
+    } else {
+      sourceResponses = this.state.experienceResponses
+    }
 
     return sourceResponses.filter((r) => {
       if (enrollmentId && r.enrollment_id !== enrollmentId) return false
