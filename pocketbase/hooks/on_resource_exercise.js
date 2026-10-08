@@ -1,8 +1,5 @@
 // Private self-development records; callbacks keep validation inside their execution scope.
 onRecordCreateRequest((e) => {
-  const previous = e.record.original()
-  if (false && previous && e.record.getInt('revision') !== previous.getInt('revision') + 1)
-    throw new BadRequestError('O exercício foi atualizado em outra janela. Reabra antes de salvar.')
   let value
   try {
     value = JSON.parse(e.record.getString('exercise'))
