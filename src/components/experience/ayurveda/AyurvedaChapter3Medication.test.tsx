@@ -229,4 +229,122 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
       ).toHaveAttribute('aria-pressed', 'true'),
     )
   })
+
+  it('permite abrir o bloco opcional "Como meu corpo está agora" no caminho curto e registrar área com comparação e detalhes', async () => {
+    const user = userEvent.setup()
+    const props = {
+      enrollmentId: 'enrollment-demo',
+      experienceId: 'exp-corpo-fisiologia-07b',
+      respondentUserId: 'participant-demo',
+      onBackToHub: () => {},
+    }
+    render(<AyurvedaChapter3Flow {...props} />)
+
+    await screen.findByText('O que está diferente agora')
+    // Caminho curto: seleciona "Não percebo mudanças importantes agora"
+    await user.click(screen.getByRole('button', { name: 'Não percebo mudanças importantes agora' }))
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+
+    // Chega na Etapa 5
+    expect(screen.getByText('Como meu corpo está agora')).toBeInTheDocument()
+    // Abre o bloco recolhível
+    await user.click(screen.getByRole('button', { name: /Abrir/i }))
+    expect(screen.getByText(/Pense nos últimos 14 dias/i)).toBeInTheDocument()
+
+    // Abre a área de Fome
+    const preencherBtns = screen.getAllByRole('button', { name: /Preencher/i })
+    await user.click(preencherBtns[0]) // Fome
+    expect(screen.getByText('Como está sua fome nestes últimos 14 dias?')).toBeInTheDocument()
+
+    // Seleciona um estado de fome
+    await user.click(
+      screen.getByRole('button', { name: 'Surge de repente e pode ficar muito intensa' }),
+    )
+    // Seleciona comparação "Diferente do meu habitual"
+    await user.click(screen.getByRole('button', { name: 'Diferente do meu habitual' }))
+
+    // Abre campos condicionais
+    expect(
+      screen.getByText(/Há quanto tempo percebe essa diferença em fome\?/i),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Com que frequência isso tem acontecido?')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /O que estava acontecendo nesse período\? Isso registra contexto, sem afirmar causa\./i,
+      ),
+    ).toBeInTheDocument()
+
+    // Preenche duração e frequência
+    await user.click(screen.getByRole('button', { name: 'Entre 1 e 3 meses' }))
+    await user.click(screen.getByRole('button', { name: 'Em vários dias' }))
+    await user.click(screen.getByRole('button', { name: 'Estresse ou acontecimentos emocionais' }))
+
+    // Verifica que foi persistido sob a chave correspondente
+    await waitFor(() =>
+      expect(experienceResponseService.saveResponse).toHaveBeenCalledWith(
+        expect.objectContaining({
+          promptId: 'ayv_c3_current_hunger',
+          promptKey: 'ayv_c3_current_hunger',
+          structuredValue: expect.objectContaining({
+            value: expect.objectContaining({
+              area_key: 'hunger',
+              comparison: 'different',
+              duration: 'one_to_three_months',
+              frequency: 'several_days',
+            }),
+          }),
+        }),
+      ),
+    )
+
+    // Preenche medicamentos para poder revisar
+    await user.click(
+      screen.getByRole('button', { name: 'Não uso medicamentos ou suplementos atualmente' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Revisar' }))
+
+    // Na tela de revisão (step 6), deve exibir os campos respondidos e a referência
+    expect(screen.getByText('Como meu corpo está agora (últimos 14 dias)')).toBeInTheDocument()
+    expect(screen.getByText(/Surge de repente e pode ficar muito intensa/)).toBeInTheDocument()
+    expect(screen.getByText(/Diferente do meu habitual/)).toBeInTheDocument()
+    expect(screen.getByText(/Entre 1 e 3 meses/)).toBeInTheDocument()
+    expect(screen.getByText(/Em vários dias/)).toBeInTheDocument()
+    expect(screen.getByText(/Estresse ou acontecimentos emocionais/)).toBeInTheDocument()
+  })
+
+  it('quando a comparação muda de different para same_as_usual, a revisão não exibe os detalhes obsoletos', async () => {
+    const user = userEvent.setup()
+    const props = {
+      enrollmentId: 'enrollment-demo',
+      experienceId: 'exp-corpo-fisiologia-07b',
+      respondentUserId: 'participant-demo',
+      onBackToHub: () => {},
+    }
+    render(<AyurvedaChapter3Flow {...props} />)
+
+    await screen.findByText('O que está diferente agora')
+    await user.click(screen.getByRole('button', { name: 'Não percebo mudanças importantes agora' }))
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+
+    await user.click(screen.getByRole('button', { name: /Abrir/i }))
+    const preencherBtns = screen.getAllByRole('button', { name: /Preencher/i })
+    await user.click(preencherBtns[3]) // Sono
+
+    await user.click(screen.getByRole('button', { name: 'Diferente do meu habitual' }))
+    await user.click(screen.getByRole('button', { name: 'Nas últimas semanas' }))
+    await user.click(screen.getByRole('button', { name: 'Quase todos os dias' }))
+
+    // Muda a comparação para "Parecido com meu habitual"
+    await user.click(screen.getByRole('button', { name: 'Parecido com meu habitual' }))
+
+    await user.click(
+      screen.getByRole('button', { name: 'Não uso medicamentos ou suplementos atualmente' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Revisar' }))
+
+    expect(screen.getByText('Parecido com meu habitual')).toBeInTheDocument()
+    // Detalhes condicionais não devem ser exibidos na revisão para sono
+    expect(screen.queryByText(/Duração da mudança:/)).toBeNull()
+    expect(screen.queryByText(/Frequência:/)).toBeNull()
+  })
 })

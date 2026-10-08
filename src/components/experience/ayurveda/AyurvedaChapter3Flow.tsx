@@ -3,6 +3,8 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Clock,
   Mic,
   Plus,
@@ -35,6 +37,15 @@ import {
   chapter3Label,
   deriveChapter3Status,
   loadChapter3State,
+  AYV_C3_AREA_DEFINITIONS,
+  AYV_C3_COMPARISON_OPTIONS,
+  AYV_C3_FREQUENCY_OPTIONS,
+  AYV_C3_OPERATIONAL_REFERENCE_TEXT,
+  AYV_C3_CONTEXT_PROMPT_INSTRUCTION,
+  AyurvedaC3AreaId,
+  AyurvedaC3ComparisonOption,
+  AyurvedaC3FrequencyOption,
+  AyurvedaCurrentAreaRecord,
 } from '@/services/ayurvedaChapter3'
 
 interface Props {
@@ -62,6 +73,8 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   const [isCorrectionMode, setIsCorrectionMode] = useState(false)
   const [showCorrectionConfirmation, setShowCorrectionConfirmation] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
+  const [showCurrentBodyBlock, setShowCurrentBodyBlock] = useState(false)
+  const [openAreaId, setOpenAreaId] = useState<AyurvedaC3AreaId | null>(null)
   const medicationItemsRef = useRef<AyurvedaMedicationItem[]>([])
   const revisionNumberRef = useRef(1)
 
@@ -314,6 +327,39 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           state.optional_note || '',
           reason,
         )
+        // Novas coletas opcionais por área
+        const areaPromptMap: Record<
+          AyurvedaC3AreaId,
+          (typeof AYV_C3_PROMPTS)[keyof typeof AYV_C3_PROMPTS]
+        > = {
+          hunger: AYV_C3_PROMPTS.CURRENT_HUNGER,
+          post_meal: AYV_C3_PROMPTS.CURRENT_POST_MEAL,
+          elimination: AYV_C3_PROMPTS.CURRENT_ELIMINATION,
+          sleep: AYV_C3_PROMPTS.CURRENT_SLEEP,
+          temperature: AYV_C3_PROMPTS.CURRENT_TEMPERATURE,
+          skin: AYV_C3_PROMPTS.CURRENT_SKIN,
+        }
+        const stateKeyMap: Record<AyurvedaC3AreaId, keyof AyurvedaChapter3State> = {
+          hunger: 'current_hunger',
+          post_meal: 'current_post_meal',
+          elimination: 'current_elimination',
+          sleep: 'current_sleep',
+          temperature: 'current_temperature',
+          skin: 'current_skin',
+        }
+        for (const areaId of [
+          'hunger',
+          'post_meal',
+          'elimination',
+          'sleep',
+          'temperature',
+          'skin',
+        ] as const) {
+          const rec = state[stateKeyMap[areaId]] as AyurvedaCurrentAreaRecord | undefined
+          if (rec) {
+            await savePrompt(areaPromptMap[areaId], rec, rec.current_states || [], '', reason)
+          }
+        }
       }
       const now = new Date().toISOString()
       const saved = await experienceResponseService.saveResponse({
@@ -371,6 +417,128 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
       {label}
     </button>
   )
+
+  const getCurrentAreaRecord = (areaId: AyurvedaC3AreaId): AyurvedaCurrentAreaRecord => {
+    const keyMap: Record<AyurvedaC3AreaId, keyof AyurvedaChapter3State> = {
+      hunger: 'current_hunger',
+      post_meal: 'current_post_meal',
+      elimination: 'current_elimination',
+      sleep: 'current_sleep',
+      temperature: 'current_temperature',
+      skin: 'current_skin',
+    }
+    return (state[keyMap[areaId]] as AyurvedaCurrentAreaRecord) || { area_key: areaId }
+  }
+
+  const persistCurrentAreaRecord = async (
+    areaId: AyurvedaC3AreaId,
+    rec: AyurvedaCurrentAreaRecord,
+  ) => {
+    const promptMap: Record<
+      AyurvedaC3AreaId,
+      (typeof AYV_C3_PROMPTS)[keyof typeof AYV_C3_PROMPTS]
+    > = {
+      hunger: AYV_C3_PROMPTS.CURRENT_HUNGER,
+      post_meal: AYV_C3_PROMPTS.CURRENT_POST_MEAL,
+      elimination: AYV_C3_PROMPTS.CURRENT_ELIMINATION,
+      sleep: AYV_C3_PROMPTS.CURRENT_SLEEP,
+      temperature: AYV_C3_PROMPTS.CURRENT_TEMPERATURE,
+      skin: AYV_C3_PROMPTS.CURRENT_SKIN,
+    }
+    const keyMap: Record<AyurvedaC3AreaId, keyof AyurvedaChapter3State> = {
+      hunger: 'current_hunger',
+      post_meal: 'current_post_meal',
+      elimination: 'current_elimination',
+      sleep: 'current_sleep',
+      temperature: 'current_temperature',
+      skin: 'current_skin',
+    }
+    setState((prev) => ({ ...prev, [keyMap[areaId]]: rec }))
+    await persist(promptMap[areaId], rec, rec.current_states || [])
+  }
+
+  const toggleCurrentAreaState = async (areaId: AyurvedaC3AreaId, optionId: string) => {
+    const def = AYV_C3_AREA_DEFINITIONS[areaId]
+    const opt = def.options.find((o) => o.id === optionId)
+    const isExclusive = Boolean(opt && 'exclusive' in opt && opt.exclusive)
+    const rec = getCurrentAreaRecord(areaId)
+    const current = rec.current_states || []
+    let next: string[]
+
+    if (isExclusive) {
+      next = current.includes(optionId) ? [] : [optionId]
+    } else {
+      if (current.includes(optionId)) {
+        next = current.filter((id) => id !== optionId)
+      } else {
+        const withoutExclusives = current.filter((id) => {
+          const item = def.options.find((o) => o.id === id)
+          return !(item && 'exclusive' in item && item.exclusive)
+        })
+        if (withoutExclusives.length >= def.maxStates) {
+          next = [...withoutExclusives.slice(1), optionId]
+        } else {
+          next = [...withoutExclusives, optionId]
+        }
+      }
+    }
+
+    const updated: AyurvedaCurrentAreaRecord = { ...rec, area_key: areaId, current_states: next }
+    await persistCurrentAreaRecord(areaId, updated)
+  }
+
+  const selectCurrentAreaComparison = async (
+    areaId: AyurvedaC3AreaId,
+    comp: AyurvedaC3ComparisonOption,
+  ) => {
+    const rec = getCurrentAreaRecord(areaId)
+    const updated: AyurvedaCurrentAreaRecord = {
+      ...rec,
+      area_key: areaId,
+      comparison: comp,
+    }
+    await persistCurrentAreaRecord(areaId, updated)
+  }
+
+  const selectCurrentAreaDuration = async (areaId: AyurvedaC3AreaId, duration: string) => {
+    const rec = getCurrentAreaRecord(areaId)
+    const updated: AyurvedaCurrentAreaRecord = { ...rec, area_key: areaId, duration }
+    await persistCurrentAreaRecord(areaId, updated)
+  }
+
+  const selectCurrentAreaFrequency = async (
+    areaId: AyurvedaC3AreaId,
+    frequency: AyurvedaC3FrequencyOption,
+  ) => {
+    const rec = getCurrentAreaRecord(areaId)
+    const updated: AyurvedaCurrentAreaRecord = { ...rec, area_key: areaId, frequency }
+    await persistCurrentAreaRecord(areaId, updated)
+  }
+
+  const toggleCurrentAreaContext = async (areaId: AyurvedaC3AreaId, contextId: string) => {
+    const opt = AYV_C3_CONTEXT_OPTIONS.find((c) => c.id === contextId)
+    const isExclusive = Boolean(opt && 'exclusive' in opt && opt.exclusive)
+    const rec = getCurrentAreaRecord(areaId)
+    const current = rec.contexts || []
+    let next: string[]
+
+    if (isExclusive) {
+      next = current.includes(contextId) ? [] : [contextId]
+    } else {
+      if (current.includes(contextId)) {
+        next = current.filter((id) => id !== contextId)
+      } else {
+        const filtered = current.filter((id) => {
+          const item = AYV_C3_CONTEXT_OPTIONS.find((c) => c.id === id)
+          return !(item && 'exclusive' in item && item.exclusive)
+        })
+        next = [...filtered, contextId]
+      }
+    }
+
+    const updated: AyurvedaCurrentAreaRecord = { ...rec, area_key: areaId, contexts: next }
+    await persistCurrentAreaRecord(areaId, updated)
+  }
 
   if (step === 6) {
     return (
@@ -449,6 +617,85 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
               <p>
                 <strong>Registro livre:</strong> “{state.optional_note}”
               </p>
+            )}
+            {/* Bloco de revisão literal das 6 áreas atuais respondidas */}
+            {(['hunger', 'post_meal', 'elimination', 'sleep', 'temperature', 'skin'] as const).some(
+              (aId) => {
+                const rec = getCurrentAreaRecord(aId)
+                return Boolean(rec.current_states?.length || rec.comparison)
+              },
+            ) && (
+              <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-3">
+                <span className="block text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  Como meu corpo está agora (últimos 14 dias)
+                </span>
+                <p className="text-[11px] text-muted-foreground italic">
+                  “{AYV_C3_OPERATIONAL_REFERENCE_TEXT}”
+                </p>
+                {(
+                  ['hunger', 'post_meal', 'elimination', 'sleep', 'temperature', 'skin'] as const
+                ).map((aId) => {
+                  const def = AYV_C3_AREA_DEFINITIONS[aId]
+                  const rec = getCurrentAreaRecord(aId)
+                  if (!rec.current_states?.length && !rec.comparison) return null
+
+                  const stateLabels = (rec.current_states || []).map(
+                    (id) => def.options.find((o) => o.id === id)?.label || id,
+                  )
+                  const compLabel = rec.comparison
+                    ? AYV_C3_COMPARISON_OPTIONS.find((c) => c.id === rec.comparison)?.label ||
+                      rec.comparison
+                    : null
+                  const isDiff = rec.comparison === 'different'
+                  const durLabel =
+                    isDiff && rec.duration
+                      ? AYV_C3_STARTED_OPTIONS.find((d) => d.id === rec.duration)?.label ||
+                        rec.duration
+                      : null
+                  const freqLabel =
+                    isDiff && rec.frequency
+                      ? AYV_C3_FREQUENCY_OPTIONS.find((f) => f.id === rec.frequency)?.label ||
+                        rec.frequency
+                      : null
+                  const ctxLabels =
+                    isDiff && rec.contexts?.length
+                      ? rec.contexts.map(
+                          (cId) => AYV_C3_CONTEXT_OPTIONS.find((c) => c.id === cId)?.label || cId,
+                        )
+                      : []
+
+                  return (
+                    <div key={aId} className="space-y-1 rounded-lg border bg-background/80 p-2.5">
+                      <p className="font-semibold">{def.title}</p>
+                      {stateLabels.length > 0 && (
+                        <p className="text-muted-foreground">
+                          <strong>Percepção atual:</strong> {stateLabels.join('; ')}
+                        </p>
+                      )}
+                      {compLabel && (
+                        <p className="text-muted-foreground">
+                          <strong>Comparação com o habitual:</strong> {compLabel}
+                        </p>
+                      )}
+                      {isDiff && durLabel && (
+                        <p className="text-muted-foreground">
+                          <strong>Duração da mudança:</strong> {durLabel}
+                        </p>
+                      )}
+                      {isDiff && freqLabel && (
+                        <p className="text-muted-foreground">
+                          <strong>Frequência:</strong> {freqLabel}
+                        </p>
+                      )}
+                      {isDiff && ctxLabels.length > 0 && (
+                        <p className="text-muted-foreground">
+                          <strong>Contexto:</strong> {ctxLabels.join('; ')}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -541,24 +788,35 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
       </div>
 
       {step === 1 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold">
-            Em quais áreas você percebe alguma mudança atualmente?
-          </h3>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {AYV_C3_DOMAIN_OPTIONS.map((option) => (
-              <React.Fragment key={option.id}>
-                {optionButton(
-                  Boolean(state.changed_domains?.includes(option.id)),
-                  () => void toggleDomain(option.id),
-                  option.label,
-                )}
-              </React.Fragment>
-            ))}
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold">
+              Em quais áreas você percebe alguma mudança atualmente?
+            </h3>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {AYV_C3_DOMAIN_OPTIONS.map((option) => (
+                <React.Fragment key={option.id}>
+                  {optionButton(
+                    Boolean(state.changed_domains?.includes(option.id)),
+                    () => void toggleDomain(option.id),
+                    option.label,
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
+
+          {shortPath && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2 text-xs">
+              <p className="text-muted-foreground">
+                Você indicou que não percebe mudanças importantes agora (ou marcou
+                incerteza/recusa). Caso queira registrar como seu corpo está agora por área
+                específica, você poderá fazer isso opcionalmente na próxima etapa.
+              </p>
+            </div>
+          )}
         </div>
       )}
-
       {step === 2 && (
         <div className="space-y-5">
           <h3 className="text-sm font-semibold">Como cada área mudou?</h3>
@@ -629,6 +887,197 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
 
       {step === 5 && (
         <div className="space-y-4">
+          {/* Bloco recolhível opcional: Como meu corpo está agora */}
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="space-y-0.5">
+                <h3 className="text-sm font-semibold">Como meu corpo está agora</h3>
+                <p className="text-xs text-muted-foreground">
+                  Opcional. Registre como tem se sentido nos últimos 14 dias por área específica.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-xs"
+                onClick={() => setShowCurrentBodyBlock((open) => !open)}
+                aria-expanded={showCurrentBodyBlock}
+              >
+                {showCurrentBodyBlock ? (
+                  <>
+                    <span>Recolher</span>
+                    <ChevronUp className="h-4 w-4" />
+                  </>
+                ) : (
+                  <>
+                    <span>Abrir</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {showCurrentBodyBlock && (
+              <div className="space-y-4 pt-2 border-t border-primary/15">
+                <div className="rounded-xl border border-primary/25 bg-background/80 p-3 text-xs leading-relaxed text-muted-foreground">
+                  <p className="font-medium text-foreground mb-1">Referência temporal</p>
+                  <p>{AYV_C3_OPERATIONAL_REFERENCE_TEXT}</p>
+                </div>
+
+                <div className="space-y-3">
+                  {(
+                    ['hunger', 'post_meal', 'elimination', 'sleep', 'temperature', 'skin'] as const
+                  ).map((areaId) => {
+                    const def = AYV_C3_AREA_DEFINITIONS[areaId]
+                    const rec = getCurrentAreaRecord(areaId)
+                    const isOpen = openAreaId === areaId
+                    const hasAnswers = Boolean(rec.current_states?.length || rec.comparison)
+
+                    return (
+                      <div
+                        key={areaId}
+                        className="rounded-xl border bg-background/90 p-3 space-y-3"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold">{def.title}</span>
+                            {hasAnswers && (
+                              <Badge variant="secondary" className="text-[10px] py-0 px-1.5">
+                                Preenchido
+                              </Badge>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs gap-1 px-2"
+                            onClick={() => setOpenAreaId(isOpen ? null : areaId)}
+                            aria-expanded={isOpen}
+                          >
+                            {isOpen ? 'Fechar' : 'Preencher'}
+                            {isOpen ? (
+                              <ChevronUp className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </div>
+
+                        {isOpen && (
+                          <div className="space-y-4 pt-2 border-t text-xs">
+                            <div className="space-y-2">
+                              <label className="font-medium block text-foreground">
+                                {def.questionText}
+                              </label>
+                              <p className="text-[11px] text-muted-foreground">
+                                Escolha até {def.maxStates} opções onde fizer sentido. Opções de
+                                incerteza e recusa são exclusivas.
+                              </p>
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                {def.options.map((option) => (
+                                  <React.Fragment key={option.id}>
+                                    {optionButton(
+                                      Boolean(rec.current_states?.includes(option.id)),
+                                      () => void toggleCurrentAreaState(areaId, option.id),
+                                      option.label,
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-2 pt-2 border-t">
+                              <label className="font-medium block text-foreground">
+                                Comparando com seu padrão habitual, o que você percebe?
+                              </label>
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                {AYV_C3_COMPARISON_OPTIONS.map((cOption) => (
+                                  <React.Fragment key={cOption.id}>
+                                    {optionButton(
+                                      rec.comparison === cOption.id,
+                                      () =>
+                                        void selectCurrentAreaComparison(
+                                          areaId,
+                                          cOption.id as AyurvedaC3ComparisonOption,
+                                        ),
+                                      cOption.label,
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </div>
+                            </div>
+
+                            {rec.comparison === 'different' && (
+                              <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-3">
+                                <div className="space-y-2">
+                                  <label className="font-medium block text-foreground">
+                                    Há quanto tempo percebe essa diferença em{' '}
+                                    {def.title.toLowerCase()}?
+                                  </label>
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    {AYV_C3_STARTED_OPTIONS.map((sOption) => (
+                                      <React.Fragment key={sOption.id}>
+                                        {optionButton(
+                                          rec.duration === sOption.id,
+                                          () => void selectCurrentAreaDuration(areaId, sOption.id),
+                                          sOption.label,
+                                        )}
+                                      </React.Fragment>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="space-y-2 pt-2 border-t border-primary/15">
+                                  <label className="font-medium block text-foreground">
+                                    Com que frequência isso tem acontecido?
+                                  </label>
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    {AYV_C3_FREQUENCY_OPTIONS.map((fOption) => (
+                                      <React.Fragment key={fOption.id}>
+                                        {optionButton(
+                                          rec.frequency === fOption.id,
+                                          () =>
+                                            void selectCurrentAreaFrequency(
+                                              areaId,
+                                              fOption.id as AyurvedaC3FrequencyOption,
+                                            ),
+                                          fOption.label,
+                                        )}
+                                      </React.Fragment>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="space-y-2 pt-2 border-t border-primary/15">
+                                  <label className="font-medium block text-foreground">
+                                    {AYV_C3_CONTEXT_PROMPT_INSTRUCTION}
+                                  </label>
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    {AYV_C3_CONTEXT_OPTIONS.map((ctxOption) => (
+                                      <React.Fragment key={ctxOption.id}>
+                                        {optionButton(
+                                          Boolean(rec.contexts?.includes(ctxOption.id)),
+                                          () => void toggleCurrentAreaContext(areaId, ctxOption.id),
+                                          ctxOption.label,
+                                        )}
+                                      </React.Fragment>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
             <div className="space-y-1">
               <h3 className="text-sm font-semibold">Medicamentos e suplementos</h3>

@@ -1,10 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import type { ExperienceResponseRecord } from '@/types/cer'
-import { AYV_C3_PROMPTS, deriveChapter3Status, loadChapter3State } from './ayurvedaChapter3'
+import {
+  AYV_C3_PROMPTS,
+  deriveChapter3Status,
+  loadChapter3State,
+  AYV_C3_CURRENT_HUNGER_OPTIONS,
+  AYV_C3_CURRENT_POST_MEAL_OPTIONS,
+  AYV_C3_CURRENT_ELIMINATION_OPTIONS,
+  AYV_C3_CURRENT_SLEEP_OPTIONS,
+  AYV_C3_CURRENT_TEMPERATURE_OPTIONS,
+  AYV_C3_CURRENT_SKIN_OPTIONS,
+  AYV_C3_COMPARISON_OPTIONS,
+  AYV_C3_FREQUENCY_OPTIONS,
+  AYV_C3_OPERATIONAL_REFERENCE_TEXT,
+  AYV_C3_CONTEXT_PROMPT_INSTRUCTION,
+  AYV_C3_AREA_DEFINITIONS,
+} from './ayurvedaChapter3'
 
-const response = (promptKey: string, structuredValue: any): ExperienceResponseRecord =>
+const response = (
+  promptKey: string,
+  structuredValue: any,
+  options?: { id?: string; answered_at?: string },
+): ExperienceResponseRecord =>
   ({
-    id: `resp-${promptKey}`,
+    id: options?.id || `resp-${promptKey}`,
     enrollment_id: 'enrollment-demo',
     experience_id: 'exp-corpo-fisiologia-07b',
     respondent_user_id: 'participant-demo',
@@ -16,9 +35,15 @@ const response = (promptKey: string, structuredValue: any): ExperienceResponseRe
     version: 1,
     status: 'saved',
     access_class: 'shared_care',
-    structured_value: structuredValue,
+    structured_value: {
+      ...structuredValue,
+      metadata: {
+        ...(structuredValue?.metadata || {}),
+        answered_at: options?.answered_at || '2026-09-28T12:00:00.000Z',
+      },
+    },
     created: '2026-09-28T12:00:00.000Z',
-    updated: '2026-09-28T12:00:00.000Z',
+    updated: options?.answered_at || '2026-09-28T12:00:00.000Z',
   }) as ExperienceResponseRecord
 
 describe('Capítulo 3 — mudanças atuais', () => {
@@ -119,5 +144,128 @@ describe('Capítulo 3 — mudanças atuais', () => {
       'Percebi mais cansaço depois da alteração.',
     )
     expect(JSON.stringify(state).toLowerCase()).not.toContain('causou')
+  })
+
+  describe('Microbloco 3B — Loader determinístico e coletas por área', () => {
+    it('loader é invariável à ordem de entrada e deduplica deterministicamente', () => {
+      const respOld = response(
+        AYV_C3_PROMPTS.DOMAINS.key,
+        { value: ['sleep'] },
+        { id: 'resp-domains-1', answered_at: '2026-09-28T10:00:00.000Z' },
+      )
+      const respNew = response(
+        AYV_C3_PROMPTS.DOMAINS.key,
+        { value: ['sleep', 'hunger_digestion'] },
+        { id: 'resp-domains-2', answered_at: '2026-09-28T12:00:00.000Z' },
+      )
+      const respContext = response(
+        AYV_C3_PROMPTS.CONTEXTS.key,
+        { value: ['stress'] },
+        { id: 'resp-ctx', answered_at: '2026-09-28T11:00:00.000Z' },
+      )
+
+      // Ordem A: [respOld, respNew, respContext]
+      const stateA = loadChapter3State([respOld, respNew, respContext])
+      // Ordem B: [respContext, respNew, respOld]
+      const stateB = loadChapter3State([respContext, respNew, respOld])
+      // Ordem C: [respNew, respContext, respOld]
+      const stateC = loadChapter3State([respNew, respContext, respOld])
+
+      expect(stateA.changed_domains).toEqual(['sleep', 'hunger_digestion'])
+      expect(stateB.changed_domains).toEqual(['sleep', 'hunger_digestion'])
+      expect(stateC.changed_domains).toEqual(['sleep', 'hunger_digestion'])
+      expect(stateA).toEqual(stateB)
+      expect(stateB).toEqual(stateC)
+    })
+
+    it('preserva registros legados concluídos sem transformar em não concluído', () => {
+      const legacyResponses = [
+        response(AYV_C3_PROMPTS.DOMAINS.key, { value: ['no_current_changes'] }),
+        response(AYV_C3_PROMPTS.COMPLETION.key, { completed: true }),
+      ]
+      const status = deriveChapter3Status(legacyResponses)
+      expect(status.status).toBe('completed')
+      expect(status.shortPath).toBe(true)
+      expect(status.state.changed_domains).toEqual(['no_current_changes'])
+      // As novas coletas opcionais ausentes continuam undefined sem erro
+      expect(status.state.current_hunger).toBeUndefined()
+    })
+
+    it('coletas opcionais por área: carrega valores estruturados sem alterar completude obrigatória', () => {
+      const responses = [
+        response(AYV_C3_PROMPTS.DOMAINS.key, { value: ['no_current_changes'] }),
+        response(AYV_C3_PROMPTS.CURRENT_HUNGER.key, {
+          value: {
+            area_key: 'hunger',
+            current_states: ['sudden_intense', 'variable_intensity'],
+            comparison: 'different',
+            duration: 'one_to_three_months',
+            frequency: 'several_days',
+            contexts: ['stress', 'routine'],
+          },
+        }),
+        response(AYV_C3_PROMPTS.CURRENT_TEMPERATURE.key, {
+          value: {
+            area_key: 'temperature',
+            current_states: ['cold_easily'],
+            comparison: 'same_as_usual',
+          },
+        }),
+      ]
+
+      const state = loadChapter3State(responses)
+      expect(state.current_hunger?.current_states).toEqual(['sudden_intense', 'variable_intensity'])
+      expect(state.current_hunger?.comparison).toBe('different')
+      expect(state.current_hunger?.duration).toBe('one_to_three_months')
+      expect(state.current_hunger?.frequency).toBe('several_days')
+      expect(state.current_hunger?.contexts).toEqual(['stress', 'routine'])
+
+      expect(state.current_temperature?.comparison).toBe('same_as_usual')
+      expect(state.current_temperature?.current_states).toEqual(['cold_easily'])
+
+      // Não quebra a derivação do status do capítulo (opcional)
+      const derived = deriveChapter3Status(responses)
+      expect(derived.status).toBe('ready_to_complete')
+    })
+
+    it('regras de texto e opções: 14 dias obrigatório, instrução de contexto sem causa e exclusividades', () => {
+      expect(AYV_C3_OPERATIONAL_REFERENCE_TEXT).toContain('14 dias')
+      expect(AYV_C3_OPERATIONAL_REFERENCE_TEXT).toContain('habitual para você')
+      expect(AYV_C3_CONTEXT_PROMPT_INSTRUCTION).toBe(
+        'O que estava acontecendo nesse período? Isso registra contexto, sem afirmar causa.',
+      )
+
+      // Temperatura e pele têm opções separadas e nunca combinadas
+      expect(AYV_C3_AREA_DEFINITIONS.temperature.options).toBe(AYV_C3_CURRENT_TEMPERATURE_OPTIONS)
+      expect(AYV_C3_AREA_DEFINITIONS.skin.options).toBe(AYV_C3_CURRENT_SKIN_OPTIONS)
+      expect(AYV_C3_CURRENT_TEMPERATURE_OPTIONS).not.toEqual(AYV_C3_CURRENT_SKIN_OPTIONS)
+
+      // Exclusividade de dont_know e refusal em todas as 6 áreas
+      for (const area of Object.values(AYV_C3_AREA_DEFINITIONS)) {
+        const dk = area.options.find((o) => o.id === 'dont_know')
+        const ref = area.options.find((o) => o.id === 'refusal')
+        expect(dk?.exclusive).toBe(true)
+        expect(ref?.exclusive).toBe(true)
+        // Rótulo de opções não deve conter a palavra "habitual" (esta palavra fica só no comparativo)
+        for (const opt of area.options) {
+          expect(opt.label.toLowerCase()).not.toContain('habitual')
+        }
+      }
+
+      // Frequências descritivas canônicas
+      const freqLabels = AYV_C3_FREQUENCY_OPTIONS.map((f) => f.label)
+      expect(freqLabels).toContain('Em poucos dias')
+      expect(freqLabels).toContain('Em vários dias')
+      expect(freqLabels).toContain('Quase todos os dias')
+      expect(freqLabels).toContain('Varia bastante')
+
+      // Comparações canônicas
+      const compIds = AYV_C3_COMPARISON_OPTIONS.map((c) => c.id)
+      expect(compIds).toContain('same_as_usual')
+      expect(compIds).toContain('different')
+      expect(compIds).toContain('hard_to_compare')
+      expect(compIds).toContain('dont_know')
+      expect(compIds).toContain('refusal')
+    })
   })
 })
