@@ -92,4 +92,17 @@ describe('Estratégia para agenda privada', () => {
     expect(save).not.toHaveBeenCalled()
     expect(screen.queryByLabelText('Início do meu momento')).toBeNull()
   })
+  it('captura preenchimento via evento input nos campos datetime-local', async () => {
+    const save = vi.spyOn(plannerNotesService, 'save').mockResolvedValue({ id: 'three' } as never)
+    setup()
+    fireEvent.input(screen.getByLabelText('Início do meu momento'), {
+      target: { value: '2026-10-12T09:00' },
+    })
+    fireEvent.input(screen.getByLabelText('Fim do meu momento'), {
+      target: { value: '2026-10-12T09:30' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar na minha agenda' }))
+    await screen.findByRole('status')
+    expect(save).toHaveBeenCalledTimes(1)
+  })
 })

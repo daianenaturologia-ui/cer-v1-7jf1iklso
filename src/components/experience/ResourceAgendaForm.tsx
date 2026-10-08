@@ -108,6 +108,7 @@ export function ResourceAgendaForm({
             value={start}
             disabled={working}
             onChange={(e) => setStart(e.target.value)}
+            onInput={(e) => setStart(e.currentTarget.value)}
             aria-label="Início do meu momento"
           />
         </label>
@@ -118,6 +119,7 @@ export function ResourceAgendaForm({
             value={end}
             disabled={working}
             onChange={(e) => setEnd(e.target.value)}
+            onInput={(e) => setEnd(e.currentTarget.value)}
             aria-label="Fim do meu momento"
           />
         </label>
