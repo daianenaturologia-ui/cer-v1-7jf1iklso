@@ -107,9 +107,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       return {
         ...dim,
         summary:
-          'Sensibilidade vívida no corpo frente às emoções, mente ágil no planejamento preventivo e forte autocrítica interna diante de imprevistos ou erros.',
+          'Você relata emoções rápidas no corpo, antecipação dos próximos passos, ação para resolver e cobrança severa diante de erros.',
         interpretation:
-          'Suas respostas revelam uma agudeza perceptiva notável: diante de estímulos do ambiente, seu corpo sente de forma rápida e intensa emoções como ansiedade, entusiasmo e preocupação. No nível do pensamento, isso se traduz no hábito de calcular os próximos passos para evitar falhas ou desamparo coletivo.\n\nNo campo da ação, você relata tomar a frente imediatamente para devolver a harmonia ao ambiente. Contudo, quando algo sai do planejado, surge um diálogo interno severo afirmando que "você deveria ter previsto tudo". Esse ciclo consome grande energia psíquica e muscular.\n\nA chave a investigar é como proteger a sua inteligência de planejamento e o seu discernimento autêntico sem permitir que a autocrítica agressiva assuma o comando da sua experiência interna.',
+          'Podemos distinguir quatro partes do seu relato: o que você sente, o que pensa, como age e como fala consigo. Sob pressão, ansiedade e preocupação aparecem junto à antecipação e à urgência de resolver; depois, você relata cansaço e dificuldade de desacelerar. Essa reunião de elementos é uma hipótese de funcionamento, não uma sequência comprovada.\n\nVocê também descreve uma experiência diferente quando está tranquila: respiração fluida, peito aberto e escuta sem pressa. Natureza, chá em silêncio e respiração calma já aparecem como recursos. A conversa pode explorar como ampliar suas opções antes de chegar à sobrecarga.',
         detailedRows: [...behaviorRows, ...dim.detailedRows],
       }
     }
@@ -329,18 +329,22 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Costuma esgotar as próprias forças antes de solicitar suporte externo',
       ],
       interpretation:
-        'Talvez você perceba o que o outro precisa antes de perceber seu próprio cansaço. Este movimento não é fraqueza nem submissão passiva: pode funcionar como uma estratégia protetiva ativa para manter a harmonia dos vínculos. Note a nuance entre a resposta sob pressão e o cotidiano: a urgência de cuidar parece crescer quando o ambiente fica tenso. Investigamos como resgatar a si mesma no centro do cuidado.',
+        'Você relata assumir a frente para devolver tranquilidade ao ambiente, hesitar em dizer não e pedir apoio apenas quando já está cansada. Uma hipótese é que cuidar e resolver ajudem a preservar o vínculo, enquanto suas necessidades recebem atenção mais tarde. Isso precisa ser reconhecido ou corrigido por você.\n\nReceber cuidado sincero já aparece como uma experiência significativa. Podemos explorar como oferecer e receber apoio podem coexistir, sem concluir que você precisa cuidar de todos.',
       resources: [
-        'Empatia acolhedora, sensibilidade às necessidades do ambiente e capacidade de gerar confiança recíproca',
+        'Você reconhece o valor da reciprocidade e se emociona ao receber cuidado sincero.',
+        'Conversa franca, escuta e reparação são recursos relatados nas relações.',
       ],
-      costs: ['Esgotamento físico e mental por adiar as próprias necessidades básicas'],
+      costs: [
+        'Você relata esgotar as forças antes de solicitar ajuda.',
+        'Vale observar se hesitar em dizer não deixa menos espaço para suas necessidades.',
+      ],
       connections: [
-        'Uma conexão a explorar com a resposta de Luta (mobilizar-se para resolver tudo)',
-        'Vale observar se reduz o espaço para o descanso, a intimidade e a espontaneidade',
+        'A ação imediata também aparece na regulação sob pressão; a relação entre cuidar e resolver merece conversa.',
+        'Você descreve descanso e desaceleração junto a maior disponibilidade para intimidade.',
       ],
       questions: [
-        'Como é para você perceber que também precisa de cuidado?',
-        'O que você teme que aconteça se, diante de uma demanda externa, você pausar e não assumir a tarefa de imediato?',
+        'O que ajudaria você a pedir apoio antes de chegar ao limite?',
+        'Quando cuidar é uma escolha sua e quando passa a ser uma responsabilidade que você gostaria de dividir?',
       ],
       sourceResponseIds: ['qa-me-p7b', 'qa-me-p5', 'qa-rel-p4', 'qa-rel-p5'],
     },
@@ -353,21 +357,22 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Relatada iniciativa para solucionar pendências e devolver estabilidade',
       ],
       interpretation:
-        'A capacidade de colocar ideias em prática e resolver problemas concretos é uma força inquestionável do seu perfil. Este padrão, contudo, pode em algumas ocasiões vincular o seu valor pessoal exclusivamente ao volume de coisas produzidas no dia. Investigar essa tendência ajuda a separar sua dignidade humana do seu rendimento de trabalho.',
+        'A categoria do exemplo é “aparece em algumas situações”. Você relata tomar a frente para resolver pendências, especialmente sob pressão. Isso permite explorar sua mobilização para agir, mas não comprova produtividade constante, eficiência extraordinária ou que seu valor pessoal dependa das entregas.\n\nUma hipótese é que a ação ofereça previsibilidade no curto prazo e que a recuperação receba menos espaço. O cansaço e a dificuldade de relaxar foram relatados; a ligação deles com esse movimento precisa ser investigada.',
       resources: [
-        'Eficiência operacional e clareza para destravar gargalos',
-        'Entusiasmo com realizações e projetos concretos',
+        'Iniciativa para resolver situações práticas, descrita por você.',
+        'Capacidade de reconhecer cansaço e notar seus movimentos.',
       ],
       costs: [
-        'Dificuldade de desfrutar do tempo ocioso sem culpa de "não estar produzindo"',
-        'Desconexão passageira com os ritmos naturais do corpo',
+        'Estafa mental e dificuldade para relaxar foram relatadas na regulação.',
+        'Vale investigar como esforço e recuperação se alternam nos seus dias.',
       ],
       connections: [
-        'Atua em parceria com o Analítico para construir planos práticos',
-        'Pode mascarar a fadiga corporal em prol de cumprir um prazo acordado',
+        'Pode dialogar com assumir tarefas sem pedir apoio e com antecipar riscos.',
+        'A relação com descanso e intimidade permanece uma hipótese a explorar.',
       ],
       questions: [
-        'Você consegue reconhecer seu valor mesmo em um dia em que quase nada da lista de afazeres foi concluído?',
+        'Em que situações agir logo ajuda você, e quando dividir ou adiar uma tarefa seria mais útil?',
+        'Como você percebe que já fez o suficiente por hoje?',
       ],
       sourceResponseIds: ['qa-me-p7a', 'qa-me-p5'],
     },
@@ -407,21 +412,22 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Identificação clara de gatilhos profissionais e relacionais de sobrecarga',
       ],
       interpretation:
-        'Sua mente possui grande capacidade analítica, compreendendo dinâmicas complexas e organizando passos com rapidez. Esse recurso traz previsibilidade valiosa. O custo surge quando a razão tenta processar emoções corporais profundas como se fossem problemas matemáticos a serem solucionados, afastando você da escuta sutil do que o corpo sente.',
+        'Você descreve calcular os próximos passos para evitar falhas e pensamentos acelerados em loop quando a pressão aumenta. Planejar pode ajudar a organizar incertezas; vale explorar quando ele permanece útil e quando continua mesmo sem uma decisão concreta a tomar.\n\nNão sabemos se isso afasta você das emoções. Você também relata sentir rapidamente no corpo e escutar com mais tranquilidade quando está bem. Uma possibilidade de conversa é integrar planejamento e percepção corporal antes de agir.',
       resources: [
-        'Visão estratégica lúcida e facilidade para antecipar variáveis',
-        'Capacidade de trazer clareza para equipes em momentos confusos',
+        'Você consegue descrever o que passa pela mente e reconhecer situações de pressão.',
+        'Respiração tranquila e contato com a natureza são recursos relatados.',
       ],
       costs: [
-        'Pensamentos em loop durante a noite que impedem o relaxamento mental',
-        'Distanciamento temporário da espontaneidade afetiva',
+        'Pensamentos em loop e dificuldade de relaxar constam nos relatos.',
+        'A relação com o sono interrompido merece investigação; a causa não foi estabelecida.',
       ],
       connections: [
-        'Alimenta a hipervigilância preventiva em contextos de pressão',
-        'Compete com a entrega corporal e o descanso na vida íntima',
+        'Antecipação também aparece em Hipervigilante e autocobrança em Crítico.',
+        'Sinais corporais e pensamentos podem ser observados juntos sem concluir direção causal.',
       ],
       questions: [
-        'O que acontece no seu corpo quando você substitui "o que eu preciso fazer agora" por "o que eu estou sentindo agora"?',
+        'Quando o planejamento resolve uma questão e quando apenas repete a preocupação?',
+        'O que você percebe no corpo antes de decidir o próximo passo?',
       ],
       sourceResponseIds: ['qa-me-p7a', 'qa-me-p4', 'qa-me-p3'],
     },
@@ -435,129 +441,121 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Retrato corporal sob sobrecarga: "Tensão na mandíbula, pensamentos acelerados em loop e urgência de controlar tudo"',
       ],
       interpretation:
-        'A hipervigilância é um radar de segurança que se ativa em ambientes de pressão ou quando há incerteza ao redor. Ela ajuda a prevenir problemas concretos e proteger quem está perto. Contudo, manter o corpo em prontidão permanente produz contratura muscular na mandíbula e ombros, além de um desgaste neurovegetativo intenso. Não é sintoma de patologia crônica, mas um estado de alerta que pede segurança relacional.',
+        'Na demonstração, este movimento aparece com força sob pressão. Você relatou antecipar riscos, tensão na mandíbula, ombros contraídos, respiração superficial e pensamentos em loop. A busca de previsibilidade pode ser uma função desse movimento, especialmente diante de prazos simultâneos e ruídos de comunicação.\n\nO material não demonstra prontidão permanente, crises iminentes ou uma condição clínica. Podemos explorar quando antecipar protege de um risco concreto e quando aumenta o esforço sem ampliar suas opções.',
       resources: [
-        'Percepção aguçada de riscos sutis no ambiente de trabalho',
-        'Cuidado protetivo cuidadoso com as pessoas sob sua responsabilidade',
+        'Você reconhece os contextos de pressão e identifica sinais alguns minutos depois.',
+        'Pausas respiratórias e alongamento são recursos relatados.',
       ],
-      costs: [
-        'Contratura na mandíbula e respiração curta sob pressão',
-        'Sensação constante de estar no limiar de uma crise iminente',
-      ],
+      costs: ['Tensão corporal, estafa mental e dificuldade para relaxar à noite foram relatadas.'],
       connections: [
-        'Trabalha em sintonia direta com os primeiros sinais de mobilização de Luta',
-        'Dificulta a entrega relaxada no sono e na intimidade',
+        'A resposta de resolver tudo imediatamente também aparece em Luta.',
+        'A relação entre antecipação, tensão e descanso precisa ser reconhecida ou corrigida por você.',
       ],
       questions: [
-        'Como você pode diferenciar hoje um risco real e iminente de uma antecipação gerada apenas pela ansiedade?',
+        'Que risco concreto está presente nesta situação e o que é uma possibilidade antecipada?',
+        'Que sinal poderia ajudar você a perceber a tensão um pouco antes?',
       ],
       sourceResponseIds: ['qa-me-p7b', 'qa-me-p8', 'qa-me-p11'],
     },
 
     inquieto: {
       summary:
-        'Categoria: Aparece em algumas situações. Mobilidade e entusiasmo com novidades, sem relato de dispersão crônica ou fuga patológica.',
+        'Categoria do exemplo: aparece em algumas situações. Entusiasmo foi relatado; ainda faltam exemplos para compreender mudanças de foco.',
       observations: [
         'Marcado em frequência intermediária nas respostas',
         'Emoção de "Entusiasmo" assinalada como recorrente ao lado da ansiedade',
       ],
       interpretation:
-        'O movimento inquieto reflete energia viva, curiosidade intelectual e capacidade de transitar entre múltiplos interesses. Não há nos seus relatos sinais de desatenção desregulada ou dispersão involuntária (sem qualquer correlação com diagnósticos como TDAH). Vale investigar se mudar de atividade em certos momentos é uma escolha deliberada ou uma tentativa de aliviar o desconforto de tarefas monótonas.',
+        'Você marcou entusiasmo entre as emoções frequentes, e a categoria do exemplo é “aparece em algumas situações”. Isso não basta para afirmar múltiplos interesses, criatividade, dispersão ou fuga por distração.\n\nUma possibilidade é investigar momentos em que mudar de atividade atende a uma prioridade real, oferece uma pausa ou adia um desconforto. O significado desse movimento depende da situação e da sua experiência; não será deduzido de um dosha.',
       resources: [
-        'Versatilidade, flexibilidade para novas ideias e vivacidade de espírito',
-        'Capacidade de trazer frescor e motivação para novos inícios',
+        'Você consegue nomear emoções presentes, incluindo entusiasmo.',
+        'Reconhecer a situação antes de mudar de foco pode ser uma possibilidade a experimentar.',
       ],
       costs: [
-        'Risco de abrir muitas frentes simultâneas e sobrecarregar o cronograma pessoal',
-        'Dificuldade de permanecer no tédio produtivo necessário para descansar',
+        'Este material não estabelece um custo específico de mudar de atividade.',
+        'Vale perguntar se abrir novas tarefas aumenta ou reduz a pressão em alguma situação.',
       ],
       connections: [
-        'Dialoga com o entusiasmo do mundo emocional e com o princípio Vata',
-        'Pode acelerar o ritmo diário antes que o corpo tenha tempo de se recuperar',
+        'Entusiasmo, energia oscilante e pressão foram descritos; a relação entre eles permanece aberta.',
       ],
-      questions: [
-        'Mudar de atividade traz um respiro criativo genuíno ou está sendo um atalho para evitar um desconforto temporário?',
-      ],
+      questions: ['Quando você muda de atividade, o que estava acontecendo e o que muda depois?'],
       sourceResponseIds: ['qa-me-p7b', 'qa-me-p2'],
     },
 
     comandante: {
       summary:
-        'Categoria: Quase nunca acontece comigo. Liderança baseada em resolver e proteger, sem perfil impositivo ou autoritário.',
+        'Categoria do exemplo: quase nunca acontece comigo. Assumir a frente para resolver não permite concluir como você exerce controle sobre outras pessoas.',
       observations: [
         'Frequência quase nunca apontada na escala de respostas',
         'Postura resolutiva voltada ao bem coletivo: resolver logo para devolver a paz ao ambiente',
       ],
       interpretation:
-        'Assumir a linha de frente para resolver problemas difíceis não significa querer controlar os outros por autoritarismo. Suas respostas indicam que você não busca impor sua vontade nem intimidar equipes; seu movimento resolutivo nasce da responsabilidade ética de cuidar e garantir que nada desmorone.',
+        'Você relata tomar a frente para resolver e devolver tranquilidade ao ambiente. A categoria “quase nunca” não comprova ausência de controle, nem autoriza atribuir um perfil de liderança.\n\nVale diferenciar assumir uma tarefa, coordenar uma decisão e decidir por outras pessoas. Podemos investigar se há espaço para colaboração e como você negocia limites, sem antecipar que sua conduta seja impositiva ou sempre respeitosa.',
       resources: [
-        'Firmeza respeitosa e disposição para assumir riscos em benefício do grupo',
-        'Facilidade para colaborar com transparência sem jogos de poder',
+        'Iniciativa para resolver foi relatada.',
+        'Conversa franca e escuta são recursos descritos nas relações.',
       ],
       costs: [
-        'Risco de sobrecarregar a si mesma para poupar as pessoas de conflitos',
-        'Hesitação em colocar limites assertivos quando teme parecer dura',
+        'Você relata agir sem pedir apoio e pedir ajuda depois de se esgotar.',
+        'É uma hipótese a explorar se assumir a frente concentra responsabilidades.',
       ],
-      connections: [
-        'Sua resposta de Luta é focada na tarefa e no cuidado, não em dominar pessoas',
-        'Coerente com a busca de verdade e dignidade na dimensão do Sentido',
-      ],
+      connections: ['Pode ser conversado junto à mobilização de Luta e aos limites nas relações.'],
       questions: [
-        'Como exercer sua firmeza com tranquilidade, sem receio de que posicionar seus limites seja interpretado como agressão?',
+        'Quando você assume a frente, como as outras pessoas participam das escolhas e das tarefas?',
       ],
       sourceResponseIds: ['qa-me-p7b', 'qa-me-p5'],
     },
 
     evitativo: {
       summary:
-        'Categoria: Ainda não sei dizer. Manutenção da incerteza sobre esquivar-se; recuo em conflitos funciona como reflexão e não fuga.',
+        'Categoria do exemplo: ainda não sei dizer. Você relata recuar para organizar as ideias; ainda precisamos conhecer o que acontece depois em cada situação.',
       observations: [
         'Marcado explicitamente como "Ainda não sei dizer" na avaliação dos padrões',
         'Nos conflitos: "Recuo reflexivo temporário para organizar as ideias antes do confronto"',
       ],
       interpretation:
-        'Reconhecer que você ainda não tem certeza sobre este padrão é uma demonstração valiosa de sinceridade. Afastar-se temporariamente de uma discussão acalorada para respirar e organizar as palavras não significa evitar a intimidade ou fugir de conversas difíceis. Ao contrário, seu relato mostra que você retorna para conversar com calma e desculpas sinceras, o que diferencia um recuo reflexivo de uma esquiva crônica.',
+        'A categoria mantém sua incerteza. Você relata um recuo temporário nos conflitos para organizar ideias e descreve conversa franca, escuta e pedido de desculpas como formas de reparação. Isso não demonstra que sempre retorne à conversa nem que evite intimidade.\n\nUma pausa pode dar espaço à reflexão ou adiar um assunto. O que diferencia essas possibilidades é a experiência concreta: como você se sente, quanto dura o intervalo e se a questão pode ser retomada.',
       resources: [
-        'Ponderação e prudência para não falar coisas duras no calor da emoção',
-        'Disposição para reatar laços e reparar desentendimentos com serenidade',
+        'Você reconhece a necessidade de organizar ideias antes de conversar.',
+        'Escuta, diálogo e reparação aparecem nos relatos.',
       ],
       costs: [
-        'Possibilidade de guardar mágoas caladas se o retorno à conversa demorar',
-        'Insegurança sobre quando o silêncio é sábio ou quando é adiamento de uma decisão',
+        'Não há relato suficiente para estabelecer um custo específico da esquiva.',
+        'Vale investigar se algum assunto fica pendente após o intervalo.',
       ],
       connections: [
-        'Relaciona-se ao timing cuidadoso que você adota na confiança interpessoal',
-        'Serve como amortecedor para não entrar em conflitos desnecessários',
+        'Confiança gradual e negociação de limites podem ajudar a contextualizar esses recuos.',
       ],
       questions: [
-        'Quando você recua em uma conversa difícil, você sente que está cuidando da relação ou apenas adiando um desconforto inevitável?',
+        'Depois de se afastar, você costuma retomar a conversa? O que ajuda ou dificulta esse retorno?',
       ],
       sourceResponseIds: ['qa-me-p7b', 'qa-rel-p7'],
     },
 
     critico: {
       summary:
-        'Categoria: Repete-se com frequência. Voz interna exigente que cobra antecipação total ("deveria ter previsto isso") após qualquer erro.',
+        'Categoria do exemplo: repete-se com frequência. Você relata uma voz interna severa cobrando que deveria ter previsto o erro.',
       observations: [
         'Frequência alta assinalada no questionário de mente e padrões',
         'Diálogo interno literal diante do erro: "Quando cometo um erro, uma voz me cobra severamente que eu deveria ter previsto isso"',
       ],
       interpretation:
-        'O padrão Crítico opera como um auditor interno vigilante. Seu discernimento refinado é uma ferramenta extraordinária quando colocado a serviço da aprendizagem e do crescimento. Contudo, quando se transforma em autoflagelo após qualquer falha cotidiana, ele desgasta a autoestima e multiplica o cansaço. Erros não comprovam falta de capacidade; são a forma como humanos navegam na incerteza.',
+        'Diante de um erro, você relata uma voz que cobra severamente que deveria ter previsto. Essa cobrança pode tentar prevenir novas falhas, mas sua utilidade e seus efeitos precisam ser explorados, sem concluir que ela define sua autoestima ou seu caráter.\n\nPodemos distinguir avaliar o que aconteceu de exigir que você antecipasse tudo. Uma resposta mais justa ao erro pode considerar o que era possível saber, o que merece reparação e o que já foi aprendido.',
       resources: [
-        'Capacidade de autoavaliação honesta e busca genuína por aprimoramento',
-        'Sensibilidade ética para reconhecer deslizes e oferecer reparações honestas',
+        'Você consegue reconhecer e descrever o diálogo interno.',
+        'Reconhecer erros e conversar sobre reparação aparece nas relações.',
       ],
       costs: [
-        'Cobrança desproporcional que transforma pequenos erros em falhas graves de caráter',
-        'Tensão interna contínua decorrente do medo de errar perante os outros',
+        'Cobrança severa diante de erros foi relatada.',
+        'A conexão com cansaço e tensão é uma hipótese a explorar.',
       ],
       connections: [
-        'Amplifica o padrão Insistente e a necessidade de controlar cenários',
-        'Interfere na capacidade de descansar mesmo quando tudo deu certo',
+        'Fazer tudo certo e antecipar riscos aparecem em outros movimentos do mapa.',
+        'Vale perguntar como essa cobrança muda quando você está mais descansada.',
       ],
       questions: [
-        'Qual seria a resposta de uma amiga verdadeiramente bondosa e justa com você na última vez em que você cometeu um engano?',
+        'O que era possível prever naquela situação e o que só ficou claro depois?',
+        'Que resposta ao erro seria firme e justa com você?',
       ],
       sourceResponseIds: ['qa-me-p7b', 'qa-me-p6'],
     },
@@ -576,102 +574,93 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Custo: estafa mental profunda e dificuldade para relaxar à noite',
       ],
       interpretation:
-        'Sua resposta de Luta não representa agressividade interpessoal, violência verbal ou ataque aos outros; é uma mobilização neurofisiológica altamente resolutiva de enfretamento direto. Diante da sensação de perigo ou de que as demandas podem desmoronar, seu corpo entra em ação firme e rápida para restaurar a segurança. Esta resposta foi sua grande guardiã até aqui, mas o custo relatado de estafa mostra que o repertório pode ser expandido com apoio e pausas.',
+        'Você relata prazos simultâneos e ruídos de comunicação, seguidos de coração acelerado, ombros contraídos e respiração superficial. Sua resposta descrita é tentar resolver imediatamente sem pedir auxílio; você reconhece a função de evitar desamparo ou incompetência e proteger a integridade profissional.\n\nNeste material, Luta nomeia essa mobilização para resolver. O relato não permite concluir como você age em todos os conflitos. Podemos explorar outras opções ao lado da ação, sobretudo porque você descreve estafa e dificuldade de relaxar depois.',
       resources: [
-        'Coragem para enfrentar problemas complexos sem fugir da responsabilidade',
-        'Velocidade para articular soluções e desatar nós operacionais',
+        'Você identifica sinais e a função que reconhece em sua resposta.',
+        'Respiração lenta e alongamento são recursos relatados.',
       ],
       costs: [
-        'Contrações musculares sustentadas e respiração curta',
-        'Dificuldade de desligar a mente à noite por manter o estado de alerta',
+        'Ombros contraídos, respiração superficial, estafa mental e dificuldade de relaxar foram relatados.',
       ],
       connections: [
-        'Integra-se ao padrão Hipervigilante e à agudeza do planejamento preventivo',
-        'Bloqueia temporariamente o pedido precoce de ajuda e colaboração',
+        'Antecipação e autocobrança aparecem no mesmo material; suas relações precisam ser exploradas.',
+        'Pedir apoio tarde é um ponto de conversa nas relações.',
       ],
       questions: [
-        'Quando a urgência de agir surge no corpo, é viável respirar fundo 3 vezes antes de começar a responder aos e-mails?',
+        'Quando percebe a tensão, o que ajudaria você a avaliar se precisa agir sozinha, dividir a tarefa ou negociar a demanda?',
       ],
       sourceResponseIds: ['qa-reg-p1', 'qa-reg-p2', 'qa-reg-p4', 'qa-reg-p5', 'qa-reg-p6'],
     },
 
     fuga: {
       summary:
-        'Não marcada como tendência imediata no momento de sobrecarga; movimento adaptativo de afastamento e recolhimento protetivo.',
+        'Não destacada no exemplo. O material não permite concluir presença, ausência ou intensidade dessa reação em outros contextos.',
       observations: [
-        'A reação predominante declarada no questionário foi a Luta',
-        'O recuo relatado nas relações ocorre de forma ponderada antes da conversa reflexiva',
+        'A resposta descrita diante de sobrecarga foi resolver imediatamente.',
+        'Nas relações, você relata um recuo temporário para organizar ideias.',
       ],
       interpretation:
-        'A Fuga é uma resposta que busca criar distância espacial ou silêncio para permitir que o sistema nervoso se reorganize longe do perigo. Em seu mapa atual, você não recorreu à fuga automática diante de prazos; seu impulso imediato foi intervir. Explicitar que a Fuga não está destacada é reconhecer que ela é um recurso preservado para momentos em que colocar distância for a escolha mais sábia.',
+        'Fuga descreve aqui o movimento de criar distância diante de uma situação percebida como difícil. Como não foi destacada nesta demonstração, não sabemos como aparece em outros contextos.\n\nO recuo nas relações não comprova Fuga: pode ter diferentes funções, que precisam ser compreendidas por você. Podemos investigar o que acontece antes, durante e depois de um afastamento, sem classificá-lo de antemão.',
       resources: [
-        'Capacidade de colocar limites físicos ou temporais quando a invasão for excessiva',
-        'Preservação da integridade interna pelo afastamento consciente de ambientes nocivos',
+        'Possibilidade a explorar: um intervalo pode oferecer espaço para avaliar a situação.',
+        'Não foi estabelecido um recurso pessoal específico dessa reação.',
       ],
       costs: [
-        'Se usada por automatismo excessivo, pode distanciar de conversas necessárias',
-        'Pode ser confundida com indiferença por pessoas próximas',
+        'Não há custo individual estabelecido no material.',
+        'Como possibilidade, vale observar se o afastamento ajuda a retomar ou deixa algo pendente.',
       ],
       connections: [
-        'Pode coexistir com o recuo reflexivo que você utiliza para organizar ideias antes de confrontos',
-        'Não deve ser rotulada como covardia nem como desinteresse',
+        'Pode ser conversado junto ao recuo reflexivo nas relações, sem equivalência automática.',
       ],
-      questions: [
-        'Em quais momentos colocar um intervalo ou afastar-se fisicamente de um ambiente seria um ato de respeito consigo mesma?',
-      ],
+      questions: ['Em que situação afastar-se ajuda você e como decide quando retomar?'],
       sourceResponseIds: ['qa-reg-p4', 'qa-rel-p7'],
     },
 
     paralisacao: {
       summary:
-        'Não marcada como tendência imediata; resposta de suspensão ou compasso de espera frente ao excesso de estímulos.',
+        'Não destacada no exemplo. Cansaço e peso ao despertar não comprovam essa reação, nem permitem excluir sua presença em outros contextos.',
       observations: [
-        'Seu funcionamento imediato perante a pressão é resolutivo e hiperativo',
-        'A lentidão só aparece posteriormente como custo de estafa após a entrega',
+        'A resposta descrita sob pressão foi ação imediata.',
+        'Você relata estafa mental posteriormente; isso não estabelece Paralisação.',
       ],
       interpretation:
-        'A Paralisação ocorre quando a sobrecarga ou a incerteza é tão intensa que o organismo suspende a ação para avaliar o cenário com cautela. Você não tende a travar ou ficar sem ação no ápice da pressão. Reconhecer essa ausência no relato ajuda a desmistificar a ideia de fraqueza: sua tendência é o movimento, e o cansaço que você sente decorre do excesso de ação, não de imobilidade.',
+        'Paralisação nomeia aqui situações em que agir ou responder parece difícil ou suspenso. Não foi destacada neste exemplo, mas essa informação não determina como você reage em todas as situações.\n\nCansaço, sono interrompido e peso ao despertar foram relatados em outras partes do mapa. Não equivalem a Paralisação e não serão explicados como fadiga muscular comprovada. Se você reconhecer momentos de ficar sem ação, podemos explorar seu contexto.',
       resources: [
-        'Pausa protetiva que impede reações precipitadas diante de risco iminente',
-        'Economia de energia quando nenhuma ação imediata for eficaz',
+        'Possibilidade a explorar: reconhecer e nomear um momento de suspensão pode ampliar escolhas.',
+        'O material não estabelece um recurso individual dessa reação.',
       ],
-      costs: [
-        'Sensação angustiante de impotência ou confusão mental quando ativada',
-        'Dificuldade de dar o primeiro passo para destravar tarefas',
-      ],
+      costs: ['Não há custo específico dessa reação estabelecido no relato.'],
       connections: [
-        'O peso corporal relatado ao acordar é fadiga muscular acumulada, não congelamento afetivo',
-        'Diferencia-se da serenidade contemplativa que você experimenta na natureza',
+        'Distinguir dificuldade de agir, pausa escolhida e cansaço ajuda a compreender situações concretas.',
       ],
       questions: [
-        'Se você sentisse o corpo desacelerar de forma involuntária, como poderia acolher esse sinal como um pedido urgente de descanso?',
+        'Você reconhece algum momento em que queria agir ou falar e não conseguia? Como foi para você?',
       ],
       sourceResponseIds: ['qa-reg-p4', 'qa-me-p5', 'qa-reg-p6'],
     },
 
     submissao: {
       summary:
-        'Não marcada como tendência imediata; apaziguamento como estratégia relacional de preservação do vínculo.',
+        'Não destacada no exemplo. Hesitar em dizer não não comprova essa reação; sua função precisa ser compreendida em cada situação.',
       observations: [
-        'Você relata hesitação em dizer não por cuidado com o outro',
-        'Porém, sua resposta perante desafios de trabalho é firme e resolutiva, não de submissão passiva',
+        'Você relata hesitar em dizer não por receio de ferir ou sobrecarregar outra pessoa.',
+        'Diante da sobrecarga, a resposta descrita foi tentar resolver imediatamente.',
       ],
       interpretation:
-        'A resposta de Submissão ou apaziguamento busca acalmar o outro e ceder para conter atritos imediatos. Embora você hesite em dizer "não" para poupar pessoas queridas de mágoas, seu funcionamento diante da sobrecarga não é de submissão nem de anulação da sua voz. O cuidado em não ferir quem você ama é uma expressão de sensibilidade empática, e não uma postura de subordinação sistemática.',
+        'Submissão ou apaziguamento nomeia aqui ceder ou concordar para reduzir atrito. Não foi destacada no exemplo e o material não permite afirmar presença, ausência ou intensidade em outras situações.\n\nSua hesitação em dizer não pode ter mais de uma função. Podemos explorar quando uma concessão é uma escolha que você deseja fazer e quando sente pouca liberdade para negociar, sem atribuir ressentimento ou habilidade diplomática não relatados.',
       resources: [
-        'Habilidade diplomática para acalmar tensões e buscar harmonia grupal',
-        'Flexibilidade para negociar e encontrar pontos de convergência',
+        'Conversa franca e escuta são recursos descritos nas relações.',
+        'Negociar limites é uma possibilidade a explorar, não uma habilidade presumida.',
       ],
       costs: [
-        'Risco de concordar com prazos inviáveis por medo de desapontar quem pediu',
-        'Acúmulo silencioso de ressentimento quando suas concessões não são reconhecidas',
+        'Hesitação em dizer não e pedido tardio de apoio foram relatados.',
+        'Não foi estabelecido um custo específico dessa reação.',
       ],
       connections: [
-        'Dialoga com o receio de sobrecarregar terceiros e com a hesitação em pedir suporte',
-        'Não deve ser confundida com fraqueza de caráter nem com dependência afetiva',
+        'Relaciona-se como pergunta aos limites e à reciprocidade; não é uma classificação automática do seu cuidado.',
       ],
       questions: [
-        'Como distinguir uma concessão generosa que você quer fazer de um recuo que machuca sua própria dignidade?',
+        'Em que situações você sente liberdade para concordar, discordar ou propor outra possibilidade?',
       ],
       sourceResponseIds: ['qa-rel-p4', 'qa-me-p5', 'qa-reg-p4'],
     },
@@ -718,21 +707,20 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Pensamentos acelerados em loop em momentos de alta pressão',
       ],
       interpretation:
-        'Sua mente é um instrumento poderoso de organização e lucidez. Sob pressão, entretanto, seus pensamentos tendem a acelerar e construir cenários preventivos contínuos, buscando controlar variáveis para afastar a sensação de falha. Reconhecer esse movimento de proteção ajuda a desarmar a culpa e recuperar o espaço de quietude.',
+        'Você relata antecipar próximos passos, cobrar de si que deveria ter previsto erros e perceber pensamentos em loop sob pressão. Uma hipótese é que planejar busque previsibilidade, enquanto a cobrança aumenta a exigência de não falhar.\n\nAinda não sabemos quando esses pensamentos ocorrem em relação ao sono. Podemos explorar situações concretas em que planejar ajuda e outras em que a repetição continua sem produzir uma nova escolha.',
       resources: [
-        'Visão estratégica lúcida e capacidade rápida de estruturar saídas',
-        'Preocupação honesta com o bem-estar e o alinhamento coletivo',
+        'Você reconhece pensamentos, diálogo interno e situações que costumam acioná-los.',
+        'Pausas em silêncio e respiração são recursos relatados.',
       ],
       costs: [
-        'Insônia inicial ou despertar noturno com pensamentos em torno do trabalho',
-        'Exaustão cognitiva por manter planos alternativos permanentemente ligados',
+        'Pensamentos em loop e estafa mental constam nos relatos.',
+        'Sono interrompido também foi relatado; sua relação com os pensamentos não foi estabelecida.',
       ],
       connections: [
-        'Coocorre com a tensão muscular na mandíbula e a aceleração dos batimentos',
-        'Dificulta a presença relaxada no momento presente e no lazer despretensioso',
+        'Coocorre no material com tensão corporal e ação imediata; não determina uma sequência causal.',
       ],
       questions: [
-        'Quando a mente começa a planejar em loop, o que acontece se você simplesmente anotar em um papel e dizer a si mesma "amanhã eu cuido disso"?',
+        'Como você percebe a diferença entre um plano útil e uma preocupação que está se repetindo?',
       ],
       sourceResponseIds: ['qa-me-p4', 'qa-me-p6', 'qa-me-p11'],
     },
@@ -746,49 +734,49 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Sensação de peito aberto e respiração livre nos momentos de harmonia e segurança',
       ],
       interpretation:
-        'Seu universo emocional é rico e dinâmico: você não reprime o que sente, mas percebe no próprio corpo o fluxo vibrante dos sentimentos. Quando há segurança e ausência de pressa, sua afetividade se manifesta em escuta calorosa e peito aberto. Quando surgem prazos e ruídos relacionais, a ansiedade se conecta à preocupação e busca a ação rápida como antídoto.',
+        'Você descreve emoções rápidas e intensas no corpo, incluindo ansiedade, entusiasmo e preocupação. Quando está tranquila, relata peito aberto, respiração fluida e escuta sem pressa. Esses contrastes ajudam a observar sua experiência sem concluir que você sempre expressa ou reprime emoções.\n\nDemandas no trabalho e conversas inacabadas aparecem como contextos importantes. Podemos explorar o que cada emoção sinaliza e como você escolhe agir, sem atribuir seus sinais digestivos a uma causa emocional.',
       resources: [
-        'Capacidade de empatia sincera e escuta atenta sem julgamentos',
-        'Entusiasmo contagiante diante de projetos que dialogam com seus valores',
+        'Você consegue nomear emoções e descrever sinais no corpo.',
+        'Natureza, silêncio e respiração calma foram relatados como úteis.',
       ],
       costs: [
-        'Impacto de tensões emocionais na digestão e na respiração',
-        'Dificuldade de filtrar a ansiedade quando as pessoas ao redor estão inseguras',
+        'Ansiedade, preocupação e tensão corporal constam nos relatos.',
+        'Não foi estabelecido um efeito emocional específico sobre a digestão.',
       ],
       connections: [
-        'Conecta-se à busca de reciprocidade e verdade nos vínculos',
-        'Nutre sua sensibilidade artística, contemplativa e o contato com a natureza',
+        'Pensamentos antecipatórios e mobilização para resolver aparecem nas mesmas situações de pressão.',
+        'Reciprocidade e segurança relacional ajudam a contextualizar as experiências, sem explicar tudo.',
       ],
       questions: [
-        'Como você acolhe o entusiasmo sem deixar que ele acelere o seu corpo além do seu limite de energia?',
+        'O que você sente primeiro numa situação de pressão e o que precisa antes de agir?',
       ],
       sourceResponseIds: ['qa-me-p1', 'qa-me-p2', 'qa-me-p10'],
     },
 
     protecao: {
       summary:
-        'Nó Proteção: estratégias de defesa e adaptação compreendidas no contexto da sua história.',
+        'Movimentos atuais de antecipar, cobrar de si e resolver sob pressão. Suas origens ainda não foram contextualizadas pela Linha da Vida.',
       observations: [
-        'Movimentos ativos para assegurar retidão e excelência',
-        'Ação rápida sob pressão para recompor a harmonia dos ambientes',
-        'Função percebida: proteger a integridade profissional e evitar desamparo',
+        'Busca relatada por fazer tudo impecavelmente certo e antecipar riscos.',
+        'Ação imediata para resolver diante de sobrecarga.',
+        'Função reconhecida por você: evitar desamparo ou incompetência e proteger a integridade profissional.',
       ],
       interpretation:
-        'Seus movimentos de proteção não são defeitos de personalidade; são formas de adaptação que buscaram cuidar de você e daqueles ao seu redor. Eles participaram da construção da sua competência e dedicação. O trabalho integrativo não busca eliminá-los, mas devolver-lhes flexibilidade para que não governem todas as situações da sua rotina.',
+        'Você descreve movimentos que buscam previsibilidade e integridade profissional. Podemos explorar como eles ajudam em certos contextos e como ficam mais exigentes sob pressão. Isso não permite afirmar quando surgiram ou qual papel tiveram na construção da sua competência.\n\nA direção possível é ampliar escolhas: agir, pedir apoio, negociar uma demanda ou fazer uma pausa, conforme a situação. Sua história poderá ajudar a contextualizar esses movimentos quando você desejar compartilhá-la.',
       resources: [
-        'Lealdade protetora aos vínculos e compromissos assumidos',
-        'Prontidão e coragem para intervir quando situações exigem liderança',
+        'Você consegue identificar movimentos e a função que percebe neles.',
+        'Respiração e alongamento já são recursos conhecidos.',
       ],
       costs: [
-        'Rigidez na autocobrança e dificuldade de aceitar a própria imperfeição',
-        'Adiamento constante do autocuidado e da diversão descompromissada',
+        'Estafa mental, tensão e dificuldade de relaxar foram relatadas.',
+        'Vale investigar quando a ação imediata deixa pouco espaço para apoio.',
       ],
       connections: [
-        'Coocorre com a resposta de mobilização de Luta diante de prazos apertados',
-        'Pode ser suavizado pela prática de pequenos passos de permissão e descanso',
+        'Luta, antecipação e autocobrança aparecem como movimentos a explorar em conjunto.',
+        'Ainda faltam marcos de vida para relacionar esse retrato a acontecimentos específicos.',
       ],
       questions: [
-        'Qual parte dessas defesas você pode agradecer hoje por ter cuidado de você, ao mesmo tempo em que a convida a relaxar um pouco?',
+        'Em que situação esse movimento ajuda e em qual você gostaria de ter outra opção?',
       ],
       sourceResponseIds: ['qa-me-p7a', 'qa-me-p7b', 'qa-me-p5', 'qa-reg-p5'],
     },
@@ -803,21 +791,18 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Reparação de conflitos através de conversa franca e escuta atenta',
       ],
       interpretation:
-        'Seus relacionamentos são alicerçados em respeito, verdade e generosidade. Você oferece um porto seguro para quem caminha com você. O ponto sensível reside em cuidar tanto das demandas alheias a ponto de esquecer de expressar seus próprios cansaços e necessidades. Aprender a pedir ajuda antes do esgotamento e praticar o dizer "não" com amorosidade fortalece ainda mais os laços que você preza.',
+        'Você descreve vínculos seletos, reciprocidade, confiança gradual e emoção ao receber cuidado sincero. Também relata hesitar em dizer não e pedir apoio quando já está esgotada. Uma hipótese é que cuidar dos vínculos e expressar suas necessidades nem sempre encontrem o mesmo espaço.\n\nPodemos investigar como dividir responsabilidades antes do limite, sem presumir isolamento, obrigação de ser a mais forte ou que você absorva tarefas alheias em todas as relações.',
       resources: [
-        'Profundidade nos encontros e capacidade de sustentar conversas de reparação',
-        'Sensibilidade para reconhecer e valorizar o carinho sincero recebido',
+        'Conversa franca, escuta e pedido de desculpas foram relatados como caminhos de reparação.',
+        'Você reconhece e valoriza o cuidado sincero recebido.',
       ],
-      costs: [
-        'Sobrecarga por absorver responsabilidades que caberiam a outras pessoas',
-        'Sentimento de isolamento temporário por achar que precisa ser a mais forte sempre',
-      ],
+      costs: ['Hesitação em dizer não e esgotamento antes de pedir ajuda foram relatados.'],
       connections: [
-        'Sustenta a segurança necessária para a entrega na vida afetiva e erótica',
-        'Espelha os valores fundamentais de generosidade e dignidade humana',
+        'Segurança e cumplicidade também aparecem na intimidade.',
+        'Generosidade e dignidade são valores relatados; a ligação deles com disponibilidade constante é uma hipótese.',
       ],
       questions: [
-        'Quem é uma pessoa no seu círculo de confiança para quem você poderia pedir uma ajuda simples ainda esta semana?',
+        'Em qual relação você poderia conversar sobre uma necessidade sua sem esperar chegar ao limite?',
       ],
       sourceResponseIds: ['qa-rel-p1', 'qa-rel-p4', 'qa-rel-p5', 'qa-rel-p6', 'qa-rel-p8'],
     },
@@ -826,27 +811,26 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Nó Vida Cotidiana & Sentido: coerência ética, contemplação da natureza, intimidade e o equilíbrio entre servir e descansar.',
       observations: [
-        'Coerência ética e paz de consciência como bússola interna permanente',
-        'Valores fundamentais de verdade, generosidade e respeito à dignidade humana',
-        'Nutrição pela natureza, meditação, silêncio e caminhada descalça no jardim',
-        'Desejo e erotismo conectados ao descanso e à ausência de fadiga',
+        'Coerência ética e paz de consciência são referências relatadas.',
+        'Verdade, generosidade e dignidade humana são valores importantes para você.',
+        'Natureza, silêncio, meditação e leitura aparecem como experiências de conexão.',
+        'Você descreve maior disponibilidade para intimidade com afeto, desaceleração e menos cansaço.',
       ],
       interpretation:
-        'Este nó integra o sentido maior da sua existência com a rotina dos seus dias. Quando seus valores de generosidade são vividos com serenidade, você desfruta da vida com contemplação, poesia e presença. A armadilha é quando o senso de utilidade se torna uma obrigação contínua de servir, roubando o silêncio e o prazer da intimidade. Proteger pequenas pausas é um ato ético de respeito à sua própria vida.',
+        'Você encontra direção em valores de verdade, generosidade e dignidade, e descreve natureza, silêncio, meditação e leitura como experiências significativas. Na intimidade, afeto e desaceleração aparecem junto a maior disponibilidade.\n\nUma conexão possível é explorar como suas responsabilidades deixam espaço para essas experiências. Não sabemos se você sente culpa ao descansar ou se o lazer foi sacrificado. O descanso pode ser discutido como uma escolha que também respeita o que importa para você.',
       resources: [
-        'Bússola moral firme que orienta escolhas difíceis com integridade',
-        'Conexão viva com o sagrado presente na natureza e na contemplação',
+        'Valores que você consegue nomear e experiências de conexão já reconhecidas.',
+        'Jardim, silêncio e respiração calma foram relatados como recursos cotidianos.',
       ],
       costs: [
-        'Sacrifício de momentos de lazer e descanso por excesso de deveres',
-        'Culpa passageira quando se permite não ser útil ou produtiva',
+        'Cansaço e distração por pendências foram descritos na intimidade.',
+        'Vale investigar se demandas e quietude disputam espaço em certos períodos.',
       ],
       connections: [
-        'Confere significado aos seus esforços e projetos profissionais',
-        'Oferece caminhos de retorno ao eixo: chá em silêncio, jardim e respiração',
+        'Relaciona valores, rotina, vínculos e disponibilidade para intimidade como campos de conversa.',
       ],
       questions: [
-        'De que maneira o silêncio e o descanso podem se tornar aliados — e não concorrentes — dos seus valores de generosidade?',
+        'Como você gostaria que seus valores aparecessem também no cuidado com o seu tempo e seu descanso?',
       ],
       sourceResponseIds: [
         'qa-sen-p1',
@@ -908,6 +892,62 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'qa-rel-p4',
         'qa-rel-p5',
       ],
+    },
+
+    meu_mundo_emocional: {
+      summary:
+        'Você relata emoções rápidas no corpo, antecipação dos próximos passos, ação para resolver e cobrança severa diante de erros.',
+      observations: [
+        'Ansiedade, entusiasmo e preocupação com o futuro foram relatados.',
+        'Cobranças no trabalho e conversas inacabadas aparecem como contextos importantes.',
+        'Você calcula próximos passos e assume a frente para devolver tranquilidade.',
+        'Diante de um erro, relata a voz interna “deveria ter previsto isso”.',
+        'Quando tranquila, descreve peito aberto, respiração fluida e escuta sem pressa.',
+      ],
+      interpretation:
+        'Podemos distinguir quatro partes do seu relato: o que você sente, o que pensa, como age e como fala consigo. Sob pressão, ansiedade e preocupação aparecem junto à antecipação e à urgência de resolver; depois, você relata cansaço e dificuldade de desacelerar. Essa reunião de elementos é uma hipótese de funcionamento, não uma sequência comprovada.\n\nVocê também descreve uma experiência diferente quando está tranquila: respiração fluida, peito aberto e escuta sem pressa. Natureza, chá em silêncio e respiração calma já aparecem como recursos. A conversa pode explorar como ampliar suas opções antes de chegar à sobrecarga.',
+      resources: [
+        'Você consegue nomear emoções, pensamentos, sinais corporais e recursos.',
+        'Natureza, silêncio, respiração e alongamento foram relatados como úteis.',
+      ],
+      costs: ['Tensão, pensamentos em loop, cobrança severa e estafa constam nos relatos.'],
+      connections: [
+        'Dialoga com os padrões e a regulação sem transformar categorias em traços fixos.',
+        'Descanso, apoio e disponibilidade para intimidade são campos de conexão a investigar.',
+      ],
+      questions: [
+        'Qual dessas partes você percebe primeiro quando a pressão aumenta?',
+        'O que neste retrato descreve sua experiência e o que você mudaria?',
+      ],
+      sourceResponseIds: ['qa-me-p1', 'qa-me-p2', 'qa-me-p4', 'qa-me-p5', 'qa-me-p6', 'qa-me-p10'],
+    },
+
+    mundo_emocional: {
+      summary:
+        'Você relata emoções rápidas no corpo, antecipação dos próximos passos, ação para resolver e cobrança severa diante de erros.',
+      observations: [
+        'Ansiedade, entusiasmo e preocupação com o futuro foram relatados.',
+        'Cobranças no trabalho e conversas inacabadas aparecem como contextos importantes.',
+        'Você calcula próximos passos e assume a frente para devolver tranquilidade.',
+        'Diante de um erro, relata a voz interna “deveria ter previsto isso”.',
+        'Quando tranquila, descreve peito aberto, respiração fluida e escuta sem pressa.',
+      ],
+      interpretation:
+        'Podemos distinguir quatro partes do seu relato: o que você sente, o que pensa, como age e como fala consigo. Sob pressão, ansiedade e preocupação aparecem junto à antecipação e à urgência de resolver; depois, você relata cansaço e dificuldade de desacelerar. Essa reunião de elementos é uma hipótese de funcionamento, não uma sequência comprovada.\n\nVocê também descreve uma experiência diferente quando está tranquila: respiração fluida, peito aberto e escuta sem pressa. Natureza, chá em silêncio e respiração calma já aparecem como recursos. A conversa pode explorar como ampliar suas opções antes de chegar à sobrecarga.',
+      resources: [
+        'Você consegue nomear emoções, pensamentos, sinais corporais e recursos.',
+        'Natureza, silêncio, respiração e alongamento foram relatados como úteis.',
+      ],
+      costs: ['Tensão, pensamentos em loop, cobrança severa e estafa constam nos relatos.'],
+      connections: [
+        'Dialoga com os padrões e a regulação sem transformar categorias em traços fixos.',
+        'Descanso, apoio e disponibilidade para intimidade são campos de conexão a investigar.',
+      ],
+      questions: [
+        'Qual dessas partes você percebe primeiro quando a pressão aumenta?',
+        'O que neste retrato descreve sua experiência e o que você mudaria?',
+      ],
+      sourceResponseIds: ['qa-me-p1', 'qa-me-p2', 'qa-me-p4', 'qa-me-p5', 'qa-me-p6', 'qa-me-p10'],
     },
 
     // ═════════════════════════════════════════════════════════════════════════
