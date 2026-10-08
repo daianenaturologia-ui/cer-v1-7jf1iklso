@@ -1,6 +1,6 @@
 {
   "name": "skip-react-template",
-  "description": "A frontend React Vite TypeScript Shadcn UI template for Skip projects — CER V1 (build 0.0.294 - Bloco 8 Resource Exercises)",
+  "description": "CER V1 (build - Bloco 9 Resource Agenda)",
   "private": true,
   "version": "0.0.302",
   "packageManager": "pnpm@10.5.2",
