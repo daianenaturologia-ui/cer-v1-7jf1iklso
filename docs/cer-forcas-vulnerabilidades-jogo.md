@@ -1,6 +1,6 @@
 # Integração CER: minhas forças diante das dificuldades
 
-Direção aprovada por Daiane em 08/10/2026, para o próximo bloco do relatório final integrado. O jogo foi implementado no bloco 8, na leitura integrada. Inclui acréscimos pessoais, edição, retirada reversível, conexões reutilizáveis e estratégia por conexão. A transferência para o Planner permanece uma etapa futura.
+Direção aprovada por Daiane em 08/10/2026, para o próximo bloco do relatório final integrado. O jogo foi implementado no bloco 8, na leitura integrada. Inclui acréscimos pessoais, edição, retirada reversível, conexões reutilizáveis e estratégia por conexão. A transferência para a agenda foi implementada no bloco9: a pessoa salva a estratégia, escolhe um pequeno passo, objetivo opcional e horários, e confirma a criação de um momento privado. A agenda guarda uma cópia; alterações posteriores do exercício não reescrevem compromissos existentes.
 
 ## Propósito
 

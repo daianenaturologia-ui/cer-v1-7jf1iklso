@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, X, Link2, Sparkles } from 'lucide-react'
+import { ResourceAgendaForm } from './ResourceAgendaForm'
 
 const dimensionNames: Record<string, string> = {
   corpo: 'Corpo',
@@ -314,6 +315,20 @@ export function IntegratedResourceGame({
                     }
                   />
                 )}
+                {!readOnly &&
+                  c.strategy.trim() &&
+                  (dirty || saving ? (
+                    <p className="text-xs text-muted-foreground">
+                      Salve seu exercício para levar esta estratégia à agenda.
+                    </p>
+                  ) : (
+                    <ResourceAgendaForm
+                      enrollmentId={snapshot.enrollmentId}
+                      strength={itemById.get(c.strengthId)!.label}
+                      difficulty={item.label}
+                      strategy={c.strategy}
+                    />
+                  ))}
               </div>
             ))}
         </div>
@@ -450,8 +465,8 @@ export function IntegratedResourceGame({
             </button>
           )}
           <p className="text-xs text-muted-foreground">
-            As conexões podem ajudar a construir estratégias para sua rotina. Elas ainda não criam
-            tarefas no Planner.
+            As conexões podem ajudar a construir estratégias para sua rotina. Depois de salvar o
+            exercício, você pode escolher uma estratégia e levá-la à sua agenda.
           </p>
           {error && (
             <p role="alert" className="text-sm">
