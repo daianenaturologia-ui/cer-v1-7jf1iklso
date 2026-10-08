@@ -95,9 +95,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       return {
         ...dim,
         summary:
-          'Mariana, seu relato corporal descreve uma estrutura leve habitual e sensibilidade ao frio, combinadas no momento atual com sono entrecortado, fome irregular e estufamento pós-prandial.',
+          'Mariana, seu relato corporal descreve características habituais de estrutura leve, sensibilidade ao frio em mãos e pés, fome irregular, digestão pesada e sono leve ou interrompido.',
         interpretation:
-          'Seu histórico de compleição física estreita, pele seca e intolerância ao frio aponta para uma tendência de base (Prakriti) de características leves e ágeis. No entanto, a irregularidade no apetite, os gases ocasionais e a oscilação de vitalidade ao longo do dia representam o seu estado atual (Vikriti).\n\nEsses sinais digestivos e de sono coocorrem com um ritmo de exigência profissional elevada e pensamentos em loop descritos por você. É importante não afirmar uma causalidade direta e única — não sabemos se o desgaste corporal gera a aceleração mental ou se a sobrecarga de demandas desregula o corpo, mas ambos se sustentam mutuamente no seu momento de vida.\n\nNa tradição ayurvédica, acolher esse funcionamento convida a investigar rotinas de aconchego, refeições mornas e previsibilidade de horários, sem transformá-los em prescrições rígidas.',
+          'Seu relato reúne características corporais habituais reconhecidas ao longo de muitos anos — compleição física estreita, pele seca ou áspera, cabelo fino, frio em mãos e pés, fome irregular, digestão pesada e sono leve ou interrompido. Como o percurso de aprofundamento do Capítulo 3 ainda não foi iniciado neste cenário, não há dados para afirmar uma diferença comprovada entre estado basal e atual.\n\nSinais de tensão na mandíbula ou nos ombros e respiração superficial descritos sob momentos de sobrecarga pertencem a dimensões distintas da sua experiência. Embora possam coincidir no tempo, cabe investigar em conjunto como essas percepções dialogam, sem concluir uma causalidade direta entre corpo e mente.\n\nNa perspectiva integrativa, o convite é explorar com a profissional formas de acolher esse ritmo habitual, investigando o que traz conforto e previsibilidade sem regras rígidas.',
         summaryRows: [...doshaRows, ...dim.summaryRows],
         detailedRows: [...doshaRows, ...dim.detailedRows],
       }
@@ -139,9 +139,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       return {
         ...dim,
         summary:
-          'A intimidade e o desejo emergem em momentos de desaceleração, segurança relacional e descanso corporal, sendo bloqueados pelo acúmulo de tarefas mentais.',
+          'A intimidade e a disponibilidade para o afeto aparecem nos relatos associadas a momentos de desaceleração, segurança relacional e descanso, em contraste com períodos de cansaço e pendências acumuladas.',
         interpretation:
-          'Sua experiência da intimidade corporal e do desejo está diretamente atrelada ao descanso e à ausência de cansaço acumulado. Quando o corpo está descansado e há cumplicidade afetiva, você se percebe à vontade e aberta ao prazer como uma celebração do vínculo a dois.\n\nEm contrapartida, quando a rotina está sobrecarregada com tarefas pendentes, prazos e pensamentos em loop sobre o dia seguinte, o ruído mental compete diretamente com a presença necessária para a intimidade. Não há qualquer evidência de trauma ou disfunção biológica descrita, mas sim um reflexo fiel de como o cansaço do dia a dia drena a energia erótica.\n\nProteger tempos protegidos de desaceleração mútua e comunicar desejos e limites com clareza surgem como caminhos naturais de nutrição dessa dimensão.',
+          'Nas suas respostas, momentos de descanso corporal e cumplicidade afetiva são descritos junto a uma maior sensação de abertura e presença para a intimidade e a celebração do vínculo.\n\nPor outro lado, quando o cotidiano acumula tarefas pendentes, prazos e pensamentos em loop sobre o dia seguinte, você relata cansaço e menor disponibilidade para o contato íntimo. Essa coocorrência pode ser investigada como parte do ritmo das suas semanas.\n\nEspaços de desaceleração mútua, segurança no vínculo, respeito a limites e comunicação gradual surgem nos seus relatos como recursos a valorizar.',
       }
     }
 
@@ -149,9 +149,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       return {
         ...dim,
         summary:
-          'Bússola interna assentada na coerência ética, verdade e generosidade, nutrida pelo silêncio contemplativo e pela conexão com a natureza.',
+          'Bússola interna orientada por coerência ética, verdade e generosidade, acompanhada por momentos relatados de contemplação da natureza, silêncio, meditação e leitura.',
         interpretation:
-          'O sentido de direção da sua vida é fortemente guiado por uma bússola moral de dignidade humana, lealdade e verdade. Momentos na natureza, silêncio reflexivo e meditação já foram citados por você como fontes reais de reabastecimento da alma e retorno à paz de consciência.\n\nContudo, quando essa generosidade essencial se confunde com uma exigência interna de estar sempre disponível e sendo útil a terceiros, seus momentos de contemplação acabam sendo sacrificados em nome das obrigações imediatas.\n\nDar espaço ao descanso, ao chá em silêncio e ao caminhar descalço no jardim não é afastar-se do seu propósito ético, mas justamente criar as condições vitais para que seus valores mais nobres se manifestem sem exaustão.',
+          'O sentido de direção nos seus relatos apoia-se em valores fundamentais de dignidade humana, lealdade, verdade e generosidade. Momentos de contato com a natureza, silêncio reflexivo, meditação e leitura foram relatados por você como experiências de reabastecimento e retorno à serenidade.\n\nA generosidade aparece como um valor central; uma conexão possível a investigar na conversa é se uma autocobrança de manter-se sempre útil ou disponível pode, em certas fases, concorrer com o tempo dedicado à quietude e à contemplação.\n\nAbrir espaço para o silêncio e o descanso pode ser compreendido como uma forma de honrar esses mesmos valores no cuidado com a própria vida.',
       }
     }
 
@@ -165,141 +165,125 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
     // ═════════════════════════════════════════════════════════════════════════
     vata: {
       summary:
-        'Sinais de leveza, sensibilidade térmica e variabilidade digestiva conectados à lente tradicional do princípio de Vata.',
+        'Características corporais habituais relatadas (estrutura leve, pele seca, sensibilidade ao frio, fome e eliminação irregulares) lidas à luz tradicional de Vata. Percentual de 45% puramente ilustrativo.',
       observations: [
-        'Estrutura física leve e estreita reconhecida desde jovem',
-        'Pele seca frequente e necessidade de hidratação contínua',
-        'Tendência fácil ao frio em mãos e pés',
-        'Fome e ritmo digestivo com horários variáveis no cotidiano',
+        'Estrutura física leve e estreita reconhecida desde a juventude',
+        'Pele seca ou áspera e cabelo fino relatados habitualmente',
+        'Sensibilidade ao frio com mãos e pés frios frequentes',
+        'Fome irregular e eliminação intestinal com ritmo variável',
       ],
       interpretation:
-        'Na tradição ayurvédica, o princípio Vata rege os movimentos, o fluxo de pensamentos e a velocidade de percepção. Os sinais de secura, sensibilidade ao frio e oscilação de fome relatados por você se alinham com essa qualidade de movimento e leveza. O percentual de 45% exibido no gráfico é uma representação didática de demonstração visual e não deve ser lido como um cálculo biológico fechado nem como uma definição rígida de quem você é.',
+        'Na tradição ayurvédica, o princípio Vata representa movimento, leveza e variabilidade. Os sinais relatados — constituição estreita habitual, pele seca, pés e mãos frios, fome oscilante e eliminação irregular — alinham-se conceitualmente a essas qualidades tradicionais. O percentual de 45% apresentado no gráfico é unicamente um exemplo visual demonstrativo, e não um cálculo laboratorial, medição biológica ou diagnóstico clínico. Não se deve associar traços de personalidade ou talentos intelectuais a um dosha.',
       resources: [
-        'Rapidez para captar nuances e mudanças de ambiente',
-        'Facilidade para se conectar com novas ideias e projetos',
+        'Capacidade de perceber e descrever com nitidez características corporais habituais',
       ],
       costs: [
-        'Vulnerabilidade ao cansaço rápido quando não há previsibilidade',
-        'Tendência a reter tensão e ressecar mucosas em fases frias ou agitadas',
+        'Sono leve ou interrompido relatado na autoavaliação',
+        'Oscilação na disposição e na energia ao longo dos dias',
       ],
       connections: [
-        'Conecta-se ao hábito mental de planejar antecipadamente para conter imprevistos',
-        'Coocorre com a dificuldade de relaxar o corpo ao final de dias muito atribulados',
+        'Uma conexão possível a explorar com a profissional é se o ritmo de atividades atual dialoga com essa oscilação de sono e energia, sem estabelecer causalidade direta.',
       ],
       questions: [
-        'Em quais momentos da semana você percebe seu corpo pedindo calor, quietude ou pausas mais regulares?',
+        'Olhando para a sua rotina, quais dessas características você percebe como habituais de muitos anos e o que você sente que mudou mais recentemente?',
       ],
       sourceResponseIds: ['qa-c1-p1', 'qa-c1-p2', 'qa-c1-p4', 'qa-c2-p1'],
     },
 
     pitta: {
       summary:
-        'Capacidade de foco, organização e discernimento rápido; percentual gráfico demonstrativo de 35% sem validação de excesso.',
+        'Princípio tradicional de calor e transformação; dados da autoavaliação insuficientes para diagnosticar constituição ou excesso. Percentual de 35% ilustrativo.',
       observations: [
-        'Ação rápida e resolutiva para solucionar pendências de equipe',
-        'Sensibilidade ao calor em refeições muito condimentadas ou apressadas',
-        'Transpiração equilibrada sem extremos declarados',
+        'Transpira pouco segundo o relato da autoavaliação',
+        'Prefere bebidas mornas ou quentes e sente frio em extremidades',
+        'Consegue esperar uma refeição sem grande desconforto imediato',
       ],
       interpretation:
-        'O princípio Pitta relaciona-se à digestão, ao metabolismo e à agudeza do intelecto. Sua clareza para analisar cenários e sua iniciativa para resolver problemas mostram esse fogo transformador ativo como recurso. No entanto, o valor de 35% no gráfico é apenas parte do exemplo ilustrativo: não há dados na sua autoavaliação que comprovem um excesso inflamatório ou hiperacidez crônica.',
-      resources: [
-        'Capacidade de organização e entrega em momentos decisivos',
-        'Discernimento lúcido para distinguir prioridades quando está descansada',
-      ],
+        'Na tradição ayurvédica, Pitta corresponde aos processos metabólicos, digestivos e de transformação térmica. O percentual de 35% exibido no gráfico é meramente didático e ilustrativo. Os dados relatados nesta autoavaliação — que registram pouca transpiração e ausência de queixas clássicas de queimação — são insuficientes para validar constituição predominante ou apontar excesso de Pitta. Características como foco ou irritabilidade não devem ser explicadas por causalidade humoral sem base empírica.',
+      resources: ['Atenção às respostas corporais de digestão e temperatura quando questionada'],
       costs: [
-        'Risco de converter foco produtivo em cobrança perfeccionista consigo mesma',
-        'Irritabilidade interna passageira quando planos falham por desatenção alheia',
+        'Dados insuficientes no relato atual para mapear custos corporais específicos ligados a calor',
       ],
       connections: [
-        'Apoia sua resposta de mobilização ativa frente a prazos de trabalho',
-        'Pode intensificar a voz autocrítica quando algo sai imperfeito',
+        'Permanece como dimensão aberta a ser acompanhada caso surjam sinais digestivos ou térmicos em outras fases',
       ],
       questions: [
-        'Quando a sua exigência por excelência deixa de ser recurso e passa a gerar estresse desnecessário?',
+        'Você nota no seu corpo algum sinal relacionado a calor, queimação ou alterações digestivas que ainda não tenha descrito?',
       ],
       sourceResponseIds: ['qa-me-p5', 'qa-c2-p5', 'qa-c1-p5c'],
     },
 
     kapha: {
       summary:
-        'Capacidade de sustentação de vínculos e consistência; 20% demonstrativo sem rotular lentidão como constituição fixa.',
+        'Princípio tradicional de estrutura e sustentação; sensação de peso relatada sem validação de constituição fixa. Percentual de 20% ilustrativo.',
       observations: [
-        'Dedicação fiel e de longo prazo ao círculo íntimo de relações',
-        'Sensação de peso corporal e despertar matinal por vezes arrastado',
-        'Busca por ancoragem e acolhimento nos momentos difíceis',
+        'Sensação relatada de digestão pesada após determinadas refeições',
+        'Sensação de corpo pesado ao despertar em alguns períodos',
+        'Reconhecimento de ritmos habituais mantidos ao longo de muitos anos',
       ],
       interpretation:
-        'Kapha representa estabilidade, nutrição de tecidos e resistência relacional. Sua capacidade de ser leal e oferecer ancoragem amorosa expressa esse princípio de sustentação. O peso matinal relatado ao acordar reflete a fadiga acumulada de noites entrecortadas, não devendo ser confundido com lentidão constitucional inata.',
-      resources: [
-        'Capacidade de manter compromissos profundos com consistência',
-        'Espaço afetivo caloroso para quem compartilha a vida com você',
-      ],
-      costs: [
-        'Dificuldade para sair da inércia após períodos intensos de estafa',
-        'Tendência a engolir desconfortos para preservar a estabilidade dos ambientes',
-      ],
+        'No Ayurveda, Kapha simboliza estabilidade, coesão estrutural e lubrificação dos tecidos. O percentual de 20% no gráfico compõe apenas o exemplo visual de navegação. A sensação de peso após refeições e o corpo pesado ao despertar foram descritos no seu relato, mas não validam um diagnóstico de constituição Kapha. Traços relacionais, como lealdade ou dificuldade de dizer não, não devem ser atribuídos ao dosha; da mesma forma, o peso matinal é uma percepção a ser investigada sem inferir causa definitiva.',
+      resources: ['Percepção dos próprios ritmos e atenção às sensações corporais ao longo do dia'],
+      costs: ['Sensação de peso corporal relatada ao despertar e após refeições mais densas'],
       connections: [
-        'Sustenta sua lealdade afetiva e a dificuldade de dizer não',
-        'Coexiste com a necessidade de repouso restaurador em silêncio',
+        'A relação entre a qualidade do sono e a sensação de peso ao acordar pode ser explorada na conversa como uma possibilidade a compreender, sem afirmar causa fechada.',
       ],
       questions: [
-        'Como equilibrar seu desejo natural de estabilidade com a permissão para renovar rotinas cansativas?',
+        'A sensação de peso após refeições ou ao acordar é algo habitual de muitos anos ou costuma variar em determinados períodos do mês?',
       ],
       sourceResponseIds: ['qa-rel-p1', 'qa-c2-p9', 'qa-sen-p5'],
     },
 
     agni: {
       summary:
-        'Digestão com ritmo variável, fome oscilante e sensibilidade a refeições tardias, sugerindo Vishama Agni na tradição.',
+        'Digestão pesada, fome irregular e retorno de apetite variável relatados, lidos na tradição como irregularidade do fogo digestivo a explorar em conversa.',
       observations: [
-        'Apetite que varia entre dias de fome viva e dias de pouco apetite',
-        'Desconforto ou estufamento quando come correndo ou sob estresse',
-        'Ritmo intestinal que oscila de acordo com viagens ou alterações de horário',
+        'Fome irregular no cotidiano',
+        'Retorno da fome variável entre as refeições',
+        'Digestão percebida como pesada',
+        'Alimentos gordurosos ou pesados exigem mais do organismo',
+        'Eliminação intestinal com ritmo irregular',
       ],
       interpretation:
-        'Na medicina ayurvédica, Agni é o fogo digestivo que transforma o que ingerimos e vivenciamos. Quando há alternância entre fome forte e ausência de apetite, a tradição chama esse estado de Vishama Agni (digestão irregular), frequentemente associado à agitação e à falta de rotina horária. Isso não representa uma patologia comprovada por exames, mas um convite a cultivar previsibilidade e calma nas refeições.',
+        'Na visão ayurvédica, Agni representa a capacidade digestiva e de assimilação de nutrientes e estímulos. A alternância entre fome imprevisível, retorno de apetite variável e digestão pesada é tradicionalmente descrita como uma dinâmica irregular de Agni (Vishama Agni). Essa leitura não constitui um diagnóstico clínico nem uma prescrição de conduta, servindo como ponto de partida para dialogar com a profissional sobre sua experiência alimentar.',
       resources: [
-        'Sensibilidade rápida do corpo aos alimentos frescos e leves',
-        'Boa resposta fisiológica a momentos em que consegue comer com calma',
+        'Capacidade de descrever com clareza os sinais corporais de apetite, digestão e ritmo intestinal',
       ],
       costs: [
-        'Gases, sensação de peso ou distensão após comer com pressa',
-        'Queda de energia à tarde quando pula refeições ou come atrasada',
+        'Sensação de peso pós-refeição relatada',
+        'Ritmo digestivo e eliminatório variável no cotidiano',
       ],
       connections: [
-        'Diretamente conectado ao ritmo de trabalho acelerado e prazos simultâneos',
-        'Influencia a qualidade do sono e a facilidade para despertar descansada',
+        'Pode ser investigada a forma como os períodos de maior exigência na rotina coincidem ou não com essa variabilidade digestiva, sem presumir causalidade direta.',
       ],
       questions: [
-        'Que pequenas âncoras de horário você gostaria de testar para almoçar sem telas ou pressa?',
+        'Em quais contextos do seu dia a dia você percebe que a digestão flui com mais leveza ou com maior peso?',
       ],
       sourceResponseIds: ['qa-c2-p1', 'qa-c2-p3', 'qa-c2-p6'],
     },
 
     ama: {
       summary:
-        'Sinais de processamento incompleto (gases, despertar pesado e língua esbranquiçada), lidos sem mito de intoxicação patológica.',
+        'Sensação de digestão pesada, corpo pesado ao despertar e eliminação pegajosa/incompleta relatadas; leitura tradicional de processamento incompleto sem diagnóstico.',
       observations: [
-        'Sensação de peso e lentidão após refeições noturnas mais densas',
-        'Despertar matinal sem sensação imediata de frescor ou clareza',
-        'Tendência a estufamento abdominal em semanas de estresse prolongado',
+        'Digestão percebida como pesada',
+        'Eliminação intestinal descrita como pegajosa ou incompleta',
+        'Sensação de corpo pesado ao despertar',
       ],
       interpretation:
-        'Ama é o conceito ayurvédico para digestão ou assimilação incompleta de alimentos e estímulos mentais. Não equivale a toxinas químicas detectadas em exames toxicológicos nem exige dietas punitivas de "desintoxicação". Na visão integrativa, reflete apenas que o sistema esteve sobrecarregado e pede simplificação da dieta, infusões digestivas quentes e redução do ritmo para se recuperar.',
+        'Ama é uma categoria tradicional do Ayurveda que descreve sinais de processamento ou assimilação incompleta no trato digestivo. Não equivale a toxinas laboratoriais mensuráveis nem autoriza diagnósticos médicos ou protocolos prescritivos. Trata-se de uma chave de reflexão sobre como o organismo vem processando a rotina e os alimentos, a ser explorada de forma colaborativa com a profissional.',
       resources: [
-        'Sinalizador corporal nítido que avisa com rapidez quando o ritmo passou do limite',
-        'Capacidade de recuperação com hidratação morna e repouso',
+        'Observação atenta de variações corporais ao longo do tempo para revisar conjuntamente com a profissional',
       ],
       costs: [
-        'Lentidão mental passageira após almoços pesados',
-        'Aperto ou desconforto abdominal que rouba foco nas atividades',
+        'Desconforto associado à digestão pesada e eliminação pegajosa ou incompleta',
+        'Corpo pesado ao despertar em certos dias',
       ],
       connections: [
-        'Reflete a coocorrência de noites mal dormidas e preocupações antecipadas',
-        'Pode ser aliviado quando você consegue fazer a pausa para o chá em silêncio',
+        'Vale investigar se essas sensações se intensificam em períodos de sono mais entrecortado ou dias com menor regularidade alimentar, como hipótese a confirmar.',
       ],
       questions: [
-        'Você nota diferença na sua disposição matinal quando janta mais cedo e de forma leve?',
+        'Quando você percebe mais nitidamente esses sinais de peso e quais condições de rotina ou alimentação parecem acompanhar esses momentos?',
       ],
       sourceResponseIds: ['qa-c2-p3', 'qa-c2-p9'],
     },
@@ -309,28 +293,28 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
     // ═════════════════════════════════════════════════════════════════════════
     insistente: {
       summary:
-        'Categoria: Repete-se com frequência. Busca fazer tudo do jeito certo, sustentando excelência mas gerando dificuldade de fechar tarefas.',
+        'Categoria no exemplo: Repete-se com frequência. Relato de buscar fazer as coisas do jeito certo e voz interna cobrando antecipação.',
       observations: [
-        'Marcado com frequência alta na avaliação de movimentos automáticos',
-        'Selecionado entre os padrões que mais interferem na rotina: "fazer tudo impecavelmente certo"',
-        'Alinhado à voz que cobra não falhar com ninguém no planejamento',
+        'Marcado na categoria "Repete-se com frequência" na escala do questionário de demonstração',
+        'Relatada a busca por "fazer tudo impecavelmente certo"',
+        'Diálogo interno relatado diante de imprevistos ou falhas: "deveria ter previsto isso"',
       ],
       interpretation:
-        'O padrão Insistente (Perfeccionista no modelo de Shirzad Chamine) nasce de uma busca honesta por integridade, qualidade e respeito aos compromissos. Ele assegura padrões altos e consistência, mas cobra um preço severo quando não tolera o "suficientemente bom". Não afirmamos aqui uma causa familiar na infância, mas investigamos como essa exigência atual pode dificultar o encerramento sereno de ciclos.',
+        'O padrão Insistente reflete um cuidado atento com a qualidade, organização e responsabilidade diante de compromissos assumidos. Como hipótese a explorar na conversa, vale investigar se a busca por fazer impecavelmente certo pode, em certos momentos, sustentar consistência, mas também dificultar a finalização de tarefas ou o fechamento de ciclos.',
       resources: [
-        'Organização meticulosa e padrão técnico exemplar',
-        'Confiabilidade absoluta em projetos entregues sob sua supervisão',
+        'Cuidado com a organização e atenção à qualidade dos processos',
+        'Senso de compromisso e dedicação às entregas',
       ],
       costs: [
-        'Dificuldade de delegar e sensação de que se não fizer pessoalmente sairá errado',
-        'Adiamento do descanso até que tudo esteja rigorosamente impecável',
+        'Como hipótese a investigar: sensação de sobrecarga ao tentar garantir que nada escape ao controle',
+        'Possível adiamento do descanso enquanto restarem detalhes percebidos como pendentes',
       ],
       connections: [
-        'Alimenta o hábito de assumir demandas além do limite na equipe',
-        'Reforça o padrão Crítico quando qualquer detalhe sai fora do padrão',
+        'Pode dialogar com a autocrítica relatada diante de erros imprevistos',
+        'Vale observar na conversa se dificulta o compartilhamento de tarefas na rotina',
       ],
       questions: [
-        'Em qual projeto desta semana seria seguro e libertador praticar o critério de "bom o bastante"?',
+        'Em quais situações você sente que buscar o impecável ajuda você, e quando essa mesma busca parece tornar o fechamento de uma tarefa mais pesado?',
       ],
       sourceResponseIds: ['qa-me-p7a', 'qa-me-p8', 'qa-me-p4'],
     },
@@ -390,27 +374,26 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
 
     vitima: {
       summary:
-        'Categoria: Quase nunca acontece comigo. Postura proativa e protagonista, sem que isso anule o cansaço real que você vivencia.',
+        'Categoria no exemplo: Quase nunca acontece comigo. Cansaço relatado não equivale a desesperança ou passividade.',
       observations: [
-        'Classificado como quase nunca presente na escala de comportamentos',
-        'Ausência de narrativas de imobilidade ou vitimização passiva nos relatos livres',
+        'Marcado na categoria "Quase nunca acontece comigo" no questionário de demonstração',
+        'Relatos apontam disposição para intervir e resolver situações práticas',
       ],
       interpretation:
-        'Você raramente se coloca em postura de resignação, passividade ou lamento diante das dificuldades da vida; sua inclinação predominante é a ação e a responsabilidade. É importante ressaltar que marcar "quase nunca" não significa ausência de tristeza ou imunidade ao cansaço, mas apenas que seu movimento espontâneo busca sempre saídas resolutivas.',
+        'A marcação de "quase nunca acontece comigo" faz parte das opções da escala do exemplo de demonstração. Nos relatos, seu movimento espontâneo tende mais à ação diante de problemas do que à inércia. É essencial pontuar que sentir cansaço físico ou mental não equivale a desesperança ou vitimização; trata-se de um sinal corporal compreensível frente à sobrecarga.',
       resources: [
-        'Autonomia psicológica e postura construtiva perante adversidades',
-        'Clareza para buscar soluções sem estagnar em queixas infrutíferas',
+        'Disposição para agir diante de dificuldades práticas',
+        'Reconhecimento da própria capacidade de buscar caminhos possíveis',
       ],
       costs: [
-        'Risco de não se permitir expressar vulnerabilidade ou tristeza quando o fardo fica pesado demais',
-        'Pode cobrar dos outros a mesma prontidão para superar problemas rapidamente',
+        'Hipótese a verificar na conversa: se a tendência a seguir agindo pode dificultar reconhecer momentos em que o corpo pede apenas pausa e acolhimento',
       ],
       connections: [
-        'Reforça a preferência por mobilizar-se na Luta em vez de paralisar',
-        'Dificulta pedir colo ou apoio desarmado em momentos de exaustão',
+        'Dialoga com a preferência relatada por agir rápido sob sobrecarga',
+        'Pode ser explorado em relação ao tempo que leva para pedir apoio externo',
       ],
       questions: [
-        'Quando continuar com força total perde o sentido e o que você realmente precisa é apenas de acolhimento?',
+        'Quando continuar agindo com força total perde o sentido e o que o momento realmente pede é pausa e acolhimento?',
       ],
       sourceResponseIds: ['qa-me-p7a', 'qa-me-p5'],
     },
@@ -698,28 +681,30 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
     // ═════════════════════════════════════════════════════════════════════════
     corpo: {
       summary:
-        'Nó Corpo & Ritmo: estrutura leve, sensibilidade ao frio, digestão irregular e sono entrecortado em diálogo com a rotina.',
+        'Nó Corpo & Ritmo: características corporais, digestivas e de sono habituais reconhecidas ao longo de muitos anos, em diálogo com o ritmo do cotidiano.',
       observations: [
-        'Estrutura leve e sensível habitual associada a Vata',
-        'Digestão com gases e sensação de peso pós-prandial',
-        'Sono leve com despertares noturnos e cansaço acumulado',
+        'Estrutura corporal leve e estreita desde a juventude',
+        'Pele seca ou áspera, cabelo fino e frio habitual em mãos e pés',
+        'Fome irregular, retorno da fome variável e digestão pesada',
+        'Eliminação irregular e pegajosa ou incompleta',
+        'Sono leve ou interrompido e sensação de corpo pesado ao despertar',
       ],
       interpretation:
-        'O nó do Corpo é o solo onde todas as suas experiências acontecem. As flutuações de fome, o sono leve e os momentos de estafa física coexistem com a intensidade das suas jornadas de trabalho. Cuidar deste nó passa por cultivar pequenos ritmos de aconchego, refeições quentes e regulares e pausas respiratórias, ancorando a fisiologia na calma.',
+        'O nó do Corpo reúne características habituais que você reconhece em si há muitos anos. Como o percurso de aprofundamento do Capítulo 3 ainda não foi iniciado neste cenário, não há dados para contrastar um estado basal comprovado com alterações atuais. Além disso, as tensões de mandíbula e ombros e a alteração respiratória relatadas sob pressão provêm da dimensão de regulação emocional; distingui-las de traços fisiológicos habituais ajuda a não presumir causalidade direta e única entre corpo e mente.',
       resources: [
-        'Percepção precoce de quando o ritmo externo agride o corpo',
-        'Boa resposta biológica ao contato com o sol, calor e silêncio',
+        'Percepção da tensão corporal alguns minutos depois de sua instalação',
+        'Práticas de respiração lenta, alongamento, silêncio e contato com a natureza relatadas como úteis para reencontrar o eixo',
       ],
       costs: [
-        'Oscilação de vitalidade física ao longo da semana',
-        'Retenção de tensão nos ombros, costas e mandíbula',
+        'Oscilação de vitalidade e energia ao longo dos dias',
+        'Sono leve ou interrompido com sensação de corpo pesado ao despertar',
       ],
       connections: [
-        'Pode relacionar-se com pensamentos de antecipação preventiva',
-        'Impacta a disponibilidade erótica e a leveza nas relações íntimas',
+        'Pode ser explorado na conversa como a oscilação de energia dialoga com momentos de sobrecarga ou cobrança mental, como hipótese aberta.',
+        'Vale acompanhar como o descanso corporal influencia a disposição para a convivência e a intimidade.',
       ],
       questions: [
-        'Qual o primeiro sinal físico que seu corpo costuma dar quando um dia de trabalho passou da conta?',
+        'Como você poderia experimentar notar a tensão corporal um pouco antes, como uma escolha consciente no seu cotidiano?',
       ],
       sourceResponseIds: ['qa-c1-p1', 'qa-c1-p4', 'qa-c2-p1', 'qa-c2-p3', 'qa-c2-p8', 'qa-c2-p9'],
     },
@@ -880,25 +865,25 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Síntese integrativa do Método CER: equilíbrio entre capacidade de realização, cuidado relacional e espaço protegido para o descanso.',
       observations: [
-        'Sensibilidade viva para perceber nuances corporais e relacionais',
-        'Iniciativa ágil para planejar, prevenir falhas e resolver pendências',
-        'Sinais físicos de sobrecarga e autocobrança severa perante erros',
+        'Sensibilidade para perceber nuances corporais e relacionais',
+        'Iniciativa para planejar, prevenir falhas e resolver pendências práticas',
+        'Sinais físicos de sobrecarga e autocrítica diante de erros relatados',
         'Recursos relatados de retorno ao eixo: respiração, alongamento, chá em silêncio e natureza',
       ],
       interpretation:
-        'Mariana, suas respostas mostram capacidade de perceber nuances, planejar e cuidar. Sob pressão, esses mesmos recursos parecem perder flexibilidade: você tenta prever, assume a frente e cobra de si que nada falhe. Isso pode trazer alívio imediato, mas você relata estafa e dificuldade para desacelerar. A direção a explorar não é deixar de ser responsável; é ampliar suas opções para que responsabilidade, apoio e descanso possam coexistir.\n\nUma hipótese a explorar reúne demandas e imprevisibilidade; antecipação e autocobrança; tensão e ação imediata; apoio tardio; desgaste e menor disponibilidade para descanso/prazer. Você relatou os elementos; as relações entre eles precisam ser reconhecidas ou corrigidas por você.\n\nVocê já conta com recursos relatados por você mesma: sua escuta atenta quando está tranquila, a capacidade de notar os sinais da sobrecarga, o contato com a natureza e o jardim, as pausas respiratórias, a gratidão ao receber cuidado sincero e uma bússola ética generosa.\n\nDescrever experiências a escolher no seu cotidiano, sem plano prescrito: notar os primeiros sinais no corpo antes de assumir mais uma tarefa; perguntar-se com gentileza "isto é realmente minha responsabilidade agora?"; experimentar pedir apoio antes de atingir o limite; tolerar o resultado "suficientemente bom" em vez de exigir o impecável; e proteger pequenas pausas em silêncio ao longo da semana.',
+        'Mariana, suas respostas mostram capacidade de perceber nuances, planejar e cuidar. Sob pressão, esses mesmos recursos parecem perder flexibilidade: você tenta prever, assume a frente e cobra de si que nada falhe. Isso pode trazer alívio imediato, mas você relata estafa e dificuldade para desacelerar. A direção a explorar não é deixar de ser responsável; é ampliar suas opções para que responsabilidade, apoio e descanso possam coexistir.\n\nUma hipótese a explorar reúne demandas e imprevisibilidade; antecipação e autocobrança; tensão e ação imediata; apoio tardio; desgaste e menor disponibilidade para descanso/prazer. Você relatou os elementos; as relações entre eles precisam ser reconhecidas ou corrigidas por você.\n\nVocê já conta com recursos relatados por você mesma: sua escuta atenta quando está tranquila, a capacidade de notar os sinais da sobrecarga, o contato com a natureza e o jardim, as pausas respiratórias, a gratidão ao receber cuidado sincero e uma bússola ética generosa.\n\nSe fizer sentido para você, podemos explorar pequenas experiências: notar os primeiros sinais no corpo antes de assumir mais uma tarefa; perguntar-se com gentileza "isto é realmente minha responsabilidade agora?"; experimentar pedir apoio antes de atingir o limite; tolerar o resultado "suficientemente bom" em vez de exigir o impecável; e proteger pequenas pausas em silêncio ao longo da semana.',
       resources: [
         'Escuta acolhedora e sensível quando está em um ambiente tranquilo',
         'Capacidade demonstrada de reconhecer seus próprios padrões de funcionamento',
         'Contato restaurador com a natureza, silêncio e chá morno',
-        'Prática de respiração lenta em 4 tempos e alongamento físico já conhecidos',
-        'Sensibilidade para acolher cuidado sincero e capacidade honesta de reparação',
+        'Prática de respiração lenta em 4 tempos e alongamento físico relatadas',
+        'Sensibilidade para acolher cuidado sincero e capacidade de reparação honesta',
         'Bússola moral assentada na verdade, dignidade humana e generosidade',
       ],
       costs: [
-        'Você relata sono interrompido e dificuldade de relaxar; a relação com as preocupações merece ser explorada.',
+        'Sono interrompido e dificuldade de relaxar relatados; a relação com as preocupações pode ser explorada na conversa',
         'Acúmulo de tarefas individuais por hesitar em dizer não e pedir suporte',
-        'Autocrítica pesada diante de desvios e imprevistos na rotina',
+        'Autocrítica pesada relatada diante de desvios e imprevistos na rotina',
       ],
       connections: [
         'Articula todas as seis dimensões do CER em uma rede viva e interdependente',
@@ -930,30 +915,29 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
     // ═════════════════════════════════════════════════════════════════════════
     historia: {
       summary:
-        'História e Linha da Vida: distinção entre características corporais habituais e uma história relacional que ainda será narrada em conjunto.',
+        'História e Linha da Vida: distinção entre características corporais habituais e uma história relacional que ainda poderá ser narrada em diálogo.',
       observations: [
-        'Características corporais habituais conhecidas desde jovem (estrutura estreita, sensibilidade térmica)',
-        'Funcionamento atual de alto engajamento profissional e cuidado relacional',
-        'Ausência de marcos preenchidos na Linha da Vida nesta versão inicial',
+        'Características corporais habituais reconhecidas desde jovem (estrutura estreita, sensibilidade térmica)',
+        'Funcionamento atual de engajamento profissional e cuidado relacional',
+        'Ausência de marcos preenchidos na Linha da Vida neste cenário inicial',
       ],
       interpretation:
-        'Até aqui, há características corporais reconhecidas há anos e relatos do seu funcionamento atual. Ainda faltam marcos compartilhados da Linha da Vida para relacionar esse retrato a acontecimentos específicos. Não sabemos quando você aprendeu a assumir tantas demandas, o que ajudou ou o que foi difícil.\n\nÉ fundamental não pressupor uma infância traumática nem deduzir padrões atuais a partir de hipóteses sobre pais rígidos ou eventos familiares não narrados. As características corporais que você reconhece há mais tempo são consideradas pela lente tradicional da Prakriti. Isso não mede sua genética nem explica sozinho os movimentos aprendidos ao longo da vida. Ainda precisamos conhecer sua história para explorar essas relações.\n\nQuando houver uma história real compartilhada entre você e a profissional, essa dimensão será atualizada de forma dialógica e cuidadosa, sem automações que antecipem conclusões sobre a sua vida.',
+        'Até aqui, constam características corporais reconhecidas há muitos anos e relatos do seu funcionamento atual. Ainda faltam marcos compartilhados da Linha da Vida para relacionar esse retrato a acontecimentos específicos do seu percurso.\n\nAs características corporais que você reconhece há mais tempo são consideradas pela perspectiva tradicional da Prakriti. Elas representam tendências habituais e não determinam sozinhas os movimentos aprendidos ao longo da sua trajetória. É importante distinguir essas características corporais de uma história relacional que ainda não foi narrada.\n\nQuando houver memórias ou marcos compartilhados entre você e a profissional no momento oportuno, essa dimensão poderá ser construída de forma dialógica e cuidadosa na conversa.',
       resources: [
-        'Respeito absoluto à sua autonomia e ao seu tempo para compartilhar memórias',
-        'Discernimento para não misturar tendências corporais com histórias relacionais não contadas',
+        'Autonomia para compartilhar memórias e vivências no seu próprio tempo',
+        'Experiências e marcos significativos que ainda poderão ser narrados em diálogo',
       ],
       costs: [
-        'Ainda não dispor de conexões entre vivências do passado e os gatilhos da sobrecarga atual',
+        'Lacuna de marcos na Linha da Vida para contextualizar vivências do passado em relação a desafios atuais',
       ],
       connections: [
-        'Alimentará as conexões entre a Linha da Vida e as escolhas de autocuidado no futuro',
-        'Dará suporte a um plano de cuidado verdadeiramente individualizado',
+        'Poderá enriquecer a compreensão entre a história de vida e escolhas de autocuidado futuras',
+        'Oferece base para um diálogo individualizado na conversa com a profissional',
       ],
       questions: [
-        'Quando você começou a sentir que precisava dar conta de tudo?',
-        'Em quais contextos da sua vida assumir a frente mais ajudou você?',
-        'Houve relações em que pedir ajuda foi uma experiência segura e possível?',
-        'Que experiências do seu percurso ampliaram sua confiança e seus recursos mais bonitos?',
+        'Quando você começou a sentir que precisava dar conta de tantas coisas?',
+        'Em quais momentos ou contextos da sua história assumir a frente mais fez sentido ou ajudou você?',
+        'Houve relações ou fases em que pedir ajuda foi uma experiência possível e acolhedora?',
       ],
       sourceResponseIds: ['qa-c1-p1', 'qa-c1-p4', 'qa-me-p5', 'qa-rel-p1'],
     },
