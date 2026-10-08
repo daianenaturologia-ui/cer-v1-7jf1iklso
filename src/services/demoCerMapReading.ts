@@ -167,10 +167,10 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Sinais de leveza, sensibilidade térmica e variabilidade digestiva conectados à lente tradicional do princípio de Vata.',
       observations: [
-        'Estrutura física leve e estreita reconhecida desde jovem (qa-c1-p1)',
-        'Pele seca frequente e necessidade de hidratação contínua (qa-c1-p2)',
-        'Tendência fácil ao frio em mãos e pés (qa-c1-p4)',
-        'Fome e ritmo digestivo com horários variáveis no cotidiano (qa-c2-p1)',
+        'Estrutura física leve e estreita reconhecida desde jovem',
+        'Pele seca frequente e necessidade de hidratação contínua',
+        'Tendência fácil ao frio em mãos e pés',
+        'Fome e ritmo digestivo com horários variáveis no cotidiano',
       ],
       interpretation:
         'Na tradição ayurvédica, o princípio Vata rege os movimentos, o fluxo de pensamentos e a velocidade de percepção. Os sinais de secura, sensibilidade ao frio e oscilação de fome relatados por você se alinham com essa qualidade de movimento e leveza. O percentual de 45% exibido no gráfico é uma representação didática de demonstração visual e não deve ser lido como um cálculo biológico fechado nem como uma definição rígida de quem você é.',
@@ -196,9 +196,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Capacidade de foco, organização e discernimento rápido; percentual gráfico demonstrativo de 35% sem validação de excesso.',
       observations: [
-        'Ação rápida e resolutiva para solucionar pendências de equipe (qa-me-p5)',
-        'Sensibilidade ao calor em refeições muito condimentadas ou apressadas (qa-c2-p5)',
-        'Transpiração equilibrada sem extremos declarados (qa-c1-p5c)',
+        'Ação rápida e resolutiva para solucionar pendências de equipe',
+        'Sensibilidade ao calor em refeições muito condimentadas ou apressadas',
+        'Transpiração equilibrada sem extremos declarados',
       ],
       interpretation:
         'O princípio Pitta relaciona-se à digestão, ao metabolismo e à agudeza do intelecto. Sua clareza para analisar cenários e sua iniciativa para resolver problemas mostram esse fogo transformador ativo como recurso. No entanto, o valor de 35% no gráfico é apenas parte do exemplo ilustrativo: não há dados na sua autoavaliação que comprovem um excesso inflamatório ou hiperacidez crônica.',
@@ -224,9 +224,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Capacidade de sustentação de vínculos e consistência; 20% demonstrativo sem rotular lentidão como constituição fixa.',
       observations: [
-        'Dedicação fiel e de longo prazo ao círculo íntimo de relações (qa-rel-p1)',
-        'Sensação de peso corporal e despertar matinal por vezes arrastado (qa-c2-p9)',
-        'Busca por ancoragem e acolhimento nos momentos difíceis (qa-sen-p5)',
+        'Dedicação fiel e de longo prazo ao círculo íntimo de relações',
+        'Sensação de peso corporal e despertar matinal por vezes arrastado',
+        'Busca por ancoragem e acolhimento nos momentos difíceis',
       ],
       interpretation:
         'Kapha representa estabilidade, nutrição de tecidos e resistência relacional. Sua capacidade de ser leal e oferecer ancoragem amorosa expressa esse princípio de sustentação. O peso matinal relatado ao acordar reflete a fadiga acumulada de noites entrecortadas, não devendo ser confundido com lentidão constitucional inata.',
@@ -252,9 +252,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Digestão com ritmo variável, fome oscilante e sensibilidade a refeições tardias, sugerindo Vishama Agni na tradição.',
       observations: [
-        'Apetite que varia entre dias de fome viva e dias de pouco apetite (qa-c2-p1)',
-        'Desconforto ou estufamento quando come correndo ou sob estresse (qa-c2-p3)',
-        'Ritmo intestinal que oscila de acordo com viagens ou alterações de horário (qa-c2-p6)',
+        'Apetite que varia entre dias de fome viva e dias de pouco apetite',
+        'Desconforto ou estufamento quando come correndo ou sob estresse',
+        'Ritmo intestinal que oscila de acordo com viagens ou alterações de horário',
       ],
       interpretation:
         'Na medicina ayurvédica, Agni é o fogo digestivo que transforma o que ingerimos e vivenciamos. Quando há alternância entre fome forte e ausência de apetite, a tradição chama esse estado de Vishama Agni (digestão irregular), frequentemente associado à agitação e à falta de rotina horária. Isso não representa uma patologia comprovada por exames, mas um convite a cultivar previsibilidade e calma nas refeições.',
@@ -280,9 +280,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Sinais de processamento incompleto (gases, despertar pesado e língua esbranquiçada), lidos sem mito de intoxicação patológica.',
       observations: [
-        'Sensação de peso e lentidão após refeições noturnas mais densas (qa-c2-p3)',
-        'Despertar matinal sem sensação imediata de frescor ou clareza (qa-c2-p9)',
-        'Tendência a estufamento abdominal em semanas de estresse prolongado (qa-c2-p3)',
+        'Sensação de peso e lentidão após refeições noturnas mais densas',
+        'Despertar matinal sem sensação imediata de frescor ou clareza',
+        'Tendência a estufamento abdominal em semanas de estresse prolongado',
       ],
       interpretation:
         'Ama é o conceito ayurvédico para digestão ou assimilação incompleta de alimentos e estímulos mentais. Não equivale a toxinas químicas detectadas em exames toxicológicos nem exige dietas punitivas de "desintoxicação". Na visão integrativa, reflete apenas que o sistema esteve sobrecarregado e pede simplificação da dieta, infusões digestivas quentes e redução do ritmo para se recuperar.',
@@ -311,9 +311,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Categoria: Repete-se com frequência. Busca fazer tudo do jeito certo, sustentando excelência mas gerando dificuldade de fechar tarefas.',
       observations: [
-        'Marcado com frequência alta na avaliação de movimentos automáticos (qa-me-p7a)',
-        'Selecionado entre os padrões que mais interferem na rotina: "fazer tudo impecavelmente certo" (qa-me-p8)',
-        'Alinhado à voz que cobra não falhar com ninguém no planejamento (qa-me-p4)',
+        'Marcado com frequência alta na avaliação de movimentos automáticos',
+        'Selecionado entre os padrões que mais interferem na rotina: "fazer tudo impecavelmente certo"',
+        'Alinhado à voz que cobra não falhar com ninguém no planejamento',
       ],
       interpretation:
         'O padrão Insistente (Perfeccionista no modelo de Shirzad Chamine) nasce de uma busca honesta por integridade, qualidade e respeito aos compromissos. Ele assegura padrões altos e consistência, mas cobra um preço severo quando não tolera o "suficientemente bom". Não afirmamos aqui uma causa familiar na infância, mas investigamos como essa exigência atual pode dificultar o encerramento sereno de ciclos.',
@@ -339,26 +339,23 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Categoria: Aparece com muita força quando estou sob pressão. Movimento de cuidar e assumir a frente para devolver harmonia, hesitando em pedir ajuda.',
       observations: [
-        'Declarado sob pressão no snapshot e "às vezes" na matriz de frequência (qa-me-p7b)',
-        'Relato espontâneo: "Assumo a frente para resolver logo e devolver a tranquilidade ao ambiente" (qa-me-p5)',
-        'Hesitação em dizer não por receio de sobrecarregar ou ferir outrem (qa-rel-p4)',
-        'Costuma esgotar as próprias forças antes de solicitar suporte externo (qa-rel-p5)',
+        'Na demonstração, este movimento aparece sob pressão; em outro registro, você o marcou como às vezes. Vale investigar como o contexto muda sua experiência.',
+        'Relato espontâneo: "Assumo a frente para resolver logo e devolver a tranquilidade ao ambiente"',
+        'Hesitação em dizer não por receio de sobrecarregar ou ferir outrem',
+        'Costuma esgotar as próprias forças antes de solicitar suporte externo',
       ],
       interpretation:
-        'Talvez você perceba o que o outro precisa antes de perceber seu próprio cansaço. Este movimento não é fraqueza nem submissão passiva: é uma estratégia protetiva ativa para manter a harmonia dos vínculos e garantir que ninguém se sinta desamparado. Note a nuance entre a resposta sob pressão e o cotidiano: a urgência de cuidar cresce quando o ambiente fica tenso. Não inferimos abandono infantil; investigamos como resgatar a si mesma no centro do cuidado.',
+        'Talvez você perceba o que o outro precisa antes de perceber seu próprio cansaço. Este movimento não é fraqueza nem submissão passiva: pode funcionar como uma estratégia protetiva ativa para manter a harmonia dos vínculos. Note a nuance entre a resposta sob pressão e o cotidiano: a urgência de cuidar parece crescer quando o ambiente fica tenso. Investigamos como resgatar a si mesma no centro do cuidado.',
       resources: [
-        'Empatia acolhedora, sensibilidade às carências do ambiente e calor humano',
-        'Capacidade de acolher genuinamente e gerar confiança recíproca',
+        'Empatia acolhedora, sensibilidade às necessidades do ambiente e capacidade de gerar confiança recíproca',
       ],
-      costs: [
-        'Esgotamento físico e mental por adiar as próprias necessidades básicas',
-        'Sentimento velado de solidão por sentir que dá conta de todos, mas ninguém percebe sua fadiga',
-      ],
+      costs: ['Esgotamento físico e mental por adiar as próprias necessidades básicas'],
       connections: [
-        'Conecta-se diretamente à resposta de Luta (mobilizar-se para resolver tudo)',
-        'Limita o espaço para o descanso, a intimidade e a espontaneidade',
+        'Uma conexão a explorar com a resposta de Luta (mobilizar-se para resolver tudo)',
+        'Vale observar se reduz o espaço para o descanso, a intimidade e a espontaneidade',
       ],
       questions: [
+        'Como é para você perceber que também precisa de cuidado?',
         'O que você teme que aconteça se, diante de uma demanda externa, você pausar e não assumir a tarefa de imediato?',
       ],
       sourceResponseIds: ['qa-me-p7b', 'qa-me-p5', 'qa-rel-p4', 'qa-rel-p5'],
@@ -368,8 +365,8 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Categoria: Aparece em algumas situações. Foco resolutivo e ação orientada a resultados como forma de combater a incerteza.',
       observations: [
-        'Marcado na categoria intermediária de frequência nas respostas (qa-me-p7a)',
-        'Relatada iniciativa para solucionar pendências e devolver estabilidade (qa-me-p5)',
+        'Marcado na categoria intermediária de frequência nas respostas',
+        'Relatada iniciativa para solucionar pendências e devolver estabilidade',
       ],
       interpretation:
         'A capacidade de colocar ideias em prática e resolver problemas concretos é uma força inquestionável do seu perfil. Este padrão, contudo, pode em algumas ocasiões vincular o seu valor pessoal exclusivamente ao volume de coisas produzidas no dia. Investigar essa tendência ajuda a separar sua dignidade humana do seu rendimento de trabalho.',
@@ -395,8 +392,8 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Categoria: Quase nunca acontece comigo. Postura proativa e protagonista, sem que isso anule o cansaço real que você vivencia.',
       observations: [
-        'Classificado como quase nunca presente na escala de comportamentos (qa-me-p7a)',
-        'Ausência de narrativas de imobilidade ou vitimização passiva nos relatos livres (qa-me-p5)',
+        'Classificado como quase nunca presente na escala de comportamentos',
+        'Ausência de narrativas de imobilidade ou vitimização passiva nos relatos livres',
       ],
       interpretation:
         'Você raramente se coloca em postura de resignação, passividade ou lamento diante das dificuldades da vida; sua inclinação predominante é a ação e a responsabilidade. É importante ressaltar que marcar "quase nunca" não significa ausência de tristeza ou imunidade ao cansaço, mas apenas que seu movimento espontâneo busca sempre saídas resolutivas.',
@@ -422,9 +419,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Categoria: Repete-se com frequência. Cálculo preventivo dos próximos passos para organizar cenários e evitar surpresas.',
       observations: [
-        'Marcado com frequência expressiva na matriz de proteção (qa-me-p7a)',
-        'Citação textual: "Fico calculando os próximos passos para não deixar nada desmoronar nem falhar com ninguém" (qa-me-p4)',
-        'Identificação clara de gatilhos profissionais e relacionais de sobrecarga (qa-me-p3)',
+        'Marcado com frequência expressiva na avaliação dos padrões de proteção',
+        'Citação textual: "Fico calculando os próximos passos para não deixar nada desmoronar nem falhar com ninguém"',
+        'Identificação clara de gatilhos profissionais e relacionais de sobrecarga',
       ],
       interpretation:
         'Sua mente possui grande capacidade analítica, compreendendo dinâmicas complexas e organizando passos com rapidez. Esse recurso traz previsibilidade valiosa. O custo surge quando a razão tenta processar emoções corporais profundas como se fossem problemas matemáticos a serem solucionados, afastando você da escuta sutil do que o corpo sente.',
@@ -450,9 +447,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Categoria: Aparece com muita força quando estou sob pressão. Tensão corporal e prontidão para detectar riscos antes que se concretizem.',
       observations: [
-        'Marcado sob pressão nos comportamentos automáticos (qa-me-p7b)',
-        'Selecionado como padrão prioritário: "Antecipar e prevenir qualquer risco" (qa-me-p8)',
-        'Retrato corporal sob sobrecarga: "Tensão na mandíbula, pensamentos acelerados em loop e urgência de controlar tudo" (qa-me-p11)',
+        'Marcado sob pressão nos comportamentos automáticos',
+        'Selecionado como padrão prioritário: "Antecipar e prevenir qualquer risco"',
+        'Retrato corporal sob sobrecarga: "Tensão na mandíbula, pensamentos acelerados em loop e urgência de controlar tudo"',
       ],
       interpretation:
         'A hipervigilância é um radar de segurança que se ativa em ambientes de pressão ou quando há incerteza ao redor. Ela ajuda a prevenir problemas concretos e proteger quem está perto. Contudo, manter o corpo em prontidão permanente produz contratura muscular na mandíbula e ombros, além de um desgaste neurovegetativo intenso. Não é sintoma de patologia crônica, mas um estado de alerta que pede segurança relacional.',
@@ -478,8 +475,8 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Categoria: Aparece em algumas situações. Mobilidade e entusiasmo com novidades, sem relato de dispersão crônica ou fuga patológica.',
       observations: [
-        'Marcado em frequência intermediária nas respostas (qa-me-p7b)',
-        'Emoção de "Entusiasmo" assinalada como recorrente ao lado da ansiedade (qa-me-p2)',
+        'Marcado em frequência intermediária nas respostas',
+        'Emoção de "Entusiasmo" assinalada como recorrente ao lado da ansiedade',
       ],
       interpretation:
         'O movimento inquieto reflete energia viva, curiosidade intelectual e capacidade de transitar entre múltiplos interesses. Não há nos seus relatos sinais de desatenção desregulada ou dispersão involuntária (sem qualquer correlação com diagnósticos como TDAH). Vale investigar se mudar de atividade em certos momentos é uma escolha deliberada ou uma tentativa de aliviar o desconforto de tarefas monótonas.',
@@ -505,8 +502,8 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Categoria: Quase nunca acontece comigo. Liderança baseada em resolver e proteger, sem perfil impositivo ou autoritário.',
       observations: [
-        'Frequência quase nunca apontada na escala ordinal (qa-me-p7b)',
-        'Postura resolutiva voltada ao bem coletivo: resolver logo para devolver a paz ao ambiente (qa-me-p5)',
+        'Frequência quase nunca apontada na escala de respostas',
+        'Postura resolutiva voltada ao bem coletivo: resolver logo para devolver a paz ao ambiente',
       ],
       interpretation:
         'Assumir a linha de frente para resolver problemas difíceis não significa querer controlar os outros por autoritarismo. Suas respostas indicam que você não busca impor sua vontade nem intimidar equipes; seu movimento resolutivo nasce da responsabilidade ética de cuidar e garantir que nada desmorone.',
@@ -532,8 +529,8 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Categoria: Ainda não sei dizer. Manutenção da incerteza sobre esquivar-se; recuo em conflitos funciona como reflexão e não fuga.',
       observations: [
-        'Marcado explicitamente como "Ainda não sei dizer" na matriz dos padrões (qa-me-p7b)',
-        'Nos conflitos: "Recuo reflexivo temporário para organizar as ideias antes do confronto" (qa-rel-p7)',
+        'Marcado explicitamente como "Ainda não sei dizer" na avaliação dos padrões',
+        'Nos conflitos: "Recuo reflexivo temporário para organizar as ideias antes do confronto"',
       ],
       interpretation:
         'Reconhecer que você ainda não tem certeza sobre este padrão é uma demonstração valiosa de sinceridade. Afastar-se temporariamente de uma discussão acalorada para respirar e organizar as palavras não significa evitar a intimidade ou fugir de conversas difíceis. Ao contrário, seu relato mostra que você retorna para conversar com calma e desculpas sinceras, o que diferencia um recuo reflexivo de uma esquiva crônica.',
@@ -559,8 +556,8 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Categoria: Repete-se com frequência. Voz interna exigente que cobra antecipação total ("deveria ter previsto isso") após qualquer erro.',
       observations: [
-        'Frequência alta assinalada no questionário de mente e padrões (qa-me-p7b)',
-        'Diálogo interno literal diante do erro: "Quando cometo um erro, uma voz me cobra severamente que eu deveria ter previsto isso" (qa-me-p6)',
+        'Frequência alta assinalada no questionário de mente e padrões',
+        'Diálogo interno literal diante do erro: "Quando cometo um erro, uma voz me cobra severamente que eu deveria ter previsto isso"',
       ],
       interpretation:
         'O padrão Crítico opera como um auditor interno vigilante. Seu discernimento refinado é uma ferramenta extraordinária quando colocado a serviço da aprendizagem e do crescimento. Contudo, quando se transforma em autoflagelo após qualquer falha cotidiana, ele desgasta a autoestima e multiplica o cansaço. Erros não comprovam falta de capacidade; são a forma como humanos navegam na incerteza.',
@@ -589,11 +586,11 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Tendência espontânea relatada: mobilização ativa para intervir, resolver logo e devolver tranquilidade ao ambiente.',
       observations: [
-        'Contexto de ativação: sobrecarga de prazos simultâneos e ruídos de comunicação (qa-reg-p1)',
-        'Primeiros sinais: aceleração do batimento cardíaco, ombros contraídos e respiração superficial (qa-reg-p2)',
-        'Resposta declarada: mobilização hiperativa para resolver tudo imediatamente sem pedir auxílio (qa-reg-p4)',
-        'Função percebida: evitar sensação de desamparo/incompetência e garantir previsibilidade profissional (qa-reg-p5)',
-        'Custo: estafa mental profunda e dificuldade para relaxar à noite (qa-reg-p6)',
+        'Contexto de ativação: sobrecarga de prazos simultâneos e ruídos de comunicação',
+        'Primeiros sinais: aceleração do batimento cardíaco, ombros contraídos e respiração superficial',
+        'Resposta declarada: mobilização hiperativa para resolver tudo imediatamente sem pedir auxílio',
+        'Função percebida: evitar sensação de desamparo/incompetência e garantir previsibilidade profissional',
+        'Custo: estafa mental profunda e dificuldade para relaxar à noite',
       ],
       interpretation:
         'Sua resposta de Luta não representa agressividade interpessoal, violência verbal ou ataque aos outros; é uma mobilização neurofisiológica altamente resolutiva de enfretamento direto. Diante da sensação de perigo ou de que as demandas podem desmoronar, seu corpo entra em ação firme e rápida para restaurar a segurança. Esta resposta foi sua grande guardiã até aqui, mas o custo relatado de estafa mostra que o repertório pode ser expandido com apoio e pausas.',
@@ -619,8 +616,8 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Não marcada como tendência imediata no momento de sobrecarga; movimento adaptativo de afastamento e recolhimento protetivo.',
       observations: [
-        'A reação predominante declarada no questionário foi a Luta (qa-reg-p4)',
-        'O recuo relatado nas relações ocorre de forma ponderada antes da conversa reflexiva (qa-rel-p7)',
+        'A reação predominante declarada no questionário foi a Luta',
+        'O recuo relatado nas relações ocorre de forma ponderada antes da conversa reflexiva',
       ],
       interpretation:
         'A Fuga é uma resposta que busca criar distância espacial ou silêncio para permitir que o sistema nervoso se reorganize longe do perigo. Em seu mapa atual, você não recorreu à fuga automática diante de prazos; seu impulso imediato foi intervir. Explicitar que a Fuga não está destacada é reconhecer que ela é um recurso preservado para momentos em que colocar distância for a escolha mais sábia.',
@@ -646,8 +643,8 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Não marcada como tendência imediata; resposta de suspensão ou compasso de espera frente ao excesso de estímulos.',
       observations: [
-        'Seu funcionamento imediato perante a pressão é resolutivo e hiperativo (qa-reg-p4, qa-me-p5)',
-        'A lentidão só aparece posteriormente como custo de estafa após a entrega (qa-reg-p6)',
+        'Seu funcionamento imediato perante a pressão é resolutivo e hiperativo',
+        'A lentidão só aparece posteriormente como custo de estafa após a entrega',
       ],
       interpretation:
         'A Paralisação ocorre quando a sobrecarga ou a incerteza é tão intensa que o organismo suspende a ação para avaliar o cenário com cautela. Você não tende a travar ou ficar sem ação no ápice da pressão. Reconhecer essa ausência no relato ajuda a desmistificar a ideia de fraqueza: sua tendência é o movimento, e o cansaço que você sente decorre do excesso de ação, não de imobilidade.',
@@ -673,8 +670,8 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Não marcada como tendência imediata; apaziguamento como estratégia relacional de preservação do vínculo.',
       observations: [
-        'Você relata hesitação em dizer não por cuidado com o outro (qa-rel-p4)',
-        'Porém, sua resposta perante desafios de trabalho é firme e resolutiva, não de submissão passiva (qa-me-p5, qa-reg-p4)',
+        'Você relata hesitação em dizer não por cuidado com o outro',
+        'Porém, sua resposta perante desafios de trabalho é firme e resolutiva, não de submissão passiva',
       ],
       interpretation:
         'A resposta de Submissão ou apaziguamento busca acalmar o outro e ceder para conter atritos imediatos. Embora você hesite em dizer "não" para poupar pessoas queridas de mágoas, seu funcionamento diante da sobrecarga não é de submissão nem de anulação da sua voz. O cuidado em não ferir quem você ama é uma expressão de sensibilidade empática, e não uma postura de subordinação sistemática.',
@@ -703,9 +700,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Nó Corpo & Ritmo: estrutura leve, sensibilidade ao frio, digestão irregular e sono entrecortado em diálogo com a rotina.',
       observations: [
-        'Estrutura leve e sensível habitual associada a Vata (qa-c1-p1, qa-c1-p4)',
-        'Digestão Vishama com gases e sensação de peso pós-prandial (qa-c2-p1, qa-c2-p3)',
-        'Sono leve com despertares noturnos e cansaço acumulado (qa-c2-p8, qa-c2-p9)',
+        'Estrutura leve e sensível habitual associada a Vata',
+        'Digestão com gases e sensação de peso pós-prandial',
+        'Sono leve com despertares noturnos e cansaço acumulado',
       ],
       interpretation:
         'O nó do Corpo é o solo onde todas as suas experiências acontecem. As flutuações de fome, o sono leve e os momentos de estafa física coexistem com a intensidade das suas jornadas de trabalho. Cuidar deste nó passa por cultivar pequenos ritmos de aconchego, refeições quentes e regulares e pausas respiratórias, ancorando a fisiologia na calma.',
@@ -718,7 +715,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Retenção de tensão nos ombros, costas e mandíbula',
       ],
       connections: [
-        'Alimenta e sofre diretamente com os pensamentos de antecipação preventiva',
+        'Pode relacionar-se com pensamentos de antecipação preventiva',
         'Impacta a disponibilidade erótica e a leveza nas relações íntimas',
       ],
       questions: [
@@ -731,12 +728,12 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Nó Pensamentos: antecipação preventiva de cenários, planejamento contínuo e diálogo interno exigente.',
       observations: [
-        'Cálculo de passos futuros para não falhar nem deixar desmoronar (qa-me-p4)',
-        'Voz autocrítica que repreende enganos afirmando que deveria ter previsto (qa-me-p6)',
-        'Pensamentos acelerados em loop em momentos de alta pressão (qa-me-p11)',
+        'Cálculo de passos futuros para não falhar nem deixar desmoronar',
+        'Voz autocrítica que repreende enganos afirmando que deveria ter previsto',
+        'Pensamentos acelerados em loop em momentos de alta pressão',
       ],
       interpretation:
-        'Sua mente é um instrumento poderoso de organização e lucidez. Sob pressão, entretanto, seus pensamentos tendem a acelerar e construir cenários preventivos contínuos, buscando controlar todas as variáveis para afastar a sensação de falha. Reconhecer esse loop como um movimento de proteção ajuda a desarmar a culpa e recuperar o espaço de quietude.',
+        'Sua mente é um instrumento poderoso de organização e lucidez. Sob pressão, entretanto, seus pensamentos tendem a acelerar e construir cenários preventivos contínuos, buscando controlar variáveis para afastar a sensação de falha. Reconhecer esse movimento de proteção ajuda a desarmar a culpa e recuperar o espaço de quietude.',
       resources: [
         'Visão estratégica lúcida e capacidade rápida de estruturar saídas',
         'Preocupação honesta com o bem-estar e o alinhamento coletivo',
@@ -746,7 +743,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Exaustão cognitiva por manter planos alternativos permanentemente ligados',
       ],
       connections: [
-        'Dispara a tensão muscular na mandíbula e a aceleração dos batimentos',
+        'Coocorre com a tensão muscular na mandíbula e a aceleração dos batimentos',
         'Dificulta a presença relaxada no momento presente e no lazer despretensioso',
       ],
       questions: [
@@ -759,9 +756,9 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Nó Emoções: vivacidade afetiva sentida no corpo, ansiedade e entusiasmo caminhando lado a lado.',
       observations: [
-        'Emoções vividas com intensidade e rapidez corporal imediata (qa-me-p1)',
-        'Ansiedade, entusiasmo e preocupação identificados como sentimentos frequentes (qa-me-p2)',
-        'Sensação de peito aberto e respiração livre nos momentos de harmonia e segurança (qa-me-p10)',
+        'Emoções vividas com intensidade e rapidez corporal imediata',
+        'Ansiedade, entusiasmo e preocupação identificados como sentimentos frequentes',
+        'Sensação de peito aberto e respiração livre nos momentos de harmonia e segurança',
       ],
       interpretation:
         'Seu universo emocional é rico e dinâmico: você não reprime o que sente, mas percebe no próprio corpo o fluxo vibrante dos sentimentos. Quando há segurança e ausência de pressa, sua afetividade se manifesta em escuta calorosa e peito aberto. Quando surgem prazos e ruídos relacionais, a ansiedade se conecta à preocupação e busca a ação rápida como antídoto.',
@@ -770,11 +767,11 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Entusiasmo contagiante diante de projetos que dialogam com seus valores',
       ],
       costs: [
-        'Impacto imediato das tensões emocionais na digestão e na respiração',
+        'Impacto de tensões emocionais na digestão e na respiração',
         'Dificuldade de filtrar a ansiedade quando as pessoas ao redor estão inseguras',
       ],
       connections: [
-        'Conecta-se à necessidade de reciprocidade e verdade nos vínculos',
+        'Conecta-se à busca de reciprocidade e verdade nos vínculos',
         'Nutre sua sensibilidade artística, contemplativa e o contato com a natureza',
       ],
       questions: [
@@ -785,16 +782,16 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
 
     protecao: {
       summary:
-        'Nó Proteção: estratégias sábias de defesa e adaptação que garantiram sua integridade até aqui.',
+        'Nó Proteção: estratégias de defesa e adaptação compreendidas no contexto da sua história.',
       observations: [
-        'Padrões Insistente e Crítico ativos para assegurar retidão e excelência (qa-me-p7a, qa-me-p7b)',
-        'Prestativo ativado sob pressão para recompor a harmonia dos ambientes (qa-me-p7b, qa-me-p5)',
-        'Função percebida: proteger a integridade profissional e evitar desamparo (qa-reg-p5)',
+        'Movimentos ativos para assegurar retidão e excelência',
+        'Ação rápida sob pressão para recompor a harmonia dos ambientes',
+        'Função percebida: proteger a integridade profissional e evitar desamparo',
       ],
       interpretation:
-        'Seus padrões de proteção não são defeitos de personalidade ou traumas insolúveis; são recursos adaptativos inteligentes desenvolvidos ao longo da sua história para cuidar de você e daqueles que você ama. Eles foram indispensáveis para que você construísse a competência e a lealdade que possui hoje. O trabalho integrativo não busca destruí-los, mas devolver-lhes flexibilidade para que não precisem governar todas as horas do seu dia.',
+        'Seus movimentos de proteção não são defeitos de personalidade; são formas de adaptação que buscaram cuidar de você e daqueles ao seu redor. Eles participaram da construção da sua competência e dedicação. O trabalho integrativo não busca eliminá-los, mas devolver-lhes flexibilidade para que não governem todas as situações da sua rotina.',
       resources: [
-        'Lealdade protetora inabalável aos vínculos e compromissos assumidos',
+        'Lealdade protetora aos vínculos e compromissos assumidos',
         'Prontidão e coragem para intervir quando situações exigem liderança',
       ],
       costs: [
@@ -802,7 +799,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Adiamento constante do autocuidado e da diversão descompromissada',
       ],
       connections: [
-        'Sustenta a resposta de mobilização de Luta diante de prazos apertados',
+        'Coocorre com a resposta de mobilização de Luta diante de prazos apertados',
         'Pode ser suavizado pela prática de pequenos passos de permissão e descanso',
       ],
       questions: [
@@ -815,10 +812,10 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Nó Relações: dedicação profunda a laços autênticos, reciprocidade e o desafio de delimitar fronteiras de responsabilidade.',
       observations: [
-        'Círculo íntimo seleto com alto nível de dedicação e lealdade profunda (qa-rel-p1)',
-        'Hesitação em dizer não e demora em solicitar auxílio (qa-rel-p4, qa-rel-p5)',
-        'Acolhimento sincero e comoção ao receber cuidado desinteressado (qa-rel-p6)',
-        'Reparação de conflitos através de conversa franca e escuta atenta (qa-rel-p8)',
+        'Círculo íntimo seleto com alto nível de dedicação e lealdade profunda',
+        'Hesitação em dizer não e demora em solicitar auxílio',
+        'Acolhimento sincero e comoção ao receber cuidado desinteressado',
+        'Reparação de conflitos através de conversa franca e escuta atenta',
       ],
       interpretation:
         'Seus relacionamentos são alicerçados em respeito, verdade e generosidade. Você oferece um porto seguro para quem caminha com você. O ponto sensível reside em cuidar tanto das demandas alheias a ponto de esquecer de expressar seus próprios cansaços e necessidades. Aprender a pedir ajuda antes do esgotamento e praticar o dizer "não" com amorosidade fortalece ainda mais os laços que você preza.',
@@ -844,10 +841,10 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Nó Vida Cotidiana & Sentido: coerência ética, contemplação da natureza, intimidade e o equilíbrio entre servir e descansar.',
       observations: [
-        'Coerência ética e paz de consciência como bússola interna permanente (qa-sen-p1)',
-        'Valores fundamentais de verdade, generosidade e respeito à dignidade humana (qa-sen-p2)',
-        'Nutrição pela natureza, meditação, silêncio e caminhada descalça no jardim (qa-sen-p3, qa-me-p12)',
-        'Desejo e erotismo conectados ao descanso e à ausência de fadiga (qa-sex-p1, qa-sex-p2)',
+        'Coerência ética e paz de consciência como bússola interna permanente',
+        'Valores fundamentais de verdade, generosidade e respeito à dignidade humana',
+        'Nutrição pela natureza, meditação, silêncio e caminhada descalça no jardim',
+        'Desejo e erotismo conectados ao descanso e à ausência de fadiga',
       ],
       interpretation:
         'Este nó integra o sentido maior da sua existência com a rotina dos seus dias. Quando seus valores de generosidade são vividos com serenidade, você desfruta da vida com contemplação, poesia e presença. A armadilha é quando o senso de utilidade se torna uma obrigação contínua de servir, roubando o silêncio e o prazer da intimidade. Proteger pequenas pausas é um ato ético de respeito à sua própria vida.',
@@ -860,8 +857,8 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Culpa passageira quando se permite não ser útil ou produtiva',
       ],
       connections: [
-        'Confere significado nobre a todos os seus esforços e projetos profissionais',
-        'Oferece os recursos mais poderosos de retorno ao eixo: chá em silêncio, jardim e respiração',
+        'Confere significado aos seus esforços e projetos profissionais',
+        'Oferece caminhos de retorno ao eixo: chá em silêncio, jardim e respiração',
       ],
       questions: [
         'De que maneira o silêncio e o descanso podem se tornar aliados — e não concorrentes — dos seus valores de generosidade?',
@@ -883,13 +880,13 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'Síntese integrativa do Método CER: equilíbrio entre capacidade de realização, cuidado relacional e espaço protegido para o descanso.',
       observations: [
-        'Sensibilidade viva para perceber nuances corporais e relacionais (qa-me-p1, qa-rel-p2)',
-        'Iniciativa ágil para planejar, prevenir falhas e resolver pendências (qa-me-p4, qa-me-p5)',
-        'Sinais físicos de sobrecarga e autocobrança severa perante erros (qa-me-p6, qa-reg-p2)',
-        'Recursos relatados de retorno ao eixo: respiração, alongamento, chá em silêncio e natureza (qa-reg-p7, qa-me-p12)',
+        'Sensibilidade viva para perceber nuances corporais e relacionais',
+        'Iniciativa ágil para planejar, prevenir falhas e resolver pendências',
+        'Sinais físicos de sobrecarga e autocobrança severa perante erros',
+        'Recursos relatados de retorno ao eixo: respiração, alongamento, chá em silêncio e natureza',
       ],
       interpretation:
-        'Mariana, suas respostas mostram capacidade de perceber nuances, planejar e cuidar. Sob pressão, esses mesmos recursos parecem perder flexibilidade: você tenta prever, assume a frente e cobra de si que nada falhe. Isso pode trazer alívio imediato, mas você relata estafa e dificuldade para desacelerar. A direção a explorar não é deixar de ser responsável; é ampliar suas opções para que responsabilidade, apoio e descanso possam coexistir.\n\nComo hipótese explícita de compreensão desse ciclo conjunto — distinguindo seu relato factual das inferências integrativas —, podemos observar a seguinte sequência em momentos desafiadores: demandas profissionais e imprevisibilidade no ambiente disparam a antecipação mental preventiva e a autocobrança; o corpo responde com contração física nos ombros e mandíbula, levando você a agir imediatamente sem solicitar ajuda; o apoio só é buscado tardiamente quando as forças estão no limite; como resultado, instala-se um desgaste acumulado que restringe o espaço para o descanso, a intimidade e o prazer.\n\nVocê já conta com recursos preciosos relatados por você mesma: sua escuta atenta quando está tranquila, a capacidade de notar os sinais da sobrecarga, o contato com a natureza e o jardim, as pausas respiratórias, a gratidão ao receber cuidado sincero e uma bússola ética generosa.\n\nPara transformar esse ciclo, os caminhos não são imposições terapêuticas rígidas, mas experiências a escolher no seu cotidiano: notar os primeiros sinais no corpo antes de assumir mais uma tarefa; perguntar-se com gentileza "isto é realmente minha responsabilidade agora?"; experimentar pedir apoio antes de atingir o limite; tolerar o resultado "suficientemente bom" em vez de exigir o impecável; e proteger pequenas pausas em silêncio ao longo da semana.',
+        'Mariana, suas respostas mostram capacidade de perceber nuances, planejar e cuidar. Sob pressão, esses mesmos recursos parecem perder flexibilidade: você tenta prever, assume a frente e cobra de si que nada falhe. Isso pode trazer alívio imediato, mas você relata estafa e dificuldade para desacelerar. A direção a explorar não é deixar de ser responsável; é ampliar suas opções para que responsabilidade, apoio e descanso possam coexistir.\n\nUma hipótese a explorar reúne demandas e imprevisibilidade; antecipação e autocobrança; tensão e ação imediata; apoio tardio; desgaste e menor disponibilidade para descanso/prazer. Você relatou os elementos; as relações entre eles precisam ser reconhecidas ou corrigidas por você.\n\nVocê já conta com recursos relatados por você mesma: sua escuta atenta quando está tranquila, a capacidade de notar os sinais da sobrecarga, o contato com a natureza e o jardim, as pausas respiratórias, a gratidão ao receber cuidado sincero e uma bússola ética generosa.\n\nDescrever experiências a escolher no seu cotidiano, sem plano prescrito: notar os primeiros sinais no corpo antes de assumir mais uma tarefa; perguntar-se com gentileza "isto é realmente minha responsabilidade agora?"; experimentar pedir apoio antes de atingir o limite; tolerar o resultado "suficientemente bom" em vez de exigir o impecável; e proteger pequenas pausas em silêncio ao longo da semana.',
       resources: [
         'Escuta acolhedora e sensível quando está em um ambiente tranquilo',
         'Capacidade demonstrada de reconhecer seus próprios padrões de funcionamento',
@@ -899,7 +896,7 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
         'Bússola moral assentada na verdade, dignidade humana e generosidade',
       ],
       costs: [
-        'Estafa mental ao final do dia e sono interrompido por preocupações',
+        'Você relata sono interrompido e dificuldade de relaxar; a relação com as preocupações merece ser explorada.',
         'Acúmulo de tarefas individuais por hesitar em dizer não e pedir suporte',
         'Autocrítica pesada diante de desvios e imprevistos na rotina',
       ],
@@ -935,12 +932,12 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
       summary:
         'História e Linha da Vida: distinção entre características corporais habituais e uma história relacional que ainda será narrada em conjunto.',
       observations: [
-        'Características corporais habituais conhecidas desde jovem (estrutura estreita, sensibilidade térmica) (qa-c1-p1, qa-c1-p4)',
-        'Funcionamento atual de alto engajamento profissional e cuidado relacional (qa-me-p5, qa-rel-p1)',
-        'Ausência intencional de marcos preenchidos na Linha da Vida neste snapshot inicial',
+        'Características corporais habituais conhecidas desde jovem (estrutura estreita, sensibilidade térmica)',
+        'Funcionamento atual de alto engajamento profissional e cuidado relacional',
+        'Ausência de marcos preenchidos na Linha da Vida nesta versão inicial',
       ],
       interpretation:
-        'Até aqui, há características corporais reconhecidas há anos e relatos do seu funcionamento atual. Ainda faltam marcos compartilhados da Linha da Vida para relacionar esse retrato a acontecimentos específicos. Não sabemos quando você aprendeu a assumir tantas demandas, o que ajudou ou o que foi difícil.\n\nÉ fundamental não pressupor uma infância traumática nem deduzir padrões atuais a partir de hipóteses sobre pais rígidos ou eventos familiares não narrados. Suas tendências constitucionais leves (Prakriti) expressam uma biologia de base, enquanto os padrões de proteção e a dedicação ao trabalho foram moldados ao longo de experiências e contextos de vida que vocês aprofundarão no momento oportuno.\n\nQuando houver uma história real compartilhada entre você e a profissional, essa dimensão será atualizada de forma dialógica e cuidadosa, sem automações que antecipem conclusões sobre a sua vida.',
+        'Até aqui, há características corporais reconhecidas há anos e relatos do seu funcionamento atual. Ainda faltam marcos compartilhados da Linha da Vida para relacionar esse retrato a acontecimentos específicos. Não sabemos quando você aprendeu a assumir tantas demandas, o que ajudou ou o que foi difícil.\n\nÉ fundamental não pressupor uma infância traumática nem deduzir padrões atuais a partir de hipóteses sobre pais rígidos ou eventos familiares não narrados. As características corporais que você reconhece há mais tempo são consideradas pela lente tradicional da Prakriti. Isso não mede sua genética nem explica sozinho os movimentos aprendidos ao longo da vida. Ainda precisamos conhecer sua história para explorar essas relações.\n\nQuando houver uma história real compartilhada entre você e a profissional, essa dimensão será atualizada de forma dialógica e cuidadosa, sem automações que antecipem conclusões sobre a sua vida.',
       resources: [
         'Respeito absoluto à sua autonomia e ao seu tempo para compartilhar memórias',
         'Discernimento para não misturar tendências corporais com histórias relacionais não contadas',

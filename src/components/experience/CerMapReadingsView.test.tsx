@@ -496,4 +496,78 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     // Preserva o conteúdo padrão conceitual existente
     expect(screen.getByText(/Pensamentos comuns quando ativo/i)).toBeInTheDocument()
   })
+
+  it('valida que modais com elementReadings limpos não vazam IDs técnicos nem blocos duplicados e exibem textos refinados', async () => {
+    const demoSnapshot = createDemoCerMapReading('demo-enr-01')
+    render(<CerMapReadingsView snapshot={demoSnapshot} />)
+
+    // 1. Abrir Prestativo
+    const prestativoBtn = screen.getByRole('button', {
+      name: /Prestativo: categoria Aparece com muita força quando estou sob pressão/i,
+    })
+    await userEvent.click(prestativoBtn)
+
+    const prestativoDialog = await screen.findByRole('dialog')
+    expect(prestativoDialog).toBeInTheDocument()
+    const prestativoText = prestativoDialog.textContent || ''
+
+    // IDs técnicos NÃO devem vazar no texto visível
+    expect(prestativoText).not.toMatch(/qa-(me|rel|reg|c1|c2|sex|sen)-/)
+    expect(prestativoText).not.toMatch(/hiper_realizador|evitativo/)
+
+    // NÃO exibe bloco antigo duplicado quando há elemento personalizado
+    expect(prestativoText).not.toContain('PENSAMENTOS COMUNS QUANDO ATIVO')
+    expect(prestativoText).not.toContain('SUA RESPOSTA DECLARADA')
+
+    // NÃO contém afirmação causal de 'solidão' nem 'Não inferimos abandono infantil'
+    expect(prestativoText).not.toContain('Sentimento velado de solidão')
+    expect(prestativoText).not.toContain('Não inferimos abandono infantil')
+    expect(prestativoText).toContain('Como é para você perceber que também precisa de cuidado?')
+    expect(prestativoText).toContain('Vale investigar como o contexto muda sua experiência')
+
+    // Fechar modal
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+
+    // 2. Abrir Centro
+    const centroBtn = screen.getByRole('button', {
+      name: /Meu funcionamento em conjunto\. Toque para abrir síntese/i,
+    })
+    await userEvent.click(centroBtn)
+
+    const centroDialog = await screen.findByRole('dialog')
+    expect(centroDialog).toBeInTheDocument()
+    const centroText = centroDialog.textContent || ''
+
+    // IDs técnicos NÃO devem vazar no Centro
+    expect(centroText).not.toMatch(/qa-(me|rel|reg|c1|c2|sex|sen)-/)
+    // Novo texto de hipótese e custo suavizado
+    expect(centroText).toContain('Uma hipótese a explorar reúne demandas e imprevisibilidade')
+    expect(centroText).toContain(
+      'Você relatou os elementos; as relações entre eles precisam ser reconhecidas ou corrigidas por você.',
+    )
+    expect(centroText).toContain(
+      'Você relata sono interrompido e dificuldade de relaxar; a relação com as preocupações merece ser explorada.',
+    )
+
+    // Fechar modal
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+
+    // 3. Abrir História
+    const historiaBtn = screen.getByRole('button', {
+      name: /Sua história e seu funcionamento hoje\. Toque para abrir conexões/i,
+    })
+    await userEvent.click(historiaBtn)
+
+    const historiaDialog = await screen.findByRole('dialog')
+    expect(historiaDialog).toBeInTheDocument()
+    const historiaText = historiaDialog.textContent || ''
+
+    // IDs técnicos NÃO devem vazar na História
+    expect(historiaText).not.toMatch(/qa-(me|rel|reg|c1|c2|sex|sen)-/)
+    // Novo texto Prakriti cuidadoso sem causa biológica/genética fechada
+    expect(historiaText).toContain(
+      'As características corporais que você reconhece há mais tempo são consideradas pela lente tradicional da Prakriti. Isso não mede sua genética nem explica sozinho os movimentos aprendidos ao longo da vida. Ainda precisamos conhecer sua história para explorar essas relações.',
+    )
+    expect(historiaText).not.toContain('expressam uma biologia de base')
+  })
 })

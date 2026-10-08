@@ -608,41 +608,49 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Corpo & Fisiologia',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-            {elementReading && renderElementReadingSections(elementReading)}
-
-            <p>{info.desc}</p>
-            <div className="rounded-lg bg-muted/30 p-3 space-y-1 text-xs">
-              <span className="font-semibold text-foreground block">Referencial tradicional</span>
-              <p className="text-muted-foreground">{info.ayurvedaContext}</p>
-              <p className="text-muted-foreground mt-1">
-                A psique também é influenciada por história, educação, cultura, saúde, sono e
-                vínculos. Para aprofundar, converse com a Daiane sobre a avaliação ayurvédica
-                específica.
-              </p>
-            </div>
-
-            <div className="pt-2 border-t space-y-2">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Leitura publicada relevante
-              </h4>
-              {relevantRows.length > 0 ? (
-                <div className="space-y-2">
-                  {relevantRows.map((row, idx) => (
-                    <div key={idx} className="border-l-2 border-primary/40 pl-3 py-1">
-                      <span className="font-medium text-xs text-foreground block">{row.label}</span>
-                      <span className="text-xs text-muted-foreground whitespace-pre-wrap">
-                        {row.text}
-                      </span>
-                    </div>
-                  ))}
+            {elementReading ? (
+              renderElementReadingSections(elementReading)
+            ) : (
+              <>
+                <p>{info.desc}</p>
+                <div className="rounded-lg bg-muted/30 p-3 space-y-1 text-xs">
+                  <span className="font-semibold text-foreground block">
+                    Referencial tradicional
+                  </span>
+                  <p className="text-muted-foreground">{info.ayurvedaContext}</p>
+                  <p className="text-muted-foreground mt-1">
+                    A psique também é influenciada por história, educação, cultura, saúde, sono e
+                    vínculos. Para aprofundar, converse com a Daiane sobre a avaliação ayurvédica
+                    específica.
+                  </p>
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground italic">
-                  Conteúdo psicoeducativo geral. A leitura específica para esta dimensão será
-                  aprofundada com a Daiane ao longo das sessões.
-                </p>
-              )}
-            </div>
+
+                <div className="pt-2 border-t space-y-2">
+                  <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                    Leitura publicada relevante
+                  </h4>
+                  {relevantRows.length > 0 ? (
+                    <div className="space-y-2">
+                      {relevantRows.map((row, idx) => (
+                        <div key={idx} className="border-l-2 border-primary/40 pl-3 py-1">
+                          <span className="font-medium text-xs text-foreground block">
+                            {row.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground whitespace-pre-wrap">
+                            {row.text}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">
+                      Conteúdo psicoeducativo geral. A leitura específica para esta dimensão será
+                      aprofundada com a Daiane ao longo das sessões.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         ),
       },
@@ -659,29 +667,36 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Ayurveda',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-            {elementReading && renderElementReadingSections(elementReading)}
-            <p>
-              Na tradição ayurvédica, Agni é a capacidade de digerir, assimilar e transformar tanto
-              alimentos quanto estímulos do mundo. É um aspecto central da nutrição e da saúde
-              integrativa: investigamos a fome, o conforto após comer, a eliminação e a
-              regularidade.
-            </p>
-            <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
-              <span className="font-semibold text-foreground block">Limites da leitura</span>
-              <p>
-                Agni não é uma enzima específica nem um resultado de exame laboratorial de sangue.
-                As consequências e o resultado específico provêm exclusivamente da leitura
-                disponível no seu percurso de cuidado.
-              </p>
-            </div>
-            {agniRow && (
-              <div className="border-t pt-3 space-y-1">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Sua leitura de Agni
-                </h4>
-                <p className="text-xs text-foreground font-medium">{agniRow.label}</p>
-                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{agniRow.text}</p>
-              </div>
+            {elementReading ? (
+              renderElementReadingSections(elementReading)
+            ) : (
+              <>
+                <p>
+                  Na tradição ayurvédica, Agni é a capacidade de digerir, assimilar e transformar
+                  tanto alimentos quanto estímulos do mundo. É um aspecto central da nutrição e da
+                  saúde integrativa: investigamos a fome, o conforto após comer, a eliminação e a
+                  regularidade.
+                </p>
+                <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+                  <span className="font-semibold text-foreground block">Limites da leitura</span>
+                  <p>
+                    Agni não é uma enzima específica nem um resultado de exame laboratorial de
+                    sangue. As consequências e o resultado específico provêm exclusivamente da
+                    leitura disponível no seu percurso de cuidado.
+                  </p>
+                </div>
+                {agniRow && (
+                  <div className="border-t pt-3 space-y-1">
+                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                      Sua leitura de Agni
+                    </h4>
+                    <p className="text-xs text-foreground font-medium">{agniRow.label}</p>
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                      {agniRow.text}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         ),
@@ -699,32 +714,39 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Ayurveda',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-            {elementReading && renderElementReadingSections(elementReading)}
-            <p>
-              Ama descreve produtos ou estados de processamento incompleto na tradição ayurvédica. A
-              palavra &ldquo;toxinas&rdquo; é uma tradução aproximada e coloquial: a toxicologia
-              biomédica investiga substâncias identificáveis em dose e exposição concretas; já Ama é
-              uma categoria tradicional ampla de peso ou lentidão no sistema digestivo, não
-              equivalendo a uma substância detectada no sangue.
-            </p>
-            <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
-              <span className="font-semibold text-foreground block">Cuidado com mitos</span>
-              <p>
-                Algumas propostas ayurvédicas incluem práticas de purificação após avaliação
-                cuidadosa, não um detox obrigatório nem com eficácia presumida. A
-                &ldquo;desintoxicação mental ou emocional&rdquo; é uma metáfora para elaborar
-                experiências e reduzir a sobrecarga; emoções não são toxinas. Não se conclui doença
-                nem acúmulo patológico pela pontuação.
-              </p>
-            </div>
-            {amaRow && (
-              <div className="border-t pt-3 space-y-1">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Sua leitura de Ama
-                </h4>
-                <p className="text-xs text-foreground font-medium">{amaRow.label}</p>
-                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{amaRow.text}</p>
-              </div>
+            {elementReading ? (
+              renderElementReadingSections(elementReading)
+            ) : (
+              <>
+                <p>
+                  Ama descreve produtos ou estados de processamento incompleto na tradição
+                  ayurvédica. A palavra &ldquo;toxinas&rdquo; é uma tradução aproximada e coloquial:
+                  a toxicologia biomédica investiga substâncias identificáveis em dose e exposição
+                  concretas; já Ama é uma categoria tradicional ampla de peso ou lentidão no sistema
+                  digestivo, não equivalendo a uma substância detectada no sangue.
+                </p>
+                <div className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+                  <span className="font-semibold text-foreground block">Cuidado com mitos</span>
+                  <p>
+                    Algumas propostas ayurvédicas incluem práticas de purificação após avaliação
+                    cuidadosa, não um detox obrigatório nem com eficácia presumida. A
+                    &ldquo;desintoxicação mental ou emocional&rdquo; é uma metáfora para elaborar
+                    experiências e reduzir a sobrecarga; emoções não são toxinas. Não se conclui
+                    doença nem acúmulo patológico pela pontuação.
+                  </p>
+                </div>
+                {amaRow && (
+                  <div className="border-t pt-3 space-y-1">
+                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                      Sua leitura de Ama
+                    </h4>
+                    <p className="text-xs text-foreground font-medium">{amaRow.label}</p>
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                      {amaRow.text}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         ),
@@ -750,107 +772,113 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Mente & Emoções',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-            {elementReading && renderElementReadingSections(elementReading)}
+            {elementReading ? (
+              renderElementReadingSections(elementReading)
+            ) : (
+              <>
+                {content?.shortDescription && <p>{content.shortDescription}</p>}
 
-            {content?.shortDescription && <p>{content.shortDescription}</p>}
+                {content?.commonThoughts?.length ? (
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                      Pensamentos comuns quando ativo
+                    </h4>
+                    <ul className="list-disc pl-5 text-xs text-muted-foreground space-y-1">
+                      {content.commonThoughts.slice(0, 3).map((thought, i) => (
+                        <li key={i}>{thought}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
 
-            {content?.commonThoughts?.length ? (
-              <div className="space-y-1">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Pensamentos comuns quando ativo
-                </h4>
-                <ul className="list-disc pl-5 text-xs text-muted-foreground space-y-1">
-                  {content.commonThoughts.slice(0, 3).map((thought, i) => (
-                    <li key={i}>{thought}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+                {content?.associatedFeelings?.length ? (
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                      Sentimentos associados
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {content.associatedFeelings.slice(0, 4).join(' · ')}
+                    </p>
+                  </div>
+                ) : null}
 
-            {content?.associatedFeelings?.length ? (
-              <div className="space-y-1">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Sentimentos associados
-                </h4>
-                <p className="text-xs text-muted-foreground">
-                  {content.associatedFeelings.slice(0, 4).join(' · ')}
+                <div className="rounded-lg bg-muted/20 p-3 space-y-2 text-xs">
+                  <h4 className="font-semibold text-foreground">O que este padrão pode proteger</h4>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {content?.possibleProtectiveFunctions ||
+                      'Em sua história de vida, esse movimento pode ter surgido para preservar vínculos, conter sobrecargas ou buscar segurança em momentos desafiadores.'}
+                  </p>
+                  {content?.clarificationNote && (
+                    <p className="text-primary/90 font-medium pt-1 border-t border-border/50">
+                      {content.clarificationNote}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                  <div className="border rounded p-2.5 bg-card">
+                    <span className="font-semibold text-foreground block mb-1">
+                      Recursos essenciais
+                    </span>
+                    <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
+                      {(content?.strengths || ['Sensibilidade', 'Responsabilidade', 'Capacidade'])
+                        .slice(0, 3)
+                        .map((st, i) => (
+                          <li key={i}>{st}</li>
+                        ))}
+                    </ul>
+                  </div>
+                  <div className="border rounded p-2.5 bg-card">
+                    <span className="font-semibold text-foreground block mb-1">
+                      Custos possíveis
+                    </span>
+                    <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
+                      {(content?.costToSelf || ['Cansaço', 'Sobrecarga', 'Autoexigência'])
+                        .slice(0, 3)
+                        .map((c, i) => (
+                          <li key={i}>{c}</li>
+                        ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {content?.wakeUpCalls?.length ? (
+                  <div className="space-y-1 pt-1">
+                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                      Direção de cuidado e aprendizagem
+                    </h4>
+                    <ul className="list-disc pl-5 text-xs text-primary/90 space-y-1">
+                      {content.wakeUpCalls.slice(0, 2).map((call, i) => (
+                        <li key={i}>{call}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                <div className="border-t pt-3 space-y-1 text-xs">
+                  <h4 className="font-semibold uppercase tracking-wider text-foreground text-[11px]">
+                    Sua resposta declarada
+                  </h4>
+                  {row ? (
+                    <p className="text-muted-foreground">
+                      <span className="font-medium text-foreground">{row.label}: </span>
+                      {row.text}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground italic">
+                      Ainda não há resposta detalhada registrada para este padrão específico no
+                      snapshot.
+                    </p>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-muted-foreground/80 pt-2 border-t">
+                  Referência: Modelo dos Padrões de Proteção CER, adaptado a partir do trabalho de
+                  Shirzad Chamine (Positive Intelligence). Não constitui psicometria formal nem
+                  diagnóstico clínico individual.
                 </p>
-              </div>
-            ) : null}
-
-            <div className="rounded-lg bg-muted/20 p-3 space-y-2 text-xs">
-              <h4 className="font-semibold text-foreground">O que este padrão pode proteger</h4>
-              <p className="text-muted-foreground leading-relaxed">
-                {content?.possibleProtectiveFunctions ||
-                  'Em sua história de vida, esse movimento pode ter surgido para preservar vínculos, conter sobrecargas ou buscar segurança em momentos desafiadores.'}
-              </p>
-              {content?.clarificationNote && (
-                <p className="text-primary/90 font-medium pt-1 border-t border-border/50">
-                  {content.clarificationNote}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-              <div className="border rounded p-2.5 bg-card">
-                <span className="font-semibold text-foreground block mb-1">
-                  Recursos essenciais
-                </span>
-                <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
-                  {(content?.strengths || ['Sensibilidade', 'Responsabilidade', 'Capacidade'])
-                    .slice(0, 3)
-                    .map((st, i) => (
-                      <li key={i}>{st}</li>
-                    ))}
-                </ul>
-              </div>
-              <div className="border rounded p-2.5 bg-card">
-                <span className="font-semibold text-foreground block mb-1">Custos possíveis</span>
-                <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
-                  {(content?.costToSelf || ['Cansaço', 'Sobrecarga', 'Autoexigência'])
-                    .slice(0, 3)
-                    .map((c, i) => (
-                      <li key={i}>{c}</li>
-                    ))}
-                </ul>
-              </div>
-            </div>
-
-            {content?.wakeUpCalls?.length ? (
-              <div className="space-y-1 pt-1">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Direção de cuidado e aprendizagem
-                </h4>
-                <ul className="list-disc pl-5 text-xs text-primary/90 space-y-1">
-                  {content.wakeUpCalls.slice(0, 2).map((call, i) => (
-                    <li key={i}>{call}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            <div className="border-t pt-3 space-y-1 text-xs">
-              <h4 className="font-semibold uppercase tracking-wider text-foreground text-[11px]">
-                Sua resposta declarada
-              </h4>
-              {row ? (
-                <p className="text-muted-foreground">
-                  <span className="font-medium text-foreground">{row.label}: </span>
-                  {row.text}
-                </p>
-              ) : (
-                <p className="text-muted-foreground italic">
-                  Ainda não há resposta detalhada registrada para este padrão específico no
-                  snapshot.
-                </p>
-              )}
-            </div>
-
-            <p className="text-[11px] text-muted-foreground/80 pt-2 border-t">
-              Referência: Modelo dos Padrões de Proteção CER, adaptado a partir do trabalho de
-              Shirzad Chamine (Positive Intelligence). Não constitui psicometria formal nem
-              diagnóstico clínico individual.
-            </p>
+              </>
+            )}
           </div>
         ),
       },
@@ -872,36 +900,41 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Regulação & Padrões de Resposta',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-            {elementReading && renderElementReadingSections(elementReading)}
-            <p>{item.concept}</p>
-            <div className="rounded-lg bg-muted/20 p-3 space-y-2 text-xs">
-              <h4 className="font-semibold text-foreground">
-                Compreensão integrativa e desenvolvimento
-              </h4>
-              <p className="text-muted-foreground">
-                A resposta a situações difíceis não se forma definitivamente até os 3 anos de idade:
-                a aprendizagem emocional e relacional continua ao longo de toda a vida. A combinação
-                de respostas é uma hipótese contextual e relacional, nunca um subtipo neurológico
-                rígido.
-              </p>
-            </div>
-            <div className="border-t pt-3 space-y-1">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Presença no seu mapa
-              </h4>
-              <p className="text-xs text-muted-foreground">
-                {status.reported ? (
-                  <>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                      Relatada por você no percurso:
-                    </span>{' '}
-                    {status.detail}
-                  </>
-                ) : (
-                  'Esta reação não foi marcada como sua tendência espontânea principal neste momento.'
-                )}
-              </p>
-            </div>
+            {elementReading ? (
+              renderElementReadingSections(elementReading)
+            ) : (
+              <>
+                <p>{item.concept}</p>
+                <div className="rounded-lg bg-muted/20 p-3 space-y-2 text-xs">
+                  <h4 className="font-semibold text-foreground">
+                    Compreensão integrativa e desenvolvimento
+                  </h4>
+                  <p className="text-muted-foreground">
+                    A resposta a situações difíceis não se forma definitivamente até os 3 anos de
+                    idade: a aprendizagem emocional e relacional continua ao longo de toda a vida. A
+                    combinação de respostas é uma hipótese contextual e relacional, nunca um subtipo
+                    neurológico rígido.
+                  </p>
+                </div>
+                <div className="border-t pt-3 space-y-1">
+                  <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                    Presença no seu mapa
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    {status.reported ? (
+                      <>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                          Relatada por você no percurso:
+                        </span>{' '}
+                        {status.detail}
+                      </>
+                    ) : (
+                      'Esta reação não foi marcada como sua tendência espontânea principal neste momento.'
+                    )}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         ),
       },
@@ -1031,35 +1064,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
           content: (
             <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
               {renderElementReadingSections(elementReading)}
-
-              {nodeKey === 'centro' && snapshot.integration && (
-                <div className="space-y-1.5 pt-2 border-t">
-                  <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                    Síntese global integrada
-                  </h4>
-                  <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
-                    {snapshot.integration}
-                  </p>
-                </div>
-              )}
-
-              {nodeKey === 'centro' && !!snapshot.lifeDirections?.length && (
-                <div className="border-t pt-3 space-y-2">
-                  <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                    Seus objetivos no centro do mapa
-                  </h4>
-                  {snapshot.lifeDirections.map((dir) => (
-                    <div key={dir.id} className="text-xs border rounded p-2.5">
-                      <span className="font-medium block">{dir.title}</span>
-                      {dir.meaning && (
-                        <span className="text-muted-foreground block text-[11px] mt-0.5">
-                          Sentido: {dir.meaning}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           ),
         },
@@ -1134,46 +1138,52 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         tag: 'Linha da Vida',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-            {elementReading && renderElementReadingSections(elementReading)}
-
-            <p>
-              {snapshot.history ||
-                'A relação entre sua história e seu funcionamento ainda será aprofundada em conversa e na Linha da Vida. As respostas das dimensões não permitem afirmar como um padrão se formou.'}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Tendências pessoais, experiências e contexto atual podem participar desse retrato.
-              Prakriti e Vikriti são leituras ayurvédicas, e não equivalências diretas entre
-              genética e história de vida.
-            </p>
-            {!!snapshot.lifeConnections?.length && (
-              <div className="border-t pt-3 space-y-2">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Relações exploradas em conversa
-                </h4>
-                {snapshot.lifeConnections.map((conn, idx) => (
-                  <div key={idx} className="border rounded p-2.5 text-xs space-y-1">
-                    <p className="font-medium text-foreground">{conn.text}</p>
-                    {conn.question && (
-                      <p className="text-primary italic">Para investigar: {conn.question}</p>
-                    )}
+            {elementReading ? (
+              renderElementReadingSections(elementReading)
+            ) : (
+              <>
+                <p>
+                  {snapshot.history ||
+                    'A relação entre sua história e seu funcionamento ainda será aprofundada em conversa e na Linha da Vida. As respostas das dimensões não permitem afirmar como um padrão se formou.'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Tendências pessoais, experiências e contexto atual podem participar desse retrato.
+                  Prakriti e Vikriti são leituras ayurvédicas, e não equivalências diretas entre
+                  genética e história de vida.
+                </p>
+                {!!snapshot.lifeConnections?.length && (
+                  <div className="border-t pt-3 space-y-2">
+                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                      Relações exploradas em conversa
+                    </h4>
+                    {snapshot.lifeConnections.map((conn, idx) => (
+                      <div key={idx} className="border rounded p-2.5 text-xs space-y-1">
+                        <p className="font-medium text-foreground">{conn.text}</p>
+                        {conn.question && (
+                          <p className="text-primary italic">Para investigar: {conn.question}</p>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-            {!!snapshot.lifeEvents?.length && (
-              <div className="border-t pt-3 space-y-2">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Acontecimentos da sua história compartilhados
-                </h4>
-                {snapshot.lifeEvents.map((evt) => (
-                  <div key={evt.id} className="border rounded p-2 text-xs">
-                    <span className="font-medium block">
-                      {evt.title} ({lifeTimeLabel(evt)})
-                    </span>
-                    <span className="text-muted-foreground text-[11px] block">{evt.narrative}</span>
+                )}
+                {!!snapshot.lifeEvents?.length && (
+                  <div className="border-t pt-3 space-y-2">
+                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                      Acontecimentos da sua história compartilhados
+                    </h4>
+                    {snapshot.lifeEvents.map((evt) => (
+                      <div key={evt.id} className="border rounded p-2 text-xs">
+                        <span className="font-medium block">
+                          {evt.title} ({lifeTimeLabel(evt)})
+                        </span>
+                        <span className="text-muted-foreground text-[11px] block">
+                          {evt.narrative}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         ),
