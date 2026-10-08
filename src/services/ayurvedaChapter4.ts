@@ -56,7 +56,9 @@ export interface Chapter4LiteralItem {
 }
 
 import {
+  AYURVEDA_C3_CURRENT_AREA_IDS,
   buildAyurvedaCurrentBodyFactualBlock,
+  getCurrentAreaRecordFromState,
   type AyurvedaCurrentBodyFactualBlock,
 } from './ayurvedaCurrentBodyFactual'
 
@@ -258,6 +260,14 @@ export function buildChapter4Synthesis(responses: ExperienceResponseRecord[]): C
     ),
   ]
   for (const response of questionResponses) {
+    const key =
+      (response as any).prompt_key ||
+      (response.structured_value as any)?.metadata?.prompt_key ||
+      response.prompt_id ||
+      ''
+    if (String(key).startsWith('ayv_c3_current_')) {
+      continue
+    }
     const value = response.structured_value as any
     const raw = rawValue(response)
     const metadata = value?.metadata || {}
@@ -268,7 +278,6 @@ export function buildChapter4Synthesis(responses: ExperienceResponseRecord[]): C
       raw === 'changed_lot' ||
       (Array.isArray(raw) && raw.some((id) => ['dont_know', 'refusal', 'changed_lot'].includes(id)))
     if (!needsConversation) continue
-    const key = metadata.prompt_key || (response as any).prompt_key || response.prompt_id
     const baseKey = String(key).startsWith('ayv_c1_')
       ? getChapter1BasePromptId(String(key))
       : getChapter2BasePromptId(String(key))
@@ -279,6 +288,51 @@ export function buildChapter4Synthesis(responses: ExperienceResponseRecord[]): C
         : metadata.explicit_unsure
           ? 'A interagente não soube identificar.'
           : 'Foi registrada mudança ou contradição que merece contexto.',
+    })
+  }
+
+  // Avaliação de dúvida (dont_know) ou recusa (refusal) ATIVA nos dados atuais ayv_c3_current_*
+  // Subcampos de duração, frequência e contexto só existem vigentes quando comparison === 'different'
+  let hasActiveCurrentUnsureOrRefusal = false
+  for (const areaId of AYURVEDA_C3_CURRENT_AREA_IDS) {
+    const areaRecord = getCurrentAreaRecordFromState(c3, areaId)
+    if (!areaRecord) continue
+
+    const isUnsureOrRefusal = (val: unknown) =>
+      val === 'dont_know' || val === 'refusal' || val === 'unsure'
+    const hasInArray = (arr: unknown) => Array.isArray(arr) && arr.some(isUnsureOrRefusal)
+
+    if (isUnsureOrRefusal(areaRecord.comparison)) {
+      hasActiveCurrentUnsureOrRefusal = true
+      break
+    }
+    if (hasInArray(areaRecord.current_states)) {
+      hasActiveCurrentUnsureOrRefusal = true
+      break
+    }
+
+    // Subcampos condicionais: apenas se a comparação for 'different'
+    if (areaRecord.comparison === 'different') {
+      if (isUnsureOrRefusal(areaRecord.duration)) {
+        hasActiveCurrentUnsureOrRefusal = true
+        break
+      }
+      if (isUnsureOrRefusal(areaRecord.frequency)) {
+        hasActiveCurrentUnsureOrRefusal = true
+        break
+      }
+      if (hasInArray(areaRecord.contexts)) {
+        hasActiveCurrentUnsureOrRefusal = true
+        break
+      }
+    }
+  }
+
+  if (hasActiveCurrentUnsureOrRefusal) {
+    questionsForSession.push({
+      title: 'Ponto para conversar com Daiane',
+      value:
+        'Se quiser, você pode conversar com Daiane sobre as respostas em que marcou dúvida ou preferiu não responder.',
     })
   }
 

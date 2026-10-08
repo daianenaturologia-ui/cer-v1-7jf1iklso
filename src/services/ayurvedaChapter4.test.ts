@@ -211,4 +211,143 @@ describe('Capítulo 4 — síntese descritiva', () => {
     expect(synthesis.currentBody?.hasAnyData).toBe(false)
     expect(synthesis.currentBody?.items).toEqual([])
   })
+
+  it('Microbloco 4B: consolida convite opcional para dúvidas/recusas nos dados atuais e evita duplicatas genéricas', () => {
+    // Caso fictício salvo:
+    // fome com 2 estados + comparação different + duração refusal + frequência several + contexto routine;
+    // sono dont_know + comparação hard_to_compare
+    const mockCase = [
+      response(AYV_C3_PROMPTS.CURRENT_HUNGER.key, {
+        value: {
+          area_key: 'hunger',
+          current_states: ['regular_hours', 'sudden_intense'],
+          comparison: 'different',
+          duration: 'refusal',
+          frequency: 'several_days',
+          contexts: ['routine'],
+        },
+      }),
+      response(AYV_C3_PROMPTS.CURRENT_SLEEP.key, {
+        value: {
+          area_key: 'sleep',
+          current_states: ['dont_know'],
+          comparison: 'hard_to_compare',
+        },
+      }),
+    ]
+
+    const synthesis = buildChapter4Synthesis(mockCase)
+
+    // (a) bloco current literal preservado (título, estados, duração "Prefiro não responder" literal, frequência, contexto)
+    expect(synthesis.currentBody).toBeDefined()
+    expect(synthesis.currentBody?.title).toBe('Como meu corpo está agora')
+    const hungerItem = synthesis.currentBody?.items.find((i) => i.areaId === 'hunger')
+    expect(hungerItem).toBeDefined()
+    expect(hungerItem?.currentStates).toHaveLength(2)
+    expect(hungerItem?.currentStates).toContain('Aparece em horários relativamente previsíveis')
+    expect(hungerItem?.currentStates).toContain('Surge de repente e pode ficar muito intensa')
+    expect(hungerItem?.comparison).toBe('Diferente do meu habitual')
+    expect(hungerItem?.duration).toBe('Prefiro não responder')
+    expect(hungerItem?.frequency).toBe('Em vários dias')
+    expect(hungerItem?.contexts).toContain('Mudança de rotina')
+
+    const sleepItem = synthesis.currentBody?.items.find((i) => i.areaId === 'sleep')
+    expect(sleepItem).toBeDefined()
+    expect(sleepItem?.currentStates).toContain('Não sei identificar')
+    expect(sleepItem?.comparison).toBe('Difícil comparar')
+
+    // (b) EXATAMENTE UM convite opcional com o texto exato, sem duplicação
+    const optionalInvites = synthesis.questionsForSession.filter(
+      (q) =>
+        q.value ===
+        'Se quiser, você pode conversar com Daiane sobre as respostas em que marcou dúvida ou preferiu não responder.',
+    )
+    expect(optionalInvites).toHaveLength(1)
+
+    // (c) nenhum ponto "A interagente não soube identificar" gerado pelos dados atuais
+    const genericUnknowns = synthesis.questionsForSession.filter(
+      (q) => q.value === 'A interagente não soube identificar.',
+    )
+    expect(genericUnknowns).toHaveLength(0)
+
+    const genericRefusals = synthesis.questionsForSession.filter(
+      (q) => q.value === 'A interagente preferiu não responder.',
+    )
+    expect(genericRefusals).toHaveLength(0)
+
+    // (d) caso sem nenhuma dúvida/recusa nos dados atuais → nenhum convite
+    const cleanCase = [
+      response(AYV_C3_PROMPTS.CURRENT_HUNGER.key, {
+        value: {
+          area_key: 'hunger',
+          current_states: ['regular_hours'],
+          comparison: 'different',
+          duration: 'last_week',
+          frequency: 'several_days',
+          contexts: ['routine'],
+        },
+      }),
+      response(AYV_C3_PROMPTS.CURRENT_SLEEP.key, {
+        value: {
+          area_key: 'sleep',
+          current_states: ['light_wakes_easy'],
+          comparison: 'same_as_usual',
+        },
+      }),
+    ]
+    const cleanSynthesis = buildChapter4Synthesis(cleanCase)
+    expect(
+      cleanSynthesis.questionsForSession.some(
+        (q) =>
+          q.value ===
+          'Se quiser, você pode conversar com Daiane sobre as respostas em que marcou dúvida ou preferiu não responder.',
+      ),
+    ).toBe(false)
+
+    // (e) caso legado sem chaves ayv_c3_current_* → pontos legados inalterados e nenhum convite novo
+    const legacyCase = [
+      response(
+        AYV_C1_PROMPTS.P1_STRUCTURE.key,
+        { value: 'dont_know', metadata: { explicit_unsure: true } },
+        1,
+      ),
+      response(AYV_C1_PROMPTS.CHAPTER_COMPLETION.key, { completed: true }, 1),
+    ]
+    const legacySynthesis = buildChapter4Synthesis(legacyCase)
+    expect(legacySynthesis.questionsForSession).toContainEqual({
+      title: 'Estrutura corporal habitual',
+      value: 'A interagente não soube identificar.',
+    })
+    expect(
+      legacySynthesis.questionsForSession.some(
+        (q) =>
+          q.value ===
+          'Se quiser, você pode conversar com Daiane sobre as respostas em que marcou dúvida ou preferiu não responder.',
+      ),
+    ).toBe(false)
+
+    // (f) detalhes obsoletos de comparação não-different não geram convite nem ponto
+    // Exemplo: comparison é 'same_as_usual', mas duration/frequency ficaram preenchidos com refusal/dont_know
+    const obsoleteDetailsCase = [
+      response(AYV_C3_PROMPTS.CURRENT_HUNGER.key, {
+        value: {
+          area_key: 'hunger',
+          current_states: ['regular_hours'],
+          comparison: 'same_as_usual',
+          duration: 'refusal',
+          frequency: 'dont_know',
+          contexts: ['routine'],
+        },
+      }),
+    ]
+    const obsoleteSynthesis = buildChapter4Synthesis(obsoleteDetailsCase)
+    expect(
+      obsoleteSynthesis.questionsForSession.some(
+        (q) =>
+          q.value ===
+          'Se quiser, você pode conversar com Daiane sobre as respostas em que marcou dúvida ou preferiu não responder.',
+      ),
+    ).toBe(false)
+    expect(obsoleteSynthesis.questionsForSession).toHaveLength(0)
+  })
 })
