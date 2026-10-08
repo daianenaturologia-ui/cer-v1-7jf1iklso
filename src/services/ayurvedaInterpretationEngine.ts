@@ -359,34 +359,62 @@ export function buildAyurvedaInterpretation(
     }
   }
 
-  // 1. Estrutura corporal habitual (Cap 1)
+  // 1. Estrutura corporal habitual (Cap 1) — qualificada exclusivamente por P1_DURATION
+  const p1DurationEntry =
+    answersMap.get(AYV_C1_PROMPTS.P1_DURATION.id) || answersMap.get(AYV_C1_PROMPTS.P1_DURATION.key)
+  const p1DurationVals =
+    p1DurationEntry && !p1DurationEntry.isExplicitUnsureOrRefusal ? p1DurationEntry.values : []
+  const p1DurationRaw = p1DurationVals[0]
+  const p1DurationUnsureOrRefusal =
+    !p1DurationEntry ||
+    p1DurationEntry.isExplicitUnsureOrRefusal ||
+    p1DurationRaw === 'dont_know' ||
+    p1DurationRaw === 'refusal' ||
+    !p1DurationRaw
+
+  // Status de qualificação da estrutura
+  const isStructureStable = p1DurationRaw === 'lifelong' || p1DurationRaw === 'most_adult'
+  const isStructureVariable = p1DurationRaw === 'some_phases' || p1DurationRaw === 'changed_lot'
+  // Compatibilidade com dados legados / ausente / não confirmado:
+  // Não inventar duração, não afirmar estabilidade como comprovada, mas registrar ponto de atenção.
+  const isStructureUnconfirmed =
+    p1DurationUnsureOrRefusal || (!isStructureStable && !isStructureVariable)
+
   const p1Vals = getActiveValues(AYV_C1_PROMPTS.P1_STRUCTURE)
-  if (hasAnyMatch(p1Vals, ['slender', 'light_narrow', 'leve_longilinea'])) {
-    pushDedupedByCategory(prakritiVata, {
-      dosha: 'Vata',
-      category: 'Estrutura corporal',
-      sourceQuestionTitle: 'Estrutura corporal habitual',
-      literalText: 'Estrutura mais leve, longilínea ou óssea aparente',
-      observation: 'Conformação habitual com predomínio de leveza e menor densidade de tecidos.',
-    })
-  }
-  if (hasAnyMatch(p1Vals, ['medium', 'intermediate', 'moderada_proporcional'])) {
-    pushDedupedByCategory(prakritiPitta, {
-      dosha: 'Pitta',
-      category: 'Estrutura corporal',
-      sourceQuestionTitle: 'Estrutura corporal habitual',
-      literalText: 'Estrutura média, proporcional ou musculatura definida',
-      observation: 'Conformação habitual equilibrada com moderado desenvolvimento muscular.',
-    })
-  }
-  if (hasAnyMatch(p1Vals, ['broad', 'broad_solid', 'larga_robusta'])) {
-    pushDedupedByCategory(prakritiKapha, {
-      dosha: 'Kapha',
-      category: 'Estrutura corporal',
-      sourceQuestionTitle: 'Estrutura corporal habitual',
-      literalText: 'Estrutura mais larga, densa ou com tendência a reter volume',
-      observation: 'Conformação habitual com solidez de base, estabilidade e densidade tecidual.',
-    })
+
+  // A estrutura SOMENTE conta para evidência de dosha se for estável ('lifelong' | 'most_adult')
+  // ou se for legado/não confirmado (onde conta sem afirmação de estabilidade comprovada).
+  // Se 'some_phases' ou 'changed_lot', a estrutura é EXCLUÍDA da predominância.
+  const structureCountsForPredominance = !isStructureVariable
+
+  if (structureCountsForPredominance) {
+    if (hasAnyMatch(p1Vals, ['slender', 'light_narrow', 'leve_longilinea'])) {
+      pushDedupedByCategory(prakritiVata, {
+        dosha: 'Vata',
+        category: 'Estrutura corporal',
+        sourceQuestionTitle: 'Estrutura corporal habitual',
+        literalText: 'Estrutura mais leve, longilínea ou óssea aparente',
+        observation: 'Conformação habitual com predomínio de leveza e menor densidade de tecidos.',
+      })
+    }
+    if (hasAnyMatch(p1Vals, ['medium', 'intermediate', 'moderada_proporcional'])) {
+      pushDedupedByCategory(prakritiPitta, {
+        dosha: 'Pitta',
+        category: 'Estrutura corporal',
+        sourceQuestionTitle: 'Estrutura corporal habitual',
+        literalText: 'Estrutura média, proporcional ou musculatura definida',
+        observation: 'Conformação habitual equilibrada com moderado desenvolvimento muscular.',
+      })
+    }
+    if (hasAnyMatch(p1Vals, ['broad', 'broad_solid', 'larga_robusta'])) {
+      pushDedupedByCategory(prakritiKapha, {
+        dosha: 'Kapha',
+        category: 'Estrutura corporal',
+        sourceQuestionTitle: 'Estrutura corporal habitual',
+        literalText: 'Estrutura mais larga, densa ou com tendência a reter volume',
+        observation: 'Conformação habitual com solidez de base, estabilidade e densidade tecidual.',
+      })
+    }
   }
 
   // 2. Pele habitual (Cap 1)
@@ -627,32 +655,68 @@ export function buildAyurvedaInterpretation(
   let secondaryPrakriti: string | undefined = undefined
   let prakritiConfidence: 'Alta' | 'Moderada' | 'Em observação' = 'Em observação'
 
-  const prakritiScores = [
+  // Análise de convergência sem hierarquia artificial em caso de empate:
+  // Categorias por dosha:
+  const doshaCounts = [
     { dosha: 'Vata', count: vataPrakritiCategories },
     { dosha: 'Pitta', count: pittaPrakritiCategories },
     { dosha: 'Kapha', count: kaphaPrakritiCategories },
-  ].sort((a, b) => b.count - a.count)
+  ]
 
-  if (prakritiScores[0].count >= 2) {
-    primaryPrakriti = prakritiScores[0].dosha
-    if (prakritiScores[1].count >= 2) {
-      secondaryPrakriti = prakritiScores[1].dosha
-      prakritiConfidence = 'Alta'
-    } else {
-      prakritiConfidence = 'Moderada'
-    }
-  } else {
-    prakritiConfidence = 'Em observação'
-  }
+  const maxCount = Math.max(
+    vataPrakritiCategories,
+    pittaPrakritiCategories,
+    kaphaPrakritiCategories,
+  )
+  const topDoshas = doshaCounts.filter((d) => d.count === maxCount && d.count >= 2)
 
   let prakritiSummary = ''
-  if (!primaryPrakriti) {
+
+  if (maxCount < 2) {
+    // Nenhuma convergência com ≥ 2 categorias
+    prakritiConfidence = 'Em observação'
     prakritiSummary =
       'Os dados estruturais atuais não apresentaram convergência em pelo menos 2 categorias distintas para sustentar uma hipótese de constituição de base. Manter leitura em observação qualitativa.'
-  } else if (secondaryPrakriti) {
-    prakritiSummary = `Hipótese bidosha com predominância de ${primaryPrakriti} e presença convergente de ${secondaryPrakriti}, sustentada por evidências cruzadas de estrutura, tecido e regulação habitual.`
+  } else if (topDoshas.length === 3) {
+    // Triplo empate (ex.: 2/2/2 ou 3/3/3): NÃO converter em constituição tridosha/sama confirmada
+    // Sinalizar ambiguidade que requer aprofundamento. Sem primary/secondary artificial.
+    prakritiConfidence = 'Em observação'
+    prakritiSummary =
+      'Convergência equilibrada de respostas entre Vata, Pitta e Kapha, sem predominância separável com os dados atuais. Ambiguidade que requer aprofundamento e contextualização em sessão, sem inferência de constituição tridosha confirmada.'
+  } else if (topDoshas.length === 2) {
+    // Empate no topo entre 2 doshas (ex.: Vata 2 / Pitta 2)
+    // Preservar as convergências por dosha e descrever a dupla sem hierarquia artificial.
+    // Ordenar alfabeticamente para garantir invariância à ordem de inserção:
+    const sortedDuo = [...topDoshas].sort((a, b) => a.dosha.localeCompare(b.dosha))
+    // primary e secondary permanecem indefinidos (omitidos) para não falsificar hierarquia pela ordem do array.
+    // NÃO aumentar confiança em caso de empate (permanece Moderada).
+    prakritiConfidence = 'Moderada'
+    prakritiSummary = `Convergência entre ${sortedDuo[0].dosha} e ${sortedDuo[1].dosha}, sem predominância separável com os dados atuais (maior convergência de respostas em ambos).`
   } else {
-    prakritiSummary = `Hipótese de tendência primária ${primaryPrakriti}, sustentada por convergência estrutural observada em mais de uma esfera corporal.`
+    // topDoshas.length === 1 (um dosha claramente com maior contagem, ≥ 2)
+    primaryPrakriti = topDoshas[0].dosha
+
+    // Verificar se há segundo lugar com ≥ 2 categorias
+    const remaining = doshaCounts
+      .filter((d) => d.dosha !== primaryPrakriti)
+      .sort((a, b) => b.count - a.count)
+
+    const secondMax = remaining[0].count
+    const secondDoshas = remaining.filter((d) => d.count === secondMax && d.count >= 2)
+
+    if (secondDoshas.length === 1) {
+      secondaryPrakriti = secondDoshas[0].dosha
+      prakritiConfidence = 'Alta'
+      prakritiSummary = `Hipótese bidosha com maior convergência de respostas em ${primaryPrakriti} e presença convergente de ${secondaryPrakriti}, sustentada por evidências cruzadas de estrutura, tecido e regulação habitual.`
+    } else if (secondDoshas.length === 2) {
+      // Empate no segundo lugar (ex.: 3 Vata, 2 Pitta, 2 Kapha)
+      const sortedSecondDuo = [...secondDoshas].sort((a, b) => a.dosha.localeCompare(b.dosha))
+      prakritiConfidence = 'Moderada'
+      prakritiSummary = `Hipótese com maior convergência de respostas em ${primaryPrakriti}, associada a convergências secundárias equivalentes entre ${sortedSecondDuo[0].dosha} e ${sortedSecondDuo[1].dosha}.`
+    } else {
+      prakritiConfidence = 'Moderada'
+      prakritiSummary = `Hipótese com maior convergência de respostas em ${primaryPrakriti}, sustentada por convergência estrutural observada em mais de uma esfera corporal.`
+    }
   }
 
   // Vikriti
@@ -940,6 +1004,50 @@ export function buildAyurvedaInterpretation(
     perceivedResources.push(
       `Traços estruturais de base compatíveis com tendência ${primaryPrakriti}`,
     )
+  }
+
+  // MICROBLOCO 2B: Registro de qualificação de P1_DURATION nos pontos de atenção
+  if (c1Completed) {
+    if (isStructureVariable) {
+      attentionPoints.push(
+        'Estrutura corporal habitual relatada com variações ao longo do tempo — não sustenta hipótese de estrutura constitucional estável; a ser explorada em sessão.',
+      )
+    } else if (isStructureUnconfirmed) {
+      attentionPoints.push(
+        'Duração da estrutura corporal habitual não confirmada; estabilidade constitucional não assumida como comprovada.',
+      )
+    }
+  }
+
+  // MICROBLOCO 2B: Opções de variabilidade de C1 entram como "pontos a explorar", nunca como evidência de dosha
+  // Opções de variabilidade conhecidas:
+  // C1 Tela 1: 'two_figures', 'changed_lot'
+  // C1 Tela 2 (Pele): 'varies_region'
+  // C1 Tela 3 (Cabelo): 'mixed_varies'
+  // C1 Tela 4 (Temperatura): 'alternates', 'varies_climate'
+  // C1 Tela 5 (Sede/Bebida/Suor): 'varies_late', 'varies_stress'
+  const variabilityOptionsMap: Record<string, string> = {
+    two_figures:
+      'Estrutura corporal relatando características de duas figuras (variação combinada)',
+    varies_region: 'Pele habitual com comportamento que varia conforme região ou estação',
+    mixed_varies: 'Cabelo habitual com fios que misturam características ou variam bastante',
+    alternates: 'Temperatura habitual com oscilação frequente entre sensação de frio e calor',
+    varies_climate: 'Sensibilidade térmica habitual variando conforme o clima, ciclo ou fase',
+    varies_late:
+      'Sensação de sede com padrão oscilante ou percepção tardia da necessidade de hidratação',
+    varies_stress: 'Transpiração habitual variando conforme estresse, clima ou ciclo',
+  }
+
+  if (c1Completed) {
+    const rawAllC1Values = Array.from(answersMap.entries())
+      .filter(([k]) => k.startsWith('ayv_c1_'))
+      .flatMap(([, v]) => (v.isExplicitUnsureOrRefusal ? [] : v.values))
+
+    for (const [optKey, optDesc] of Object.entries(variabilityOptionsMap)) {
+      if (rawAllC1Values.includes(optKey)) {
+        attentionPoints.push(`Ponto a explorar: ${optDesc}.`)
+      }
+    }
   }
 
   // P12 do C2: Confiança histórica
