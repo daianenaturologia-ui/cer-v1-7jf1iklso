@@ -960,6 +960,14 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     const interpretationTitle = isReviewed
       ? 'Interpretação revisada em conversa'
       : 'Uma leitura possível'
+    const elementReading = snapshot.elementReadings?.[dimId]
+    const hasCustomDemoReading = Boolean(
+      isDemoSnapshot &&
+      (dim.summary ||
+        dim.interpretation ||
+        elementReading?.summary ||
+        elementReading?.interpretation),
+    )
 
     openDialog(
       {
@@ -999,27 +1007,29 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
               </div>
             )}
 
-            <div className="space-y-2 pt-1 border-t">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                Respostas compartilhadas nesta versão
-              </h4>
-              {dim.detailedRows.length > 0 ? (
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                  {dim.detailedRows.map((r, i) => (
-                    <div key={i} className="text-xs border-b pb-1.5 last:border-b-0">
-                      <span className="font-medium text-foreground block">
-                        {formatFriendlyRowLabel(r.label)}
-                      </span>
-                      <span className="text-muted-foreground whitespace-pre-wrap">{r.text}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground italic">
-                  Ainda não há respostas compartilhadas suficientes para esta dimensão.
-                </p>
-              )}
-            </div>
+            {!hasCustomDemoReading && (
+              <div className="space-y-2 pt-1 border-t">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Respostas compartilhadas nesta versão
+                </h4>
+                {dim.detailedRows.length > 0 ? (
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {dim.detailedRows.map((r, i) => (
+                      <div key={i} className="text-xs border-b pb-1.5 last:border-b-0">
+                        <span className="font-medium text-foreground block">
+                          {formatFriendlyRowLabel(r.label)}
+                        </span>
+                        <span className="text-muted-foreground whitespace-pre-wrap">{r.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">
+                    Ainda não há respostas compartilhadas suficientes para esta dimensão.
+                  </p>
+                )}
+              </div>
+            )}
 
             {renderReferencesList(refs)}
           </div>

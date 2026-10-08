@@ -607,4 +607,79 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     )
     expect(historiaText).not.toContain('expressam uma biologia de base')
   })
+
+  it('não renderiza rows cruas/bloco de respostas na dimensão Corpo do demo e não exibe mensagem vazia falsa em Sexualidade', async () => {
+    const demo = createDemoCerMapReading()
+    render(<CerMapReadingsView snapshot={demo} />)
+
+    // 1. Abrir dimensão Corpo pelo botão "Ver leitura completa da dimensão Corpo"
+    const corpoBtn = screen.getByRole('button', {
+      name: /Ver leitura completa da dimensão Corpo/i,
+    })
+    await userEvent.click(corpoBtn)
+
+    const corpoDialog = await screen.findByRole('dialog')
+    expect(corpoDialog).toBeInTheDocument()
+    const corpoText = corpoDialog.textContent || ''
+
+    // Presença da leitura e síntese personalizadas
+    expect(corpoText).toContain('Exemplo fictício para explorar o Mapa CER')
+    expect(corpoText).toContain('Como compreender esta dimensão')
+    expect(corpoText).toContain('Síntese da leitura')
+    expect(corpoText).toContain('Uma leitura possível')
+
+    // Afirmar AUSÊNCIA do bloco "Respostas compartilhadas nesta versão" e de IDs técnicos / valores crus
+    expect(corpoText).not.toContain('Respostas compartilhadas nesta versão')
+    expect(corpoText).not.toContain('Ainda não há respostas compartilhadas suficientes')
+    expect(corpoText).not.toContain('light_interrupted')
+    expect(corpoText).not.toContain('varies_drastically')
+    expect(corpoText).not.toContain('fluctuates')
+    expect(corpoText).not.toContain('irregular')
+    expect(corpoText).not.toContain('variable')
+
+    // Fechar diálogo do Corpo
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+
+    // 2. Abrir dimensão Sexualidade
+    const sexualidadeBtn = screen.getByRole('button', {
+      name: /Abrir dimensão: Sexualidade & Intimidade/i,
+    })
+    await userEvent.click(sexualidadeBtn)
+
+    const sexDialog = await screen.findByRole('dialog')
+    expect(sexDialog).toBeInTheDocument()
+    const sexText = sexDialog.textContent || ''
+
+    // Afirmar AUSÊNCIA da mensagem vazia falsa e do bloco de rows
+    expect(sexText).not.toContain('Ainda não há respostas compartilhadas suficientes')
+    expect(sexText).not.toContain('Respostas compartilhadas nesta versão')
+
+    // Afirmar PRESENÇA da síntese, interpretação e aviso de exemplo fictício
+    expect(sexText).toContain('Exemplo fictício para explorar o Mapa CER')
+    expect(sexText).toContain('Sexualidade & Intimidade')
+    expect(sexText).toContain('A intimidade e a disponibilidade para o afeto aparecem nos relatos')
+    expect(sexText).toContain('Uma leitura possível')
+
+    // Fechar diálogo de Sexualidade
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
+
+    // 3. Abrir dimensão Sentido
+    const sentidoBtn = screen.getByRole('button', {
+      name: /Abrir dimensão: Sentido & Conexão/i,
+    })
+    await userEvent.click(sentidoBtn)
+
+    const sentidoDialog = await screen.findByRole('dialog')
+    expect(sentidoDialog).toBeInTheDocument()
+    const sentidoText = sentidoDialog.textContent || ''
+
+    // Afirmar AUSÊNCIA da mensagem vazia falsa e do bloco de rows
+    expect(sentidoText).not.toContain('Ainda não há respostas compartilhadas suficientes')
+    expect(sentidoText).not.toContain('Respostas compartilhadas nesta versão')
+
+    // Afirmar PRESENÇA da síntese, interpretação e aviso de exemplo fictício
+    expect(sentidoText).toContain('Exemplo fictício para explorar o Mapa CER')
+    expect(sentidoText).toContain('Sentido & Conexão')
+    expect(sentidoText).toContain('Bússola interna orientada por coerência ética')
+  })
 })
