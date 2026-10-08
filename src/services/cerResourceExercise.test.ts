@@ -79,7 +79,7 @@ describe('Exercício pessoal e persistência', () => {
   it('migração protege somente a pessoa proprietária e impede acesso profissional implícito', () => {
     const created: any[] = []
     vm.runInNewContext(
-      fs.readFileSync('pocketbase/migrations/0078_create_resource_exercises.js', 'utf8'),
+      fs.readFileSync('pocketbase/migrations/0074_create_resource_exercises.js', 'utf8'),
       {
         migrate: (up: any) =>
           up({
