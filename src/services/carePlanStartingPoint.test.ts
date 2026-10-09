@@ -87,6 +87,14 @@ it('preserva a pausa para conversa e reúne somente recursos, limites e primeiro
   expect(carePlanChoices(source, [parent, paused])[0].needsConversation).toBe(true)
   expect(directionCareContext(source)).toContain('Disposição e limites: Uma conversa')
   expect(directionCareContext(source)).not.toContain(source.title)
-  const conversation = { ...parent, reflection: JSON.stringify({ ...emptyCareEpisode(), facts: 'Um pedido', alternative: 'Quero compreender esta situação com minha profissional antes de escolher uma ação.' }) }
+  const conversation = {
+    ...parent,
+    reflection: JSON.stringify({
+      ...emptyCareEpisode(),
+      facts: 'Um pedido',
+      alternative:
+        'Quero compreender esta situação com minha profissional antes de escolher uma ação.',
+    }),
+  }
   expect(carePlanChoices(source, [conversation])[0].needsConversation).toBe(true)
 })

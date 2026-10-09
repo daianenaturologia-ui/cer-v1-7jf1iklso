@@ -30,7 +30,7 @@ export function carePlanChoices(source: LifeDirection, records: DevelopmentExper
         observation: review?.observation || '',
         needsConversation:
           review?.outcome === 'paused' ||
-        /pausar e conversar|compreender melhor juntas|antes de escolher uma ação/i.test(
+          /pausar e conversar|compreender melhor juntas|antes de escolher uma ação/i.test(
             review ? review.adjustment : episode.alternative,
           ),
       }
