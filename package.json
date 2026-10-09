@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "CER V1 (build - Bloco 17 Mind Conversation)",
   "private": true,
-  "version": "0.0.330",
+  "version": "0.0.331",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
