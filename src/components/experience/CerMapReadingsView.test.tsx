@@ -530,7 +530,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
 
     // 1b. Abrir "Meu mundo emocional"
     const mundoEmocionalBtn = screen.getByRole('button', {
-      name: /Abrir: Meu mundo emocional/i,
+      name: /Interpretação dessa dimensão: Mente e Emoções/i,
     })
     await userEvent.click(mundoEmocionalBtn)
 
@@ -612,9 +612,9 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     const demo = createDemoCerMapReading()
     render(<CerMapReadingsView snapshot={demo} />)
 
-    // 1. Abrir dimensão Corpo pelo botão "Ver leitura completa da dimensão Corpo"
+    // 1. Abrir dimensão Corpo pelo botão "Interpretação dessa dimensão: Corpo"
     const corpoBtn = screen.getByRole('button', {
-      name: /Ver leitura completa da dimensão Corpo/i,
+      name: /Interpretação dessa dimensão: Corpo/i,
     })
     await userEvent.click(corpoBtn)
 
@@ -645,7 +645,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
 
     // 2. Abrir dimensão Sexualidade
     const sexualidadeBtn = screen.getByRole('button', {
-      name: /Abrir dimensão: Sexualidade & Intimidade/i,
+      name: /Interpretação dessa dimensão: Sexualidade & Intimidade/i,
     })
     await userEvent.click(sexualidadeBtn)
 
@@ -668,7 +668,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
 
     // 3. Abrir dimensão Sentido
     const sentidoBtn = screen.getByRole('button', {
-      name: /Abrir dimensão: Sentido & Conexão/i,
+      name: /Interpretação dessa dimensão: Sentido & Conexão/i,
     })
     await userEvent.click(sentidoBtn)
 
@@ -692,7 +692,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
 
     // 1. Abrir Sexualidade
     const sexualidadeBtn = screen.getByRole('button', {
-      name: /Abrir dimensão: Sexualidade & Intimidade/i,
+      name: /Interpretação dessa dimensão: Sexualidade & Intimidade/i,
     })
     await userEvent.click(sexualidadeBtn)
     const sexDialog = await screen.findByRole('dialog')
@@ -706,7 +706,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
 
     // 2. Abrir Corpo e validar presença
     const corpoBtn = screen.getByRole('button', {
-      name: /Ver leitura completa da dimensão Corpo/i,
+      name: /Interpretação dessa dimensão: Corpo/i,
     })
     await userEvent.click(corpoBtn)
     const corpoDialog = await screen.findByRole('dialog')
@@ -755,7 +755,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     render(<CerMapReadingsView snapshot={realSnapshot as any} />)
 
     const corpoBtn = screen.getByRole('button', {
-      name: /Ver leitura completa da dimensão Corpo/i,
+      name: /Interpretação dessa dimensão: Corpo/i,
     })
     await userEvent.click(corpoBtn)
 
@@ -788,7 +788,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     render(<CerMapReadingsView snapshot={demoSnapshot} />)
 
     const corpoBtn = screen.getByRole('button', {
-      name: /Ver leitura completa da dimensão Corpo/i,
+      name: /Interpretação dessa dimensão: Corpo/i,
     })
     await userEvent.click(corpoBtn)
 
@@ -816,7 +816,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape', code: 'Escape' })
 
     const regulacaoBtn = screen.getByRole('button', {
-      name: /Ver leitura completa da dimensão Regulação/i,
+      name: /Interpretação dessa dimensão: Regulação/i,
     })
     await userEvent.click(regulacaoBtn)
     const regDialog = await screen.findByRole('dialog')

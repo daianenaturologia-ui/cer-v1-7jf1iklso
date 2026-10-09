@@ -58,8 +58,12 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
       <ParticipantIntegrativeMapView responses={[]} participantName="Teste" currentMap={map} />,
     )
     expect(screen.queryByText('RESPOSTA DA VERSÃO PUBLICADA')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Abrir: Meu mundo emocional' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Abrir: Meu mundo emocional' }))
+    expect(
+      screen.getByRole('button', { name: 'Interpretação dessa dimensão: Mente e Emoções' }),
+    ).toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Interpretação dessa dimensão: Mente e Emoções' }),
+    )
     expect(await screen.findByText('DETALHE DA VERSÃO PUBLICADA')).toBeInTheDocument()
     expect(screen.getByText('INTERPRETAÇÃO REVISADA')).toBeInTheDocument()
     expect(screen.getByText('Referências e fontes de consulta')).toBeInTheDocument()
@@ -126,8 +130,12 @@ describe('Mapa inicial automático', () => {
     )
     expect(screen.getByTestId('participant-initial-map')).toBeInTheDocument()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Ver dimensão completa' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Ver dimensão completa' }))
+    expect(
+      screen.getByRole('button', { name: 'Interpretação dessa dimensão: Regulação' }),
+    ).toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Interpretação dessa dimensão: Regulação' }),
+    )
     for (const option of options)
       expect(await screen.findByText(new RegExp(option.title))).toBeInTheDocument()
     expect(screen.queryByText('NOTA PROFISSIONAL PRIVADA')).not.toBeInTheDocument()

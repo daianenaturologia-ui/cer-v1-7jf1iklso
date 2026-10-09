@@ -8,7 +8,7 @@ describe('Leitura integrada sem avisos repetidos', () => {
   it('reúne limites na explicação geral e preserva evidências na leitura pessoal', async () => {
     const user = userEvent.setup()
     render(<CerMapReadingsView snapshot={createDemoCerMapReading()} />)
-    await user.click(screen.getByRole('button', { name: 'Ver leitura completa da dimensão Corpo' }))
+    await user.click(screen.getByRole('button', { name: 'Interpretação dessa dimensão: Corpo' }))
     const body = await screen.findByRole('dialog', { name: 'Corpo & Fisiologia' })
     for (const name of [
       'Entenda os doshas e suas combinações',

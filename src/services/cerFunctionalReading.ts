@@ -3,6 +3,7 @@ import type { ExperienceResponseRecord } from '@/types/cer'
 import { BUILD_07C_MENTE_PROMPTS, BUILD_07C_REGULACAO_PROMPTS } from './build07cPrompts'
 import { selectedReadingChoices, regulationReadings, patternResources } from './cerPersonalReadings'
 import { CER_PROTECTION_PATTERNS } from './cerProtectionPatterns'
+import { mindConversation } from './cerMindConversation'
 import { buildProtectionPatternReading } from './cerProtectionPatternReading'
 
 /** Connect supported characteristics, never classify a free narrative by keywords. */
@@ -155,11 +156,18 @@ export function applyFunctionalReading(
     : fallback.length
       ? `${snapshot.participantName}, seu funcionamento pode ser compreendido pelas conexões abaixo.\n\n${[...new Set(fallback)].slice(0, 4).join('\n\n')}`
       : ''
+  const personalMind = mindConversation(
+    snapshot.participantName,
+    mind,
+    choices('emocoes_recorrentes'),
+    emotionReadings,
+    fight,
+  )
   const dimensions = snapshot.dimensions.map((d) => {
     if (d.id === 'corpo') return d
     let text =
       d.id === 'mente' && mental.length
-        ? mental.join('\n\n')
+        ? personalMind || mental.join('\n\n')
         : d.id === 'regulacao' && reg.length
           ? reg.join('\n\n')
           : d.interpretation ||
@@ -233,7 +241,7 @@ export function applyFunctionalReading(
     elements.mente = {
       summary: '',
       observations: [],
-      interpretation: mental.join('\n\n'),
+      interpretation: personalMind || mental.join('\n\n'),
       resources: [],
       costs: [],
       connections: physical,

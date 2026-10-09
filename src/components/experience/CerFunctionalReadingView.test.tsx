@@ -47,3 +47,16 @@ describe('Leitura do funcionamento no mapa', () => {
     expect(dialog.queryByText('Como esse movimento organiza seu funcionamento')).toBeNull()
   })
 })
+
+it('padroniza os seis acessos e abre uma interpretação pessoal com três padrões', async () => {
+  render(<CerMapReadingsView snapshot={createDemoCerMapReading()} />)
+  expect(screen.getAllByRole('button', { name: /^Interpretação dessa dimensão:/ })).toHaveLength(6)
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Interpretação dessa dimensão: Mente e Emoções' }),
+  )
+  const dialog = await screen.findByRole('dialog')
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Como você funciona nesta dimensão' }))
+  expect(dialog.textContent).toContain('Mariana, vamos olhar com carinho')
+  expect(dialog.textContent).toContain('Prestativo, Hipervigilante e Analítico')
+  expect(dialog.textContent).not.toContain('Insistente')
+})

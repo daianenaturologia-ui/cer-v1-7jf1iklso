@@ -1289,9 +1289,9 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             size="sm"
             onClick={(e) => openDimensionDialog('corpo', e)}
             className="text-xs text-primary min-h-[44px] self-start sm:self-auto"
-            aria-label="Ver leitura completa da dimensão Corpo"
+            aria-label="Interpretação dessa dimensão: Corpo"
           >
-            Ver leitura completa da dimensão <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            Interpretação dessa dimensão <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </div>
 
@@ -1628,9 +1628,9 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             size="sm"
             onClick={(e) => openEmotionalWorldDialog(e)}
             className="text-xs min-h-[44px] self-start sm:self-auto border-primary/30 text-foreground"
-            aria-label="Abrir: Meu mundo emocional"
+            aria-label="Interpretação dessa dimensão: Mente e Emoções"
           >
-            Meu mundo emocional <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            Interpretação dessa dimensão <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </div>
 
@@ -1743,9 +1743,9 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             size="sm"
             onClick={(e) => openDimensionDialog('regulacao', e)}
             className="text-xs text-primary min-h-[44px] self-start sm:self-auto"
-            aria-label="Ver leitura completa da dimensão Regulação"
+            aria-label="Interpretação dessa dimensão: Regulação"
           >
-            Ver dimensão completa <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            Interpretação dessa dimensão <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </div>
 
@@ -1812,14 +1812,14 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             type="button"
             onClick={(e) => openDimensionDialog('relacoes', e)}
             className="min-h-[48px] p-3.5 rounded-xl border border-border/70 hover:border-primary/60 bg-card hover:bg-muted/15 transition-colors text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary"
-            aria-label="Abrir dimensão: Relações & Vínculos"
+            aria-label="Interpretação dessa dimensão: Relações & Vínculos"
           >
             <div>
               <span className="font-serif font-semibold text-sm text-foreground block">
                 Relações & Vínculos
               </span>
               <span className="text-[11px] text-muted-foreground">
-                Proximidade, limites e confiança
+                Interpretação dessa dimensão
               </span>
             </div>
             <Heart className="w-4 h-4 text-rose-500" aria-hidden="true" />
@@ -1829,14 +1829,14 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             type="button"
             onClick={(e) => openDimensionDialog('sexualidade', e)}
             className="min-h-[48px] p-3.5 rounded-xl border border-border/70 hover:border-primary/60 bg-card hover:bg-muted/15 transition-colors text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary"
-            aria-label="Abrir dimensão: Sexualidade & Intimidade"
+            aria-label="Interpretação dessa dimensão: Sexualidade & Intimidade"
           >
             <div>
               <span className="font-serif font-semibold text-sm text-foreground block">
                 Sexualidade & Intimidade
               </span>
               <span className="text-[11px] text-muted-foreground">
-                Bem-estar, corpo e segurança
+                Interpretação dessa dimensão
               </span>
             </div>
             <Sparkles className="w-4 h-4 text-amber-500" aria-hidden="true" />
@@ -1846,14 +1846,14 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             type="button"
             onClick={(e) => openDimensionDialog('sentido', e)}
             className="min-h-[48px] p-3.5 rounded-xl border border-border/70 hover:border-primary/60 bg-card hover:bg-muted/15 transition-colors text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary"
-            aria-label="Abrir dimensão: Sentido & Conexão"
+            aria-label="Interpretação dessa dimensão: Sentido & Conexão"
           >
             <div>
               <span className="font-serif font-semibold text-sm text-foreground block">
                 Sentido & Conexão
               </span>
               <span className="text-[11px] text-muted-foreground">
-                Valores e presença no cotidiano
+                Interpretação dessa dimensão
               </span>
             </div>
             <Compass className="w-4 h-4 text-primary" aria-hidden="true" />
