@@ -12,6 +12,7 @@ vi.mock('@/services/demoAdapter', () => ({
   demoAdapter: {
     isEnabled: () => true,
     listPlans: () => [],
+    listExperienceResponses: () => [],
     listPresentedForParticipant: () => [],
     listAcceptancesByEnrollment: () => [],
   },

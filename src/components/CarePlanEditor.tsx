@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { AyurvedaCarePriorities } from './AyurvedaCarePriorities'
 import { lifeDirectionsService, type LifeDirection } from '@/services/lifeDirections'
 import { sharedFutureDirections, developmentPresentation } from '@/services/developmentPlanning'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
@@ -445,6 +446,19 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
       </CardHeader>
 
       <CardContent className="p-4 space-y-4">
+        <AyurvedaCarePriorities
+          enrollmentId={enrollmentId}
+          participantName={participantName}
+          canPrepare={!!selectedPlan}
+          onPrepare={(priority) => {
+            setPrioTitle(priority.title)
+            setPrioDescription(priority.description)
+            setPrioProfessionalRationale(priority.professionalRationale)
+            setPrioTherapeutic(true)
+            setPrioPossibleNow(false)
+            setCreatePriorityDialogOpen(true)
+          }}
+        />
         {/* Feedback visual */}
         {errorMsg && (
           <div className="p-2.5 rounded bg-red-500/10 border border-red-300 text-red-700 dark:text-red-300 text-xs flex items-center justify-between">
