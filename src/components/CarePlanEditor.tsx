@@ -685,12 +685,14 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
                         {/* Rationale Clínico Privado do Profissional (Seguro) */}
                         {prio.professional_rationale && (
-                          <div className="p-2 rounded bg-muted/30 border border-border/40 text-[11px] text-muted-foreground">
-                            <span className="font-medium text-foreground">
-                              Olhar Clínico Privado:{' '}
-                            </span>
-                            <span>{prio.professional_rationale}</span>
-                          </div>
+                          <details className="p-2 rounded bg-muted/30 border border-border/40 text-[11px] text-muted-foreground">
+                            <summary className="cursor-pointer font-medium text-foreground focus-visible:ring-2 focus-visible:ring-ring rounded">
+                              Olhar clínico privado
+                            </summary>
+                            <p className="mt-2 whitespace-pre-line break-words">
+                              {prio.professional_rationale}
+                            </p>
+                          </details>
                         )}
 
                         {/* Devolutivas Operacionais da Participante (7 estados reais, sem private notes) */}
