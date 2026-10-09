@@ -6,6 +6,7 @@ import { resourceExerciseService } from '@/services/cerResourceExercise'
 import { GoalRoadmapPlanner } from './GoalRoadmapPlanner'
 import { ResourceAgendaForm } from './ResourceAgendaForm'
 import { VoiceInputCapture } from '@/components/VoiceInputCapture'
+import { MyNextStepWizard, clearMyNextStepDraft } from './MyNextStepWizard'
 import {
   lifeDirectionsService,
   LIFE_HORIZONS,
@@ -129,7 +130,13 @@ export function LifeDirections({
     setBusy(true)
     setError('')
     try {
-      const record = await lifeDirectionsService.save(editing, editingId)
+      const record = await lifeDirectionsService.save(
+        planning && editing.kind === 'future' && !editing.title.trim()
+          ? { ...editing, title: 'Compreender o que está me causando angústia' }
+          : editing,
+        editingId,
+      )
+      if (planning && editing.kind === 'future') clearMyNextStepDraft(enrollmentId, editingId)
       setRecords((values) =>
         editingId ? values.map((v) => (v.id === editingId ? record : v)) : [...values, record],
       )
@@ -157,7 +164,9 @@ export function LifeDirections({
     >
       <h2 className="font-serif text-xl">
         {planning
-          ? 'O que quero transformar'
+          ? readOnly
+            ? 'Direção do cuidado'
+            : 'Meu próximo passo'
           : perspective === 'present'
             ? 'Como estou vivendo agora'
             : perspective === 'future'
@@ -165,24 +174,11 @@ export function LifeDirections({
               : 'Linha da Vida · Presente e futuro'}
       </h2>
       {planning ? (
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <p>
-            Seu mapa ajuda a compreender seu funcionamento. Agora, escolha o que mais precisa mudar
-            na sua vida e o que deseja e consegue sustentar. Isso pode envolver corpo, emoções,
-            trabalho, dinheiro, relacionamentos ou outra área importante para você.
-          </p>
-          <p>
-            Você pode chegar com uma situação específica ou apenas com angústia. Não precisa
-            descobrir tudo agora: compreender o que está pesando também pode ser o primeiro
-            objetivo.
-          </p>
-          <p>
-            Em conversa com sua profissional, esta direção poderá se tornar um objetivo terapêutico.
-            O plano reunirá os recursos do jogo e ações possíveis para esse objetivo. Alimentação,
-            movimento e outras orientações entram conforme o que vocês combinarem. A primeira meta
-            começa pequena; curto, médio e longo prazo serão ajustados à sua realidade.
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          {readOnly
+            ? 'A direção expressa pela interagente é o ponto de partida. Considerem seu funcionamento, seus apoios e suas condições para combinar o objetivo e um primeiro passo possível.'
+            : 'Vamos aproximar seu mapa da sua vida: o que merece cuidado, a mudança que faria diferença e um começo que cabe no seu momento.'}
+        </p>
       ) : (
         <p className="text-sm text-muted-foreground">
           Registre seu momento e as mudanças que deseja construir. Seus registros podem orientar a
@@ -219,7 +215,7 @@ export function LifeDirections({
           )}
           {!readOnly && unlocked && !error && (
             <div className="flex flex-wrap gap-2">
-              {planning && (
+              {planning && !editing && (
                 <Button variant="outline" onClick={() => open('future')}>
                   Escolher minha primeira direção
                 </Button>
@@ -236,94 +232,108 @@ export function LifeDirections({
               )}
             </div>
           )}
-          {(['present', 'future'] as const)
-            .filter((kind) => !perspective || kind === perspective)
-            .map((kind) => (
-              <div key={kind} className="border-l-4 border-primary/60 pl-4 space-y-3">
-                <h3 className="font-medium">
-                  {kind === 'present'
-                    ? 'Presente · meus momentos de agora'
-                    : planning
-                      ? 'Direções e primeiras metas'
-                      : 'Futuro · desejos e possibilidades'}
-                </h3>
-                {records
-                  .filter((v) => v.kind === kind)
-                  .map((record) => (
-                    <article key={record.id} className="border rounded-lg p-3 space-y-2">
-                      <h4 className="font-medium">{record.title}</h4>
-                      <p className="text-xs text-muted-foreground">
-                        {LIFE_HORIZONS[record.horizon]} ·{' '}
-                        {record.created
-                          ? new Date(record.created).toLocaleDateString('pt-BR')
-                          : 'Registro atual'}{' '}
-                        ·{' '}
-                        {record.access_class === 'participant_shared'
-                          ? 'Compartilhado com minha profissional'
-                          : 'Só para mim'}
-                      </p>
-                      <p className="text-sm whitespace-pre-wrap">{record.narrative}</p>
-                      {(
-                        [
-                          ['meaning', 'Sentido e propósito'],
-                          ['resources', 'Recursos e apoios'],
+          {!editing &&
+            (['present', 'future'] as const)
+              .filter((kind) => !perspective || kind === perspective)
+              .map((kind) => (
+                <div key={kind} className="border-l-4 border-primary/60 pl-4 space-y-3">
+                  <h3 className="font-medium">
+                    {kind === 'present'
+                      ? 'Presente · meus momentos de agora'
+                      : planning
+                        ? 'Direções e primeiras metas'
+                        : 'Futuro · desejos e possibilidades'}
+                  </h3>
+                  {records
+                    .filter((v) => v.kind === kind)
+                    .map((record) => (
+                      <article key={record.id} className="border rounded-lg p-3 space-y-2">
+                        <h4 className="font-medium">{record.title}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {LIFE_HORIZONS[record.horizon]} ·{' '}
+                          {record.created
+                            ? new Date(record.created).toLocaleDateString('pt-BR')
+                            : 'Registro atual'}{' '}
+                          ·{' '}
+                          {record.access_class === 'participant_shared'
+                            ? 'Compartilhado com minha profissional'
+                            : 'Só para mim'}
+                        </p>
+                        <p className="text-sm whitespace-pre-wrap">{record.narrative}</p>
+                        {(
                           [
-                            'limits',
-                            planning
-                              ? 'O que desejo e consigo sustentar'
-                              : 'Limites e necessidades',
-                          ],
-                          ['first_step', 'Pequeno passo possível'],
-                        ] as const
-                      ).map(
-                        ([field, label]) =>
-                          record[field] && (
-                            <p key={field} className="text-sm whitespace-pre-wrap">
-                              <strong>{label}: </strong>
-                              {record[field]}
-                            </p>
-                          ),
-                      )}
-                      {planning &&
-                        record.kind === 'future' &&
-                        record.first_step.trim() &&
-                        !readOnly &&
-                        unlocked && (
-                          <ResourceAgendaForm
-                            key={`${record.id}:${record.updated}`}
-                            enrollmentId={enrollmentId}
-                            strength={
-                              record.resources ||
-                              'Recursos que vou reconhecer com minha profissional'
-                            }
-                            difficulty={record.narrative || record.title}
-                            strategy={record.first_step}
-                            initialGoal={record.title}
-                          />
+                            [
+                              'meaning',
+                              planning ? 'Áreas de cuidado e sentido' : 'Sentido e propósito',
+                            ],
+                            [
+                              'resources',
+                              planning
+                                ? 'Por onde quero começar · recursos e apoios'
+                                : 'Recursos e apoios',
+                            ],
+                            [
+                              'limits',
+                              planning
+                                ? 'Condições que o plano precisa respeitar'
+                                : 'Limites e necessidades',
+                            ],
+                            ['first_step', 'Pequeno passo possível'],
+                          ] as const
+                        ).map(
+                          ([field, label]) =>
+                            record[field] && (
+                              <p key={field} className="text-sm whitespace-pre-wrap">
+                                <strong>{label}: </strong>
+                                {record[field]}
+                              </p>
+                            ),
                         )}
-                      {record.kind === 'future' && (readOnly || (planning && unlocked)) && (
-                        <GoalRoadmapPlanner
-                          source={record}
-                          readOnly={readOnly}
-                          strategies={strategies}
-                        />
-                      )}
-                      {!readOnly && unlocked && (
-                        <Button size="sm" variant="outline" onClick={() => open(kind, record)}>
-                          Editar registro
-                        </Button>
-                      )}
-                    </article>
-                  ))}
-                {!records.some((v) => v.kind === kind) && (
-                  <p className="text-sm text-muted-foreground">
-                    {readOnly
-                      ? 'Ainda não há registros compartilhados deste momento.'
-                      : 'Este espaço pode ser preenchido no seu tempo.'}
-                  </p>
-                )}
-              </div>
-            ))}
+                        {planning &&
+                          record.kind === 'future' &&
+                          record.first_step.trim() &&
+                          !readOnly &&
+                          unlocked && (
+                            <ResourceAgendaForm
+                              key={`${record.id}:${record.updated}`}
+                              enrollmentId={enrollmentId}
+                              strength={
+                                record.resources ||
+                                'Recursos que vou reconhecer com minha profissional'
+                              }
+                              difficulty={record.narrative || record.title}
+                              strategy={record.first_step}
+                              initialGoal={record.title}
+                            />
+                          )}
+                        {record.kind === 'future' && (readOnly || (planning && unlocked)) && (
+                          <details className="rounded-lg border p-3">
+                            <summary className="cursor-pointer text-sm font-medium">
+                              Metas e ações desta direção
+                            </summary>
+                            <GoalRoadmapPlanner
+                              source={record}
+                              readOnly={readOnly}
+                              strategies={strategies}
+                            />
+                          </details>
+                        )}
+                        {!readOnly && unlocked && (
+                          <Button size="sm" variant="outline" onClick={() => open(kind, record)}>
+                            Editar registro
+                          </Button>
+                        )}
+                      </article>
+                    ))}
+                  {!records.some((v) => v.kind === kind) && (
+                    <p className="text-sm text-muted-foreground">
+                      {readOnly
+                        ? 'Ainda não há registros compartilhados deste momento.'
+                        : 'Este espaço pode ser preenchido no seu tempo.'}
+                    </p>
+                  )}
+                </div>
+              ))}
         </>
       )}
       {error && (
@@ -341,7 +351,23 @@ export function LifeDirections({
           {saved}
         </p>
       )}
-      {editing && !readOnly && unlocked && (
+      {editing && planning && editing.kind === 'future' && !readOnly && unlocked && (
+        <MyNextStepWizard
+          key={`${enrollmentId}:${editingId || 'new'}`}
+          value={editing}
+          recordId={editingId}
+          busy={busy}
+          strategies={strategies}
+          onChange={setEditing}
+          onSave={() => void save()}
+          onPause={() => {
+            setEditing(null)
+            setVoice(false)
+            setError('')
+          }}
+        />
+      )}
+      {editing && !(planning && editing.kind === 'future') && !readOnly && unlocked && (
         <form
           className="border rounded-xl p-4 space-y-4"
           onSubmit={(e) => {

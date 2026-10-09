@@ -1810,16 +1810,23 @@ export const InteragenteHome: React.FC = () => {
           <div className="space-y-6">
             <div className="rounded-xl border p-4 space-y-2">
               <p className="text-sm">
-                Na Evolução, escolhemos o futuro e planejamos juntos. Aqui você encontra os
-                ensinamentos e experimentos que apoiam o caminho.
+                Vamos escolher o que merece cuidado e encontrar um começo que cabe na sua vida. As
+                práticas e os ensinamentos apoiarão essa direção.
               </p>
               <Button variant="outline" onClick={() => setActivePhase('evolucao')}>
-                Ver direção e plano na Evolução
+                Ver minha trajetória na Evolução
               </Button>
               <Button variant="ghost" onClick={() => navigate('/planner')}>
                 Levar para o meu dia · Planner
               </Button>
             </div>
+            {enrollment && (
+              <LifeDirections
+                key={`next-step-${enrollment.id}`}
+                enrollmentId={enrollment.id}
+                planning
+              />
+            )}
             <Tabs defaultValue="praticas">
               <TabsList aria-label="Equilíbrio">
                 <TabsTrigger value="praticas">Práticas</TabsTrigger>

@@ -82,31 +82,31 @@ describe('Presente e futuro', () => {
   })
 })
 
-it('reúne presente e futuro numa direção privada sem exigir clareza pronta', async () => {
+it('salva uma direção pelos três passos sem exigir clareza pronta', async () => {
   vi.mocked(lifeDirectionsService.save).mockImplementation(async (value) => ({
     ...value,
     id: 'new',
   }))
   render(<LifeDirections enrollmentId="mariana" planning />)
   fireEvent.click(await screen.findByRole('button', { name: 'Escolher minha primeira direção' }))
-  expect(screen.queryByRole('button', { name: /Como estou agora/ })).toBeNull()
+  fireEvent.change(
+    screen.getByLabelText('Conte uma situação que mostre como isso aparece na sua vida hoje.'),
+    { target: { value: 'Não consigo desligar do trabalho.' } },
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
   fireEvent.click(screen.getByRole('button', { name: 'Ainda não tenho clareza da mudança' }))
-  fireEvent.change(screen.getByLabelText('O que está pesando hoje e quero transformar?'), {
-    target: { value: 'Não consigo desligar do trabalho.' },
-  })
-  fireEvent.change(screen.getByLabelText(/O que desejo e consigo sustentar neste momento/), {
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  fireEvent.change(screen.getByLabelText('As condições que meu plano precisa respeitar'), {
     target: { value: 'Duas pausas por semana. Alimentação ainda não cabe.' },
   })
-  fireEvent.change(screen.getByLabelText('Horizonte da primeira meta'), {
-    target: { value: 'short' },
-  })
-  fireEvent.click(screen.getByRole('button', { name: 'Salvar registro' }))
+  expect(screen.getByRole('checkbox')).not.toBeChecked()
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar minha direção' }))
   await screen.findByText(/Direção salva/)
   expect(lifeDirectionsService.save).toHaveBeenCalledWith(
     expect.objectContaining({
       title: 'Compreender o que está me causando angústia',
       kind: 'future',
-      horizon: 'short',
+      horizon: 'open',
       narrative: 'Não consigo desligar do trabalho.',
       limits: 'Duas pausas por semana. Alimentação ainda não cabe.',
       access_class: 'participant_private',
@@ -114,7 +114,7 @@ it('reúne presente e futuro numa direção privada sem exigir clareza pronta', 
     undefined,
   )
 })
-it('aproveita o presente já registrado sem modificar o original', async () => {
+it('reaproveita o presente e preserva suas condições sem modificar o original', async () => {
   const old = {
     id: 'old',
     enrollment_id: 'mariana',
@@ -131,32 +131,37 @@ it('aproveita o presente já registrado sem modificar o original', async () => {
   vi.mocked(lifeDirectionsService.list).mockResolvedValue([old])
   render(<LifeDirections enrollmentId="mariana" planning />)
   fireEvent.click(await screen.findByRole('button', { name: 'Escolher minha primeira direção' }))
-  expect(screen.getByLabelText('O que está pesando hoje e quero transformar?')).toHaveValue(
-    'Cansaço',
-  )
-  expect(screen.getByLabelText(/O que desejo e consigo sustentar neste momento/)).toHaveValue(
+  expect(
+    screen.getByLabelText('Conte uma situação que mostre como isso aparece na sua vida hoje.'),
+  ).toHaveValue('Cansaço')
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  expect(screen.getByLabelText('As condições que meu plano precisa respeitar')).toHaveValue(
     'Pouco tempo',
   )
   expect(old.kind).toBe('present')
   expect(lifeDirectionsService.save).not.toHaveBeenCalled()
 })
-
-it('somente inclui uma estratégia privada do jogo após escolha explícita', async () => {
+it('inclui uma estratégia do jogo apenas por escolha e mantém textos se salvar falhar', async () => {
   vi.mocked(resourceExerciseService.load).mockResolvedValue({
     id: 'game',
     revision: 1,
     data: { connections: [{ strategy: 'Pedir apoio antes de assumir mais uma tarefa.' }] },
   } as any)
+  vi.mocked(lifeDirectionsService.save).mockRejectedValue(new Error('Falha ao salvar'))
   render(<LifeDirections enrollmentId="mariana" planning />)
   fireEvent.click(await screen.findByRole('button', { name: 'Escolher minha primeira direção' }))
-  expect(screen.getByLabelText('Recursos e apoios que quero usar')).toHaveValue('')
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  const input = screen.getByLabelText('Meu começo e os apoios que quero usar')
+  expect(input).toHaveValue('')
   fireEvent.click(
     await screen.findByRole('button', { name: 'Pedir apoio antes de assumir mais uma tarefa.' }),
   )
-  expect(screen.getByLabelText('Recursos e apoios que quero usar')).toHaveValue(
-    'Pedir apoio antes de assumir mais uma tarefa.',
-  )
-  expect(lifeDirectionsService.save).not.toHaveBeenCalled()
+  expect(input).toHaveValue('Pedir apoio antes de assumir mais uma tarefa.')
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar minha direção' }))
+  await screen.findByText('Falha ao salvar')
+  expect(input).toHaveValue('Pedir apoio antes de assumir mais uma tarefa.')
 })
 it('profissional não carrega o exercício privado do jogo', async () => {
   render(<LifeDirections enrollmentId="mariana" planning readOnly />)

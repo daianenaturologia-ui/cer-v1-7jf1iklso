@@ -506,8 +506,8 @@ export const ParticipantWorkspace: React.FC = () => {
       {currentTab === 'equilibrio' && (
         <div className="space-y-6">
           <p className="text-sm text-muted-foreground">
-            O futuro e o plano são construídos na Evolução. Aqui você organiza os recursos para
-            colocá-los em prática.
+            Partam da direção que a interagente deseja construir. Combinem o objetivo, os recursos e
+            os passos possíveis para sua vida atual.
           </p>
           <div className="flex flex-wrap gap-2 border-b border-border/50 pb-3">
             {(['plano', 'biblioteca', 'mandala', 'planner', 'ciclos'] as const).map((tool) => (
@@ -530,9 +530,19 @@ export const ParticipantWorkspace: React.FC = () => {
             ))}
           </div>
           {careTool === 'plano' && (
-            <Button variant="outline" onClick={() => setSearchParams({ tab: 'evolucao' })}>
-              Construir o plano na Evolução
-            </Button>
+            <div className="space-y-5">
+              <LifeDirections
+                key={`care-direction-${enrollment.id}`}
+                enrollmentId={enrollment.id}
+                planning
+                readOnly
+              />
+              <CarePlanEditor
+                key={enrollment.id}
+                enrollmentId={enrollment.id}
+                participantName={participantName}
+              />
+            </div>
           )}
 
           {careTool === 'biblioteca' &&
