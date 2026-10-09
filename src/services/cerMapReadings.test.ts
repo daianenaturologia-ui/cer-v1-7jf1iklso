@@ -33,6 +33,7 @@ describe('Documento das duas versões: respostas literais, privacidade e revisã
     for (const option of (prompt.schema_config as any).options.slice(0, 2))
       expect(reading.detailedRows.map((r) => r.text).join()).toContain(option.title)
     expect(reading.detailedRows[0].sourceResponseId).toBe('resp')
+    expect(reading.personalSections?.[0].text).toContain('resposta de luta')
     expect(reading.personalSections?.[0].text).toContain('Você reconhece o movimento')
   })
   it('exclui registros privados, rascunhos e de outra interagente', () => {

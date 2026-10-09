@@ -354,39 +354,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     }
   }
 
-  const isDemoSnapshot =
-    snapshot.overview?.toLowerCase().includes('dados fictícios') ||
-    snapshot.overview?.toLowerCase().includes('fictício') ||
-    snapshot.overview?.toLowerCase().includes('ficticio')
-
   const renderElementReadingSections = (reading: CerMapElementReading, _showDemoNote = true) => (
     <div className="space-y-3.5 pt-2 border-t border-border/50 text-xs">
-      {reading.summary && (
-        <div className="rounded-lg bg-muted/40 p-3 space-y-1">
-          <h4 className="font-semibold text-xs uppercase tracking-wider text-primary">
-            Síntese do elemento
-          </h4>
-          <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
-            {reading.summary}
-          </p>
-        </div>
-      )}
-
-      {reading.observations?.length > 0 && (
-        <div className="space-y-1.5">
-          <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-            O que aparece nas suas respostas
-          </h4>
-          <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
-            {reading.observations.map((obs, idx) => (
-              <li key={idx} className="leading-relaxed">
-                {obs}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {reading.interpretation && (
         <div className="space-y-1.5">
           <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
@@ -594,10 +563,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     }
 
     const info = concepts[doshaName]
-    const relevantRows = (dimCorpo?.detailedRows || []).filter((r) =>
-      r.label.toLowerCase().includes(doshaName.toLowerCase()),
-    )
-
     openDialog(
       {
         title: `Dosha ${doshaName}`,
@@ -620,31 +585,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                     vínculos. Para aprofundar, converse com a Daiane sobre a avaliação ayurvédica
                     específica.
                   </p>
-                </div>
-
-                <div className="pt-2 border-t space-y-2">
-                  <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                    Leitura publicada relevante
-                  </h4>
-                  {relevantRows.length > 0 ? (
-                    <div className="space-y-2">
-                      {relevantRows.map((row, idx) => (
-                        <div key={idx} className="border-l-2 border-primary/40 pl-3 py-1">
-                          <span className="font-medium text-xs text-foreground block">
-                            {row.label}
-                          </span>
-                          <span className="text-xs text-muted-foreground whitespace-pre-wrap">
-                            {row.text}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">
-                      Conteúdo psicoeducativo geral. A leitura específica para esta dimensão será
-                      aprofundada com a Daiane ao longo das sessões.
-                    </p>
-                  )}
                 </div>
               </>
             )}
@@ -752,14 +692,14 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         ? snapshot.elementReadings?.[patternKey]
         : row && profile
           ? {
-              summary: `Você marcou: ${row.text}.`,
+              summary: '',
               observations: [],
               interpretation: active
                 ? profile.text
                 : 'Sua resposta registra este movimento sem destacá-lo como uma dificuldade frequente. Você pode conhecer o conceito sem acrescentá-lo à sua lista pessoal.',
               resources: active ? [profile.strength.join(': ')] : [],
               costs: active ? [profile.difficulty.join(': ')] : [],
-              connections: [],
+              connections: active ? snapshot.elementReadings?.[patternKey]?.connections || [] : [],
               questions: [],
             }
           : snapshot.elementReadings?.[patternKey]
@@ -854,23 +794,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                   </div>
                 ) : null}
 
-                <div className="border-t pt-3 space-y-1 text-xs">
-                  <h4 className="font-semibold uppercase tracking-wider text-foreground text-[11px]">
-                    Sua resposta declarada
-                  </h4>
-                  {row ? (
-                    <p className="text-muted-foreground">
-                      <span className="font-medium text-foreground">{row.label}: </span>
-                      {row.text}
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground italic">
-                      Ainda não há resposta detalhada registrada para este padrão específico no
-                      snapshot.
-                    </p>
-                  )}
-                </div>
-
                 <p className="text-[11px] text-muted-foreground/80 pt-2 border-t">
                   Referência: Modelo dos Padrões de Proteção CER, adaptado a partir do trabalho de
                   Shirzad Chamine (Positive Intelligence).
@@ -924,7 +847,9 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                         <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                           Relatada por você no percurso:
                         </span>{' '}
-                        {status.detail}
+                        {
+                          'Essa mobilização privilegia ação e intervenção; sua leitura considera também o tempo de recuperação e o acesso a apoio.'
+                        }
                       </>
                     ) : (
                       'Esta reação não foi marcada como sua tendência espontânea principal neste momento.'
@@ -940,16 +865,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     )
   }
 
-  const formatFriendlyRowLabel = (label: string): string => {
-    let clean = label
-    for (const [key, pat] of Object.entries(CER_PROTECTION_PATTERNS)) {
-      if (clean.includes(key)) {
-        clean = clean.split(key).join(pat.baseName)
-      }
-    }
-    return clean
-  }
-
   const openDimensionDialog = (dimId: string, e?: React.MouseEvent<HTMLElement>) => {
     const dim = snapshot.dimensions.find((d) => d.id === dimId)
     if (!dim) return
@@ -958,15 +873,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     const interpretationTitle = isReviewed
       ? 'Interpretação revisada em conversa'
       : 'Como suas respostas se conectam'
-    const elementReading = snapshot.elementReadings?.[dimId]
-    const hasCustomDemoReading = Boolean(
-      isDemoSnapshot &&
-      (dim.summary ||
-        dim.interpretation ||
-        elementReading?.summary ||
-        elementReading?.interpretation),
-    )
-
     openDialog(
       {
         title: dim.title,
@@ -1042,15 +948,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                   <p className="text-xs text-muted-foreground leading-relaxed">{dim.explanation}</p>
                 </div>
 
-                {dim.summary && (
-                  <div className="space-y-1">
-                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                      Síntese da leitura
-                    </h4>
-                    <p className="text-xs text-foreground whitespace-pre-wrap">{dim.summary}</p>
-                  </div>
-                )}
-
                 {dim.interpretation && (
                   <div className="space-y-1">
                     <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
@@ -1062,30 +959,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                   </div>
                 )}
               </>
-            )}
-
-            {!hasCustomDemoReading && !dim.personalSections?.length && dimId !== 'corpo' && (
-              <div className="space-y-2 pt-1 border-t">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Respostas compartilhadas nesta versão
-                </h4>
-                {dim.detailedRows.length > 0 ? (
-                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    {dim.detailedRows.map((r, i) => (
-                      <div key={i} className="text-xs border-b pb-1.5 last:border-b-0">
-                        <span className="font-medium text-foreground block">
-                          {formatFriendlyRowLabel(r.label)}
-                        </span>
-                        <span className="text-muted-foreground whitespace-pre-wrap">{r.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground italic">
-                    Ainda não há respostas compartilhadas suficientes para esta dimensão.
-                  </p>
-                )}
-              </div>
             )}
 
             {renderReferencesList(refs)}

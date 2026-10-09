@@ -579,7 +579,7 @@ export function buildConscienciaQaFixture(
       responseType: 'MultiSelectCards',
       created: dateMente,
       structuredValue: {
-        selectedOptionIds: ['ansiedade', 'entusiasmo', 'preocupacao'],
+        selectedOptionIds: ['ansiedade_apreensao', 'alegria'],
         selected: ['Ansiedade', 'Entusiasmo', 'Preocupação com o futuro'],
         prompt_key: 'emocoes_recorrentes',
         metadata: { prompt_key: 'emocoes_recorrentes', step_order: 2 },
@@ -868,6 +868,7 @@ export function buildConscienciaQaFixture(
       created: dateReg,
       structuredValue: {
         title: 'Mobilização hiperativa para resolver tudo de imediato sem pedir auxílio',
+        selectedOptionIds: ['resolver_imediatamente'],
         prompt_key: 'resposta_tendencia',
       },
     }),

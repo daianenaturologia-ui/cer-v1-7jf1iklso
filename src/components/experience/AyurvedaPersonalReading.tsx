@@ -47,16 +47,6 @@ function Section({ id, title, children }: { id: string; title: string; children:
     </AccordionItem>
   )
 }
-function Evidence({ items }: { items: string[] }) {
-  return items.length ? (
-    <div className="space-y-2 rounded-lg bg-primary/5 p-3">
-      <h4 className="font-semibold">O que suas respostas mostram</h4>
-      {[...new Set(items)].map((text, i) => (
-        <p key={i}>{text}</p>
-      ))}
-    </div>
-  ) : null
-}
 export function AyurvedaPersonalReading({
   dimension,
   participantName,
@@ -237,7 +227,6 @@ export function AyurvedaPersonalReading({
                 em que você precisa de apoio.
               </p>
             )}
-            <Evidence items={reading?.constitutionEvidence || []} />
           </Section>
         )}
         <Section id="recursos" title="Suas forças e potencialidades">
@@ -295,24 +284,24 @@ export function AyurvedaPersonalReading({
             leituras diferentes: na Prakriti, descrevem suas tendências de base; na Vikriti, ajudam
             a reconhecer as mudanças que estão dificultando seu conforto e seu ritmo.
           </p>
-          <Evidence items={reading?.currentFacts || []} />
+
           {vk && (
             <>
               <p>
                 Na leitura Vata–Kapha do momento atual, a variabilidade e a lentidão aparecem
                 juntas. Os sinais associados a Vata descrevem irregularidade, ressecamento ou
                 dificuldade de sustentar repouso; os associados a Kapha descrevem peso, digestão
-                lenta ou dificuldade de mobilização. As manifestações efetivamente relatadas estão
-                descritas acima.
+                lenta ou dificuldade de mobilização. Esse encontro ajuda a compreender a diferença
+                entre querer agir e conseguir sustentar um ritmo confortável.
               </p>
               <p>
                 Esses dois movimentos podem parecer opostos e, ainda assim, acontecer juntos:
                 dificuldade para encontrar um ritmo estável e sensação de que o corpo demora a
                 recuperar leveza. Quando a fome oscila ou demora a surgir, o conforto digestivo fica
                 mais difícil de antecipar. Se isso se soma a sono leve ou eliminação incompleta, a
-                recuperação também pode perder continuidade. Os sinais presentes no seu caso estão
-                nos registros acima. Esse conjunto ajuda a compreender por que disponibilidade de
-                energia e recuperação podem se tornar menos previsíveis ao longo do dia.
+                recuperação também pode perder continuidade. Esse conjunto ajuda a compreender por
+                que disponibilidade de energia e recuperação podem se tornar menos previsíveis ao
+                longo do dia.
               </p>
               {vp && (
                 <p>
@@ -359,10 +348,9 @@ export function AyurvedaPersonalReading({
               <p className="text-xs text-muted-foreground">{reading.digestiveReference}</p>
               <h4 className="font-semibold">Seu Agni</h4>
               <p>{reading.agniSummary}</p>
-              <Evidence items={reading.agniEvidence} />
+
               <h4 className="font-semibold">Sua leitura de Ama</h4>
               <p>{reading.amaSummary}</p>
-              <Evidence items={reading.amaEvidence} />
             </>
           ) : (
             <p>

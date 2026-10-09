@@ -636,9 +636,9 @@ export function buildPersonalDimensionReading(
         addInsight('strength', r.strength, response, r.name, 'reference')
         addInsight('difficulty', r.difficulty, response, r.name, 'reference')
         elements[r.id] = {
-          summary: r.text,
-          observations: [formatPromptResponse(prompt, response)],
-          interpretation: '',
+          summary: '',
+          observations: [],
+          interpretation: r.text,
           resources: [r.strength.join(': ')],
           costs: [r.difficulty.join(': ')],
           connections: [],
@@ -657,7 +657,7 @@ export function buildPersonalDimensionReading(
             frequency,
           )
         elements[canonical] = {
-          summary: `Você marcou: ${frequency}.`,
+          summary: '',
           observations: [],
           interpretation: active
             ? profile.text
@@ -669,9 +669,7 @@ export function buildPersonalDimensionReading(
           sourceResponseIds: [response.id],
         }
         if (active) {
-          textParts.push(
-            `${CER_PROTECTION_PATTERNS[key].movementDescription}: ${frequency}. ${profile.text}`,
-          )
+          textParts.push(profile.text)
           addInsight(
             'strength',
             profile.strength,
@@ -741,24 +739,10 @@ export function buildPersonalDimensionReading(
     const literal = formatPromptResponse(prompt, response)
     // Unknown choices and a refusal are preserved as information, never classified as a weakness.
     if (!textParts.length && /Prefiro não responder|Não sei dizer agora/.test(literal)) continue
-    if (!textParts.length && !/reconhecimento|recognition|campo_final/.test(key)) {
-      if (response.free_text?.trim() || ids.length)
-        textParts.push(
-          dimensionId === 'regulacao'
-            ? 'Este registro acrescenta uma parte da sua sequência: o contexto, os sinais ou o retorno. Lê-lo junto das outras respostas ajuda a escolher em que momento oferecer apoio.'
-            : dimensionId === 'relacoes'
-              ? 'Essa experiência mostra condições importantes do vínculo. Confiança, proximidade e apoio precisam considerar o que acontece nessa relação e o seu momento.'
-              : dimensionId === 'sexualidade'
-                ? 'Essa percepção acrescenta condições para compreender sua intimidade. Corpo, desejo, disponibilidade e comunicação participam juntos das escolhas que fazem sentido para você.'
-                : dimensionId === 'sentido'
-                  ? 'Esse registro ajuda a reconhecer o que aproxima você da vida que deseja construir. Ele pode orientar prioridades e pequenos passos no cotidiano.'
-                  : 'Essa experiência acrescenta uma parte do seu funcionamento mental e emocional. Conhecê-la ajuda a reconhecer o que acontece e o apoio que pode tornar suas escolhas mais acessíveis.',
-        )
-    }
     if (textParts.length)
       sections.push({
         title,
-        text: `Você registrou: “${literal}”.\n\n${textParts.join('\n\n')}`,
+        text: textParts.join('\n\n'),
         sourceResponseIds: [response.id],
       })
   }

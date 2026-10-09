@@ -1,4 +1,5 @@
 import { buildCerMapReadings } from './cerMapReadings'
+import { applyFunctionalReading } from './cerFunctionalReading'
 import { buildIntegratedAyurvedaQaFixture as buildConscienciaQaFixture } from './conscienciaQaFixture'
 import type { CerMapReadingSnapshot, CerMapElementReading } from '@/types/cerMapReadings'
 
@@ -1036,12 +1037,15 @@ export function createDemoCerMapReading(enrollmentId = 'demo-enr-01'): CerMapRea
     }
   }
 
-  return {
-    ...snapshot,
-    overview: overviewText,
-    integration: integrationText,
-    history: historyText,
-    elementReadings,
-    dimensions,
-  }
+  return applyFunctionalReading(
+    {
+      ...snapshot,
+      overview: overviewText,
+      integration: integrationText,
+      history: historyText,
+      elementReadings,
+      dimensions,
+    },
+    buildConscienciaQaFixture(enrollmentId).responses,
+  )
 }

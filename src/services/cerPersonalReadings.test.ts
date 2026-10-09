@@ -49,8 +49,8 @@ describe('Interpretação compartilhada com evidências', () => {
       /\?|infância|trauma|diagnóstic/,
     )
     const reactions = s.elementReadings!
-    expect(reactions.luta.summary).toContain('resolver e intervir')
-    expect(reactions.submissao.summary).toContain('apaziguar e ceder')
+    expect(reactions.luta.interpretation).toContain('mobilização')
+    expect(reactions.submissao.interpretation).toContain('apaziguar e ceder')
     expect(isCerMapReadingSnapshot(s)).toBe(true)
   })
   it('não inclui conteúdo privado, rascunhos, recusa, campos privados mal classificados ou outra pessoa', () => {
@@ -96,7 +96,10 @@ describe('Interpretação compartilhada com evidências', () => {
       'enr',
       'Lia',
     )
-    expect(s.dimensions[1].personalSections?.[0].text).toContain('Não sou perfeccionista')
+    expect(JSON.stringify(s.dimensions[1].personalSections)).not.toContain('Não sou perfeccionista')
+    expect(
+      s.dimensions[1].detailedRows.some((r) => r.text.includes('Não sou perfeccionista')),
+    ).toBe(true)
     expect(integratedResources(s)).toEqual([])
   })
   it('mostra nomes de apoios open-first e não expõe identificadores internos', () => {

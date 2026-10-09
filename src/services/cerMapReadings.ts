@@ -19,6 +19,7 @@ import { movementReportValues } from './movementFrequency'
 import { CER_PROTECTION_PATTERNS } from './cerProtectionPatterns'
 import { formatPromptResponse } from '@/components/experience/formatPromptResponse'
 import { buildPersonalDimensionReading } from './cerPersonalReadings'
+import { applyFunctionalReading } from './cerFunctionalReading'
 
 export const CER_READING_DIMENSIONS = [
   {
@@ -318,30 +319,33 @@ export function buildCerMapReadings(
       ...(personal?.insights.length ? { insights: personal.insights } : {}),
     }
   })
-  return {
-    schemaVersion: 1,
-    enrollmentId,
-    participantName,
-    generatedAt: new Date().toISOString(),
-    sourceResponseIds: [...new Set(shared.map((response) => response.id))],
-    overview: options.literalOnly
-      ? 'Este é seu mapa inicial: um retrato das respostas que você já registrou, disponível sem esperar pelo primeiro encontro. Uma leitura visual com aprofundamento sob toque para explorar dimensões, conceitos e recursos. Vocês poderão aprofundar e ajustar essa compreensão nas sessões.'
-      : 'Este mapa reúne suas respostas e a leitura revisada pela profissional. Uma leitura visual única com aprofundamento sob toque para compreender conceitos, hipóteses e recursos, sem definir quem você é.',
-    integration: dimensions.some((d) => d.personalSections?.length)
-      ? `${participantName}, este mapa aproxima suas experiências em ${dimensions
-          .filter((d) => d.personalSections?.length || d.ayurvedaReading)
-          .map((d) => d.title)
-          .join(', ')}. Cada dimensão acrescenta uma parte do seu funcionamento.
+  return applyFunctionalReading(
+    {
+      schemaVersion: 1,
+      enrollmentId,
+      participantName,
+      generatedAt: new Date().toISOString(),
+      sourceResponseIds: [...new Set(shared.map((response) => response.id))],
+      overview: options.literalOnly
+        ? 'Este é seu mapa inicial: uma leitura que conecta suas características e seu momento para ajudar você a compreender o próprio funcionamento, disponível sem esperar pelo primeiro encontro. Uma leitura visual com aprofundamento sob toque para explorar dimensões, conceitos e recursos. Vocês poderão aprofundar e ajustar essa compreensão nas sessões.'
+        : 'Este mapa conecta suas características em uma leitura do seu funcionamento revisada pela profissional. Uma leitura visual única com aprofundamento sob toque para compreender conceitos, hipóteses e recursos, sem definir quem você é.',
+      integration: dimensions.some((d) => d.personalSections?.length)
+        ? `${participantName}, este mapa aproxima suas experiências em ${dimensions
+            .filter((d) => d.personalSections?.length || d.ayurvedaReading)
+            .map((d) => d.title)
+            .join(', ')}. Cada dimensão acrescenta uma parte do seu funcionamento.
 
 ${dimensions.flatMap((d) => d.insights || []).some((i) => i.kind === 'strength' && i.origins.some((o) => o.basis === 'response')) ? 'Você já reconheceu recursos e condições que ajudam. Reuni-los torna mais fácil escolher o que mobilizar em um momento difícil.' : 'As potencialidades apresentadas oferecem recursos para reconhecer na sua experiência e desenvolver ao longo do percurso.'} Os pontos de atenção indicam onde oferecer apoio, ajustar exigências ou criar condições mais favoráveis.
 
 Usar uma força de forma estratégica inclui escolher sua intensidade, considerar os limites do momento e recorrer a pessoas e condições externas. As conexões abaixo ajudam a transformar essa leitura em caminhos possíveis para os objetivos que importam para você.`
-      : '',
-    history: '',
-    dimensions,
-    ...(Object.keys(elementReadings).length ? { elementReadings } : {}),
-    references: structuredClone(CER_MAP_REFERENCES),
-  }
+        : '',
+      history: '',
+      dimensions,
+      ...(Object.keys(elementReadings).length ? { elementReadings } : {}),
+      references: structuredClone(CER_MAP_REFERENCES),
+    },
+    shared,
+  )
 }
 
 export function isCerMapReadingSnapshot(value: unknown): value is CerMapReadingSnapshot {
