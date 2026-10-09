@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "CER V1 (build - Bloco 11 Ayurveda Care Reasoning)",
   "private": true,
-  "version": "0.0.311",
+  "version": "0.0.310",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
