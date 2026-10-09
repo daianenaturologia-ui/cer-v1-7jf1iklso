@@ -132,3 +132,28 @@ it('leva o objetivo da direção para a agenda sem salvar automaticamente', asyn
   await screen.findByRole('status')
   expect(save.mock.calls[0][0].note).toContain('Meu objetivo: Recuperar disposição')
 })
+
+it('guarda prazo, ritmo e alternativa da ação junto ao objetivo na agenda', async () => {
+  const save = vi.spyOn(plannerNotesService, 'save').mockResolvedValue({ id: 'goal' } as any)
+  render(
+    <ResourceAgendaForm
+      enrollmentId="person-a"
+      strength="Organização"
+      difficulty="Duas pausas"
+      strategy="Pausar dez minutos"
+      initialGoal="Recuperar disposição"
+      planningContext="Meta: Duas pausas · até 2026-10-23\nRitmo combinado: duas vezes por semana\nEm um dia difícil: dois minutos"
+    />,
+  )
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'Levar Organização para minha agenda diante de Duas pausas',
+    }),
+  )
+  dates()
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar na minha agenda' }))
+  await screen.findByRole('status')
+  expect(save.mock.calls[0][0].note).toContain('até 2026-10-23')
+  expect(save.mock.calls[0][0].note).toContain('Ritmo combinado: duas vezes por semana')
+  expect(save.mock.calls[0][0].note).toContain('Em um dia difícil: dois minutos')
+})
