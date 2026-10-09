@@ -55,5 +55,7 @@ describe('Do mapa ao plano Ayurveda', () => {
       before.priorities.map((p) => [p.title, p.directions, p.evidence]),
     )
     expect(after.review).toEqual(before.review)
+    for (const priority of after.priorities)
+      expect(priority.professionalRationale).not.toContain('draft:')
   })
 })

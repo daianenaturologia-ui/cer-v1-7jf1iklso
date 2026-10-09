@@ -1,6 +1,7 @@
 import type { ExperienceResponseRecord } from '@/types/cer'
 import { buildCerMapReadings } from './cerMapReadings'
 import { ayurvedaCareDirections, ayurvedaReviewWindow } from './ayurvedaCareReasoning'
+import { completedCurrentResponses } from './ayurvedaCurrentInterpretation'
 
 export interface AyurvedaCarePriority {
   id: string
@@ -55,7 +56,9 @@ export function buildAyurvedaCarePriorities(
         review
           ? `Avaliação concluída em ${review.assessedAt}. Reavaliar a partir de ${review.dueAt}.`
           : 'Data da avaliação atual ainda não registrada.',
-        `Respostas de origem do mapa: ${snapshot.sourceResponseIds.join(', ')}`,
+        `Respostas de origem do mapa: ${completedCurrentResponses(records)
+          .map((r) => r.id)
+          .join(', ')}`,
       ].join('\n'),
     })
   }
