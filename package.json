@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "CER V1 (build - Bloco 13 Functional Reading par tridosha)",
   "private": true,
-  "version": "0.0.322",
+  "version": "0.0.323",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
