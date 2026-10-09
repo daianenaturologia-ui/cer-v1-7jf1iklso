@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "CER V1 (build - Bloco 17 Ajuste Regulação)",
   "private": true,
-  "version": "0.0.332",
+  "version": "0.0.333",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
