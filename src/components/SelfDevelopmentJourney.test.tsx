@@ -23,10 +23,46 @@ beforeEach(() => {
 })
 afterEach(cleanup)
 it('uma situação explorada não vira tarefa no Planner nem exibe metadados do exercício', async () => {
-  const source = await lifeDirectionsService.save({ enrollment_id: DEMO_ENROLLMENT_ID, kind: 'future', horizon: 'open', title: 'Minha direção', narrative: '', meaning: '', resources: '', limits: '', first_step: '', access_class: 'participant_private' })
-  const episode = await selfDevelopmentService.save(careEpisodeInput(source, { ...emptyCareEpisode(), facts: 'Minha cena privada', alternative: 'Alternativa ainda não agendada' }, false))
-  await selfDevelopmentService.save(episodeReviewInput(source, episode, { ...emptyEpisodeReview(episode.id), observation: 'Aprendizado privado', adjustment: 'Ajuste ainda não agendado' }, false))
-  render(<MemoryRouter><SelfDevelopmentJourney enrollmentId={DEMO_ENROLLMENT_ID} mode="play" /></MemoryRouter>)
+  const source = await lifeDirectionsService.save({
+    enrollment_id: DEMO_ENROLLMENT_ID,
+    kind: 'future',
+    horizon: 'open',
+    title: 'Minha direção',
+    narrative: '',
+    meaning: '',
+    resources: '',
+    limits: '',
+    first_step: '',
+    access_class: 'participant_private',
+  })
+  const episode = await selfDevelopmentService.save(
+    careEpisodeInput(
+      source,
+      {
+        ...emptyCareEpisode(),
+        facts: 'Minha cena privada',
+        alternative: 'Alternativa ainda não agendada',
+      },
+      false,
+    ),
+  )
+  await selfDevelopmentService.save(
+    episodeReviewInput(
+      source,
+      episode,
+      {
+        ...emptyEpisodeReview(episode.id),
+        observation: 'Aprendizado privado',
+        adjustment: 'Ajuste ainda não agendado',
+      },
+      false,
+    ),
+  )
+  render(
+    <MemoryRouter>
+      <SelfDevelopmentJourney enrollmentId={DEMO_ENROLLMENT_ID} mode="play" />
+    </MemoryRouter>,
+  )
   await waitFor(() => expect(screen.queryByText('Carregando seus passos…')).toBeNull())
   expect(screen.queryByText('Alternativa ainda não agendada')).toBeNull()
   expect(screen.queryByText(/"version":1/)).toBeNull()

@@ -509,19 +509,29 @@ export function CareEpisodeExplorer({
                         )}
                       </dl>
                     </details>
-                    <CareEpisodeFollowUp source={source} parent={record} records={records} readOnly={readOnly} onSaved={saved => setRecords(old => [saved, ...old.filter(v => v.id !== saved.id)])} />
+                    <CareEpisodeFollowUp
+                      source={source}
+                      parent={record}
+                      records={records}
+                      readOnly={readOnly}
+                      onSaved={(saved) =>
+                        setRecords((old) => [saved, ...old.filter((v) => v.id !== saved.id)])
+                      }
+                    />
                     {!readOnly && (
                       <>
                         <Button variant="outline" size="sm" onClick={() => setEditing(record)}>
                           Revisar esta situação
                         </Button>
-                        {!records.some(v => readEpisodeReview(v)?.episodeId === record.id) && <ResourceAgendaForm
-                          enrollmentId={source.enrollment_id}
-                          strength={episode.support || 'Reconhecer um apoio na conversa'}
-                          difficulty={episode.facts}
-                          strategy={episode.alternative}
-                          initialGoal={source.title}
-                        />}
+                        {!records.some((v) => readEpisodeReview(v)?.episodeId === record.id) && (
+                          <ResourceAgendaForm
+                            enrollmentId={source.enrollment_id}
+                            strength={episode.support || 'Reconhecer um apoio na conversa'}
+                            difficulty={episode.facts}
+                            strategy={episode.alternative}
+                            initialGoal={source.title}
+                          />
+                        )}
                       </>
                     )}
                   </article>
