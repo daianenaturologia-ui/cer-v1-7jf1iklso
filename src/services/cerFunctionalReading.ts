@@ -112,6 +112,7 @@ export function applyFunctionalReading(
     (dimension?.personalSections || [])
       .filter(
         (section) =>
+          section.title !== 'Como você funciona nesta dimensão' &&
           !section.sourceResponseIds.some((id) => {
             const record = records.find((r) => r.id === id)
             const prompt = prompts.find((p) => p.id === record?.prompt_id)
