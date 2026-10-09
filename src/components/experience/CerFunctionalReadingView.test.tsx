@@ -32,8 +32,13 @@ describe('Leitura do funcionamento no mapa', () => {
     s.reviewedAt = '2026-10-09'
     s.reviewedBy = 'Daiane'
     s.elementReadings!.prestativo = {
-      summary: '', observations: [], interpretation: 'Leitura aprovada e individualizada.',
-      resources: [], costs: [], connections: [], questions: [],
+      summary: '',
+      observations: [],
+      interpretation: 'Leitura aprovada e individualizada.',
+      resources: [],
+      costs: [],
+      connections: [],
+      questions: [],
     }
     render(<CerMapReadingsView snapshot={s} />)
     await userEvent.click(screen.getByRole('button', { name: /Prestativo: categoria/ }))
