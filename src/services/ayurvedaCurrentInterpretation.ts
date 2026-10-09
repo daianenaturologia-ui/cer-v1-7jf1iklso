@@ -39,10 +39,12 @@ export function completedCurrentResponses(responses: ExperienceResponseRecord[])
   const completion = completions.at(-1)
   if (!completion) return []
   const revision =
+    (completion.structured_value as any)?.metadata?.chapter_revision_number ??
     (completion.structured_value as any)?.revision_number ??
     (completion.structured_value as any)?.metadata?.revision_number
   return active.filter((r) => {
     const recordRevision =
+      (r.structured_value as any)?.metadata?.chapter_revision_number ??
       (r.structured_value as any)?.revision_number ??
       (r.structured_value as any)?.metadata?.revision_number
     return (

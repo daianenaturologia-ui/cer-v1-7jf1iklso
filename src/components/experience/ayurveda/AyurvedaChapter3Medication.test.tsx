@@ -2,11 +2,12 @@
 
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import userEvent from '@testing-library/user-event'
 import { AyurvedaChapter3Flow } from './AyurvedaChapter3Flow'
 import { experienceResponseService } from '@/services/experienceEngine'
+import { buildIntegratedAyurvedaQaFixture } from '@/services/conscienciaQaFixture'
 
 describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
   beforeEach(() => {
@@ -34,6 +35,29 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
   })
 
   afterEach(() => cleanup())
+
+  it('reavalia somente o momento ayurvédico e não escreve antes de a pessoa responder', async () => {
+    vi.mocked(experienceResponseService.listResponsesByExperience).mockResolvedValue(
+      buildIntegratedAyurvedaQaFixture().responses,
+    )
+    const user = userEvent.setup()
+    render(
+      <AyurvedaChapter3Flow
+        enrollmentId="demo-enr-01"
+        experienceId="exp-corpo-fisiologia-07b"
+        respondentUserId="participant-demo"
+        onBackToHub={() => {}}
+      />,
+    )
+    await screen.findByText('Capítulo 3 concluído')
+    await user.click(screen.getByRole('button', { name: 'Reavaliar meu Ayurveda' }))
+    expect(
+      screen.getByRole('dialog', { name: 'Reavaliar seu momento ayurvédico?' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Começar reavaliação' }))
+    expect(screen.getByText('O que está diferente agora')).toBeInTheDocument()
+    expect(experienceResponseService.saveResponse).not.toHaveBeenCalled()
+  })
 
   it('abre detalhes somente quando necessário e exige apenas o nome do item', async () => {
     const user = userEvent.setup()
@@ -404,7 +428,9 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
     await user.click(screen.getByRole('button', { name: 'Diferente do meu habitual' }))
 
     // Em duração, a opção "Prefiro não responder" deve existir
-    const durationRefusalBtn = screen.getByRole('button', { name: 'Prefiro não responder' })
+    const durationRefusalBtn = within(
+      screen.getByText('Há quanto tempo percebe essa diferença em fome?').parentElement!,
+    ).getByRole('button', { name: 'Prefiro não responder' })
     expect(durationRefusalBtn).toBeInTheDocument()
     await user.click(durationRefusalBtn)
 

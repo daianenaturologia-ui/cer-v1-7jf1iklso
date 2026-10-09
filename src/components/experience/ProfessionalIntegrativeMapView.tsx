@@ -36,6 +36,7 @@ import {
   type ProtectionPatternAndTension,
 } from '@/services/integrativeMapEngine'
 import { buildAyurvedaInterpretation } from '@/services/ayurvedaInterpretationEngine'
+import { ProfessionalAyurvedaCareReasoning } from './AyurvedaCareReasoning'
 import {
   buildMindEmotionsInterpretation,
   buildRegulacaoInterpretation,
@@ -1261,6 +1262,10 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
             </CardContent>
           </Card>
 
+          <ProfessionalAyurvedaCareReasoning
+            responses={responses}
+            participantName={participantName}
+          />
           {/* ── BLOCO 6: BLOCO AYURVEDA CONCISO ─────────────────────────────────── */}
           <Card id="secao-bloco-6-ayurveda" className="border-border/70 shadow-none scroll-mt-20">
             <CardHeader className="p-4 pb-2">

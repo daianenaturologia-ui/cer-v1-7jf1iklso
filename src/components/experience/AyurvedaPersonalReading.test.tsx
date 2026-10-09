@@ -39,7 +39,10 @@ describe('Leitura pessoal ayurvédica', () => {
     ['Kapha'],
     ['Vata', 'Pitta'],
     ['Vata', 'Kapha'],
+    ['Pitta', 'Vata'],
     ['Pitta', 'Kapha'],
+    ['Kapha', 'Vata'],
+    ['Kapha', 'Pitta'],
     ['Vata', 'Pitta', 'Kapha'],
   ] as const)('respeita o perfil explícito %j sem contaminar outros perfis', async (...profile) => {
     const doshas = profile as ('Vata' | 'Pitta' | 'Kapha')[]

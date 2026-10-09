@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { ProfessionalAyurvedaCareReasoning } from '../AyurvedaCareReasoning'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -1088,6 +1089,10 @@ export const ProfessionalAyurvedaCorpoFisiologiaView: React.FC<
 
   return (
     <div className="space-y-6">
+      <ProfessionalAyurvedaCareReasoning
+        responses={responses || []}
+        participantName={participantName}
+      />
       {/* ═══════════════════════════════════════════════════════════════════
           1. CABEÇALHO FACTUAL
          ═══════════════════════════════════════════════════════════════════ */}

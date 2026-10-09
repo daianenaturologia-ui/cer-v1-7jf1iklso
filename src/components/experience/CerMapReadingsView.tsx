@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { AyurvedaPersonalReading } from './AyurvedaPersonalReading'
+import { AyurvedaCareReasoning } from './AyurvedaCareReasoning'
 import { IntegratedResourceGame } from './IntegratedResourceGame'
 import { useOptionalAuth } from '@/contexts/AuthContext'
 import { patternResources } from '@/services/cerPersonalReadings'
@@ -1438,6 +1439,12 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
           </div>
         )}
 
+        {auth?.isProfissional && dimCorpo && (
+          <AyurvedaCareReasoning
+            constitution={dimCorpo.ayurvedaConstitution}
+            reading={dimCorpo.ayurvedaReading}
+          />
+        )}
         {/* Doshas: pizza ou composição circular neutra */}
         <div className="space-y-4 pt-1">
           {doshaPercents ? (

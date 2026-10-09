@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { ayurvedaReviewWindow } from '@/services/ayurvedaCareReasoning'
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,6 +23,7 @@ import type { ExperienceResponseRecord } from '@/types/cer'
 import { CerArtStrip } from '@/components/CerArtwork'
 import {
   AYV_C3_CONTEXT_OPTIONS,
+  getResponseAnsweredAt,
   chapter3DirectionOptions,
   AYV_C3_DOMAIN_OPTIONS,
   AYV_C3_SKIN_HAIR_HELP,
@@ -72,6 +74,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   const [saving, setSaving] = useState(false)
   const [showVoice, setShowVoice] = useState(false)
   const [isCorrectionMode, setIsCorrectionMode] = useState(false)
+  const [isReassessment, setIsReassessment] = useState(false)
   const [showCorrectionConfirmation, setShowCorrectionConfirmation] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [showCurrentBodyBlock, setShowCurrentBodyBlock] = useState(false)
@@ -90,13 +93,15 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
         medicationItemsRef.current = loadedState.medication_items || []
         setState(loadedState)
         const derived = deriveChapter3Status(loaded)
-        const completion = loaded.find((response) => {
-          const key =
-            (response as any).prompt_key ||
-            (response.structured_value as any)?.metadata?.prompt_key ||
-            response.prompt_id
-          return key === AYV_C3_PROMPTS.COMPLETION.key
-        })
+        const completion = [...loaded]
+          .sort((a, b) => getResponseAnsweredAt(b).localeCompare(getResponseAnsweredAt(a)))
+          .find((response) => {
+            const key =
+              (response as any).prompt_key ||
+              (response.structured_value as any)?.metadata?.prompt_key ||
+              response.prompt_id
+            return key === AYV_C3_PROMPTS.COMPLETION.key
+          })
         revisionNumberRef.current =
           (completion?.structured_value as any)?.metadata?.chapter_revision_number || 1
         if (derived.status === 'completed' || derived.status === 'ready_to_complete') setStep(6)
@@ -700,9 +705,42 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
             )}
           </CardContent>
         </Card>
+        {derived.status === 'completed' && !isCorrectionMode && (
+          <div className="rounded-xl border bg-primary/5 p-3 space-y-2 text-sm">
+            <p>
+              Vamos acompanhar seu momento a cada 35 dias. Esta reavaliação retoma somente Ayurveda:
+              Vikriti, Agni e Ama. Suas tendências de base e as demais dimensões permanecem
+              preservadas.
+            </p>
+            {ayurvedaReviewWindow(responses) && (
+              <p className="text-xs">
+                Próxima reavaliação:{' '}
+                {new Date(ayurvedaReviewWindow(responses)!.dueAt).toLocaleDateString('pt-BR', {
+                  timeZone: 'America/Sao_Paulo',
+                })}
+                .
+              </p>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsReassessment(true)
+                setShowCorrectionConfirmation(true)
+              }}
+            >
+              Reavaliar meu Ayurveda
+            </Button>
+          </div>
+        )}
         <div className="flex flex-wrap justify-between gap-2">
           {derived.status === 'completed' && !isCorrectionMode ? (
-            <Button variant="outline" onClick={() => setShowCorrectionConfirmation(true)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsReassessment(false)
+                setShowCorrectionConfirmation(true)
+              }}
+            >
               <RotateCcw className="mr-1 h-4 w-4" />
               Corrigir minhas respostas
             </Button>
@@ -715,7 +753,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           {derived.status === 'completed' ? (
             isCorrectionMode ? (
               <Button disabled={saving} onClick={complete}>
-                Concluir correção
+                {isReassessment ? 'Concluir reavaliação' : 'Concluir correção'}
               </Button>
             ) : (
               <Button onClick={onBackToHub}>Voltar aos capítulos</Button>
@@ -741,11 +779,16 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
             <div className="cer-dialog w-full max-w-md space-y-4 rounded-2xl bg-background p-5 shadow-xl">
               <CerArtStrip variant="seed" />
               <h3 id="c3-correction-dialog-title" className="font-serif text-lg font-semibold">
-                Corrigir respostas do Capítulo 3?
+                {isReassessment
+                  ? 'Reavaliar seu momento ayurvédico?'
+                  : 'Corrigir respostas do Capítulo 3?'}
               </h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Suas respostas atuais serão carregadas para correção. A versão já concluída
-                continuará preservada até você revisar e concluir novamente este capítulo.
+                {isReassessment
+                  ? 'Suas respostas serão retomadas para registrar como você está agora. Prakriti e as outras dimensões não serão refeitas.'
+                  : 'Suas respostas atuais serão carregadas para correção.'}{' '}
+                A versão já concluída continuará preservada até você revisar e concluir novamente
+                este capítulo.
               </p>
               <div className="flex justify-end gap-2">
                 <Button
@@ -761,10 +804,11 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                     setShowCorrectionConfirmation(false)
                     revisionNumberRef.current += 1
                     setIsCorrectionMode(true)
+                    if (isReassessment) setShowCurrentBodyBlock(true)
                     setStep(1)
                   }}
                 >
-                  Começar correção
+                  {isReassessment ? 'Começar reavaliação' : 'Começar correção'}
                 </Button>
               </div>
             </div>
@@ -894,7 +938,9 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
               <div className="space-y-0.5">
                 <h3 className="text-sm font-semibold">Como meu corpo está agora</h3>
                 <p className="text-xs text-muted-foreground">
-                  Opcional. Registre como tem se sentido nos últimos 14 dias por área específica.
+                  {isReassessment
+                    ? 'Revise as respostas abaixo para representar seus últimos 14 dias. Elas atualizarão Vikriti, Agni e Ama ao concluir.'
+                    : 'Opcional. Registre como tem se sentido nos últimos 14 dias por área específica.'}
                 </p>
               </div>
               <Button

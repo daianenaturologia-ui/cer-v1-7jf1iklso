@@ -108,13 +108,15 @@ export function AyurvedaPersonalReading({
             Imagine que movimento, transformação e sustentação estão presentes em você, mas não
             aparecem sempre com a mesma intensidade. Em algumas constituições, um desses princípios
             se destaca; em outras, dois ou os três compõem a base. Por isso falamos em Vata, Pitta,
-            Kapha, Vata–Pitta, Vata–Kapha, Pitta–Kapha e Vata–Pitta–Kapha.
+            Kapha. As combinações são Vata–Pitta, Vata–Kapha, Pitta–Vata, Pitta–Kapha, Kapha–Vata,
+            Kapha–Pitta e Vata–Pitta–Kapha.
           </p>
           <p>
-            O nome da combinação ajuda a reunir as características que se repetem no seu
-            funcionamento. Ele ganha sentido quando lemos essas características em conjunto. A ordem
-            dos nomes só indica predominância quando as respostas permitem essa distinção; uma
-            contagem empatada, sozinha, não confirma equilíbrio entre os três.
+            Vata–Pitta e Pitta–Vata envolvem os mesmos doshas, mas destacam predominâncias
+            diferentes: o primeiro nome indica a tendência principal. O nome da combinação ajuda a
+            reunir as características que se repetem no seu funcionamento. A ordem dos nomes só
+            indica predominância quando as respostas permitem essa distinção; uma contagem empatada,
+            sozinha, não confirma equilíbrio entre os três.
           </p>
         </Section>
         <Section id="base-atual" title="Entenda Prakriti e Vikriti: sua base e seu momento">
@@ -150,9 +152,10 @@ export function AyurvedaPersonalReading({
             suas condições de saúde e sua realidade cotidiana.
           </p>
           <p>
-            O questionário é o ponto de partida dessa leitura. As respostas ajudam a reconhecer
-            tendências e necessidades; os encontros permitem aprofundar o que elas significam na sua
-            vida e acompanhar as mudanças ao longo do cuidado.
+            Essa não é uma leitura definitiva, pois o diagnóstico na medicina ayurvédica depende de
+            um olhar em conjunto com o terapeuta. Com Daiane, ao longo do processo, vocês poderão
+            aprofundar e ajustar esse olhar. Nossa intenção é aproximar seu funcionamento e sua
+            energia da sua constituição original, regular Agni e diminuir os sinais de Ama.
           </p>
           <p>
             Se quiser aprofundar essa descoberta, converse com Daiane. Juntas, vocês poderão
@@ -165,7 +168,7 @@ export function AyurvedaPersonalReading({
         <h3 className="font-semibold">{participantName}, sua constituição e seu momento atual</h3>
         <p>
           {doshas.length
-            ? `Suas respostas sustentam uma hipótese constitucional ${pair}. A leitura reúne suas características de base e explica como elas se relacionam com seu momento atual.`
+            ? `Suas respostas sustentam uma hipótese constitucional ${pair}${reading?.currentDoshas.length ? ` e um momento atual ${reading.currentDoshas.join('–')}` : ''}. A leitura reúne sua base e o que pede cuidado agora.`
             : 'Ainda precisamos conhecer melhor suas tendências de base para definir uma hipótese constitucional. O resultado disponível é a descrição do que você já compartilhou, sem preencher lacunas com características presumidas.'}
         </p>
         <p>
@@ -180,10 +183,10 @@ export function AyurvedaPersonalReading({
             {vp && (
               <>
                 <p>
-                  Vata–Pitta combina a abertura para perceber e imaginar com a capacidade de
-                  compreender e direcionar. É a imagem de um funcionamento que encontra caminhos e
-                  busca transformá-los em realização. Curiosidade, sensibilidade e determinação
-                  podem se encontrar nessa constituição.
+                  {pair} combina a abertura para perceber e imaginar com a capacidade de compreender
+                  e direcionar. É a imagem de um funcionamento que encontra caminhos e busca
+                  transformá-los em realização. Curiosidade, sensibilidade e determinação podem se
+                  encontrar nessa constituição.
                 </p>
                 <p>
                   Essa combinação reúne qualidades diferentes: Vata tende à variabilidade e ao frio;
@@ -255,8 +258,8 @@ export function AyurvedaPersonalReading({
           )}
           {vp && (
             <p>
-              Na combinação Vata–Pitta, a criatividade encontra discernimento: perceber alternativas
-              e dar forma a elas são forças que podem trabalhar juntas. A sensibilidade amplia a
+              Na combinação {pair}, a criatividade encontra discernimento: perceber alternativas e
+              dar forma a elas são forças que podem trabalhar juntas. A sensibilidade amplia a
               percepção; a iniciativa ajuda a transformar o que importa em algo concreto. O desgaste
               pode reduzir o acesso a esses recursos, sem apagar suas capacidades.
             </p>
@@ -313,7 +316,7 @@ export function AyurvedaPersonalReading({
               </p>
               {vp && (
                 <p>
-                  Para uma constituição Vata–Pitta, isso significa que sua base de movimento e
+                  Para uma constituição {pair}, isso significa que sua base de movimento e
                   transformação está convivendo com alterações de ritmo e maior peso ou lentidão. A
                   fome variável, o desconforto digestivo e a recuperação do sono podem interferir no
                   acesso à energia e à continuidade. A clareza e a vontade de realizar não
