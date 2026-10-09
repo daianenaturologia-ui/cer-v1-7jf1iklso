@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { GoalRoadmapPlanner } from './experience/GoalRoadmapPlanner'
+import { CarePlanStartingPoint } from './experience/CarePlanStartingPoint'
+import { directionCareContext } from '@/services/carePlanStartingPoint'
 import { AyurvedaCarePriorities } from './AyurvedaCarePriorities'
 import { lifeDirectionsService, type LifeDirection } from '@/services/lifeDirections'
 import { sharedFutureDirections, developmentPresentation } from '@/services/developmentPlanning'
@@ -528,6 +530,18 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
               )}
             </div>
 
+            <CarePlanStartingPoint
+              enrollmentId={enrollmentId}
+              directionId={selectedPlan.direction_source_id}
+              onPrepare={(choice) => {
+                setPrioTitle(choice.title)
+                setPrioDescription(choice.description)
+                setPrioProfessionalRationale('')
+                setPrioPossibleNow(false)
+                setCreatePriorityDialogOpen(true)
+              }}
+            />
+
             {/* Warning Qualitativo de Capacidade (> 2 prioridades "AGORA") */}
             {possibleNowCount > 2 && (
               <div className="p-3 rounded-lg border border-amber-300 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
@@ -789,6 +803,8 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                 disabled={sourcesLoading || !!sourceError || actionLoading}
                 onChange={(e) => {
                   setDirectionSourceId(e.target.value)
+                  const source = directionSources.find((v) => v.id === e.target.value)
+                  setNewPlanIntent(source ? directionCareContext(source) : '')
                   setNewPlanDirection(
                     directionSources.find((v) => v.id === e.target.value)?.title || '',
                   )
@@ -838,19 +854,20 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
             <div className="space-y-1">
               <label className="text-[11px] font-medium text-foreground">
-                Intenção Terapêutica (Opcional)
+                Recursos e condições combinados (opcional)
               </label>
-              <Input
-                placeholder="Ex: Proporcionar estabilidade somática antes de aprofundamentos"
+              <Textarea
+                placeholder="O que pode ajudar e o que cabe na vida da pessoa neste momento"
                 value={newPlanIntent}
                 onChange={(e) => setNewPlanIntent(e.target.value)}
-                className="h-8 text-xs"
+                className="text-xs"
+                rows={4}
               />
             </div>
 
             <div className="space-y-1">
               <label className="text-[11px] font-medium text-foreground">
-                Rationale Profissional Privado
+                Fundamentação profissional privada
               </label>
               <Textarea
                 placeholder="Notas clínicas de fundamentação (visíveis apenas para profissionais autorizados)"

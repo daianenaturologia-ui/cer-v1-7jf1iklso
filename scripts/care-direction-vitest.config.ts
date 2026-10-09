@@ -6,6 +6,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/services/carePlanStartingPoint.test.ts',
+      'src/services/lifeDirectionsHook.test.ts',
+      'src/components/experience/CarePlanStartingPoint.test.tsx',
       'src/services/careEpisodeReview.test.ts',
       'src/components/experience/CareEpisodeFollowUp.test.tsx',
       'src/services/careEpisode.test.ts',

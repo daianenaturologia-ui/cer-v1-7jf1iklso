@@ -1,28 +1,32 @@
 onRecordCreateRequest((e) => {
   const r = e.record
-  const requiredCodes = [
-    'corpo_fisiologia_ayurveda',
-    'mente_emocoes_cer',
-    'regulacao_respostas_cer',
-    'relacoes_cer',
-    'sexualidade_cer',
-    'sentido_conexao_cer',
-  ]
-  const completed = e.app.findRecordsByFilter(
-    'enrollment_experiences',
-    'enrollment_id = {:id} && progress_status = "completed"',
-    '',
-    0,
-    0,
-    { id: r.getString('enrollment_id') },
-  )
-  const codes = completed.map((item) =>
-    e.app.findRecordById('cer_experiences', item.getString('experience_id')).getString('code'),
-  )
-  if (!requiredCodes.every((code) => codes.includes(code)))
-    throw new BadRequestError(
-      'Conclua as seis dimensões da Consciência antes de começar a Linha da Vida.',
+  // A future direction can begin provisionally while the Map is still being completed.
+  // Collection rules continue to enforce ownership and professional access.
+  if (r.getString('kind') === 'present') {
+    const requiredCodes = [
+      'corpo_fisiologia_ayurveda',
+      'mente_emocoes_cer',
+      'regulacao_respostas_cer',
+      'relacoes_cer',
+      'sexualidade_cer',
+      'sentido_conexao_cer',
+    ]
+    const completed = e.app.findRecordsByFilter(
+      'enrollment_experiences',
+      'enrollment_id = {:id} && progress_status = "completed"',
+      '',
+      0,
+      0,
+      { id: r.getString('enrollment_id') },
     )
+    const codes = completed.map((item) =>
+      e.app.findRecordById('cer_experiences', item.getString('experience_id')).getString('code'),
+    )
+    if (!requiredCodes.every((code) => codes.includes(code)))
+      throw new BadRequestError(
+        'Conclua as seis dimensões da Consciência antes de registrar esta leitura do presente.',
+      )
+  }
 
   const kind = r.getString('kind')
   const horizon = r.getString('horizon')
