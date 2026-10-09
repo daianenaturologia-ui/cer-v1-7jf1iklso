@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CerIntro } from '@/components/CerArtwork'
+import { PlannerGentleGuide } from '@/components/PlannerGentleGuide'
 import {
   plannerNotesService,
   type PlannerNote,
@@ -244,6 +245,7 @@ export function WeeklyAgenda({
           )}
         </p>
       </CerIntro>
+      {!readOnly && <PlannerGentleGuide />}
       <Tabs defaultValue="agenda">
         <TabsList aria-label="Visões do Planner" className="mb-3">
           <TabsTrigger value="agenda">Minha semana</TabsTrigger>
