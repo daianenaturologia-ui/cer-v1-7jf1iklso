@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "CER V1 (build - Bloco 12 Ayurveda Care Priorities)",
   "private": true,
-  "version": "0.0.313",
+  "version": "0.0.314",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
