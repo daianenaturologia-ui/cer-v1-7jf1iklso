@@ -3,7 +3,6 @@ import { AyurvedaPersonalReading } from './AyurvedaPersonalReading'
 import { AyurvedaCareReasoning } from './AyurvedaCareReasoning'
 import { IntegratedResourceGame } from './IntegratedResourceGame'
 import { useOptionalAuth } from '@/contexts/AuthContext'
-import { patternResources } from '@/services/cerPersonalReadings'
 import {
   Accordion,
   AccordionContent,
@@ -40,6 +39,7 @@ import {
 } from 'lucide-react'
 import { CER_PROTECTION_PATTERNS } from '@/services/cerProtectionPatterns'
 import { getCerProtectionPatternContent } from '@/services/cerProtectionPatternContent'
+import { buildProtectionPatternReading } from '@/services/cerProtectionPatternReading'
 import { cn } from '@/lib/utils'
 
 export interface CerMapReadingsViewProps {
@@ -367,6 +367,17 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         </div>
       )}
 
+      {reading.sections?.map((section, index) => (
+        <div key={`${section.title}-${index}`} className="space-y-1.5">
+          <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+            {section.title}
+          </h4>
+          <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+            {section.text}
+          </p>
+        </div>
+      ))}
+
       {(reading.resources?.length > 0 || reading.costs?.length > 0) && (
         <div className="space-y-2 pt-1">
           <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
@@ -681,7 +692,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     const canonical = CER_PROTECTION_PATTERNS[patternKey]
     const content = getCerProtectionPatternContent(patternKey)
     const row = getPatternRow(patternKey)
-    const profile = patternResources[patternKey]
     const active =
       row &&
       ['algumas_situacoes', 'com_frequencia', 'sob_pressao'].includes(
@@ -690,19 +700,11 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
     const elementReading =
       snapshot.reviewedAt && snapshot.reviewedBy
         ? snapshot.elementReadings?.[patternKey]
-        : row && profile
-          ? {
-              summary: '',
-              observations: [],
-              interpretation: active
-                ? profile.text
-                : 'Sua resposta registra este movimento sem destacá-lo como uma dificuldade frequente. Você pode conhecer o conceito sem acrescentá-lo à sua lista pessoal.',
-              resources: active ? [profile.strength.join(': ')] : [],
-              costs: active ? [profile.difficulty.join(': ')] : [],
-              connections: active ? snapshot.elementReadings?.[patternKey]?.connections || [] : [],
-              questions: [],
-            }
-          : snapshot.elementReadings?.[patternKey]
+        : buildProtectionPatternReading(
+            patternKey,
+            Boolean(active),
+            snapshot.elementReadings?.[patternKey],
+          )
 
     openDialog(
       {

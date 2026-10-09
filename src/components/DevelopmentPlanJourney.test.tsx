@@ -47,7 +47,7 @@ it('permite vincular futuro compartilhado, sem oferecer registros privados, e en
   await screen.findByText('Nenhum Plano de Cuidado formulado ainda.')
   await user.click(screen.getByRole('button', { name: 'Novo Plano' }))
   const select = await screen.findByRole('combobox', {
-    name: 'Futuro compartilhado na Linha da Vida',
+    name: 'Direção compartilhada na Linha da Vida',
   })
   await screen.findByRole('option', { name: 'Um tempo para mim' })
   expect(screen.queryByRole('option', { name: 'Segredo' })).toBeNull()

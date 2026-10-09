@@ -67,10 +67,9 @@ export function LifeJourney({
         </svg>
       </div>
       <Tabs defaultValue="past">
-        <TabsList className="grid grid-cols-3 w-full" aria-label="Momentos da Linha da Vida">
+        <TabsList className="grid grid-cols-2 w-full" aria-label="Momentos da Linha da Vida">
           <TabsTrigger value="past">Passado</TabsTrigger>
-          <TabsTrigger value="present">Presente</TabsTrigger>
-          <TabsTrigger value="future">Futuro</TabsTrigger>
+          <TabsTrigger value="present">Presente e futuro</TabsTrigger>
         </TabsList>
         <TabsContent value="past" className="space-y-4 mt-5">
           <p className="font-serif text-primary text-lg italic">
@@ -110,18 +109,7 @@ export function LifeJourney({
             key={`present-${enrollmentId}`}
             enrollmentId={enrollmentId}
             unlocked={unlocked}
-            perspective="present"
-          />
-        </TabsContent>
-        <TabsContent value="future" className="space-y-4 mt-5">
-          <p className="font-serif text-primary text-lg italic">
-            O futuro oferece direções; o presente dá espaço ao próximo passo.
-          </p>
-          <LifeDirections
-            key={`future-${enrollmentId}`}
-            enrollmentId={enrollmentId}
-            unlocked={unlocked}
-            perspective="future"
+            planning
           />
         </TabsContent>
       </Tabs>

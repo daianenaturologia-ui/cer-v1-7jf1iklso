@@ -70,6 +70,7 @@ export interface CerMapElementReading {
   summary: string
   observations: string[]
   interpretation: string
+  sections?: { title: string; text: string }[]
   resources: string[]
   costs: string[]
   connections: string[]

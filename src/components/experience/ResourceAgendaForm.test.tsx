@@ -106,3 +106,29 @@ describe('Estratégia para agenda privada', () => {
     expect(save).toHaveBeenCalledTimes(1)
   })
 })
+
+it('leva o objetivo da direção para a agenda sem salvar automaticamente', async () => {
+  const save = vi.spyOn(plannerNotesService, 'save').mockResolvedValue({ id: 'one' } as any)
+  render(
+    <ResourceAgendaForm
+      enrollmentId="person-a"
+      strength="Pedir apoio"
+      difficulty="Sobrecarga"
+      strategy="Reservar uma pausa"
+      initialGoal="Recuperar disposição"
+    />,
+  )
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'Levar Pedir apoio para minha agenda diante de Sobrecarga',
+    }),
+  )
+  expect(screen.getByLabelText('Meu objetivo para este momento')).toHaveValue(
+    'Recuperar disposição',
+  )
+  expect(save).not.toHaveBeenCalled()
+  dates()
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar na minha agenda' }))
+  await screen.findByRole('status')
+  expect(save.mock.calls[0][0].note).toContain('Meu objetivo: Recuperar disposição')
+})

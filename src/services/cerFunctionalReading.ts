@@ -3,6 +3,7 @@ import type { ExperienceResponseRecord } from '@/types/cer'
 import { BUILD_07C_MENTE_PROMPTS, BUILD_07C_REGULACAO_PROMPTS } from './build07cPrompts'
 import { selectedReadingChoices, regulationReadings, patternResources } from './cerPersonalReadings'
 import { CER_PROTECTION_PATTERNS } from './cerProtectionPatterns'
+import { buildProtectionPatternReading } from './cerProtectionPatternReading'
 
 /** Connect supported characteristics, never classify a free narrative by keywords. */
 export function applyFunctionalReading(
@@ -208,6 +209,26 @@ export function applyFunctionalReading(
         observations: [],
         connections: mental.length ? [mental[0]] : [],
       }
+  for (const key of Object.keys(patternResources)) {
+    if (active(key)) {
+      const reading = buildProtectionPatternReading(key, true, elements[key])
+      if (reading) {
+        if (anxiety && !['prestativo', 'hipervigilante'].includes(key))
+          reading.connections.push(
+            ['insistente', 'critico', 'hiper_realizador'].includes(key)
+              ? 'Ao se combinar com a ansiedade presente na sua leitura, a cobrança pode se tornar uma tentativa de recuperar segurança pelo desempenho. Fazer mais ou conferir mais oferece alívio por pouco tempo, enquanto a exigência seguinte mantém a mente ocupada. Definir uma conclusão suficiente ajuda a interromper esse ciclo.'
+              : ['inquieto', 'evitativo', 'hiper_racional'].includes(key)
+                ? 'Ao se combinar com a ansiedade presente na sua leitura, esse movimento pode oferecer alívio imediato ao mudar o foco, adiar ou procurar mais explicações. O cuidado é recuperar condições para entrar em contato com o que precisa de atenção e escolher um passo possível, em vez de prolongar a antecipação.'
+                : 'A ansiedade presente na sua leitura pode tornar a incerteza mais difícil de sustentar. Quando esse movimento procura devolver segurança rapidamente, pedir apoio e distinguir o que depende de você ajudam a ampliar suas alternativas.',
+          )
+        if (fight && ['insistente', 'critico', 'hiper_realizador', 'comandante'].includes(key))
+          reading.connections.push(
+            'Com a resposta de luta presente na sua leitura, a pressão tende a virar ação rápida. A energia para resolver pode se juntar à necessidade de corrigir ou conduzir, tornando difícil esperar e dividir responsabilidades. Sua firmeza também pode servir para combinar prioridades, comunicar limites e pedir apoio antes de agir.',
+          )
+        elements[key] = reading
+      }
+    }
+  }
   if (mental.length)
     elements.mente = {
       summary: '',

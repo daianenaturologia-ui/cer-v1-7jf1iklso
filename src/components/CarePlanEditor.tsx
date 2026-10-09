@@ -772,15 +772,17 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
             </DialogTitle>
             <DialogDescription className="text-xs">
               Escolham juntos uma direção. O Mapa ajuda a compreender o funcionamento; a escolha
-              pertence à pessoa.
+              pertence à pessoa. O plano parte do objetivo combinado, das estratégias do jogo e do
+              que ela deseja e consegue sustentar. Revisem a disposição antes de incluir alimentação
+              ou outras orientações.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <label className="block space-y-1">
-              Futuro compartilhado na Linha da Vida
+              Direção compartilhada na Linha da Vida
               <select
-                aria-label="Futuro compartilhado na Linha da Vida"
+                aria-label="Direção compartilhada na Linha da Vida"
                 className="block w-full border rounded p-2 bg-background"
                 value={directionSourceId}
                 disabled={sourcesLoading || !!sourceError || actionLoading}
@@ -815,7 +817,8 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                     <summary>Rever o que a pessoa compartilhou</summary>
                     <p className="whitespace-pre-wrap">{v.narrative}</p>
                     {v.resources && <p>Recursos e apoios: {v.resources}</p>}
-                    {v.limits && <p>Limites e necessidades: {v.limits}</p>}
+                    {v.limits && <p>Disposição, limites e o que cabe agora: {v.limits}</p>}
+                    {v.meaning && <p>Sentido desta mudança: {v.meaning}</p>}
                     {v.first_step && <p>Primeiro passo imaginado: {v.first_step}</p>}
                   </details>
                 ))}

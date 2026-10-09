@@ -26,6 +26,9 @@ export function LifeMapTrail({
             <details key={event.id} className="rounded-lg bg-muted/30 p-3">
               <summary className="cursor-pointer text-sm">
                 <span className="font-medium">{event.title}</span> · {lifeTimeLabel(event)}
+                {event.emotions.length > 0 && (
+                  <span className="text-primary"> · {event.emotions.join(' · ')}</span>
+                )}
               </summary>
               <div className="mt-3 space-y-2 text-sm">
                 <p className="text-xs text-muted-foreground">

@@ -82,3 +82,26 @@ it('começa no nascimento e abre cada marco sem mostrar todos os relatos na entr
   expect(screen.getByLabelText('Nome do acontecimento')).toHaveValue('Nascimento')
   expect(screen.getByLabelText('Idade aproximada (anos)')).toHaveValue(0)
 })
+
+it('permite escolher a emoção mais marcante sem perder as demais', async () => {
+  vi.spyOn(lifeTimelineService, 'list').mockResolvedValue([])
+  const save = vi
+    .spyOn(lifeTimelineService, 'save')
+    .mockImplementation(async (value) => ({ ...value, id: 'new' }))
+  render(<LifeTimeline enrollmentId="enr" />)
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: /Clique na linha/ }))
+  await user.type(screen.getByLabelText('Nome do acontecimento'), 'Uma conquista')
+  await user.click(screen.getByLabelText('Alegria'))
+  await user.click(screen.getByLabelText('Gratidão'))
+  await user.selectOptions(
+    screen.getByLabelText('Qual emoção mais marcou esse acontecimento?'),
+    'Gratidão',
+  )
+  await user.click(screen.getByRole('button', { name: 'Salvar acontecimento' }))
+  await screen.findByText(/Acontecimento salvo/)
+  expect(save.mock.calls[0][0].emotions).toEqual(['Gratidão', 'Alegria'])
+  expect(screen.getByRole('button', { name: 'Abrir marco: Uma conquista' })).toHaveTextContent(
+    'Gratidão · Alegria',
+  )
+})

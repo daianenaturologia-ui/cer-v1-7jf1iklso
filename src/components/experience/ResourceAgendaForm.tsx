@@ -8,15 +8,17 @@ export function ResourceAgendaForm({
   strength,
   difficulty,
   strategy,
+  initialGoal = '',
 }: {
   enrollmentId: string
   strength: string
   difficulty: string
   strategy: string
+  initialGoal?: string
 }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(strategy.trim().slice(0, 160))
-  const [goal, setGoal] = useState('')
+  const [goal, setGoal] = useState(initialGoal)
   const [start, setStart] = useState('')
   const [end, setEnd] = useState('')
   const [working, setWorking] = useState(false)

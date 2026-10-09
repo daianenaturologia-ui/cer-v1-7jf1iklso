@@ -197,6 +197,11 @@ export function LifeTimeline({
                       </span>
                       <span className="text-sm font-medium break-words w-full">{event.title}</span>
                       <span className="text-xs text-muted-foreground">{lifeTimeLabel(event)}</span>
+                      {event.emotions.length > 0 && (
+                        <span className="text-xs text-primary break-words">
+                          {event.emotions.join(' · ')}
+                        </span>
+                      )}
                     </button>
                   ))}
                 {!readOnly && unlocked && !error && (
@@ -355,6 +360,35 @@ export function LifeTimeline({
               ))}
             </div>
           </fieldset>
+          {editing.emotions.length > 1 && (
+            <label className="block text-sm space-y-1">
+              Qual emoção mais marcou esse acontecimento?
+              <select
+                aria-label="Qual emoção mais marcou esse acontecimento?"
+                className="block w-full rounded border p-2 bg-background"
+                value={editing.emotions[0]}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    emotions: [
+                      e.target.value,
+                      ...editing.emotions.filter((emotion) => emotion !== e.target.value),
+                    ],
+                  })
+                }
+              >
+                {editing.emotions.map((emotion) => (
+                  <option key={emotion} value={emotion}>
+                    {emotion}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Ela aparecerá primeiro junto ao marco; as outras emoções continuarão no seu
+                registro.
+              </p>
+            </label>
+          )}
           <label className="block text-sm space-y-1">
             Conte a história como você se lembra
             <Textarea
