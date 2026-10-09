@@ -1,8 +1,8 @@
 {
   "name": "skip-react-template",
-  "description": "CER V1 (build - Bloco 16 Goal Roadmaps)",
+  "description": "CER V1 (build - Blocos 14-15 Protection Pattern Reading / Life Planning)",
   "private": true,
-  "version": "0.0.326",
+  "version": "0.0.324",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
