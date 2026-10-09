@@ -38,6 +38,8 @@ describe('CER: funcionamento e conexões', () => {
     expect(s.elementReadings!.ama.observations).toEqual([])
     for (const d of s.dimensions.slice(1)) {
       expect(d.personalSections).toHaveLength(1)
+      const paragraphs = d.personalSections![0].text.split('\n\n')
+      expect(new Set(paragraphs).size).toBe(paragraphs.length)
       expect(d.personalSections![0].title).toBe('Como você funciona nesta dimensão')
       expect(d.personalSections![0].text).not.toMatch(/Você registrou:|acrescenta uma parte|\?|“/)
     }
