@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "CER V1 (build - Blocos 14-15 Protection Pattern Reading / Life Planning)",
   "private": true,
-  "version": "0.0.327",
+  "version": "0.0.328",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
