@@ -127,13 +127,16 @@ export function applyFunctionalReading(
   reg.push(...additional(regulation, /resposta_tendencia/))
   const physical: string[] = []
   const vp =
-    body?.ayurvedaConstitution?.includes('Vata') && body.ayurvedaConstitution.includes('Pitta')
+    body?.ayurvedaConstitution?.length === 2 &&
+    body.ayurvedaConstitution.includes('Vata') &&
+    body.ayurvedaConstitution.includes('Pitta')
   const vk =
-    body?.ayurvedaReading?.currentDoshas.includes('Vata') &&
+    body?.ayurvedaReading?.currentDoshas.length === 2 &&
+    body.ayurvedaReading.currentDoshas.includes('Vata') &&
     body.ayurvedaReading.currentDoshas.includes('Kapha')
   if (vp && vk)
     physical.push(
-      'Pela lente ayurvédica, sua base Vata–Pitta reúne movimento, sensibilidade, iniciativa e capacidade de transformar ideias em ação. O momento Vata–Kapha combina irregularidade com lentidão: você pode encontrar impulso para pensar e resolver, enquanto o corpo precisa de mais tempo para recuperar disposição e um ritmo previsível. Essa diferença ajuda a compreender o esforço de tentar sustentar o desempenho habitual com uma disponibilidade corporal que mudou.',
+      `Pela lente ayurvédica, sua base ${body!.ayurvedaConstitution!.join('–')} reúne movimento, sensibilidade, iniciativa e capacidade de transformar ideias em ação. O momento Vata–Kapha combina irregularidade com lentidão: você pode encontrar impulso para pensar e resolver, enquanto o corpo precisa de mais tempo para recuperar disposição e um ritmo previsível. Essa diferença ajuda a compreender o esforço de tentar sustentar o desempenho habitual com uma disponibilidade corporal que mudou.`,
     )
   if (body?.ayurvedaReading?.currentDigestive && (anxiety || vigilant || fight))
     physical.push(

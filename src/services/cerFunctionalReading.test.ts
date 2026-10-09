@@ -77,6 +77,17 @@ describe('CER: funcionamento e conexões', () => {
     expect(s.integration).toBe('')
     expect(s.dimensions[1].detailedRows.length).toBeGreaterThan(0)
   })
+  it('preserva a ordem constitucional e não reduz uma base tridosha a um par', () => {
+    const s = createDemoCerMapReading()
+    const body = s.dimensions.find((d) => d.id === 'corpo')!
+    body.ayurvedaConstitution = ['Pitta', 'Vata']
+    expect(applyFunctionalReading(s, []).integration).toContain('base Pitta–Vata')
+    body.ayurvedaConstitution = ['Vata', 'Pitta', 'Kapha']
+    expect(applyFunctionalReading(s, []).integration).not.toContain('sua base Vata–Pitta reúne')
+    body.ayurvedaConstitution = ['Vata', 'Pitta']
+    body.ayurvedaReading!.currentDoshas = ['Vata', 'Pitta', 'Kapha']
+    expect(applyFunctionalReading(s, []).integration).not.toContain('momento Vata–Kapha combina')
+  })
   it('não altera o snapshot ou os registros de origem', () => {
     const s = createDemoCerMapReading()
     const before = JSON.stringify(s)
