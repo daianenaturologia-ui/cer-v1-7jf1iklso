@@ -9,12 +9,14 @@ export function ResourceAgendaForm({
   difficulty,
   strategy,
   initialGoal = '',
+  planningContext = '',
 }: {
   enrollmentId: string
   strength: string
   difficulty: string
   strategy: string
   initialGoal?: string
+  planningContext?: string
 }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(strategy.trim().slice(0, 160))
@@ -37,6 +39,7 @@ export function ResourceAgendaForm({
           `Força que quero usar: ${strength}`,
           `Dificuldade que desejo cuidar: ${difficulty}`,
           `Minha estratégia: ${strategy}`,
+          planningContext,
         ]
           .filter(Boolean)
           .join('\n\n'),

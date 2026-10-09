@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { resourceExerciseService } from '@/services/cerResourceExercise'
+import { GoalRoadmapPlanner } from './GoalRoadmapPlanner'
 import { ResourceAgendaForm } from './ResourceAgendaForm'
 import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import {
@@ -300,6 +301,13 @@ export function LifeDirections({
                             initialGoal={record.title}
                           />
                         )}
+                      {record.kind === 'future' && (readOnly || (planning && unlocked)) && (
+                        <GoalRoadmapPlanner
+                          source={record}
+                          readOnly={readOnly}
+                          strategies={strategies}
+                        />
+                      )}
                       {!readOnly && unlocked && (
                         <Button size="sm" variant="outline" onClick={() => open(kind, record)}>
                           Editar registro

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { GoalRoadmapPlanner } from './experience/GoalRoadmapPlanner'
 import { AyurvedaCarePriorities } from './AyurvedaCarePriorities'
 import { lifeDirectionsService, type LifeDirection } from '@/services/lifeDirections'
 import { sharedFutureDirections, developmentPresentation } from '@/services/developmentPlanning'
@@ -820,6 +821,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                     {v.limits && <p>Disposição, limites e o que cabe agora: {v.limits}</p>}
                     {v.meaning && <p>Sentido desta mudança: {v.meaning}</p>}
                     {v.first_step && <p>Primeiro passo imaginado: {v.first_step}</p>}
+                    <GoalRoadmapPlanner source={v} readOnly />
                   </details>
                 ))}
             <div className="space-y-1">
