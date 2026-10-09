@@ -157,3 +157,36 @@ it('guarda prazo, ritmo e alternativa da ação junto ao objetivo na agenda', as
   expect(save.mock.calls[0][0].note).toContain('Ritmo combinado: duas vezes por semana')
   expect(save.mock.calls[0][0].note).toContain('Em um dia difícil: dois minutos')
 })
+
+it('permite distribuir uma ação em outros dias com nova confirmação e datas vazias', async () => {
+  const save = vi.spyOn(plannerNotesService, 'save').mockResolvedValue({ id: 'repeat' } as any)
+  render(
+    <ResourceAgendaForm
+      enrollmentId="person-a"
+      strength="Organização"
+      difficulty="Duas pausas"
+      strategy="Pausar"
+      repeatable
+    />,
+  )
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'Levar Organização para minha agenda diante de Duas pausas',
+    }),
+  )
+  dates()
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar na minha agenda' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Reservar outro momento desta ação' }))
+  expect(screen.getByLabelText('Início do meu momento')).toHaveValue('')
+  expect(save).toHaveBeenCalledTimes(1)
+  fireEvent.input(screen.getByLabelText('Início do meu momento'), {
+    target: { value: '2026-10-14T09:00' },
+  })
+  fireEvent.input(screen.getByLabelText('Fim do meu momento'), {
+    target: { value: '2026-10-14T09:10' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar na minha agenda' }))
+  await screen.findByRole('status')
+  expect(save).toHaveBeenCalledTimes(2)
+  expect(save.mock.calls[1][0].starts_at).toBe(new Date('2026-10-14T09:00').toISOString())
+})
