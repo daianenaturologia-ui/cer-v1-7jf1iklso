@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "Bloco 22 Care Plan Starting Point",
   "private": true,
-  "version": "0.0.339",
+  "version": "0.0.340",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
