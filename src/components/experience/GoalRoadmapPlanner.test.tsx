@@ -23,17 +23,15 @@ function open() {
 }
 it('cria metas e ações privadas só ao confirmar e não ocupa a agenda automaticamente', async () => {
   vi.spyOn(goalRoadmapService, 'load').mockResolvedValue(null)
-  const save = vi
-    .spyOn(goalRoadmapService, 'save')
-    .mockImplementation(async (s, r, a) => ({
-      id: 'x',
-      enrollment_id: 'e',
-      direction_id: 'd',
-      owner_id: 'u',
-      revision: 1,
-      roadmap: r,
-      access_class: a,
-    }))
+  const save = vi.spyOn(goalRoadmapService, 'save').mockImplementation(async (s, r, a) => ({
+    id: 'x',
+    enrollment_id: 'e',
+    direction_id: 'd',
+    owner_id: 'u',
+    revision: 1,
+    roadmap: r,
+    access_class: a,
+  }))
   const agenda = vi.spyOn(plannerNotesService, 'save')
   render(
     <GoalRoadmapPlanner
