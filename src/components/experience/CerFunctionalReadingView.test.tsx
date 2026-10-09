@@ -55,7 +55,9 @@ it('padroniza os seis acessos e abre uma interpretação pessoal com três padr�
     screen.getByRole('button', { name: 'Interpretação dessa dimensão: Mente e Emoções' }),
   )
   const dialog = await screen.findByRole('dialog')
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Como você funciona nesta dimensão' }))
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: 'Como você funciona nesta dimensão' }),
+  )
   expect(dialog.textContent).toContain('Mariana, vamos olhar com carinho')
   expect(dialog.textContent).toContain('Prestativo, Hipervigilante e Analítico')
   expect(dialog.textContent).not.toContain('Insistente')
