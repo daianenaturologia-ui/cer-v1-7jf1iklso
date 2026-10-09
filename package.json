@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "CER V1 (build - Bloco 10 Planner Gentle Guide)",
   "private": true,
-  "version": "0.0.308",
+  "version": "0.0.309",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
