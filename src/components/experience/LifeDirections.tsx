@@ -7,6 +7,7 @@ import { GoalRoadmapPlanner } from './GoalRoadmapPlanner'
 import { ResourceAgendaForm } from './ResourceAgendaForm'
 import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import { MyNextStepWizard, clearMyNextStepDraft } from './MyNextStepWizard'
+import { CareEpisodeExplorer } from './CareEpisodeExplorer'
 import {
   lifeDirectionsService,
   LIFE_HORIZONS,
@@ -217,7 +218,7 @@ export function LifeDirections({
             <div className="flex flex-wrap gap-2">
               {planning && !editing && (
                 <Button variant="outline" onClick={() => open('future')}>
-                  Escolher minha primeira direção
+                  {records.some(v => v.kind === 'future') ? 'Escolher outra direção' : 'Escolher minha primeira direção'}
                 </Button>
               )}
               {!planning && perspective !== 'future' && (
@@ -306,6 +307,9 @@ export function LifeDirections({
                               initialGoal={record.title}
                             />
                           )}
+                        {record.kind === 'future' && (readOnly || (planning && unlocked)) && (
+                          <CareEpisodeExplorer key={`episode:${record.id}:${readOnly}`} source={record} readOnly={readOnly} strategies={strategies} />
+                        )}
                         {record.kind === 'future' && (readOnly || (planning && unlocked)) && (
                           <details className="rounded-lg border p-3">
                             <summary className="cursor-pointer text-sm font-medium">
