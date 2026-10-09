@@ -10,6 +10,7 @@ export function ResourceAgendaForm({
   strategy,
   initialGoal = '',
   planningContext = '',
+  repeatable = false,
 }: {
   enrollmentId: string
   strength: string
@@ -17,6 +18,7 @@ export function ResourceAgendaForm({
   strategy: string
   initialGoal?: string
   planningContext?: string
+  repeatable?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(strategy.trim().slice(0, 160))
@@ -64,9 +66,26 @@ export function ResourceAgendaForm({
   }
   if (done)
     return (
-      <p role="status" className="text-xs text-primary">
-        Momento guardado na sua agenda. Você pode ajustar o horário e editar suas anotações por lá.
-      </p>
+      <div className="space-y-2">
+        <p role="status" className="text-xs text-primary">
+          Momento guardado na sua agenda. Você pode ajustar o horário e editar suas anotações por
+          lá.
+        </p>
+        {repeatable && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setStart('')
+              setEnd('')
+              setDone(false)
+              setOpen(true)
+            }}
+          >
+            Reservar outro momento desta ação
+          </Button>
+        )}
+      </div>
     )
   if (!open)
     return (

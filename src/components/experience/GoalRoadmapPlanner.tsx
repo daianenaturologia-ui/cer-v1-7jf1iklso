@@ -208,6 +208,7 @@ export function GoalRoadmapPlanner({
                                 <ResourceAgendaForm
                                   key={`${a.id}:${saved?.revision}`}
                                   enrollmentId={source.enrollment_id}
+                                  repeatable
                                   strength={
                                     a.resource || roadmap.resources || 'Meus recursos pessoais'
                                   }
