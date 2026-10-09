@@ -3,7 +3,7 @@ migrate(
     const owner =
       'owner_id = @request.auth.id && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id'
     const professional =
-      "access_class = 'participant_shared' && direction_id.access_class = 'participant_shared' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true"
+      "access_class = 'participant_shared' && direction_id.access_class = 'participant_shared' && @collection.professional_enrollment_access:goal_access.enrollment_id ?= enrollment_id && @collection.professional_enrollment_access:goal_access.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:goal_access.is_active ?= true"
     const authenticated = "@request.auth.id != '' && @request.auth.status = 'active'"
     app.save(
       new Collection({

@@ -89,7 +89,9 @@ it('coleção limita leitura compartilhada à profissional vinculada e preserva 
     },
   })
   expect(collection.listRule).toContain("direction_id.access_class = 'participant_shared'")
-  expect(collection.listRule).toContain('professional_enrollment_access_via_enrollment_id')
+  expect(collection.listRule).toContain(
+    '@collection.professional_enrollment_access:goal_access.professional_user_id ?= @request.auth.id',
+  )
   expect(collection.updateRule).toContain('@request.body.owner_id:changed = false')
   expect(collection.deleteRule).toBeNull()
   expect(collection.indexes[0]).toContain('UNIQUE')
