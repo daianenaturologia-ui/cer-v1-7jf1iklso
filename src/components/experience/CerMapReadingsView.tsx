@@ -828,17 +828,6 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             ) : (
               <>
                 <p>{item.concept}</p>
-                <div className="rounded-lg bg-muted/20 p-3 space-y-2 text-xs">
-                  <h4 className="font-semibold text-foreground">
-                    Compreensão integrativa e desenvolvimento
-                  </h4>
-                  <p className="text-muted-foreground">
-                    A resposta a situações difíceis não se forma definitivamente até os 3 anos de
-                    idade: a aprendizagem emocional e relacional continua ao longo de toda a vida. A
-                    combinação de respostas é uma hipótese contextual e relacional, nunca um subtipo
-                    neurológico rígido.
-                  </p>
-                </div>
                 <div className="border-t pt-3 space-y-1">
                   <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
                     Presença no seu mapa
