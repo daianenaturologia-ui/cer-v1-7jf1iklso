@@ -59,7 +59,10 @@ export function SelfDevelopmentJourney({
     selfDevelopmentService
       .list(enrollmentId)
       .then((values) => {
-        if (active) setRecords(visibleDevelopment(values, enrollmentId, readOnly).filter(v => !isCareEpisode(v)))
+        if (active)
+          setRecords(
+            visibleDevelopment(values, enrollmentId, readOnly).filter((v) => !isCareEpisode(v)),
+          )
       })
       .catch(() => {
         if (active)
