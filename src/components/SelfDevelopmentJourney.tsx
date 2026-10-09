@@ -15,6 +15,7 @@ import {
 import type { DevelopmentResource } from '@/services/developmentCatalog'
 import { lifeDirectionsService, type LifeDirection } from '@/services/lifeDirections'
 import { isCareEpisode } from '@/services/careEpisode'
+import { EPISODE_REVIEW_RESOURCE_ID } from '@/services/careEpisodeReview'
 
 const labels = {
   planned: 'Planejado',
@@ -59,10 +60,7 @@ export function SelfDevelopmentJourney({
     selfDevelopmentService
       .list(enrollmentId)
       .then((values) => {
-        if (active)
-          setRecords(
-            visibleDevelopment(values, enrollmentId, readOnly).filter((v) => !isCareEpisode(v)),
-          )
+        if (active) setRecords(visibleDevelopment(values, enrollmentId, readOnly).filter(v => !isCareEpisode(v) && v.resource_snapshot?.id !== EPISODE_REVIEW_RESOURCE_ID))
       })
       .catch(() => {
         if (active)

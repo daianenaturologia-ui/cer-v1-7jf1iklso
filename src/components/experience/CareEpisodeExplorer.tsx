@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import { ResourceAgendaForm } from './ResourceAgendaForm'
+import { CareEpisodeFollowUp } from './CareEpisodeFollowUp'
+import { EPISODE_REVIEW_RESOURCE_ID, readEpisodeReview } from '@/services/careEpisodeReview'
 import pb from '@/lib/pocketbase/client'
 import { demoAdapter } from '@/services/demoAdapter'
 import type { LifeDirection } from '@/services/lifeDirections'
@@ -394,7 +396,7 @@ export function CareEpisodeExplorer({
           setRecords(
             values.filter(
               (v) =>
-                isCareEpisode(v) &&
+                (isCareEpisode(v) || v.resource_snapshot?.id === EPISODE_REVIEW_RESOURCE_ID) &&
                 v.enrollment_id === source.enrollment_id &&
                 v.direction_id === source.id &&
                 (!readOnly || v.access_class === 'participant_shared'),
@@ -453,14 +455,14 @@ export function CareEpisodeExplorer({
                   Olhar uma situação
                 </Button>
               )}
-              {!records.length && (
+              {!records.some(isCareEpisode) && (
                 <p className="text-sm text-muted-foreground">
                   {readOnly
                     ? 'Ainda não há situações compartilhadas para esta direção.'
                     : 'Um episódio da vida cotidiana pode ajudar a perceber onde sua nova escolha começa.'}
                 </p>
               )}
-              {records.map((record) => {
+              {records.filter(isCareEpisode).map((record) => {
                 const episode = readCareEpisode(record)
                 if (!episode)
                   return (
@@ -482,7 +484,7 @@ export function CareEpisodeExplorer({
                     </p>
                     <p className="text-sm leading-relaxed">{careEpisodeReading(episode)}</p>
                     <p className="text-sm">
-                      <strong>Escolha para experimentar: </strong>
+                      <strong>Escolha ao explorar a situação: </strong>
                       {episode.alternative}
                     </p>
                     {episode.support && (
@@ -507,18 +509,19 @@ export function CareEpisodeExplorer({
                         )}
                       </dl>
                     </details>
+                    <CareEpisodeFollowUp source={source} parent={record} records={records} readOnly={readOnly} onSaved={saved => setRecords(old => [saved, ...old.filter(v => v.id !== saved.id)])} />
                     {!readOnly && (
                       <>
                         <Button variant="outline" size="sm" onClick={() => setEditing(record)}>
                           Revisar esta situação
                         </Button>
-                        <ResourceAgendaForm
+                        {!records.some(v => readEpisodeReview(v)?.episodeId === record.id) && <ResourceAgendaForm
                           enrollmentId={source.enrollment_id}
                           strength={episode.support || 'Reconhecer um apoio na conversa'}
                           difficulty={episode.facts}
                           strategy={episode.alternative}
                           initialGoal={source.title}
-                        />
+                        />}
                       </>
                     )}
                   </article>
