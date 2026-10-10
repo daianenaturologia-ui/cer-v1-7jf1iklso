@@ -254,7 +254,7 @@ describe('Capítulo 4 — síntese descritiva', () => {
     const sleepItem = synthesis.currentBody?.items.find((i) => i.areaId === 'sleep')
     expect(sleepItem).toBeDefined()
     expect(sleepItem?.currentStates).toContain('Não sei identificar')
-    expect(sleepItem?.comparison).toBe('Difícil comparar')
+    expect(sleepItem?.comparison).toBe('É difícil comparar')
 
     // (b) EXATAMENTE UM convite opcional com o texto exato, sem duplicação
     const optionalInvites = synthesis.questionsForSession.filter(

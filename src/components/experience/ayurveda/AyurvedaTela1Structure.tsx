@@ -12,11 +12,13 @@ import { AvatarPresentation } from '@/services/avatarCompositor'
 export interface AyurvedaTela1StructureProps {
   userPresentation?: AvatarPresentation
   structureChoice?: string
+  primaryStructureChoice?: string
   secondaryStructureChoice?: string
   durationChoice?: string
   onSave: (data: {
     structureChoice?: string
-    secondaryStructureChoice?: string
+    primaryStructureChoice?: string
+  secondaryStructureChoice?: string
     durationChoice?: string
   }) => void
   disabled?: boolean
@@ -79,6 +81,7 @@ const FIGURES_MAP = {
 export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
   userPresentation = 'feminine',
   structureChoice: initialStructure,
+  primaryStructureChoice: initialPrimary,
   secondaryStructureChoice: initialSecondary,
   durationChoice: initialDuration,
   onSave,
@@ -90,6 +93,7 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
   const [showOtherFigures, setShowOtherFigures] = useState(false)
   const [twoSelectedStructures, setTwoSelectedStructures] = useState<string[]>(() => {
     const list: string[] = []
+    if (initialStructure === 'two_figures' && initialPrimary) list.push(initialPrimary)
     if (initialStructure && initialStructure !== 'two_figures') list.push(initialStructure)
     if (initialSecondary) list.push(initialSecondary)
     return list.slice(0, 2)
@@ -102,11 +106,11 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
     setSelectedSecondary(initialSecondary)
     setSelectedDuration(initialDuration)
     setTwoSelectedStructures(
-      [initialStructure !== 'two_figures' ? initialStructure : undefined, initialSecondary]
+      [initialStructure !== 'two_figures' ? initialStructure : initialPrimary, initialSecondary]
         .filter((choice): choice is string => Boolean(choice))
         .slice(0, 2),
     )
-  }, [initialStructure, initialSecondary, initialDuration])
+  }, [initialStructure, initialPrimary, initialSecondary, initialDuration])
 
   // Figuras mostradas inicialmente conforme a apresentação do avatar, com opção de ver as outras
   const currentPresentationFigures =
@@ -169,9 +173,11 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
     struct: string | undefined,
     sec: string | undefined,
     dur: string | undefined,
+    primary = twoSelectedStructures[0],
   ) => {
     onSave({
       structureChoice: struct,
+      primaryStructureChoice: struct === 'two_figures' ? primary : undefined,
       secondaryStructureChoice: sec,
       durationChoice: dur,
     })
@@ -221,7 +227,7 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
                       : twoSelectedStructures.length >= 2
                         ? [twoSelectedStructures[1], fig.id]
                         : [...twoSelectedStructures, fig.id]
-                    triggerSave('two_figures', updated[1], selectedDuration)
+                    triggerSave('two_figures', updated[1], selectedDuration, updated[0])
                   } else {
                     handleStructureClick(fig.id)
                     triggerSave(fig.id, undefined, selectedDuration)

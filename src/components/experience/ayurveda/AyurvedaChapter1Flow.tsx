@@ -1,3 +1,4 @@
+import { useQuestionnaireSaving } from '@/hooks/useQuestionnaireSaving'
 import React, { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -132,6 +133,9 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   })
 
   const [loading, setLoading] = useState(true)
+  const saver = useQuestionnaireSaving()
+  const [loadError, setLoadError] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
@@ -200,6 +204,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         basePromptKey === AYV_C1_PROMPTS.P1_STRUCTURE.key
       ) {
         loadedState.structure_choice = sVal?.value || sVal?.choice || sVal?.structure_choice
+        loadedState.primary_structure_choice = sVal?.primary_choice || sVal?.primaryStructureChoice
         loadedState.secondary_structure_choice =
           sVal?.secondary_choice || sVal?.secondaryStructureChoice
       } else if (
@@ -262,12 +267,9 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   // Carregar respostas existentes com IDs canônicos AYV_C1 e migração idempotente
   const loadResponses = async () => {
     setLoading(true)
+    setLoadError(false)
     try {
-      const enrList = await enrollmentExperienceService.listByEnrollment(enrollmentId)
-      const currentEnrExp = enrList.find(
-        (e) =>
-          e.experience_id === experienceId || (e as any).expand?.experience_id?.id === experienceId,
-      )
+      const currentEnrExp = await enrollmentExperienceService.getByEnrollmentAndExperience(enrollmentId, experienceId)
       if (currentEnrExp) {
         setEnrollmentExp(currentEnrExp)
       }
@@ -320,6 +322,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
 
       applyResponsesToState(migratedResponses, targetRev)
     } catch (err) {
+      setLoadError(true)
       console.error('Erro ao carregar respostas do Capítulo 1:', err)
     } finally {
       setLoading(false)
@@ -360,17 +363,20 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   // Salvar Tela 1
   const handleSaveStep1 = async (data: {
     structureChoice?: string
+    primaryStructureChoice?: string
     secondaryStructureChoice?: string
     durationChoice?: string
   }) => {
     setChapterState((prev) => ({
       ...prev,
       structure_choice: data.structureChoice,
+      primary_structure_choice: data.primaryStructureChoice,
       secondary_structure_choice: data.secondaryStructureChoice,
       structure_duration: data.durationChoice,
     }))
 
     if (isReviewOnly) return
+    saver.enqueue('step1', async () => {
 
     const physicalStructureId = getChapter1RevisionPromptId(
       AYV_C1_PROMPTS.P1_STRUCTURE.id,
@@ -390,6 +396,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         domain: 'ayurveda',
         option_ids: [
           data.structureChoice,
+          ...(data.primaryStructureChoice ? [data.primaryStructureChoice] : []),
           ...(data.secondaryStructureChoice ? [data.secondaryStructureChoice] : []),
         ],
         time_layer: 'stable_history',
@@ -423,6 +430,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         structuredValue: {
           value: data.structureChoice,
           choice: data.structureChoice,
+          primary_choice: data.primaryStructureChoice,
           secondary_choice: data.secondaryStructureChoice,
           revision_number: activeRevision,
           metadata: meta,
@@ -489,12 +497,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         return [...next, saved]
       })
     }
+    })
   }
 
   // Salvar Tela 2
   const handleSaveStep2 = async (choices: string[]) => {
     setChapterState((prev) => ({ ...prev, skin_choices: choices }))
     if (isReviewOnly) return
+    saver.enqueue('step2', async () => {
 
     const physicalSkinId = getChapter1RevisionPromptId(AYV_C1_PROMPTS.P2_SKIN.id, activeRevision)
 
@@ -544,12 +554,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       const next = prev.filter((r) => r.prompt_id !== physicalSkinId)
       return [...next, saved]
     })
+    })
   }
 
   // Salvar Tela 3
   const handleSaveStep3 = async (choices: string[]) => {
     setChapterState((prev) => ({ ...prev, hair_choices: choices }))
     if (isReviewOnly) return
+    saver.enqueue('step3', async () => {
 
     const physicalHairId = getChapter1RevisionPromptId(AYV_C1_PROMPTS.P3_HAIR.id, activeRevision)
 
@@ -602,12 +614,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       const next = prev.filter((r) => r.prompt_id !== physicalHairId)
       return [...next, saved]
     })
+    })
   }
 
   // Salvar Tela 4
   const handleSaveStep4 = async (choice: string) => {
     setChapterState((prev) => ({ ...prev, temperature_choice: choice }))
     if (isReviewOnly) return
+    saver.enqueue('step4', async () => {
 
     const physicalTempId = getChapter1RevisionPromptId(
       AYV_C1_PROMPTS.P4_TEMPERATURE.id,
@@ -660,6 +674,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       const next = prev.filter((r) => r.prompt_id !== physicalTempId)
       return [...next, saved]
     })
+    })
   }
 
   // Salvar Tela 5
@@ -676,6 +691,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     }))
 
     if (isReviewOnly) return
+    saver.enqueue('step5', async () => {
 
     const physicalThirstId = getChapter1RevisionPromptId(
       AYV_C1_PROMPTS.P5_THIRST.id,
@@ -824,24 +840,41 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         return [...next, saved]
       })
     }
+    })
   }
 
   // Atualizar progresso de etapa
+  const validStructure = () => {
+    const valid = chapterState.structure_choice !== 'two_figures' || Boolean(chapterState.primary_structure_choice && chapterState.secondary_structure_choice && chapterState.primary_structure_choice !== chapterState.secondary_structure_choice)
+    setValidationError(valid ? null : 'Selecione as duas figuras que representam sua estrutura antes de avançar.')
+    return valid
+  }
+  const exitSafely = async () => {
+    try {
+      await saver.flush()
+      if (onExitToHub) onExitToHub()
+      else setStage('hub')
+    } catch { /* the saving alert keeps the current answers visible */ }
+  }
   const advanceStep = async (nextStep: Chapter1Stage, stepOrder: number) => {
-    setStage(nextStep)
-    if (enrollmentExp && !isReviewOnly) {
-      const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
-        progressStatus: 'in_progress',
-        stepOrder,
-      })
-      setEnrollmentExp(updated)
-    }
+    if (!isReviewOnly && stage === 'step1' && !validStructure()) return
+    try {
+      await saver.flush()
+      if (enrollmentExp && !isReviewOnly) {
+        const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, { progressStatus: 'in_progress', stepOrder })
+        setEnrollmentExp(updated)
+      }
+      setStage(nextStep)
+    } catch { saver.reportError() }
   }
 
   // Concluir Capítulo 1 (exclusivo para a revisão ativa)
   const handleCompleteChapter1 = async () => {
+    if (!validStructure()) return
     setSaving(true)
     try {
+      await saver.flush()
+      saver.enqueue('completion', async () => {
       const nowIso = new Date().toISOString()
       const physicalCompletionId = getChapter1RevisionPromptId(
         AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
@@ -881,6 +914,14 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       })
       ;(completionResp as any).revision_number = activeRevision
 
+      // 2. Preserva atualização de progresso de etapa no enrollmentExp
+      if (enrollmentExp) {
+        const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
+          progressStatus: 'completed',
+          stepOrder: 5,
+        })
+        setEnrollmentExp(updated)
+      }
       // Atualiza lista local de respostas com a de conclusão canônica
       setRawResponses((prev) => {
         const existingIdx = prev.findIndex(
@@ -897,16 +938,11 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         return [...prev, completionResp]
       })
 
-      // 2. Preserva atualização de progresso de etapa no enrollmentExp
-      if (enrollmentExp) {
-        const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
-          progressStatus: 'completed',
-          stepOrder: 5,
-        })
-        setEnrollmentExp(updated)
-      }
       onCompleted?.()
+      })
+      await saver.flush()
     } catch (e) {
+      saver.reportError()
       console.error('Erro ao concluir Capítulo 1:', e)
     } finally {
       setSaving(false)
@@ -1017,8 +1053,17 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     }
   }
 
+  if (loading) return <p role="status" className="p-4 text-sm text-muted-foreground">Carregando suas respostas…</p>
+
+  if (loadError) return <div role="alert" className="p-4 space-y-3">
+    <p>Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.</p>
+    <Button onClick={() => { void loadResponses() }}>Tentar carregar novamente</Button>
+  </div>
+
   return (
     <div className="w-full">
+      {saver.status}
+      {validationError && <p role="alert" className="text-sm text-destructive">{validationError}</p>}
       {/* Banner de Modo Revisão Somente-Leitura com identificação explícita do Capítulo 1 */}
       {isReviewOnly && (
         <div
@@ -1118,13 +1163,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {stage === 'opening' && (
         <AyurvedaChapter1Opening
           onStartQuestions={() => advanceStep('step1', 1)}
-          onBackToHub={() => {
-            if (onExitToHub) {
-              onExitToHub()
-            } else {
-              setStage('hub')
-            }
-          }}
+          onBackToHub={exitSafely}
         />
       )}
       {/* 4. Tela 1: Estrutura Corporal */}
@@ -1133,10 +1172,11 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           <AyurvedaTela1Structure
             userPresentation={userPresentation}
             structureChoice={chapterState.structure_choice}
+            primaryStructureChoice={chapterState.primary_structure_choice}
             secondaryStructureChoice={chapterState.secondary_structure_choice}
             durationChoice={chapterState.structure_duration}
             onSave={handleSaveStep1}
-            disabled={isReviewOnly}
+            disabled={isReviewOnly || saving}
           />
           <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             {isReviewOnly ? (
@@ -1171,7 +1211,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           <AyurvedaTela2Skin
             skinChoices={chapterState.skin_choices}
             onSave={handleSaveStep2}
-            disabled={isReviewOnly}
+            disabled={isReviewOnly || saving}
           />
           <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
@@ -1202,7 +1242,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           <AyurvedaTela3Hair
             hairChoices={chapterState.hair_choices}
             onSave={handleSaveStep3}
-            disabled={isReviewOnly}
+            disabled={isReviewOnly || saving}
           />
           <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
@@ -1233,7 +1273,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           <AyurvedaTela4Temperature
             temperatureChoice={chapterState.temperature_choice}
             onSave={handleSaveStep4}
-            disabled={isReviewOnly}
+            disabled={isReviewOnly || saving}
           />
           <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
@@ -1266,7 +1306,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             drinkTemperatureChoice={chapterState.drink_temperature_choice}
             sweatChoice={chapterState.sweat_choice}
             onSave={handleSaveStep5}
-            disabled={isReviewOnly}
+            disabled={isReviewOnly || saving}
           />
           <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
@@ -1282,7 +1322,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             <Button
               type="button"
               size="sm"
-              onClick={() => setStage('closing')}
+              onClick={() => advanceStep('closing', 5)}
               className="text-xs h-9 px-3 sm:px-4 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 whitespace-normal shrink-0"
             >
               <span>Ir para Encerramento</span>
@@ -1296,13 +1336,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         <AyurvedaClosing
           state={chapterState}
           isCompleted={isCompleted}
-          onSaveAndContinueLater={() => {
-            if (onExitToHub) {
-              onExitToHub()
-            } else {
-              setStage('hub')
-            }
-          }}
+          onSaveAndContinueLater={exitSafely}
           onCompleteChapter={handleCompleteChapter1}
           onReviewResponses={() => {
             if (onEnterReview) {
@@ -1311,13 +1345,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             handleReviewResponses()
           }}
           onStartCorrection={handleStartCorrection}
-          onBackToHub={() => {
-            if (onExitToHub) {
-              onExitToHub()
-            } else {
-              setStage('hub')
-            }
-          }}
+          onBackToHub={exitSafely}
           loading={saving}
           correctionError={correctionError}
           onClearCorrectionError={() => setCorrectionError(null)}

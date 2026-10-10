@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button'
 import React, { useState, useEffect, useCallback } from 'react'
 import { AyurvedaChaptersHub } from './AyurvedaChaptersHub'
 import { AyurvedaChapter1Flow } from './AyurvedaChapter1Flow'
@@ -119,6 +120,7 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     }
   })
 
+  const [loadError, setLoadError] = useState(false)
   const [loading, setLoading] = useState(true)
   const [rawResponses, setRawResponses] = useState<ExperienceResponseRecord[]>([])
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
@@ -126,12 +128,9 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   // Carregar respostas e progresso do backend / demoAdapter
   const reloadData = useCallback(async () => {
     setLoading(true)
+    setLoadError(false)
     try {
-      const enrList = await enrollmentExperienceService.listByEnrollment(enrollmentId)
-      const currentEnrExp = enrList.find(
-        (e) =>
-          e.experience_id === experienceId || (e as any).expand?.experience_id?.id === experienceId,
-      )
+      const currentEnrExp = await enrollmentExperienceService.getByEnrollmentAndExperience(enrollmentId, experienceId)
       if (currentEnrExp) {
         setEnrollmentExp(currentEnrExp)
       }
@@ -142,6 +141,7 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
       )
       setRawResponses(responses)
     } catch (err) {
+      setLoadError(true)
       console.error('Erro ao carregar dados do navegador de Ayurveda:', err)
     } finally {
       setLoading(false)
@@ -668,6 +668,13 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
 
   // Renderização de acordo com o estado canônico
   const activeChapterId = navState.chapterId
+  if (loading) return <p role="status" className="p-4 text-sm text-muted-foreground">Carregando seus capítulos…</p>
+
+  if (loadError) return <div role="alert" className="p-4 space-y-3">
+    <p>Não foi possível recuperar o progresso dos capítulos. Suas respostas serão carregadas antes de continuar.</p>
+    <Button onClick={() => { void reloadData() }}>Tentar carregar novamente</Button>
+  </div>
+
   if (activeChapterId === 'c1') {
     const currentStep = navState.currentStep
     const c1Mode = navState.mode as AyurvedaNavigationChapterMode
