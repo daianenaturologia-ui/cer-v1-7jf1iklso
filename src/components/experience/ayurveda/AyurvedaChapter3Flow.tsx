@@ -1,3 +1,4 @@
+import { useQuestionnaireSaving } from '@/hooks/useQuestionnaireSaving'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { ayurvedaReviewWindow } from '@/services/ayurvedaCareReasoning'
 import {
@@ -71,6 +72,15 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   const [step, setStep] = useState(initialStep)
   const [state, setState] = useState<AyurvedaChapter3State>({})
   const [responses, setResponses] = useState<ExperienceResponseRecord[]>([])
+  const saver = useQuestionnaireSaving()
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
+  const exitSafely = async () => {
+    try { await saver.flush(); onBackToHub() } catch { /* retain edits */ }
+  }
+
+
   const [saving, setSaving] = useState(false)
   const [showVoice, setShowVoice] = useState(false)
   const [isCorrectionMode, setIsCorrectionMode] = useState(false)
@@ -84,6 +94,8 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
 
   useEffect(() => {
     let active = true
+    setLoadError(false)
+    setLoading(true)
     experienceResponseService
       .listResponsesByExperience(enrollmentId, experienceId)
       .then((loaded) => {
@@ -106,11 +118,11 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           (completion?.structured_value as any)?.metadata?.chapter_revision_number || 1
         if (derived.status === 'completed' || derived.status === 'ready_to_complete') setStep(6)
         else setStep(initialStep || derived.firstUnansweredStep)
-      })
+      }).catch(() => { if (active) setLoadError(true) }).finally(() => { if (active) setLoading(false) })
     return () => {
       active = false
     }
-  }, [enrollmentId, experienceId, initialStep])
+  }, [enrollmentId, experienceId, initialStep, loadAttempt])
 
   const derived = useMemo(() => deriveChapter3Status(responses), [responses])
   const shortPath = (state.changed_domains || []).some((id) =>
@@ -182,7 +194,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     // Durante uma correção, as mudanças permanecem apenas no rascunho local.
     // A versão compartilhada só é substituída depois da nova conclusão explícita.
     if (isCorrectionMode) return
-    await savePrompt(prompt, value, optionIds, freeText)
+    saver.enqueue(prompt.id, () => savePrompt(prompt, value, optionIds, freeText))
   }
 
   const toggleDomain = async (id: string) => {
@@ -282,6 +294,8 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     setSaving(true)
     setCorrectionError(null)
     try {
+      await saver.flush()
+      saver.enqueue('completion', async () => {
       if (isCorrectionMode) {
         const reason = 'Correção concluída pela interagente no Capítulo 3 de Corpo & Fisiologia'
         await savePrompt(
@@ -399,7 +413,10 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
       setIsCorrectionMode(false)
       onCompleted?.()
       if (isCorrectionMode) onBackToHub()
+      })
+      await saver.flush()
     } catch (error) {
+      saver.reportError()
       console.error('Erro ao concluir correção do Capítulo 3:', error)
       setCorrectionError(
         'Não foi possível concluir a correção agora. Seu rascunho continua nesta tela para você tentar novamente.',
@@ -546,9 +563,17 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     await persistCurrentAreaRecord(areaId, updated)
   }
 
+  if (loading) return <p role="status" className="p-4 text-sm text-muted-foreground">Carregando suas respostas…</p>
+
+  if (loadError) return <div role="alert" className="p-4 space-y-3">
+    <p>Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.</p>
+    <Button onClick={() => setLoadAttempt(value => value + 1)}>Tentar carregar novamente</Button>
+  </div>
+
   if (step === 6) {
     return (
       <div className="mx-auto max-w-2xl space-y-5 py-4">
+        {saver.status}
         <div className="rounded-2xl border border-primary/25 bg-primary/5 p-5 text-center space-y-2">
           {derived.status === 'completed' ? (
             <CheckCircle2 className="mx-auto h-7 w-7 text-emerald-600" />
@@ -756,7 +781,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
                 {isReassessment ? 'Concluir reavaliação' : 'Concluir correção'}
               </Button>
             ) : (
-              <Button onClick={onBackToHub}>Voltar aos capítulos</Button>
+              <Button onClick={exitSafely}>Voltar aos capítulos</Button>
             )
           ) : (
             <Button disabled={saving || derived.status !== 'ready_to_complete'} onClick={complete}>
@@ -820,6 +845,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-4">
+      {saver.status}
       <div className="space-y-2">
         <Badge variant="outline">Capítulo 3 • Etapa {step} de 5</Badge>
         {isCorrectionMode && (
@@ -1355,7 +1381,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
       <div className="flex justify-between gap-2 border-t pt-4">
         <Button
           variant="outline"
-          onClick={step === 1 ? onBackToHub : () => setStep((current) => current - 1)}
+          onClick={step === 1 ? exitSafely : () => setStep((current) => current - 1)}
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
           {step === 1 ? 'Capítulos' : 'Voltar'}

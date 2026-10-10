@@ -1,4 +1,5 @@
 import pb from '@/lib/pocketbase/client'
+import { normalizeLiveResponse, prepareLiveQuestionnaire, questionnaireRecordId } from './liveQuestionnaire'
 import type {
   CerDimensionRecord,
   CerExperienceRecord,
@@ -58,6 +59,9 @@ export const DIMENSION_TO_EXPERIENCE_ID: Record<string, string> = {
 export function resolveExperienceId(raw: string): string {
   if (!raw) return raw
   const trimmed = raw.trim()
+
+  const logical = Object.values(DIMENSION_TO_EXPERIENCE_ID).find(id => questionnaireRecordId('experience', id) === trimmed)
+  if (logical) return logical
 
   // 1. Verificação direta no mapa
   if (DIMENSION_TO_EXPERIENCE_ID[trimmed]) {
@@ -391,16 +395,17 @@ export const enrollmentExperienceService = {
         )
       }
 
-      return await pb
-        .collection('enrollment_experiences')
-        .getFirstListItem<EnrollmentExperienceRecord>(
-          `enrollment_id = "${enrollmentId}" && (experience_id = "${canonicalExpId}" || experience_id = "${experienceId}")`,
-          {
-            expand: 'experience_id,enrollment_id',
-          },
-        )
-    } catch {
-      return null
+      if (canonicalExpId.startsWith('exp-')) {
+        const prepared = await prepareLiveQuestionnaire(enrollmentId, canonicalExpId)
+        return { ...prepared.enrollment_experience, experience_id: canonicalExpId } as EnrollmentExperienceRecord
+      }
+      return await pb.collection('enrollment_experiences').getFirstListItem<EnrollmentExperienceRecord>(
+        pb.filter('enrollment_id = {:enrollment} && experience_id = {:experience}', { enrollment: enrollmentId, experience: canonicalExpId }),
+        { expand: 'experience_id,enrollment_id' },
+      )
+    } catch (error) {
+      if ((error as any)?.status === 404) return null
+      throw error
     }
   },
 
@@ -460,7 +465,10 @@ export const enrollmentExperienceService = {
       filter: `enrollment_id = "${enrollmentId}"`,
       expand: 'experience_id.dimension_id',
       sort: 'created',
-    })
+    }).then(records => records.map(record => ({
+      ...record, experience_id: resolveExperienceId(record.experience_id),
+      ...(record.expand?.experience_id ? { expand: { ...record.expand, experience_id: { ...record.expand.experience_id, id: resolveExperienceId(record.experience_id) } } } : {}),
+    })))
   },
 
   /**
@@ -601,7 +609,7 @@ export const enrollmentExperienceService = {
 
     return await pb.collection('enrollment_experiences').create<EnrollmentExperienceRecord>({
       enrollment_id: enrollmentId,
-      experience_id: experienceId,
+      experience_id: resolveExperienceId(experienceId).startsWith('exp-') ? questionnaireRecordId('experience', resolveExperienceId(experienceId)) : experienceId,
       release_status: 'available',
       progress_status: 'not_started',
       current_step_order: 1,
@@ -627,16 +635,15 @@ export const experienceResponseService = {
         const responses = demoAdapter.listExperienceResponses(enrollmentId)
         return responses.find((r) => r.prompt_id === promptId) || null
       }
-      return await pb
-        .collection('experience_responses')
-        .getFirstListItem<ExperienceResponseRecord>(
-          `enrollment_id = "${enrollmentId}" && prompt_id = "${promptId}"`,
-          {
-            expand: 'prompt_id',
-          },
-        )
-    } catch {
-      return null
+      const actualPromptId = /^[a-z0-9]{15}$/.test(promptId) ? promptId : questionnaireRecordId('prompt', promptId)
+      const record = await pb.collection('experience_responses').getFirstListItem<ExperienceResponseRecord>(
+        pb.filter('enrollment_id = {:enrollment} && prompt_id = {:prompt}', { enrollment: enrollmentId, prompt: actualPromptId }),
+        { expand: 'prompt_id' },
+      )
+      return normalizeLiveResponse(record)
+    } catch (error) {
+      if ((error as any)?.status === 404) return null
+      throw error
     }
   },
 
@@ -648,7 +655,6 @@ export const experienceResponseService = {
     experienceId: string,
   ): Promise<ExperienceResponseRecord[]> {
     const canonicalExpId = resolveExperienceId(experienceId)
-    try {
       const { demoAdapter } = await import('@/services/demoAdapter')
       if (demoAdapter.isEnabled()) {
         // Ayurveda já foi salvo sob códigos de dimensão e IDs de experiência.
@@ -660,14 +666,12 @@ export const experienceResponseService = {
         }
         return demoAdapter.listExperienceResponses(enrollmentId, canonicalExpId)
       }
-      return await pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
-        filter: `enrollment_id = "${enrollmentId}" && (experience_id = "${canonicalExpId}" || experience_id = "${experienceId}")`,
-        expand: 'prompt_id',
-        sort: 'prompt_id.step_order',
+      const actualExperienceId = canonicalExpId.startsWith('exp-') ? questionnaireRecordId('experience', canonicalExpId) : canonicalExpId
+      const records = await pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
+        filter: pb.filter('enrollment_id = {:enrollment} && experience_id = {:experience}', { enrollment: enrollmentId, experience: actualExperienceId }),
+        expand: 'prompt_id', sort: 'prompt_id.step_order',
       })
-    } catch {
-      return []
-    }
+      return records.map(record => ({ ...normalizeLiveResponse(record), experience_id: canonicalExpId }))
   },
 
   /**
@@ -738,7 +742,6 @@ export const experienceResponseService = {
       return demoAdapter.saveExperienceResponse(effectiveParams)
     }
 
-    const existing = await this.getResponse(effectiveParams.enrollmentId, effectiveParams.promptId)
 
     // Fallback gracioso para ambiente local sintético de teste
     if (
@@ -756,38 +759,35 @@ export const experienceResponseService = {
         structured_value: params.structuredValue,
         free_text: params.freeText || '',
         prompt_version: params.promptVersion,
-        version: existing ? existing.version + 1 : 1,
-        status: existing ? 'revised' : 'saved',
+        version: 1,
+        status: 'saved',
         created: new Date().toISOString(),
         updated: new Date().toISOString(),
       } as any
     }
 
-    // O versionamento e snapshot temporal são garantidos 100% SERVER-SIDE via hook PocketBase
-    // (onRecordAfterCreateSuccess e onRecordUpdate em experience_responses).
-    // O cliente envia a criação ou atualização diretamente, sem duplicar lógica de histórico no frontend.
-    if (!existing) {
-      return await pb.collection('experience_responses').create<ExperienceResponseRecord>({
-        enrollment_id: params.enrollmentId,
-        experience_id: params.experienceId,
-        prompt_id: params.promptId,
-        respondent_user_id: params.respondentUserId,
-        response_type: params.responseType,
-        access_class: params.accessClass || 'shared_care',
+    const prepared = canonicalExpId.startsWith('exp-')
+      ? await prepareLiveQuestionnaire(params.enrollmentId, canonicalExpId, params.promptId)
+      : { experience_id: canonicalExpId, prompt_id: params.promptId }
+    const existing = await experienceResponseService.getResponse(params.enrollmentId, prepared.prompt_id!)
+    const options = { expand: 'prompt_id' }
+    let saved: ExperienceResponseRecord
+    if (existing) {
+      saved = await pb.collection('experience_responses').update<ExperienceResponseRecord>(existing.id, {
         structured_value: params.structuredValue,
-        free_text: params.freeText || '',
-        prompt_version: params.promptVersion,
-        version: 1,
-        status: 'saved',
-      })
+        free_text: params.freeText !== undefined ? params.freeText : existing.free_text,
+        ...(params.accessClass ? { access_class: params.accessClass } : {}),
+      }, options)
     } else {
-      return await pb
-        .collection('experience_responses')
-        .update<ExperienceResponseRecord>(existing.id, {
-          structured_value: params.structuredValue,
-          free_text: params.freeText !== undefined ? params.freeText : existing.free_text,
-          ...(params.accessClass ? { access_class: params.accessClass } : {}),
-        })
+      saved = await pb.collection('experience_responses').create<ExperienceResponseRecord>({
+        enrollment_id: params.enrollmentId, experience_id: prepared.experience_id,
+        prompt_id: prepared.prompt_id, respondent_user_id: params.respondentUserId,
+        response_type: params.responseType, access_class: params.accessClass || 'shared_care',
+        structured_value: params.structuredValue, free_text: params.freeText || '',
+        prompt_version: params.promptVersion, version: 1, status: 'saved',
+      }, options)
     }
+    return { ...normalizeLiveResponse(saved), experience_id: canonicalExpId }
+
   },
 }

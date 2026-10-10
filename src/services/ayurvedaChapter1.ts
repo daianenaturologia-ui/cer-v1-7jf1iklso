@@ -54,6 +54,7 @@ export interface AyurvedaCanonicalResponseMetadata {
 export interface AyurvedaChapter1State {
   // Tela 1: Estrutura Corporal Habitual
   structure_choice?: string // 'light_narrow' | 'intermediate' | 'broad_solid' | 'two_figures' | 'changed_lot' | 'dont_know' | 'refusal'
+  primary_structure_choice?: string
   secondary_structure_choice?: string // preenchido se 'two_figures'
   structure_duration?: string // 'lifelong' | 'most_adult' | 'some_phases' | 'changed_lot' | 'dont_know' | 'refusal'
 
@@ -371,10 +372,9 @@ export function categorizeChapter1Responses(state: AyurvedaChapter1State): {
 
   // 1. Estrutura corporal
   if (state.structure_choice === 'two_figures') {
-    const opt = AYV_TELA1_STRUCTURE_OPTIONS.find((o) => o.id === 'two_figures')
-    const opt1 = AYV_TELA1_STRUCTURE_OPTIONS.find((o) => o.id === state.structure_choice)
+    const opt1 = AYV_TELA1_STRUCTURE_OPTIONS.find((o) => o.id === state.primary_structure_choice)
     const opt2 = AYV_TELA1_STRUCTURE_OPTIONS.find((o) => o.id === state.secondary_structure_choice)
-    const combinedLabel = `Reconheço características de duas figuras: ${opt1?.label || ''}${opt2 ? ` e ${opt2.label}` : ''}`
+    const combinedLabel = `Reconheço características de duas figuras: ${opt1?.label || 'primeira figura ainda não selecionada'}${opt2 ? ` e ${opt2.label}` : ''}`
     contextVariable.push({
       promptLabel: 'Estrutura corporal habitual',
       optionLabel: combinedLabel,
