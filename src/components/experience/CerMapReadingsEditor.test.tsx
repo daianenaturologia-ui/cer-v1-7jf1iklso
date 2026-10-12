@@ -71,7 +71,9 @@ it('refreshes an empty session draft and preserves professional wording in the i
   )
   await userEvent.click(screen.getByRole('button', { name: 'Como você funciona nesta dimensão' }))
   expect(
-    await within(screen.getByRole('dialog')).findByText('Leitura revisada: percebe o limite e quer praticar a comunicação.'),
+    await within(screen.getByRole('dialog')).findByText(
+      'Leitura revisada: percebe o limite e quer praticar a comunicação.',
+    ),
   ).toBeInTheDocument()
 })
 it('exige revisão explícita e retira a marca após nova edição', async () => {
