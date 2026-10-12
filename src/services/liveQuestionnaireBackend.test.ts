@@ -8,7 +8,7 @@ class BackendRecord {
   values: Record<string, any>
   constructor(public collection: any, values: Record<string, any> = {}) { this.values = { ...values }; this.id = values.id || `record${Math.random().toString(36).slice(2)}` }
   get(key: string) { return this.values[key] }
-  getString(key: string) { return String(this.values[key] || '') }
+  getString(key: string) { const value = this.values[key]; return value && typeof value === 'object' ? JSON.stringify(value) : String(value || '') }
   set(key: string, value: any) { if (key === 'id') this.id = value; else this.values[key] = value }
   publicExport() { return { ...this.values, id: this.id } }
 }
@@ -27,6 +27,11 @@ function fixture() {
       return collections.get(name)
     },
     findRecordById(name: string, id: string) { const record = records.get(`${name}:${id}`); if (!record) throw new Error('not found'); return record },
+    findFirstRecordByData(name: string, field: string, value: any) {
+      const record = [...records.values()].find(record => record.collection.name === name && record.get(field) === value)
+      if (!record) throw new Error('not found')
+      return record
+    },
     save(record: any) { if (record instanceof BackendRecord) records.set(`${record.collection.name}:${record.id}`, record) },
     runInTransaction(callback: any) { callback(app) },
     findFirstRecordByFilter(name: string, _filter: string, params: any) {
@@ -38,12 +43,15 @@ function fixture() {
       return [...records.values()].filter(record => record.collection.name === name && record.getString('enrollment_id') === params.enrollment && record.getString('experience_id') === params.experience && record.getString('response_type') === 'ChapterCompletion')
     },
   }
+  for (const code of ['corpo_fisiologia', 'mente_emocoes', 'regulacao_respostas', 'relacoes', 'sexualidade', 'sentido_conexao']) {
+    app.save(new BackendRecord(app.findCollectionByNameOrId('cer_dimensions'), { id: 'local_' + code, code }))
+  }
   let up: any
   vm.runInNewContext(fs.readFileSync('pocketbase/migrations/0076_live_questionnaire_catalog.js', 'utf8'), { migrate: (callback: any) => { up = callback }, Record: BackendRecord })
   up(app)
   const add = (collection: string, id: string, values: any) => { const record = new BackendRecord(app.findCollectionByNameOrId(collection), values); record.id = id; app.save(record); return record }
   const enrollment = add('enrollments', 'enrollment12345', { person_id: 'person123456789', status: 'active' })
-  const auth = add('users', 'user12345678901', { person_id: 'person123456789' })
+  const auth = add('users', 'user12345678901', { person_id: 'person123456789', status: 'active' })
   let endpoint: any
   vm.runInNewContext(fs.readFileSync('pocketbase/hooks/on_live_questionnaire.js', 'utf8'), { routerAdd: (_method: string, _path: string, callback: any) => { endpoint = callback }, $app: app, $apis: { requireAuth: () => true }, Record: BackendRecord, ForbiddenError: Error, BadRequestError: Error })
   const call = (body: any, user = auth) => endpoint({ auth: user, requestInfo: () => ({ body: { enrollment_id: enrollment.id, experience_id: 'exp-corpo-fisiologia-07b', ...body } }), json: (_status: number, data: any) => data })
@@ -63,6 +71,8 @@ describe('Live catalog repair and enrollment boundary', () => {
     const prompts = [...f.records.values()].filter(record => record.collection.name === 'cer_prompts' && record !== original)
     expect(prompts).toHaveLength(131)
     expect(prompts.every(record => /^[a-z0-9]{15}$/.test(record.id) && f.records.has('cer_experiences:' + record.getString('experience_id')))).toBe(true)
+    const experience = f.app.findRecordById('cer_experiences', questionnaireRecordId('experience', 'exp-corpo-fisiologia-07b'))
+    expect(experience.getString('dimension_id')).toBe('local_corpo_fisiologia')
   })
   it('prepares and resumes the same enrollment progress record', () => {
     const f = fixture()
@@ -74,7 +84,7 @@ describe('Live catalog repair and enrollment boundary', () => {
   })
   it('rejects other participants, inactive enrollments and arbitrary catalog entries', () => {
     const f = fixture()
-    const other = f.add('users', 'otheruser123456', { person_id: 'otherperson1234' })
+    const other = f.add('users', 'otheruser123456', { person_id: 'otherperson1234', status: 'active' })
     expect(() => f.call({}, other)).toThrow('Sem acesso')
     expect(() => f.call({ experience_id: 'anything' })).toThrow('não disponível')
     f.enrollment.set('status', 'paused')
@@ -87,6 +97,11 @@ describe('Live catalog repair and enrollment boundary', () => {
     progress.set('release_status', 'locked')
     expect(() => f.call({ prompt_id: 'ayv_c1_p1_estrutura_corporal' })).toThrow('não está disponível')
     expect(progress.getString('release_status')).toBe('locked')
+  })
+  it('rejects suspended accounts even when their existing token identifies an owned enrollment', () => {
+    const f = fixture()
+    f.auth.set('status', 'suspended')
+    expect(() => f.call({})).toThrow('conta não está ativa')
   })
   it('creates only the next revision of an owned completed chapter and preserves its original prompt', () => {
     const f = fixture()
