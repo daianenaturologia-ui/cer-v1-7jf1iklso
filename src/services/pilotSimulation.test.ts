@@ -118,3 +118,17 @@ it('participant selected interference takes precedence over arbitrary intensity 
     strongestMindPatterns(dimension, ['prestativo', 'hiper_realizador', 'hipervigilante']).keys,
   ).toEqual(['prestativo', 'hipervigilante', 'hiper_realizador'])
 })
+
+it('distinct priorities created in the same millisecond never inherit each others acceptance', () => {
+  demoAdapter.setActivePersona('daiane')
+  vi.spyOn(Date, 'now').mockReturnValue(123456789)
+  const plan = demoAdapter.createDraftPlan({
+    enrollment_id: DEMO_ENROLLMENT_ID,
+    direction_mode: 'authored',
+    direction_statement: 'Test',
+  })
+  const first = demoAdapter.addPriority({ plan_id: plan.id, title: 'First' })
+  const second = demoAdapter.addPriority({ plan_id: plan.id, title: 'Second' })
+  expect(first.id).not.toBe(second.id)
+  vi.restoreAllMocks()
+})
