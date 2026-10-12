@@ -952,6 +952,23 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
               </>
             )}
 
+            {!!dim.detailedRows?.length && (
+              <Accordion type="single" collapsible className="rounded-xl border px-4">
+                <AccordionItem value="recorded-responses">
+                  <AccordionTrigger className="text-left font-serif">
+                    Respostas e registros deste mapa
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3">
+                    {dim.detailedRows.map((row, index) => (
+                      <div key={`${index}-${row.label}`}>
+                        <p className="font-medium">{row.label}</p>
+                        <p className="whitespace-pre-wrap">{row.text}</p>
+                      </div>
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
             {renderReferencesList(refs)}
           </div>
         ),
