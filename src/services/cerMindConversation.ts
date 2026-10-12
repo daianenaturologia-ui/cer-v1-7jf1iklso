@@ -56,7 +56,7 @@ const intensity = (text: string) =>
       : /algumas situações/i.test(text)
         ? 1
         : 0
-export function strongestMindPatterns(dimension?: CerMapReadingDimension) {
+export function strongestMindPatterns(dimension?: CerMapReadingDimension, declared: string[] = []) {
   const ranks = new Map<string, number>()
   for (const row of dimension?.detailedRows || []) {
     const pattern = Object.values(CER_PROTECTION_PATTERNS).find((p) =>
@@ -70,7 +70,7 @@ export function strongestMindPatterns(dimension?: CerMapReadingDimension) {
   }
   const ranked = [...ranks]
     .filter(([, rank]) => rank > 0)
-    .sort((a, b) => b[1] - a[1] || priority.indexOf(a[0]) - priority.indexOf(b[0]))
+    .sort((a, b) => Number(declared.includes(b[0])) - Number(declared.includes(a[0])) || b[1] - a[1] || priority.indexOf(a[0]) - priority.indexOf(b[0]))
   return {
     keys: ranked.slice(0, 3).map(([key]) => key),
     tied: ranked.length > 3 && ranked[2][1] === ranked[3][1],
@@ -83,8 +83,9 @@ export function mindConversation(
   emotions: string[],
   emotionTexts: Record<string, string>,
   fight: boolean,
+  declared: string[] = [],
 ) {
-  const { keys, tied, allStrong } = strongestMindPatterns(dimension)
+  const { keys, tied, allStrong } = strongestMindPatterns(dimension, declared)
   const labels: Record<string, string> = {
     medo: 'medo',
     ansiedade_apreensao: 'ansiedade',
@@ -101,9 +102,9 @@ export function mindConversation(
     items.length < 2 ? items.join('') : items.slice(0, -1).join(', ') + ' e ' + items.at(-1)
   if (!keys.length && !feelings.length) return ''
   const paragraphs = [
-    `${name}, vamos olhar com carinho para o que suas respostas nos ajudam a compreender. ${feelings.length ? `No questionário, você destacou ${list(feelings)} entre as emoções mais presentes. ` : ''}${keys.length ? `Entre seus movimentos de proteção, vamos aprofundar aqui ${list(keys.map((k) => names[k]))}, que estão entre os mais intensos na sua leitura.` : ''}`,
+    `${name}, vamos olhar com carinho para o que suas respostas nos ajudam a compreender. ${feelings.length ? `No questionário, você destacou ${list(feelings)} entre as emoções mais presentes. ` : ''}${keys.length ? `Entre seus movimentos de proteção, vamos aprofundar aqui ${list(keys.map((k) => names[k]))}, ${declared.length ? 'que você destacou como interferentes no seu cotidiano.' : 'que estão entre os mais intensos na sua leitura.'}` : ''}`,
   ]
-  if (tied)
+  if (tied && !declared.length)
     paragraphs.push(
       'Alguns movimentos aparecem com a mesma intensidade. Escolhemos três para começar esta conversa; os demais continuam disponíveis no gráfico, com o destaque que você atribuiu a cada um.',
     )

@@ -1,3 +1,4 @@
+import { isChapter4Completed } from './ayurvedaChapter4'
 import { buildAyurvedaBodyReading } from './ayurvedaBodyReading'
 import { validateLifeDirection } from '@/services/lifeDirections'
 import type {
@@ -142,7 +143,7 @@ export function consciousnessCoverage(
     return {
       ...dimension,
       started: records.length > 0 || (!!state && state.progress_status !== 'not_started'),
-      completed: state?.progress_status === 'completed',
+      completed: dimension.id === 'corpo' && records.length > 0 ? isChapter4Completed(records) : state?.progress_status === 'completed',
     }
   })
 }

@@ -31,9 +31,9 @@ describe('Navegação profissional da Consciência', () => {
     expect(screen.getAllByText(/Capítulo 1 — Minha estrutura/i).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/Capítulo 2 — O ritmo do meu corpo/i).length).toBeGreaterThan(0)
     expect(
-      screen.getByRole('heading', { name: 'Mapa e interpretação profissional' }),
+      screen.getByRole('heading', { name: 'Mapa CER' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Mapa Integrativo Profissional da Consciência')).toBeInTheDocument()
+    expect(screen.getByText('A mesma leitura disponível à interagente, em uma visão única com detalhes ao tocar.')).toBeInTheDocument()
 
     await user.click(screen.getAllByRole('button', { name: 'Ver respostas' })[1])
     expect(screen.queryByText(/Capítulo 1 — Minha estrutura/i)).toBeNull()

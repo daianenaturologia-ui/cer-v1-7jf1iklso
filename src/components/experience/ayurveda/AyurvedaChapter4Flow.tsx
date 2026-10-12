@@ -4,7 +4,7 @@ import { CheckCircle2, MessageCircleQuestion } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { experienceResponseService } from '@/services/experienceEngine'
+import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
 import type { ExperienceResponseRecord } from '@/types/cer'
 import {
   AYV_C4_COMPLETION,
@@ -73,6 +73,9 @@ export const AyurvedaChapter4Flow: React.FC<Props> = ({
             metadata: { prompt_key: AYV_C4_COMPLETION.key, answered_at: now },
           },
         })
+        const progress = await enrollmentExperienceService.getByEnrollmentAndExperience(enrollmentId, experienceId)
+        if (!progress) throw new Error('Não foi possível localizar o progresso desta dimensão.')
+        await enrollmentExperienceService.updateProgress(progress.id, { completed: true, enrollmentId })
         ;(saved as any).prompt_key = AYV_C4_COMPLETION.key
         setResponses((current) => [...current, saved])
         onCompleted?.()

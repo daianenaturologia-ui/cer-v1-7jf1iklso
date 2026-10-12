@@ -1,3 +1,5 @@
+import { professionalQuestionnaireResponses, isSharedQuestionnaireRecord } from '@/services/professionalQuestionnaireRead'
+import { currentProfessionalInterpretation } from '@/services/currentProfessionalInterpretation'
 import React, { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -21,20 +23,14 @@ import type {
   ExperienceResponseVersionRecord,
   CerPromptRecord,
 } from '@/types/cer'
-import { enrollmentExperienceService } from '@/services/experienceEngine'
+import { enrollmentExperienceService, resolveExperienceId } from '@/services/experienceEngine'
 import { ProfessionalMapEditor } from '@/components/ProfessionalMapEditor'
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
 import { ProfessionalAyurvedaCorpoFisiologiaView } from '@/components/experience/ayurveda/ProfessionalAyurvedaCorpoFisiologiaView'
 import { ProfessionalAyurvedaInterpretationView } from '@/components/experience/ayurveda/ProfessionalAyurvedaInterpretationView'
-import { ProfessionalMindEmotionsView } from '@/components/experience/ProfessionalMindEmotionsView'
 import { ProfessionalDimensionReportView } from '@/components/experience/ProfessionalDimensionReportView'
 import { SharedProfessionalCerMap } from '@/components/experience/SharedProfessionalCerMap'
-import {
-  buildRegulacaoInterpretation,
-  buildRelacoesInterpretation,
-  buildSexualidadeInterpretation,
-  buildSentidoInterpretation,
-} from '@/services/universalDimensionInterpretationEngine'
+
 import { isChapter4Completed } from '@/services/ayurvedaChapter4'
 
 export interface DimensionConfig {
@@ -146,9 +142,9 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
         setIsDemoQaScenarioActive(demoAdapter.getActiveScenario() === 'qa_consciencia_completa')
         const demoResponses = demoAdapter.listExperienceResponses(enrollment.id)
         const demoVersions = demoAdapter.listExperienceResponseVersions(enrollment.id)
-        setEnrollmentExps([])
-        setAllResponses(Array.isArray(demoResponses) ? demoResponses : [])
-        setAllResponseVersions(Array.isArray(demoVersions) ? demoVersions : [])
+        setEnrollmentExps(await enrollmentExperienceService.listByEnrollment(enrollment.id))
+        setAllResponses(professionalQuestionnaireResponses(Array.isArray(demoResponses) ? demoResponses : [], enrollment.id))
+        setAllResponseVersions((Array.isArray(demoVersions) ? demoVersions : []).filter(isSharedQuestionnaireRecord))
         setLoading(false)
         return
       }
@@ -167,8 +163,8 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
       ])
 
       setEnrollmentExps(Array.isArray(exps) ? exps : [])
-      setAllResponses(Array.isArray(resps) ? resps : [])
-      setAllResponseVersions(Array.isArray(versions) ? versions : [])
+      setAllResponses(professionalQuestionnaireResponses(Array.isArray(resps) ? resps : [], enrollment.id))
+      setAllResponseVersions((Array.isArray(versions) ? versions : []).filter(isSharedQuestionnaireRecord))
     } catch (err) {
       console.error('Erro ao carregar dados da Consciência Profissional:', err)
       setLoadError(true)
@@ -206,7 +202,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
   }
 
   const getResponsesForDim = (experienceId: string): ExperienceResponseRecord[] => {
-    return (allResponses || []).filter((r) => r?.experience_id === experienceId)
+    return (allResponses || []).filter((r) => resolveExperienceId(r?.experience_id) === experienceId)
   }
 
   const getLastUpdateDate = (
@@ -438,7 +434,9 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                           )}
                         </div>
                       ) : dim.id === 'mente_emocoes' ? (
-                        <ProfessionalMindEmotionsView
+                        <ProfessionalDimensionReportView
+                          interpretation={currentProfessionalInterpretation('mente_emocoes', responses, participantName)}
+                          icon={Heart}
                           responses={responses}
                           participantName={participantName}
                           loadError={loadError}
@@ -446,7 +444,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                         />
                       ) : dim.id === 'regulacao_respostas' ? (
                         <ProfessionalDimensionReportView
-                          interpretation={buildRegulacaoInterpretation(responses, participantName)}
+                          interpretation={currentProfessionalInterpretation('regulacao_respostas', responses, participantName)}
                           responses={responses}
                           participantName={participantName}
                           icon={Shield}
@@ -455,7 +453,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                         />
                       ) : dim.id === 'relacoes' ? (
                         <ProfessionalDimensionReportView
-                          interpretation={buildRelacoesInterpretation(responses, participantName)}
+                          interpretation={currentProfessionalInterpretation('relacoes', responses, participantName)}
                           responses={responses}
                           participantName={participantName}
                           icon={Users}
@@ -464,10 +462,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                         />
                       ) : dim.id === 'sexualidade' ? (
                         <ProfessionalDimensionReportView
-                          interpretation={buildSexualidadeInterpretation(
-                            responses,
-                            participantName,
-                          )}
+                          interpretation={currentProfessionalInterpretation('sexualidade', responses, participantName)}
                           responses={responses}
                           participantName={participantName}
                           icon={Flame}
@@ -476,7 +471,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                         />
                       ) : dim.id === 'sentido_conexao' ? (
                         <ProfessionalDimensionReportView
-                          interpretation={buildSentidoInterpretation(responses, participantName)}
+                          interpretation={currentProfessionalInterpretation('sentido_conexao', responses, participantName)}
                           responses={responses}
                           participantName={participantName}
                           icon={Sparkles}

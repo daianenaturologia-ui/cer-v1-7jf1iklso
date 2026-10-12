@@ -162,6 +162,7 @@ export function applyFunctionalReading(
     choices('emocoes_recorrentes'),
     emotionReadings,
     fight,
+    choices('movimentos_interferencia_atual').map(key => CER_PROTECTION_PATTERNS[key]?.canonicalKey || key),
   )
   const dimensions = snapshot.dimensions.map((d) => {
     if (d.id === 'corpo') return d

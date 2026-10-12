@@ -290,6 +290,37 @@ export const InteragenteHome: React.FC = () => {
         setParticipantResponses(responses)
         setCurrentMap(map)
       }
+      if (activeEnr?.id) {
+        // ETAPA 4: Carregar planos apresentados à participante (status = presented)
+        try {
+          const presentedPlans = await cerCarePlanService.listPresentedForParticipant(activeEnr.id)
+          setPresentedCarePlans(presentedPlans)
+
+          // Carregar aceites operacionais existentes para preencher visualmente se já respondeu
+          const existingAcceptances = await cerCarePlanService.listAcceptancesByEnrollment(
+            activeEnr.id,
+          )
+          const respMap: Record<
+            string,
+            {
+              response_type: OperationalAcceptanceResponseType
+              shared_comment: string
+              saved: boolean
+            }
+          > = {}
+          for (const acc of existingAcceptances) {
+            respMap[acc.presentation_id] = {
+              response_type: acc.response_type,
+              shared_comment: acc.shared_comment || '',
+              saved: true,
+            }
+          }
+          setSelectedPlanResponses(respMap)
+        } catch {
+          /* intentionally ignored */
+        }
+
+      }
       if (activeEnr?.id && effectiveEngineEnabled) {
         const [exps, kiList, myRecogs, presList, mapData, resps] = await Promise.all([
           enrollmentExperienceService.listByEnrollment(activeEnr.id),
@@ -320,35 +351,6 @@ export const InteragenteHome: React.FC = () => {
         setPresentations(presList)
         setCurrentMap(mapData)
         setParticipantResponses(Array.isArray(resps) ? resps : [])
-
-        // ETAPA 4: Carregar planos apresentados à participante (status = presented)
-        try {
-          const presentedPlans = await cerCarePlanService.listPresentedForParticipant(activeEnr.id)
-          setPresentedCarePlans(presentedPlans)
-
-          // Carregar aceites operacionais existentes para preencher visualmente se já respondeu
-          const existingAcceptances = await cerCarePlanService.listAcceptancesByEnrollment(
-            activeEnr.id,
-          )
-          const respMap: Record<
-            string,
-            {
-              response_type: OperationalAcceptanceResponseType
-              shared_comment: string
-              saved: boolean
-            }
-          > = {}
-          for (const acc of existingAcceptances) {
-            respMap[acc.presentation_id] = {
-              response_type: acc.response_type,
-              shared_comment: acc.shared_comment || '',
-              saved: true,
-            }
-          }
-          setSelectedPlanResponses(respMap)
-        } catch {
-          /* intentionally ignored */
-        }
 
         const recogMap: Record<string, { type: RecognitionType; comment: string; saved: boolean }> =
           {}
