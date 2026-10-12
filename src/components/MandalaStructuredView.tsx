@@ -345,7 +345,7 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
               {mandala.direction && (
                 <div className="p-2.5 rounded-lg bg-muted/20 border border-border/40 flex-1 space-y-1">
                   <span className="font-semibold text-foreground block">
-                    Modo de Direção: {mandala.direction.mode}
+                    Direção do cuidado: {({ authored: 'Construída em conversa', contextualized: 'Ajustada ao seu momento', reused: 'Retomada do percurso' } as Record<string,string>)[mandala.direction.mode] || 'Em acompanhamento'}
                   </span>
                   <p className="text-muted-foreground text-[11px]">
                     {mandala.direction.statement ||
