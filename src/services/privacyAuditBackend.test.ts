@@ -6,7 +6,7 @@ describe('Security audit patches — simulated events, not live RLS certificatio
   it('prepares scoped identity rules and refuses to silently restore public access', () => {
     let up: any, down: any
     vm.runInNewContext(
-      readFileSync('pocketbase/migrations/0074_harden_identity_access.js', 'utf8'),
+      readFileSync('pocketbase/migrations/0078_harden_identity_access.js', 'utf8'),
       {
         migrate: (first: any, second: any) => {
           up = first

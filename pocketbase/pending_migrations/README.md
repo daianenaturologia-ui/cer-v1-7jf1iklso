@@ -1,5 +1,5 @@
 # Migrações de segurança pendentes
 
-Arquivos preservados do commit73ca614. Eles ainda não foram aplicados ao backend ativo. No deploy do bloco8, o runtime exigiu usar o ordinal0074 para criar cer_resource_exercises. Estes quatro arquivos foram retirados do diretório executável para evitar aplicação fora do escopo autorizado.
+As quatro correções preservadas do commit73ca614 foram revisadas e renumeradas como 0078–0081 no bloco de preparação 0.0.342. Elas ainda não foram aplicadas ao backend ativo.
 
-Antes da próxima implantação de segurança, revisar o estado ativo e renumerar estes arquivos sequencialmente a partir do próximo ordinal livre. Não copiar automaticamente ao diretório migrations nem recriar a coleção do exercício.
+Veja `docs/seguranca-validada-preparacao-2026-10-12.md`. A implantação requer conferir a base ativa, duplicatas de conta e backup/recuperação. Não recriar a coleção do exercício nem reaplicar os ordinais antigos.
