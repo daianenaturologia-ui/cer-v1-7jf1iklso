@@ -1,3 +1,4 @@
+import { ProfessionalJourneySummary } from './ProfessionalJourneySummary'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CerArtStrip } from '@/components/CerArtwork'
 import { DemoPracticeWorkspace } from '@/components/DemoPracticeWorkspace'
@@ -75,14 +76,14 @@ export const ParticipantWorkspace: React.FC = () => {
       ? requestedTool
       : 'plano'
   // Normalização para a arquitetura aprovada (4 fases + sessões)
-  const currentTab: 'sessoes' | 'consciencia' | 'equilibrio' | 'evolucao' =
+  const currentTab: 'resumo' | 'sessoes' | 'consciencia' | 'equilibrio' | 'evolucao' =
     rawTab === 'consciencia'
       ? 'consciencia'
       : rawTab === 'plano' || rawTab === 'experimentos' || rawTab === 'equilibrio'
         ? 'equilibrio'
         : rawTab === 'revisao' || rawTab === 'evolucao'
           ? 'evolucao'
-          : 'sessoes'
+          : rawTab === 'sessoes' ? 'sessoes' : 'resumo'
 
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [person, setPerson] = useState<PersonRecord | null>(null)
@@ -304,6 +305,7 @@ export const ParticipantWorkspace: React.FC = () => {
 
       {/* Navegação pelas 4 Fases e Sessões — Arquitetura CER */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-border/40">
+        <Button size="sm" variant={currentTab === 'resumo' ? 'default' : 'ghost'} onClick={() => setTab('resumo')} className="h-8 text-xs">Visão geral</Button>
         <Button
           size="sm"
           variant={currentTab === 'sessoes' ? 'default' : 'ghost'}
@@ -344,6 +346,9 @@ export const ParticipantWorkspace: React.FC = () => {
           <span>Evolução</span>
         </Button>
       </div>
+
+      {currentTab === 'resumo' && <ProfessionalJourneySummary enrollmentId={enrollment.id} name={participantName}
+        onOpen={(tab, tool) => setSearchParams({ tab, ...(tool ? { tool } : {}) })} />}
 
       {/* SESSÕES & ATENÇÃO */}
       {currentTab === 'sessoes' && (
@@ -595,7 +600,7 @@ export const ParticipantWorkspace: React.FC = () => {
       {/* EVOLUÇÃO */}
       <CerArtStrip variant="path" compact />
       {currentTab === 'evolucao' && (
-        <Tabs defaultValue="plano" key={`evolution-${enrollment.id}`}>
+        <Tabs defaultValue={requestedTool === 'linha' ? 'caminho' : requestedTool === 'planner' ? 'agenda' : 'plano'} key={`evolution-${enrollment.id}-${requestedTool}`}>
           <TabsList aria-label="Evolução da interagente" className="flex-wrap h-auto">
             <TabsTrigger value="plano">Plano</TabsTrigger>
             <TabsTrigger value="caminho">Linha da Vida</TabsTrigger>

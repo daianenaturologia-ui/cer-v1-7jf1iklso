@@ -1,3 +1,4 @@
+import { formatPromptResponse } from './formatPromptResponse'
 import React, { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -230,12 +231,7 @@ export const ProfessionalDimensionReportView: React.FC<ProfessionalDimensionRepo
                   {resp.structured_value !== undefined && resp.structured_value !== null && (
                     <p className="text-foreground text-[11px]">
                       <strong>Escolha registrada:</strong>{' '}
-                      {typeof resp.structured_value === 'object'
-                        ? (resp.structured_value as any)?.title ||
-                          (resp.structured_value as any)?.label ||
-                          (resp.structured_value as any)?.value ||
-                          'Opção selecionada no instrumento'
-                        : String(resp.structured_value)}
+                      {formatPromptResponse(resp.expand?.prompt_id, { ...resp, free_text: '' })}
                     </p>
                   )}
                 </div>

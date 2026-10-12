@@ -1,3 +1,4 @@
+import { isSharedQuestionnaireRecord } from './professionalQuestionnaireRead'
 import { frequentMovementCount } from './movementFrequency'
 /**
  * ADAPTADOR DE DEMONSTRAÇÃO (CER V1 DEMO MODE)
@@ -824,19 +825,14 @@ class DemoAdapter {
   }
 
   public disableDemo(): void {
+    // Leaving a session must not reset the participant's fictitious journey.
+    // Explicit resetToDefaultState remains the only action that starts it over.
     this.isDemoEnabled = false
     try {
-      localStorage.removeItem(STORAGE_KEY)
-      localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
-      localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
-      localStorage.removeItem(DEMO_ARCHIVED_INCOMPATIBLE_KEY)
-      localStorage.removeItem(DEMO_QA_SCENARIO_STORAGE_KEY)
-      localStorage.removeItem('cer_demo_mode_active')
+      localStorage.setItem('cer_demo_mode_active', 'false')
     } catch {
       /* ignore */
     }
-    this.activeScenario = 'default'
-    this.state = getInitialState()
     this.notify()
   }
 
@@ -2049,6 +2045,7 @@ class DemoAdapter {
     return sourceResponses.filter((r) => {
       if (enrollmentId && r.enrollment_id !== enrollmentId) return false
       if (experienceId && r.experience_id !== experienceId) return false
+      if (this.state.activePersona === 'daiane' && (!isSharedQuestionnaireRecord(r) || !['saved', 'revised'].includes(r.status))) return false
       return true
     })
   }
@@ -2060,7 +2057,9 @@ class DemoAdapter {
         : this.state.experienceResponseVersions || []
 
     return sourceVersions.filter(
-      (version) => !enrollmentId || version.enrollment_id === enrollmentId,
+      (version) => (!enrollmentId || version.enrollment_id === enrollmentId) &&
+        (this.state.activePersona !== 'daiane' || (isSharedQuestionnaireRecord(version) &&
+          this.state.experienceResponses.some(r => r.id === version.response_id && isSharedQuestionnaireRecord(r)))),
     )
   }
 
@@ -2167,6 +2166,7 @@ class DemoAdapter {
           updated: existing.updated,
         })
       }
+      if (params.accessClass) existing.access_class = params.accessClass
       existing.structured_value = enrichedStructuredValue
       existing.free_text = params.freeText !== undefined ? params.freeText : existing.free_text
       existing.version = (existing.version || 1) + 1

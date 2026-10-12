@@ -940,7 +940,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
         // 2. Preserva atualização de progresso de etapa no enrollmentExp
         if (enrollmentExp) {
           const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
-            progressStatus: 'completed',
+            progressStatus: 'in_progress',
             stepOrder: 5,
           })
           setEnrollmentExp(updated)

@@ -145,7 +145,7 @@ describe('Live failures preserve the chapter', () => {
     await waitFor(() => expect(complete).toHaveBeenCalledOnce())
     expect(stored.filter((r) => r.response_type === 'ChapterCompletion')).toHaveLength(1)
     expect(enrollmentExperienceService.updateProgress).toHaveBeenLastCalledWith('realprogress123', {
-      progressStatus: 'completed',
+      progressStatus: 'in_progress',
       stepOrder: 5,
     })
   })
