@@ -1,5 +1,5 @@
 """Authenticated REST checks on the complete reference schema and hooks.
-Only generated fixtures, loopback, PocketBase 0.26.1; never contacts Skip.
+Only generated fixtures, loopback, PocketBase 0.26.1 or 0.36.0; never contacts Skip.
 Run: CER_POCKETBASE_BINARY=/absolute/path/pocketbase python scripts/verify-authenticated-backend.py
 """
 import json, os, pathlib, re, secrets, shutil, socket, subprocess, tempfile, time
@@ -7,7 +7,9 @@ import urllib.request, urllib.error
 
 binary = os.environ.get('CER_POCKETBASE_BINARY', '')
 assert pathlib.Path(binary).is_absolute(), 'Provide an absolute binary path'
-assert subprocess.check_output([binary, '--version'], text=True).strip() == 'pocketbase version 0.26.1'
+expected_version = os.environ.get('CER_POCKETBASE_VERSION', '0.26.1')
+assert expected_version in ('0.26.1', '0.36.0'), 'Unsupported reference version'
+assert subprocess.check_output([binary, '--version'], text=True).strip() == 'pocketbase version '+expected_version
 root = pathlib.Path(tempfile.mkdtemp(prefix='cer-authenticated-reference-'))
 password = secrets.token_hex(24)
 proc = None

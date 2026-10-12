@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/services/privacyAuditBackend.test.ts',
       'src/services/liveQuestionnaire.test.ts',
       'src/services/liveQuestionnaireBackend.test.ts',
       'src/hooks/useQuestionnaireSaving.test.tsx',
