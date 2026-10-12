@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from 'react'
-import {
-  enrollmentExperienceService,
-  experienceResponseService,
-  experienceCatalogService,
-} from '@/services/experienceEngine'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { enrollmentExperienceService, experienceResponseService } from '@/services/experienceEngine'
 import type {
   EnrollmentRecord,
   EnrollmentExperienceRecord,
   ExperienceResponseRecord,
-  CerExperienceRecord,
 } from '@/types/cer'
 import {
   Dialog,
@@ -20,19 +15,7 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Sparkles,
-  Play,
-  Pause,
-  RotateCcw,
-  CheckCircle2,
-  Lock,
-  Eye,
-  Calendar,
-  Layers,
-  Clock,
-  History,
-} from 'lucide-react'
+import { Sparkles, Play, Pause, RotateCcw, Lock, Eye } from 'lucide-react'
 
 interface ProfessionalExperienceManagerProps {
   enrollment: EnrollmentRecord
@@ -62,24 +45,45 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
   const [responses, setResponses] = useState<ExperienceResponseRecord[]>([])
   const [loadingResponses, setLoadingResponses] = useState(false)
   const [isResponsesModalOpen, setIsResponsesModalOpen] = useState(false)
+  const [experiencesError, setExperiencesError] = useState(false)
+  const [responsesError, setResponsesError] = useState(false)
+  const experienceRequest = useRef(0)
+  const responseRequest = useRef(0)
 
-  const loadExperiences = async () => {
+  const loadExperiences = useCallback(async () => {
+    const request = ++experienceRequest.current
     setLoading(true)
+    setExperiences([])
+    setExperiencesError(false)
     try {
       const list = await enrollmentExperienceService.listByEnrollment(enrollment.id)
+      if (request !== experienceRequest.current) return
       setExperiences(list)
     } catch (err) {
+      if (request !== experienceRequest.current) return
+      setExperiencesError(true)
       console.error('Erro ao carregar experiências do enrollment:', err)
     } finally {
-      setLoading(false)
+      if (request === experienceRequest.current) setLoading(false)
     }
-  }
+  }, [enrollment.id])
+
+  const cancelPendingReads = useCallback(() => {
+    experienceRequest.current++
+    responseRequest.current++
+  }, [])
 
   useEffect(() => {
+    responseRequest.current++
+    setResponses([])
+    setSelectedExpForResponses(null)
+    setIsResponsesModalOpen(false)
+    setResponsesError(false)
     if (enrollment?.id) {
       loadExperiences()
     }
-  }, [enrollment?.id])
+    return cancelPendingReads
+  }, [enrollment?.id, loadExperiences, cancelPendingReads])
 
   const handleTogglePause = async (enrExp: EnrollmentExperienceRecord) => {
     try {
@@ -120,6 +124,9 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
   }
 
   const handleViewResponses = async (enrExp: EnrollmentExperienceRecord) => {
+    const request = ++responseRequest.current
+    setResponses([])
+    setResponsesError(false)
     setSelectedExpForResponses(enrExp)
     setIsResponsesModalOpen(true)
     setLoadingResponses(true)
@@ -128,11 +135,42 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
         enrollment.id,
         enrExp.experience_id,
       )
-      setResponses(resps)
+      if (request !== responseRequest.current) return
+      setResponses(
+        resps
+          .filter(
+            (response) =>
+              response.enrollment_id === enrollment.id &&
+              (response.access_class === 'shared_care' ||
+                response.access_class === 'participant_shared') &&
+              (response.status === 'saved' || response.status === 'revised'),
+          )
+          .map((response) => {
+            const value = response.structured_value
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+              const structured = value as Record<string, unknown>
+              if (
+                ('private_text' in structured ||
+                  'share_private_text_with_professional' in structured) &&
+                structured.share_private_text_with_professional !== true
+              ) {
+                const {
+                  private_text: _privateText,
+                  free_text: _privateFreeText,
+                  ...sharedValue
+                } = structured
+                return { ...response, structured_value: sharedValue, free_text: '' }
+              }
+            }
+            return response
+          }),
+      )
     } catch (err) {
+      if (request !== responseRequest.current) return
+      setResponsesError(true)
       console.error('Erro ao carregar respostas da interagente:', err)
     } finally {
-      setLoadingResponses(false)
+      if (request === responseRequest.current) setLoadingResponses(false)
     }
   }
 
@@ -140,12 +178,6 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
   const sharedResponsesCount = responses.filter(
     (r) => r.access_class === 'participant_shared' || r.access_class === 'shared_care',
   ).length
-  const privateRecordsCount = responses.filter((r) => {
-    if (r.access_class === 'participant_private') return true
-    const sVal = r.structured_value as any
-    if (sVal?.private_text && !sVal?.share_private_text_with_professional) return true
-    return false
-  }).length
 
   return (
     <Card className="border-border/80 shadow-none">
@@ -170,6 +202,15 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
           <p className="text-xs text-muted-foreground py-3 text-center">
             Carregando experiências...
           </p>
+        ) : experiencesError ? (
+          <div role="alert" className="text-center py-4 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Não foi possível carregar as experiências.
+            </p>
+            <Button variant="outline" size="sm" onClick={loadExperiences}>
+              Tentar novamente
+            </Button>
+          </div>
         ) : experiences.length === 0 ? (
           <div className="text-center py-4 space-y-2">
             <p className="text-xs text-muted-foreground">
@@ -300,7 +341,18 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
       </CardContent>
 
       {/* Modal: Visualizar Respostas da Interagente */}
-      <Dialog open={isResponsesModalOpen} onOpenChange={setIsResponsesModalOpen}>
+      <Dialog
+        open={isResponsesModalOpen}
+        onOpenChange={(open) => {
+          setIsResponsesModalOpen(open)
+          if (!open) {
+            responseRequest.current++
+            setResponses([])
+            setLoadingResponses(false)
+            setResponsesError(false)
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
@@ -314,10 +366,6 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
                 <span className="text-primary">
                   {sharedResponsesCount} respostas compartilhadas
                 </span>
-                <span>•</span>
-                <span className="text-muted-foreground">
-                  {privateRecordsCount} registros mantidos em privacidade pela interagente
-                </span>
               </div>
             </DialogDescription>
           </DialogHeader>
@@ -326,10 +374,25 @@ export const ProfessionalExperienceManager: React.FC<ProfessionalExperienceManag
             <p className="text-xs text-muted-foreground py-6 text-center">
               Carregando respostas canônicas...
             </p>
+          ) : responsesError ? (
+            <div role="alert" className="text-center py-6 space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Não foi possível carregar as respostas.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  selectedExpForResponses && handleViewResponses(selectedExpForResponses)
+                }
+              >
+                Tentar novamente
+              </Button>
+            </div>
           ) : responses.length === 0 ? (
             <div className="text-center py-6 space-y-2">
               <p className="text-xs text-muted-foreground">
-                Nenhuma resposta foi registrada pela interagente ainda nesta experiência.
+                Ainda não há respostas finalizadas e compartilhadas nesta experiência.
               </p>
             </div>
           ) : (
