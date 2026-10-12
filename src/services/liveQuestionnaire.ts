@@ -12,7 +12,9 @@ export function questionnaireRecordId(kind: string, logicalId: string): string {
   return `c${hash('cer1')}${hash('cer2')}`
 }
 
-export function normalizeLiveResponse<T extends { experience_id: string; prompt_id: string; expand?: any }>(record: T): T {
+export function normalizeLiveResponse<
+  T extends { experience_id: string; prompt_id: string; expand?: any },
+>(record: T): T {
   const logicalId = record.expand?.prompt_id?.schema_config?.cer_logical_prompt_id
   return {
     ...record,
@@ -23,7 +25,11 @@ export function normalizeLiveResponse<T extends { experience_id: string; prompt_
   }
 }
 
-export async function prepareLiveQuestionnaire(enrollmentId: string, experienceId: string, promptId?: string) {
+export async function prepareLiveQuestionnaire(
+  enrollmentId: string,
+  experienceId: string,
+  promptId?: string,
+) {
   return pb.send<{
     experience_id: string
     prompt_id?: string

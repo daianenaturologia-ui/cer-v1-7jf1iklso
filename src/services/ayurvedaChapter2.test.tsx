@@ -981,7 +981,9 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
         await waitFor(() => expect(btnCorrect).toBeEnabled())
         fireEvent.click(btnCorrect)
 
-        expect(await screen.findByText('Confirmar abertura de correção do Capítulo 2')).toBeInTheDocument()
+        expect(
+          await screen.findByText('Confirmar abertura de correção do Capítulo 2'),
+        ).toBeInTheDocument()
 
         // 3. Clicar em "Confirmar e corrigir"
         const btnConfirm = screen.getByText('Confirmar e corrigir')

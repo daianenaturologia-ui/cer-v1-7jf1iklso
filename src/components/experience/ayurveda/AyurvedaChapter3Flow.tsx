@@ -77,9 +77,13 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   const [loadError, setLoadError] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
   const exitSafely = async () => {
-    try { await saver.flush(); onBackToHub() } catch { /* retain edits */ }
+    try {
+      await saver.flush()
+      onBackToHub()
+    } catch {
+      /* retain edits */
+    }
   }
-
 
   const [saving, setSaving] = useState(false)
   const [showVoice, setShowVoice] = useState(false)
@@ -118,7 +122,13 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           (completion?.structured_value as any)?.metadata?.chapter_revision_number || 1
         if (derived.status === 'completed' || derived.status === 'ready_to_complete') setStep(6)
         else setStep(initialStep || derived.firstUnansweredStep)
-      }).catch(() => { if (active) setLoadError(true) }).finally(() => { if (active) setLoading(false) })
+      })
+      .catch(() => {
+        if (active) setLoadError(true)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
     return () => {
       active = false
     }
@@ -296,123 +306,123 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     try {
       await saver.flush()
       saver.enqueue('completion', async () => {
-      if (isCorrectionMode) {
-        const reason = 'Correção concluída pela interagente no Capítulo 3 de Corpo & Fisiologia'
-        await savePrompt(
-          AYV_C3_PROMPTS.DOMAINS,
-          state.changed_domains || [],
-          state.changed_domains || [],
-          '',
-          reason,
-        )
-        await savePrompt(
-          AYV_C3_PROMPTS.DIRECTIONS,
-          state.change_directions || {},
-          Object.values(state.change_directions || {}),
-          '',
-          reason,
-        )
-        await savePrompt(
-          AYV_C3_PROMPTS.STARTED_AT,
-          state.started_change_at || '',
-          state.started_change_at ? [state.started_change_at] : [],
-          '',
-          reason,
-        )
-        await savePrompt(
-          AYV_C3_PROMPTS.CONTEXTS,
-          state.change_contexts || [],
-          state.change_contexts || [],
-          '',
-          reason,
-        )
-        await savePrompt(
-          AYV_C3_PROMPTS.MEDICATION_STATUS,
-          state.medication_status || '',
-          state.medication_status ? [state.medication_status] : [],
-          '',
-          reason,
-        )
-        await savePrompt(
-          AYV_C3_PROMPTS.MEDICATION_DETAILS,
-          state.medication_items || [],
-          (state.medication_items || []).map((item) => item.id),
-          '',
-          reason,
-        )
-        await savePrompt(
-          AYV_C3_PROMPTS.NOTE,
-          state.optional_note || '',
-          [],
-          state.optional_note || '',
-          reason,
-        )
-        // Novas coletas opcionais por área
-        const areaPromptMap: Record<
-          AyurvedaC3AreaId,
-          (typeof AYV_C3_PROMPTS)[keyof typeof AYV_C3_PROMPTS]
-        > = {
-          hunger: AYV_C3_PROMPTS.CURRENT_HUNGER,
-          post_meal: AYV_C3_PROMPTS.CURRENT_POST_MEAL,
-          elimination: AYV_C3_PROMPTS.CURRENT_ELIMINATION,
-          sleep: AYV_C3_PROMPTS.CURRENT_SLEEP,
-          temperature: AYV_C3_PROMPTS.CURRENT_TEMPERATURE,
-          skin: AYV_C3_PROMPTS.CURRENT_SKIN,
-        }
-        const stateKeyMap: Record<AyurvedaC3AreaId, keyof AyurvedaChapter3State> = {
-          hunger: 'current_hunger',
-          post_meal: 'current_post_meal',
-          elimination: 'current_elimination',
-          sleep: 'current_sleep',
-          temperature: 'current_temperature',
-          skin: 'current_skin',
-        }
-        for (const areaId of [
-          'hunger',
-          'post_meal',
-          'elimination',
-          'sleep',
-          'temperature',
-          'skin',
-        ] as const) {
-          const rec = state[stateKeyMap[areaId]] as AyurvedaCurrentAreaRecord | undefined
-          if (rec) {
-            await savePrompt(areaPromptMap[areaId], rec, rec.current_states || [], '', reason)
+        if (isCorrectionMode) {
+          const reason = 'Correção concluída pela interagente no Capítulo 3 de Corpo & Fisiologia'
+          await savePrompt(
+            AYV_C3_PROMPTS.DOMAINS,
+            state.changed_domains || [],
+            state.changed_domains || [],
+            '',
+            reason,
+          )
+          await savePrompt(
+            AYV_C3_PROMPTS.DIRECTIONS,
+            state.change_directions || {},
+            Object.values(state.change_directions || {}),
+            '',
+            reason,
+          )
+          await savePrompt(
+            AYV_C3_PROMPTS.STARTED_AT,
+            state.started_change_at || '',
+            state.started_change_at ? [state.started_change_at] : [],
+            '',
+            reason,
+          )
+          await savePrompt(
+            AYV_C3_PROMPTS.CONTEXTS,
+            state.change_contexts || [],
+            state.change_contexts || [],
+            '',
+            reason,
+          )
+          await savePrompt(
+            AYV_C3_PROMPTS.MEDICATION_STATUS,
+            state.medication_status || '',
+            state.medication_status ? [state.medication_status] : [],
+            '',
+            reason,
+          )
+          await savePrompt(
+            AYV_C3_PROMPTS.MEDICATION_DETAILS,
+            state.medication_items || [],
+            (state.medication_items || []).map((item) => item.id),
+            '',
+            reason,
+          )
+          await savePrompt(
+            AYV_C3_PROMPTS.NOTE,
+            state.optional_note || '',
+            [],
+            state.optional_note || '',
+            reason,
+          )
+          // Novas coletas opcionais por área
+          const areaPromptMap: Record<
+            AyurvedaC3AreaId,
+            (typeof AYV_C3_PROMPTS)[keyof typeof AYV_C3_PROMPTS]
+          > = {
+            hunger: AYV_C3_PROMPTS.CURRENT_HUNGER,
+            post_meal: AYV_C3_PROMPTS.CURRENT_POST_MEAL,
+            elimination: AYV_C3_PROMPTS.CURRENT_ELIMINATION,
+            sleep: AYV_C3_PROMPTS.CURRENT_SLEEP,
+            temperature: AYV_C3_PROMPTS.CURRENT_TEMPERATURE,
+            skin: AYV_C3_PROMPTS.CURRENT_SKIN,
+          }
+          const stateKeyMap: Record<AyurvedaC3AreaId, keyof AyurvedaChapter3State> = {
+            hunger: 'current_hunger',
+            post_meal: 'current_post_meal',
+            elimination: 'current_elimination',
+            sleep: 'current_sleep',
+            temperature: 'current_temperature',
+            skin: 'current_skin',
+          }
+          for (const areaId of [
+            'hunger',
+            'post_meal',
+            'elimination',
+            'sleep',
+            'temperature',
+            'skin',
+          ] as const) {
+            const rec = state[stateKeyMap[areaId]] as AyurvedaCurrentAreaRecord | undefined
+            if (rec) {
+              await savePrompt(areaPromptMap[areaId], rec, rec.current_states || [], '', reason)
+            }
           }
         }
-      }
-      const now = new Date().toISOString()
-      const saved = await experienceResponseService.saveResponse({
-        enrollmentId,
-        experienceId,
-        promptId: AYV_C3_PROMPTS.COMPLETION.id,
-        respondentUserId,
-        responseType: 'ChapterCompletion' as any,
-        promptVersion: 1,
-        promptKey: AYV_C3_PROMPTS.COMPLETION.key,
-        canonicalPromptId: AYV_C3_PROMPTS.COMPLETION.id,
-        stepOrder: 5,
-        accessClass: 'shared_care',
-        changeReason: isCorrectionMode
-          ? 'Conclusão explícita da correção do Capítulo 3 de Corpo & Fisiologia'
-          : 'Conclusão explícita do Capítulo 3 de Corpo & Fisiologia',
-        structuredValue: {
-          completed: true,
-          completed_at: now,
-          chapter_id: AYURVEDA_CHAPTER_3_ID,
-          experience_version: AYURVEDA_CHAPTER_3_VERSION,
-          metadata: {
-            prompt_key: AYV_C3_PROMPTS.COMPLETION.key,
-            answered_at: now,
-            chapter_revision_number: revisionNumberRef.current,
+        const now = new Date().toISOString()
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: AYV_C3_PROMPTS.COMPLETION.id,
+          respondentUserId,
+          responseType: 'ChapterCompletion' as any,
+          promptVersion: 1,
+          promptKey: AYV_C3_PROMPTS.COMPLETION.key,
+          canonicalPromptId: AYV_C3_PROMPTS.COMPLETION.id,
+          stepOrder: 5,
+          accessClass: 'shared_care',
+          changeReason: isCorrectionMode
+            ? 'Conclusão explícita da correção do Capítulo 3 de Corpo & Fisiologia'
+            : 'Conclusão explícita do Capítulo 3 de Corpo & Fisiologia',
+          structuredValue: {
+            completed: true,
+            completed_at: now,
+            chapter_id: AYURVEDA_CHAPTER_3_ID,
+            experience_version: AYURVEDA_CHAPTER_3_VERSION,
+            metadata: {
+              prompt_key: AYV_C3_PROMPTS.COMPLETION.key,
+              answered_at: now,
+              chapter_revision_number: revisionNumberRef.current,
+            },
           },
-        },
-      })
-      ;(saved as any).prompt_key = AYV_C3_PROMPTS.COMPLETION.key
-      setResponses((current) => [...current, saved])
-      setIsCorrectionMode(false)
-      onCompleted?.()
-      if (isCorrectionMode) onBackToHub()
+        })
+        ;(saved as any).prompt_key = AYV_C3_PROMPTS.COMPLETION.key
+        setResponses((current) => [...current, saved])
+        setIsCorrectionMode(false)
+        onCompleted?.()
+        if (isCorrectionMode) onBackToHub()
       })
       await saver.flush()
     } catch (error) {
@@ -563,12 +573,24 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     await persistCurrentAreaRecord(areaId, updated)
   }
 
-  if (loading) return <p role="status" className="p-4 text-sm text-muted-foreground">Carregando suas respostas…</p>
+  if (loading)
+    return (
+      <p role="status" className="p-4 text-sm text-muted-foreground">
+        Carregando suas respostas…
+      </p>
+    )
 
-  if (loadError) return <div role="alert" className="p-4 space-y-3">
-    <p>Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.</p>
-    <Button onClick={() => setLoadAttempt(value => value + 1)}>Tentar carregar novamente</Button>
-  </div>
+  if (loadError)
+    return (
+      <div role="alert" className="p-4 space-y-3">
+        <p>
+          Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.
+        </p>
+        <Button onClick={() => setLoadAttempt((value) => value + 1)}>
+          Tentar carregar novamente
+        </Button>
+      </div>
+    )
 
   if (step === 6) {
     return (

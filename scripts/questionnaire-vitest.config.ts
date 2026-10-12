@@ -3,7 +3,8 @@ import path from 'node:path'
 export default defineConfig({
   resolve: { alias: { '@': path.resolve(process.cwd(), 'src') } },
   test: {
-    environment: 'jsdom', setupFiles: ['src/test/setup.ts'],
+    environment: 'jsdom',
+    setupFiles: ['src/test/setup.ts'],
     include: [
       'src/services/liveQuestionnaire.test.ts',
       'src/services/liveQuestionnaireBackend.test.ts',
