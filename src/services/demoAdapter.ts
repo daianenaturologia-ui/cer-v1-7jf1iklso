@@ -1479,7 +1479,7 @@ class DemoAdapter {
         : 1
 
     const newPlan: CerCarePlanRecord = {
-      id: `demo-plan-${Date.now()}`,
+      id: `demo-plan-${crypto.randomUUID()}`,
       enrollment_id: input.enrollment_id,
       revision_number: nextRevision,
       status: 'draft',
@@ -1559,7 +1559,7 @@ class DemoAdapter {
     professional_rationale?: string
   }): CerCarePlanPriorityRecord {
     const newPrio: CerCarePlanPriorityRecord = {
-      id: `demo-prio-${Date.now()}`,
+      id: `demo-prio-${crypto.randomUUID()}`,
       plan_id: input.plan_id,
       title: input.title,
       description: input.description || '',
@@ -1587,7 +1587,7 @@ class DemoAdapter {
     channel?: 'app' | 'session'
   }): CerCarePlanPresentationRecord {
     const newPres: CerCarePlanPresentationRecord = {
-      id: `demo-pres-${Date.now()}`,
+      id: `demo-pres-${crypto.randomUUID()}`,
       plan_id: input.plan_id,
       priority_id: input.priority_id || '',
       enrollment_id: DEMO_ENROLLMENT_ID,

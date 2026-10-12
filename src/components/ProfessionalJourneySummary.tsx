@@ -1,3 +1,4 @@
+import { cerCarePlanService } from '@/services/cerCarePlanService'
 import React, { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
@@ -33,8 +34,9 @@ export function ProfessionalJourneySummary({
       lifeTimelineService.list(enrollmentId),
       lifeDirectionsService.list(enrollmentId),
       selfDevelopmentService.list(enrollmentId),
+      cerCarePlanService.listAcceptancesByEnrollment(enrollmentId),
     ])
-      .then(([responses, progress, history, directions, steps]) => {
+      .then(([responses, progress, history, directions, steps, returns]) => {
         if (!current) return
         const shared = professionalQuestionnaireResponses(responses.flat(), enrollmentId)
         setState({
@@ -42,6 +44,12 @@ export function ProfessionalJourneySummary({
           history: sharedLifeEvents(history, enrollmentId),
           directions: sharedLifeDirections(directions, enrollmentId),
           steps: visibleDevelopment(steps, enrollmentId, true),
+          returns: returns.filter(
+            (r) =>
+              r.enrollment_id === enrollmentId &&
+              r.record_status === 'current' &&
+              r.access_class === 'shared_care',
+          ),
         })
       })
       .catch(() => {
@@ -89,7 +97,9 @@ export function ProfessionalJourneySummary({
           className="h-auto p-4 flex-col items-start gap-1 whitespace-normal"
           onClick={() => onOpen('evolucao', 'linha')}
         >
-          <strong>História · {state.history.length} marcos</strong>
+          <strong>
+            História · {state.history.length} {state.history.length === 1 ? 'marco' : 'marcos'}
+          </strong>
           <span>Registros compartilhados da Linha da Vida</span>
         </Button>
         <Button
@@ -97,8 +107,13 @@ export function ProfessionalJourneySummary({
           className="h-auto p-4 flex-col items-start gap-1 whitespace-normal"
           onClick={() => onOpen('evolucao', 'planner')}
         >
-          <strong>Rotina · {state.steps.length} passos</strong>
-          <span>{experienced} experimentados · agenda e aprendizados</span>
+          <strong>
+            Rotina · {state.steps.length} {state.steps.length === 1 ? 'passo' : 'passos'}
+          </strong>
+          <span>
+            {experienced} {experienced === 1 ? 'experimentado' : 'experimentados'} · agenda e
+            aprendizados
+          </span>
         </Button>
       </div>
       <div className="rounded-2xl border bg-primary/5 p-5 space-y-3">
@@ -124,6 +139,25 @@ export function ProfessionalJourneySummary({
           Revisar nosso plano
         </Button>
       </div>
+      {state.returns.length > 0 && (
+        <div className="rounded-xl border p-4 text-sm space-y-1">
+          <h3 className="font-semibold">Retorno sobre nosso foco</h3>
+          <p>
+            {(
+              {
+                accepted: 'Consegui experimentar',
+                wants_to_try: 'Quero tentar',
+                too_much: 'Foi muito',
+                wants_to_talk: 'Prefiro conversar',
+                wants_to_adapt: 'Quero adaptar',
+                not_now: 'Agora não',
+                alternative_requested: 'Quero outra possibilidade',
+              } as Record<string, string>
+            )[state.returns[0].response_type] || 'Retorno compartilhado'}
+          </p>
+          {state.returns[0].shared_comment && <p>{state.returns[0].shared_comment}</p>}
+        </div>
+      )}
       {state.steps.length > 0 && (
         <div className="space-y-2">
           <h3 className="font-semibold">Passos compartilhados</h3>
