@@ -10,6 +10,7 @@ export default defineConfig({
       'src/services/liveQuestionnaireBackend.test.ts',
       'src/hooks/useQuestionnaireSaving.test.tsx',
       'src/components/experience/ayurveda/AyurvedaLiveSaving.test.tsx',
+      'src/components/experience/ayurveda/AyurvedaSaveAndContinueLater.test.tsx',
       'src/services/avatarCompositor.test.ts',
       'src/services/ayurvedaChapter1.test.tsx',
       'src/services/ayurvedaChapter2.test.tsx',

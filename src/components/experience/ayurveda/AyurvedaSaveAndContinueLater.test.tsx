@@ -177,8 +177,8 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
         experience_id: 'exp-c2',
         response_type: 'ChoiceCards',
         structured_value: {
-          value: ['regular_predictable'],
-          selectedOptionIds: ['regular_predictable'],
+          value: ['regular_hours'],
+          selectedOptionIds: ['regular_hours'],
           chapter_id: 'capitulo-2-digestao-rotina',
           chapter_revision_number: 1,
           metadata: {
@@ -211,7 +211,7 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
 
     // A resposta anterior foi restaurada na tela
     const regularBtn = screen.getByRole('button', {
-      name: /Regular e previsível/,
+      name: 'Aparece em horários relativamente previsíveis.',
     })
     expect(regularBtn).toHaveAttribute('aria-pressed', 'true')
 
@@ -235,7 +235,7 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
         onBackToHub={vi.fn()}
       />,
     )
-    await screen.findByText('Suas respostas deste capítulo estão completas')
+    await screen.findByRole('button', { name: 'Salvar e continuar depois' })
     const closingButtons = screen.getAllByRole('button', { name: 'Salvar e continuar depois' })
     expect(closingButtons).toHaveLength(1) // Não duplicou!
     unmountClosing()
@@ -257,6 +257,11 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
     ).not.toBeInTheDocument()
     unmountReview()
 
+    // A correção deve carregar uma revisão existente, nunca uma revisão vazia.
+    vi.mocked(experienceResponseService.listResponsesByExperience).mockResolvedValue([{
+      id: 'c2-answer', prompt_id: AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id,
+      structured_value: { value: ['regular_hours'], selectedOptionIds: ['regular_hours'], revision_number: 1, metadata: { prompt_key: AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key, revision_number: 1 } },
+    }] as any)
     // 5.3 Em modo de correção (correcting), a pausa está disponível!
     render(
       <AyurvedaChapter2Flow
@@ -272,7 +277,7 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
     expect(screen.getByRole('button', { name: 'Salvar e continuar depois' })).toBeInTheDocument()
   })
 
-  it('5. C3: exitSafely com saver.flush() e disponibilidade durante as etapas e correção', async () => {
+  it('5. C3: exitSafely com saver.flush() e disponibilidade durante as etapas de resposta', async () => {
     let flushCalled = false
     vi.spyOn(experienceResponseService, 'saveResponse').mockImplementation(async (params) => {
       flushCalled = true
@@ -297,7 +302,7 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
     expect(headerSaveBtn).toBeInTheDocument()
 
     // Seleciona uma opção e clica em salvar e continuar depois
-    fireEvent.click(screen.getByRole('button', { name: 'Digestão ou apetite' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Fome ou digestão' }))
     fireEvent.click(headerSaveBtn)
 
     await waitFor(() => {
@@ -323,6 +328,12 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('C3 não oferece salvar e sair para uma correção mantida apenas em memória', async () => {
+    render(<AyurvedaChapter3Flow enrollmentId="enr-c3-draft" experienceId="exp-c3" respondentUserId="test-user" mode="correcting" onBackToHub={vi.fn()} />)
+    await screen.findByText('Em quais áreas você percebe alguma mudança atualmente?')
+    expect(screen.queryByRole('button', { name: 'Salvar e continuar depois' })).not.toBeInTheDocument()
+  })
+
   it('6. C4: síntese sem etapas — voltar aos capítulos não marca completion', async () => {
     const onBackToHub = vi.fn()
     const onCompleted = vi.fn()
@@ -337,7 +348,7 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
       />,
     )
 
-    await screen.findByText('Síntese de Corpo & Fisiologia')
+    await screen.findByText('Meu corpo em síntese')
 
     // Clica em 'Voltar aos capítulos'
     fireEvent.click(screen.getByRole('button', { name: 'Voltar aos capítulos' }))
