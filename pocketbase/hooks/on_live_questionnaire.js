@@ -12,6 +12,9 @@ routerAdd('POST', '/backend/v1/cer/questionnaires/prepare', (e) => {
   }
   const allowed = ['exp-corpo-fisiologia-07b', 'exp-mente-emocoes-07c', 'exp-regulacao-respostas-07c', 'exp-relacoes-07d', 'exp-sexualidade-07e', 'exp-sentido-conexao-07f', 'exp-integracao-consciencia-07g']
   const body = e.requestInfo().body
+  // Reload the account so a previously issued token cannot bypass suspension.
+  const account = $app.findRecordById('users', e.auth.id)
+  if (account.getString('status') !== 'active') throw new ForbiddenError('Sua conta não está ativa.')
   const logicalExperience = String(body.experience_id || '')
   const logicalPrompt = String(body.prompt_id || '')
   if (!allowed.includes(logicalExperience)) throw new BadRequestError('Questionário não disponível.')
@@ -49,8 +52,7 @@ routerAdd('POST', '/backend/v1/cer/questionnaires/prepare', (e) => {
       const revision = logicalPrompt.match(/^(ayv_c[12]_.+)_rev([2-9]|[1-9][0-9]{1,2})$/)
       const baseLogical = revision ? revision[1] : logicalPrompt
       const base = tx.findRecordById('cer_prompts', idFor('prompt', baseLogical))
-      let schema = base.get('schema_config')
-      if (typeof schema === 'string') schema = JSON.parse(schema)
+      const schema = JSON.parse(base.getString('schema_config') || '{}')
       if (schema.cer_logical_prompt_id !== baseLogical || base.getString('experience_id') !== actualExperience) throw new BadRequestError('Pergunta fora deste questionário.')
       actualPrompt = idFor('prompt', logicalPrompt)
       if (revision) {
@@ -58,8 +60,7 @@ routerAdd('POST', '/backend/v1/cer/questionnaires/prepare', (e) => {
         const completed = tx.findRecordsByFilter('experience_responses', 'enrollment_id = {:enrollment} && experience_id = {:experience} && response_type = "ChapterCompletion"', '', 0, 0, { enrollment: enrollment.id, experience: actualExperience })
         let maxCompleted = 0
         for (const response of completed) {
-          let value = response.get('structured_value')
-          if (typeof value === 'string') value = JSON.parse(value)
+          const value = JSON.parse(response.getString('structured_value') || '{}')
           const metadata = value.metadata || {}
           if (String(metadata.prompt_key || '').startsWith(chapter) && value.completed === true) maxCompleted = Math.max(maxCompleted, Number(value.revision_number || metadata.revision_number || 1))
         }
