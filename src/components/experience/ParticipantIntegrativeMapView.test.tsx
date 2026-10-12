@@ -64,6 +64,7 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
     await userEvent.click(
       screen.getByRole('button', { name: 'Interpretação dessa dimensão: Mente e Emoções' }),
     )
+    await userEvent.click(screen.getByRole('button', { name: 'Respostas e registros deste mapa' }))
     expect(await screen.findByText('DETALHE DA VERSÃO PUBLICADA')).toBeInTheDocument()
     expect(screen.getByText('INTERPRETAÇÃO REVISADA')).toBeInTheDocument()
     expect(screen.getByText('Referências e fontes de consulta')).toBeInTheDocument()
@@ -78,7 +79,7 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
     )
     expect(screen.queryByText('RESPOSTA NOVA PRIVADA')).not.toBeInTheDocument()
   })
-  it('mantém publicações legadas literais sem inventar uma interpretação nova', () => {
+  it('mantém publicações legadas literais sem inventar uma interpretação nova', async () => {
     render(
       <ParticipantIntegrativeMapView
         responses={[]}
@@ -91,6 +92,8 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
         }
       />,
     )
+    await userEvent.click(screen.getByRole('button', { name: 'Interpretação dessa dimensão: Corpo' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Respostas e registros deste mapa' }))
     expect(screen.getByText('TEXTO LEGADO REVISADO')).toBeInTheDocument()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
   })
@@ -136,6 +139,7 @@ describe('Mapa inicial automático', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Interpretação dessa dimensão: Regulação' }),
     )
+    await userEvent.click(screen.getByRole('button', { name: 'Respostas e registros deste mapa' }))
     for (const option of options)
       expect(await screen.findByText(new RegExp(option.title))).toBeInTheDocument()
     expect(screen.queryByText('NOTA PROFISSIONAL PRIVADA')).not.toBeInTheDocument()
