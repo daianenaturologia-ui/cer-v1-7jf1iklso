@@ -92,7 +92,9 @@ describe('Mapa CER: somente a publicação revisada, em duas profundidades', () 
         }
       />,
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Interpretação dessa dimensão: Corpo' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Interpretação dessa dimensão: Corpo' }),
+    )
     await userEvent.click(screen.getByRole('button', { name: 'Respostas e registros deste mapa' }))
     expect(screen.getByText('TEXTO LEGADO REVISADO')).toBeInTheDocument()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
