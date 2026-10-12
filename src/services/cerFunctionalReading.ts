@@ -107,7 +107,7 @@ export function applyFunctionalReading(
       reg.push(regulationReadings[id].text)
   if (fight && (helpful || vigilant))
     reg.push(
-      'Quando esse movimento se encontra com sua dedicação às pessoas e sua atenção aos riscos, assumir a frente pode parecer a maneira mais rápida de devolver tranquilidade ao ambiente. Você se torna responsável tanto pela solução quanto pelo bem-estar de todos. Assim, pedir apoio ou esperar deixa de parecer uma opção simples. O caminho de desenvolvimento é preservar sua firmeza e distribuir a responsabilidade, para que agir seja uma escolha e não a única saída disponível.',
+      'Quando esse movimento se encontra com sua dedicação às pessoas e sua atenção aos riscos, assumir a frente pode parecer a maneira mais rápida de devolver tranquilidade ao ambiente. Você pode acabar assumindo tanto a solução quanto o bem-estar de todos. Assim, pedir apoio ou esperar deixa de parecer uma opção simples. O caminho de desenvolvimento é preservar sua firmeza e distribuir a responsabilidade, para que agir seja uma escolha e não a única saída disponível.',
     )
   // Preserve other supported interpretations while grouping the dimension into one reading.
   const additional = (dimension: typeof mind, excluded: RegExp) =>

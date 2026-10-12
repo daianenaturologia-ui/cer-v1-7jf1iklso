@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { careReturnLabel } from '@/services/careReturnLabels'
 import { GoalRoadmapPlanner } from './experience/GoalRoadmapPlanner'
 import { CarePlanStartingPoint } from './experience/CarePlanStartingPoint'
 import { directionCareContext } from '@/services/carePlanStartingPoint'
@@ -723,7 +724,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                               >
                                 <div className="flex items-center gap-2">
                                   <Badge variant="outline" className="text-[10px] font-mono">
-                                    {acc.response_type}
+                                    {careReturnLabel(acc.response_type)}
                                   </Badge>
                                   <span className="text-[10px] text-muted-foreground">
                                     Registrado em{' '}

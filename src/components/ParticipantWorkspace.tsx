@@ -538,7 +538,7 @@ export const ParticipantWorkspace: React.FC = () => {
               >
                 {
                   {
-                    plano: 'Plano',
+                    plano: 'Direção e metas',
                     biblioteca: 'Biblioteca de práticas',
                     mandala: 'Mandala',
                     planner: 'Planner',
@@ -556,11 +556,15 @@ export const ParticipantWorkspace: React.FC = () => {
                 planning
                 readOnly
               />
-              <CarePlanEditor
-                key={enrollment.id}
-                enrollmentId={enrollment.id}
-                participantName={participantName}
-              />
+              <div className="rounded-xl border bg-primary/5 p-4 space-y-3">
+                <p className="text-sm">
+                  Use esta direção para combinar o cuidado. O plano profissional e seus retornos
+                  ficam reunidos na Evolução.
+                </p>
+                <Button onClick={() => setSearchParams({ tab: 'evolucao', tool: 'plano' })}>
+                  Abrir plano de cuidado
+                </Button>
+              </div>
             </div>
           )}
 

@@ -11,6 +11,7 @@ export function ResourceAgendaForm({
   initialGoal = '',
   planningContext = '',
   repeatable = false,
+  actionLabel,
 }: {
   enrollmentId: string
   strength: string
@@ -19,6 +20,7 @@ export function ResourceAgendaForm({
   initialGoal?: string
   planningContext?: string
   repeatable?: boolean
+  actionLabel?: string
 }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(strategy.trim().slice(0, 160))
@@ -93,7 +95,7 @@ export function ResourceAgendaForm({
         size="sm"
         variant="outline"
         onClick={() => setOpen(true)}
-        aria-label={`Levar ${strength} para minha agenda diante de ${difficulty}`}
+        aria-label={`Levar ${actionLabel || strength} para minha agenda diante de ${difficulty}`}
       >
         Levar para minha agenda
       </Button>

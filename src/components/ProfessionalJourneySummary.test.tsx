@@ -6,7 +6,13 @@ import { ProfessionalJourneySummary } from './ProfessionalJourneySummary'
 vi.mock('@/services/cerCarePlanService', () => ({
   cerCarePlanService: { listAcceptancesByEnrollment: vi.fn(async () => []) },
 }))
-const fixtures = vi.hoisted(() => ({ read: vi.fn(), steps: vi.fn() }))
+const fixtures = vi.hoisted(() => ({
+  read: vi.fn(),
+  steps: vi.fn(),
+  directions: vi.fn(async () => [] as any[]),
+  roadmap: vi.fn(async (_enrollment: string, _id: string) => null as any),
+}))
+vi.mock('@/services/goalRoadmap', () => ({ goalRoadmapService: { load: fixtures.roadmap } }))
 vi.mock('@/services/experienceEngine', () => ({
   experienceResponseService: { listResponsesByExperience: fixtures.read },
   enrollmentExperienceService: { listByEnrollment: vi.fn(async () => []) },
@@ -17,7 +23,7 @@ vi.mock('@/services/lifeTimeline', () => ({
   sharedLifeEvents: (x: any) => x,
 }))
 vi.mock('@/services/lifeDirections', () => ({
-  lifeDirectionsService: { list: vi.fn(async () => []) },
+  lifeDirectionsService: { list: fixtures.directions },
   sharedLifeDirections: (x: any) => x,
 }))
 vi.mock('@/services/selfDevelopment', () => ({
@@ -48,4 +54,34 @@ it('failed reads show a recoverable error rather than an empty or stable care cl
   render(<ProfessionalJourneySummary enrollmentId="other" name="Lia" onOpen={vi.fn()} />)
   expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível atualizar')
   expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeInTheDocument()
+})
+
+it('surfaces shared goals while excluding private planning in the overview', async () => {
+  fixtures.read.mockResolvedValue([])
+  fixtures.steps.mockResolvedValue([])
+  fixtures.directions.mockResolvedValue([
+    { id: 'visible', enrollment_id: 'enrollment', kind: 'future' },
+    { id: 'private-plan', enrollment_id: 'enrollment', kind: 'future' },
+  ])
+  fixtures.roadmap.mockImplementation(async (_enrollment: string, id: string) => ({
+    id,
+    enrollment_id: 'enrollment',
+    access_class: id === 'visible' ? 'participant_shared' : 'participant_private',
+    roadmap: {
+      milestones: [
+        {
+          horizon: 'short',
+          title: id === 'visible' ? 'Duas caminhadas possíveis' : 'PRIVATE_PLAN',
+          targetDate: '2026-10-26',
+          signal: 'Sem acrescentar trabalho à noite',
+        },
+      ],
+    },
+  }))
+  const open = vi.fn()
+  render(<ProfessionalJourneySummary enrollmentId="enrollment" name="Lia" onOpen={open} />)
+  expect(await screen.findByText('Duas caminhadas possíveis')).toBeInTheDocument()
+  expect(screen.queryByText('PRIVATE_PLAN')).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Ver metas e ações' }))
+  expect(open).toHaveBeenCalledWith('equilibrio')
 })

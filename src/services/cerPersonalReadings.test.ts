@@ -29,6 +29,30 @@ function response(key: string, value: any, overrides: any = {}) {
   } as any
 }
 describe('Interpretação compartilhada com evidências', () => {
+  it('recognizes bodily awareness alongside hesitant communication without assuming easy boundaries', () => {
+    const rows = [
+      response('comunicacao_desconforto_cena', 'percebo_mas_hesito'),
+      response('percepcao_sensacoes_corpo', 'preciso_de_tempo'),
+      response('expressao_escolhas_preferencias', 'espero_a_outra_pessoa_perguntar'),
+    ]
+    const s = buildCerMapReadings(rows, 'enr', 'Lia')
+    const insights = s.dimensions.find((d) => d.id === 'sexualidade')!.insights || []
+    expect(
+      insights.some((i) => i.label === 'Reconhecer meu desconforto' && i.kind === 'strength'),
+    ).toBe(true)
+    expect(
+      insights.some(
+        (i) => i.label === 'Expressar desconforto na intimidade' && i.kind === 'difficulty',
+      ),
+    ).toBe(true)
+    expect(insights.some((i) => i.label === 'Comunicar meus limites')).toBe(false)
+    const privateMap = buildCerMapReadings(
+      rows.map((r) => ({ ...r, access_class: 'participant_private' })),
+      'enr',
+      'Lia',
+    )
+    expect(integratedResources(privateMap)).toEqual([])
+  })
   it('interpreta escolhas em todas as cinco dimensões sem inventar causas ou repetir perguntas', () => {
     const rows = [
       response('pensamento_associado', ['preciso_dar_conta']),

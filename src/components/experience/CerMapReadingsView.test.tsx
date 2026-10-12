@@ -57,7 +57,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
 
     expect(
       screen.getByText(
-        'A distribuição percentual ainda não está disponível no snapshot publicado.',
+        'Esta leitura reúne tendências e evidências das suas respostas. Ela não mede uma porcentagem de doshas no seu corpo.',
       ),
     ).toBeInTheDocument()
     expect(screen.queryByText('Distribuição Constitucional Registrada')).not.toBeInTheDocument()
@@ -157,7 +157,7 @@ describe('CerMapReadingsView - Novo Mapa CER Digital Interativo', () => {
     // 1. Doshas preenchidos sem aviso de indisponibilidade
     expect(
       screen.queryByText(
-        'A distribuição percentual ainda não está disponível no snapshot publicado.',
+        'Esta leitura reúne tendências e evidências das suas respostas. Ela não mede uma porcentagem de doshas no seu corpo.',
       ),
     ).not.toBeInTheDocument()
     expect(screen.getByText('Distribuição Constitucional Registrada')).toBeInTheDocument()

@@ -248,6 +248,7 @@ export const InteragenteHome: React.FC = () => {
               (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime(),
             )[0]
             if (latestDraft.message_text) {
+              setIsWritingNewIntake(true)
               // Parse do rascunho estruturado se houver
               const text = latestDraft.message_text
               const bringsMatch = text.match(/O que a traz:\n([\s\S]*?)(?=\n\nO que já a ajuda:|$)/)
