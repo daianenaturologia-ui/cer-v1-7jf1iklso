@@ -30,3 +30,9 @@ A suíte antiga initial-map teve três expectativas de apresentação ainda inco
 ## Limites e pendências da simulação
 
 A data exata na Linha da Vida foi recusada pela automação, embora o campo DOM estivesse preenchido; ano aproximado funcionou. Necessário distinguir evento de entrada do navegador automatizado e bug do app em teste dedicado. Ditado de voz, autenticação/e-mail, conta real, servidor gerenciado, restauração de backup e Google Agenda externa não foram homologados. Não foi feita reinicialização da demonstração nem exclusão de dados. Não houve publicação em produção.
+
+## Reteste na prévia 0.0.352 e complemento
+
+Sincronização direta pelo botão GitHub do Skip: build 0.0.352 concluído com sucesso. Na interface atualizada, a Visão geral mostrou 6/6 dimensões, 1 marco compartilhado e 1 passo com aprendizado; respostas profissionais de Sexualidade passaram de 13 para 10 e ficaram concluídas. Nem os textos privados de controle nem os valores técnicos das opções apareceram, incluindo com as respostas literais abertas. Sair da demonstração, reentrar e recarregar preservou respostas e plano; o plano apresentado passou a aparecer em Evolução > Acompanhamento. Foi enviado um retorno fictício “quero tentar”.
+
+Um reteste rápido detectou colisão entre prioridades criadas no mesmo milissegundo: a identificação demo usava Date.now(). O complemento usa UUID para planos, prioridades e apresentações, com regressão de criação simultânea. Também acrescenta o retorno atual compartilhado à Visão geral, ajusta singular/plural dos cartões, conta somente as seis dimensões na síntese de acompanhamento e remove o identificador técnico de direção da Mandala. Checagem de C4 confirma que a conclusão geral espera a gravação final.
