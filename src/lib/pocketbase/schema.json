@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-12T13:39:52.959Z",
+  "generatedAt": "2026-10-12T14:06:47.930Z",
   "collections": [
     {
       "name": "users",
@@ -835,7 +835,9 @@
             "BodyMap",
             "Timeline",
             "FreeReflection",
-            "ScenarioChoice"
+            "ScenarioChoice",
+            "RelationalOrbitMap",
+            "ChapterCompletion"
           ]
         },
         {
@@ -1043,7 +1045,9 @@
             "BodyMap",
             "Timeline",
             "FreeReflection",
-            "ScenarioChoice"
+            "ScenarioChoice",
+            "RelationalOrbitMap",
+            "ChapterCompletion"
           ]
         },
         {
