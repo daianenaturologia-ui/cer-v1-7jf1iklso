@@ -134,6 +134,7 @@ describe('Live failures preserve the chapter', () => {
     fireEvent.click(screen.getByText(AYV_TELA5_DRINK_TEMP_OPTIONS[0].label, { exact: true }))
     fireEvent.click(screen.getByText(AYV_TELA5_SWEAT_OPTIONS[0].label, { exact: true }))
     fireEvent.click(screen.getByRole('button', { name: 'Ir para Encerramento' }))
+    await screen.findByRole('button', { name: 'Concluir este capítulo' })
     fireEvent.click(await screen.findByRole('button', { name: 'Salvar e continuar depois' }))
     await waitFor(() => expect(exit).toHaveBeenCalledOnce())
     expect(stored).toHaveLength(8)

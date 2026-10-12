@@ -885,7 +885,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-4">
       {saver.status}
-      {!isReviewMode && (
+      {!isReviewMode && !isCorrectionMode && (
         <AyurvedaStepHeader
           chapterLabel="Capítulo 3 • Mudanças Atuais"
           stepLabel={`Etapa ${step} de 5 • ${stepTitles[step] || ''}`}
