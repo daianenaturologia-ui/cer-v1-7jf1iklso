@@ -1,0 +1,248 @@
+{
+  "snapshot_metadata": {
+    "generated_at": "2026-10-12T15:45:00.000Z",
+    "description": "Snapshot pré-aplicação PR24 (0078-0081): regras exatas, índices, flags de campos e contagens globais para recuperação de esquema.",
+    "package_json_version": "0.0.347",
+    "last_applied_migration": "0077_reconcile_catalog_dimensions.js",
+    "next_available_migration": "0078",
+    "clinical_data_included": false,
+    "user_credentials_included": false
+  },
+  "global_record_counts": {
+    "users": 7,
+    "persons": 10,
+    "cer_experiences": 8,
+    "cer_prompts": 70,
+    "cer_experience_moments": 38,
+    "experience_responses": 22,
+    "experience_response_versions": 25,
+    "enrollments": 6,
+    "enrollment_experiences": 9,
+    "cer_journal_entries": 0,
+    "cer_journal_entry_versions": 0,
+    "cer_next_session_messages": 1,
+    "cer_sessions": 0,
+    "cer_session_notes": 0,
+    "cer_life_events": 0
+  },
+  "collections": {
+    "users": {
+      "type": "auth",
+      "fields_summary": {
+        "name": "text",
+        "avatar": "file",
+        "person_id": "relation -> persons",
+        "status": "select (required) [invited | active | suspended | disabled]",
+        "mfa_enabled": "bool",
+        "mfa_secret": "text"
+      },
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
+        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ],
+      "api_rules": {
+        "list": "id = @request.auth.id && @request.auth.status = 'active'",
+        "view": "id = @request.auth.id && @request.auth.status = 'active'",
+        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && ( @collection.user_roles:actor.user_id ?= @request.auth.id && @collection.user_roles:actor.is_active ?= true && (@collection.user_roles:actor.role ?= \"profissional\" || @collection.user_roles:actor.role ?= \"admin\") ) && @request.body.status = \"invited\" && @request.body.person_id:isset = true && @request.body.person_id != \"\"",
+        "update": "id = @request.auth.id && @request.auth.status = 'active'",
+        "delete": "id = @request.auth.id && @request.auth.status = 'active'"
+      }
+    },
+    "persons": {
+      "type": "base",
+      "fields_summary": {
+        "full_name": "text (required)",
+        "preferred_name": "text",
+        "email": "email",
+        "phone": "text",
+        "notes": "text",
+        "timezone": "text",
+        "treatment_preference": "select [feminino | masculino | neutro | outro]",
+        "treatment_preference_custom": "text",
+        "avatar_presentation": "select [feminine | masculine]",
+        "avatar_skin_tone": "select [skin_01 | skin_02 | skin_03 | skin_04 | skin_05 | skin_06]",
+        "avatar_hair_color": "select [hair_black | hair_dark_brown | hair_light_brown | hair_blonde | hair_red | hair_gray_white]",
+        "avatar_customization_status": "select [completed | deferred]",
+        "avatar_version": "number",
+        "avatar_updated_at": "date"
+      },
+      "indexes": [
+        "CREATE INDEX idx_persons_full_name ON persons (full_name)",
+        "CREATE INDEX idx_persons_email ON persons (email)"
+      ],
+      "api_rules": {
+        "list": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (id = @request.auth.person_id || (( @collection.user_roles:actor.user_id ?= @request.auth.id && @collection.user_roles:actor.is_active ?= true && (@collection.user_roles:actor.role ?= \"profissional\" || @collection.user_roles:actor.role ?= \"admin\") ) && (@collection.enrollments:scope.person_id ?= id && @collection.professional_enrollment_access:access.enrollment_id ?= @collection.enrollments:scope.id && @collection.professional_enrollment_access:access.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:access.is_active ?= true)))",
+        "view": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (id = @request.auth.person_id || (( @collection.user_roles:actor.user_id ?= @request.auth.id && @collection.user_roles:actor.is_active ?= true && (@collection.user_roles:actor.role ?= \"profissional\" || @collection.user_roles:actor.role ?= \"admin\") ) && (@collection.enrollments:scope.person_id ?= id && @collection.professional_enrollment_access:access.enrollment_id ?= @collection.enrollments:scope.id && @collection.professional_enrollment_access:access.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:access.is_active ?= true)))",
+        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && ( @collection.user_roles:actor.user_id ?= @request.auth.id && @collection.user_roles:actor.is_active ?= true && (@collection.user_roles:actor.role ?= \"profissional\" || @collection.user_roles:actor.role ?= \"admin\") )",
+        "update": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (id = @request.auth.person_id || (( @collection.user_roles:actor.user_id ?= @request.auth.id && @collection.user_roles:actor.is_active ?= true && (@collection.user_roles:actor.role ?= \"profissional\" || @collection.user_roles:actor.role ?= \"admin\") ) && (@collection.enrollments:scope.person_id ?= id && @collection.professional_enrollment_access:access.enrollment_id ?= @collection.enrollments:scope.id && @collection.professional_enrollment_access:access.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:access.is_active ?= true))) && (@request.body.email:isset = false || @request.body.email = email)",
+        "delete": null
+      }
+    },
+    "cer_practice_version_assets": {
+      "type": "base",
+      "fields_summary": {
+        "practice_version_id": "relation (required) -> cer_practice_versions",
+        "asset_type": "select (required) [audio | document | video | external_link]",
+        "role": "text",
+        "file": "file (protected: true)",
+        "url_identifier": "text",
+        "title": "text",
+        "sort_order": "number"
+      },
+      "indexes": [
+        "CREATE INDEX idx_cpva_version ON cer_practice_version_assets (practice_version_id)",
+        "CREATE INDEX idx_cpva_type ON cer_practice_version_assets (asset_type)",
+        "CREATE INDEX idx_cpva_sort ON cer_practice_version_assets (sort_order)"
+      ],
+      "file_field_protected": true,
+      "api_rules": {
+        "list": "@request.auth.id != '' && (@request.auth.user_roles_via_user_id.role ?= 'profissional' || practice_version_id.cer_practice_assignments_via_practice_version_id.participant_user_id ?= @request.auth.id || practice_version_id.cer_resource_recommendations_via_resource_version_id.participant_user_id ?= @request.auth.id)",
+        "view": "@request.auth.id != '' && (@request.auth.user_roles_via_user_id.role ?= 'profissional' || practice_version_id.cer_practice_assignments_via_practice_version_id.participant_user_id ?= @request.auth.id || practice_version_id.cer_resource_recommendations_via_resource_version_id.participant_user_id ?= @request.auth.id)",
+        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "delete": null
+      }
+    },
+    "cer_journal_entries": {
+      "type": "base",
+      "fields_summary": {
+        "enrollment_id": "relation (required) -> enrollments",
+        "participant_user_id": "relation (required) -> users",
+        "title": "text",
+        "content": "text (required)",
+        "status": "select (required) [active | archived]",
+        "access_class": "select (required) [participant_private]",
+        "version_number": "number (required)"
+      },
+      "indexes": [
+        "CREATE INDEX idx_cje_enrollment ON cer_journal_entries (enrollment_id)",
+        "CREATE INDEX idx_cje_participant ON cer_journal_entries (participant_user_id)",
+        "CREATE INDEX idx_cje_status ON cer_journal_entries (status)",
+        "CREATE INDEX idx_cje_access ON cer_journal_entries (access_class)"
+      ],
+      "api_rules": {
+        "list": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "delete": null
+      }
+    },
+    "cer_journal_entry_versions": {
+      "type": "base",
+      "fields_summary": {
+        "entry_id": "relation (required) -> cer_journal_entries",
+        "enrollment_id": "relation (required) -> enrollments",
+        "participant_user_id": "relation (required) -> users",
+        "title": "text",
+        "content": "text (required)",
+        "version_number": "number (required)",
+        "change_reason": "text",
+        "access_class": "select (required) [participant_private]"
+      },
+      "indexes": [
+        "CREATE INDEX idx_cjev_entry ON cer_journal_entry_versions (entry_id)",
+        "CREATE INDEX idx_cjev_enrollment ON cer_journal_entry_versions (enrollment_id)",
+        "CREATE INDEX idx_cjev_participant ON cer_journal_entry_versions (participant_user_id)",
+        "CREATE INDEX idx_cjev_version ON cer_journal_entry_versions (entry_id, version_number)"
+      ],
+      "api_rules": {
+        "list": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "create": null,
+        "update": null,
+        "delete": null
+      }
+    },
+    "cer_next_session_messages": {
+      "type": "base",
+      "fields_summary": {
+        "enrollment_id": "relation (required) -> enrollments",
+        "participant_user_id": "relation (required) -> users",
+        "message_text": "text (required)",
+        "summary_text": "text",
+        "status": "select (required) [draft | approved | withdrawn]",
+        "approved_at": "date",
+        "withdrawn_at": "date",
+        "access_class": "select (required) [participant_private | shared_care]"
+      },
+      "indexes": [
+        "CREATE INDEX idx_cnsm_enrollment ON cer_next_session_messages (enrollment_id)",
+        "CREATE INDEX idx_cnsm_participant ON cer_next_session_messages (participant_user_id)",
+        "CREATE INDEX idx_cnsm_status ON cer_next_session_messages (status)",
+        "CREATE INDEX idx_cnsm_created ON cer_next_session_messages (created)"
+      ],
+      "api_rules": {
+        "list": "@request.auth.id != '' && (participant_user_id = @request.auth.id || (status = 'approved' && access_class = 'shared_care' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && (participant_user_id = @request.auth.id || (status = 'approved' && access_class = 'shared_care' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "delete": null
+      }
+    },
+    "cer_sessions": {
+      "type": "base",
+      "fields_summary": {
+        "enrollment_id": "relation (required) -> enrollments",
+        "professional_user_id": "relation (required) -> users",
+        "scheduled_at": "date",
+        "started_at": "date",
+        "completed_at": "date",
+        "status": "select (required) [scheduled | in_progress | completed | cancelled]"
+      },
+      "indexes": [
+        "CREATE INDEX idx_cer_sessions_enrollment ON cer_sessions (enrollment_id)",
+        "CREATE INDEX idx_cer_sessions_professional ON cer_sessions (professional_user_id)",
+        "CREATE INDEX idx_cer_sessions_status ON cer_sessions (status)"
+      ],
+      "api_rules": {
+        "list": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      }
+    },
+    "cer_session_notes": {
+      "type": "base",
+      "fields_summary": {
+        "session_id": "relation (required) -> cer_sessions",
+        "enrollment_id": "relation (required) -> enrollments",
+        "author_user_id": "relation (required) -> users",
+        "text": "text"
+      },
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_cer_session_notes_session ON cer_session_notes (session_id)",
+        "CREATE INDEX idx_cer_session_notes_enrollment ON cer_session_notes (enrollment_id)",
+        "CREATE INDEX idx_cer_session_notes_author ON cer_session_notes (author_user_id)"
+      ],
+      "api_rules": {
+        "list": "@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "view": "@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "update": "@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "delete": null
+      }
+    },
+    "cer_life_events": {
+      "type": "base",
+      "fields_summary": {
+        "enrollment_id": "relation (required) -> enrollments",
+        "title": "text (required)",
+        "time_kind": "select (required) [date | year | age | unknown]",
+        "time_value": "text",
+        "emotions": "json",
+        "narrative": "text",
+        "access_class": "select (required) [participant_private | participant_shared]"
+      },
+      "indexes": ["CREATE INDEX idx_life_enrollment ON cer_life_events (enrollment_id)"],
+      "api_rules": {
+        "list": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (access_class = 'participant_shared' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "view": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (access_class = 'participant_shared' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
+        "create": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
+        "update": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && @request.body.enrollment_id:changed = false",
+        "delete": null
+      }
+    }
+  }
+}

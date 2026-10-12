@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-12T15:52:14.184Z",
+  "generatedAt": "2026-10-12T16:01:36.439Z",
   "collections": [
     {
       "name": "users",
@@ -7,7 +7,7 @@
       "apiRules": {
         "list": "id = @request.auth.id && @request.auth.status = 'active'",
         "view": "id = @request.auth.id && @request.auth.status = 'active'",
-        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && ( @collection.user_roles:actor.user_id ?= @request.auth.id && @collection.user_roles:actor.is_active ?= true && (@collection.user_roles:actor.role ?= \"profissional\" || @collection.user_roles:actor.role ?= \"admin\") ) && @request.body.status = \"invited\" && @request.body.person_id:isset = true && @request.body.person_id != \"\"",
+        "create": null,
         "update": "id = @request.auth.id && @request.auth.status = 'active'",
         "delete": "id = @request.auth.id && @request.auth.status = 'active'"
       },
@@ -67,7 +67,8 @@
       ],
       "indexes": [
         "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
-        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''",
+        "CREATE UNIQUE INDEX idx_users_person_id_nonempty ON users (person_id) WHERE person_id != \"\""
       ]
     },
     {
@@ -2366,10 +2367,10 @@
       "name": "cer_sessions",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
-        "view": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
-        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
-        "update": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "list": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)",
+        "view": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)",
+        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)",
+        "update": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)",
         "delete": null
       },
       "fields": [
@@ -2437,10 +2438,10 @@
       "name": "cer_session_notes",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
-        "view": "@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
-        "create": "@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
-        "update": "@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true",
+        "list": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)",
+        "view": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)",
+        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)",
+        "update": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)",
         "delete": null
       },
       "fields": [
@@ -5830,10 +5831,10 @@
       "name": "cer_practice_version_assets",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (@request.auth.user_roles_via_user_id.role ?= 'profissional' || practice_version_id.cer_practice_assignments_via_practice_version_id.participant_user_id ?= @request.auth.id || practice_version_id.cer_resource_recommendations_via_resource_version_id.participant_user_id ?= @request.auth.id)",
-        "view": "@request.auth.id != '' && (@request.auth.user_roles_via_user_id.role ?= 'profissional' || practice_version_id.cer_practice_assignments_via_practice_version_id.participant_user_id ?= @request.auth.id || practice_version_id.cer_resource_recommendations_via_resource_version_id.participant_user_id ?= @request.auth.id)",
-        "create": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
-        "update": "@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'",
+        "list": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && (@request.auth.user_roles_via_user_id.role ?= 'profissional' || practice_version_id.cer_practice_assignments_via_practice_version_id.participant_user_id ?= @request.auth.id || practice_version_id.cer_resource_recommendations_via_resource_version_id.participant_user_id ?= @request.auth.id))",
+        "view": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && (@request.auth.user_roles_via_user_id.role ?= 'profissional' || practice_version_id.cer_practice_assignments_via_practice_version_id.participant_user_id ?= @request.auth.id || practice_version_id.cer_resource_recommendations_via_resource_version_id.participant_user_id ?= @request.auth.id))",
+        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional')",
+        "update": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional')",
         "delete": null
       },
       "fields": [
@@ -6492,10 +6493,10 @@
       "name": "cer_journal_entries",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && participant_user_id = @request.auth.id",
-        "view": "@request.auth.id != '' && participant_user_id = @request.auth.id",
-        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
-        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "list": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && participant_user_id = @request.auth.id)",
+        "view": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && participant_user_id = @request.auth.id)",
+        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && participant_user_id = @request.auth.id)",
+        "update": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && participant_user_id = @request.auth.id)",
         "delete": null
       },
       "fields": [
@@ -6571,8 +6572,8 @@
       "name": "cer_journal_entry_versions",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && participant_user_id = @request.auth.id",
-        "view": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "list": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && participant_user_id = @request.auth.id)",
+        "view": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && participant_user_id = @request.auth.id)",
         "create": null,
         "update": null,
         "delete": null
@@ -6656,10 +6657,10 @@
       "name": "cer_next_session_messages",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (participant_user_id = @request.auth.id || (status = 'approved' && access_class = 'shared_care' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
-        "view": "@request.auth.id != '' && (participant_user_id = @request.auth.id || (status = 'approved' && access_class = 'shared_care' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
-        "create": "@request.auth.id != '' && participant_user_id = @request.auth.id",
-        "update": "@request.auth.id != '' && participant_user_id = @request.auth.id",
+        "list": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && (participant_user_id = @request.auth.id || (status = 'approved' && access_class = 'shared_care' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)))",
+        "view": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && (participant_user_id = @request.auth.id || (status = 'approved' && access_class = 'shared_care' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true)))",
+        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && participant_user_id = @request.auth.id)",
+        "update": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (@request.auth.id != '' && participant_user_id = @request.auth.id)",
         "delete": null
       },
       "fields": [
@@ -6741,10 +6742,10 @@
       "name": "cer_life_events",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (access_class = 'participant_shared' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
-        "view": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (access_class = 'participant_shared' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
-        "create": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
-        "update": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && @request.body.enrollment_id:changed = false",
+        "list": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (enrollment_id.person_id = @request.auth.person_id || (access_class = \"participant_shared\" && @collection.professional_enrollment_access:life_scope.enrollment_id ?= enrollment_id && @collection.professional_enrollment_access:life_scope.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:life_scope.is_active ?= true))",
+        "view": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (enrollment_id.person_id = @request.auth.person_id || (access_class = \"participant_shared\" && @collection.professional_enrollment_access:life_scope.enrollment_id ?= enrollment_id && @collection.professional_enrollment_access:life_scope.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:life_scope.is_active ?= true))",
+        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && enrollment_id.person_id = @request.auth.person_id",
+        "update": "@request.auth.id != \"\" && @request.auth.status = \"active\" && enrollment_id.person_id = @request.auth.person_id && (@request.body.enrollment_id:isset = false || @request.body.enrollment_id = enrollment_id)",
         "delete": null
       },
       "fields": [

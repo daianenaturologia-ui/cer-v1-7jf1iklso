@@ -1,8 +1,8 @@
 # Diagnóstico e Snapshot de Configuração de Acesso — CER V1
 
 - **Data do snapshot:** 2026-10-12
-- **Versão (package.json):** `0.0.346`
-- **Escopo e natureza deste registro:** Snapshot exclusivamente descritivo de configuração arquitetural (esquemas de coleções, campos, tipos, índices e regras exatas de acesso no backend PocketBase). **NENHUM registro de usuários, NENHUMA resposta clínica e NENHUMA credencial constam ou podem constar neste documento.** Nenhuma migração ou alteração de código/dados foi executada nesta tarefa.
+- **Versão (package.json):** `0.0.347`
+- **Escopo e natureza deste registro:** Snapshot exclusivamente descritivo de configuração arquitetural (esquemas de coleções, campos, tipos, índices e regras exatas de acesso no backend PocketBase). **NENHUM registro de usuários, NENHUMA resposta clínica e NENHUMA credencial constam ou podem constar neste documento.** Complementado com o snapshot de configuração completo e contagens globais em `docs/diagnostico-config-acesso-pre-pr24-2026-10-12.json`.
 
 ---
 
@@ -148,6 +148,66 @@ Coleção que armazena os arquivos e mídias de apoio às práticas e intervenç
   ```text
   @request.auth.id != '' && @request.auth.user_roles_via_user_id.role ?= 'profissional'
   ```
+
+---
+
+## 3.1. Coleções Adicionais de Cuidados e Journaling (Snapshot PR24)
+
+### `cer_journal_entries`
+
+- **Campos:** `enrollment_id` (relation), `participant_user_id` (relation), `title` (text), `content` (text), `status` (select), `access_class` (select: `participant_private`), `version_number` (number).
+- **Índices:** `idx_cje_enrollment`, `idx_cje_participant`, `idx_cje_status`, `idx_cje_access`.
+- **Regras:** list/view/create/update: `@request.auth.id != '' && participant_user_id = @request.auth.id`.
+
+### `cer_journal_entry_versions`
+
+- **Campos:** `entry_id` (relation), `enrollment_id` (relation), `participant_user_id` (relation), `title` (text), `content` (text), `version_number` (number), `change_reason` (text), `access_class` (select: `participant_private`).
+- **Índices:** `idx_cjev_entry`, `idx_cjev_enrollment`, `idx_cjev_participant`, `idx_cjev_version`.
+- **Regras:** list/view: `@request.auth.id != '' && participant_user_id = @request.auth.id`; create/update/delete: `null`.
+
+### `cer_next_session_messages`
+
+- **Campos:** `enrollment_id` (relation), `participant_user_id` (relation), `message_text` (text), `summary_text` (text), `status` (select), `approved_at` (date), `withdrawn_at` (date), `access_class` (select).
+- **Índices:** `idx_cnsm_enrollment`, `idx_cnsm_participant`, `idx_cnsm_status`, `idx_cnsm_created`.
+- **Regras:** list/view: `@request.auth.id != '' && (participant_user_id = @request.auth.id || (status = 'approved' && access_class = 'shared_care' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))`; create/update: `@request.auth.id != '' && participant_user_id = @request.auth.id`.
+
+### `cer_sessions`
+
+- **Campos:** `enrollment_id` (relation), `professional_user_id` (relation), `scheduled_at` (date), `started_at` (date), `completed_at` (date), `status` (select).
+- **Índices:** `idx_cer_sessions_enrollment`, `idx_cer_sessions_professional`, `idx_cer_sessions_status`.
+- **Regras:** list/view/create/update: `@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true`.
+
+### `cer_session_notes`
+
+- **Campos:** `session_id` (relation), `enrollment_id` (relation), `author_user_id` (relation), `text` (text).
+- **Índices:** `idx_cer_session_notes_session` (unique), `idx_cer_session_notes_enrollment`, `idx_cer_session_notes_author`.
+- **Regras:** list/view/update: `@request.auth.id != '' && author_user_id = @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true`; create: `@request.auth.id != '' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true`.
+
+### `cer_life_events` (Linha da Vida)
+
+- **Campos:** `enrollment_id` (relation), `title` (text), `time_kind` (select), `time_value` (text), `emotions` (json), `narrative` (text), `access_class` (select).
+- **Índices:** `idx_life_enrollment`.
+- **Regras:** list/view: `@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (access_class = 'participant_shared' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))`; create/update: titular autenticado com salvaguarda `enrollment_id:changed = false`.
+
+---
+
+## 3.2. Contagens Globais Pré-PR24
+
+- `users`: 7
+- `persons`: 10
+- `cer_experiences`: 8
+- `cer_prompts`: 70
+- `cer_experience_moments`: 38
+- `experience_responses`: 22
+- `experience_response_versions`: 25
+- `enrollments`: 6
+- `enrollment_experiences`: 9
+- `cer_journal_entries`: 0
+- `cer_journal_entry_versions`: 0
+- `cer_next_session_messages`: 1
+- `cer_sessions`: 0
+- `cer_session_notes`: 0
+- `cer_life_events`: 0
 
 ---
 
