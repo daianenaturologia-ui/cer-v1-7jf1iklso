@@ -386,8 +386,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
               )}
             </div>
             <CardDescription className="text-xs text-muted-foreground">
-              Acompanhamento de {participantName}. Prepare as duas versões e revise antes de
-              compartilhar.
+              Acompanhamento de {participantName}. Revise o mapa interativo antes de compartilhar.
             </CardDescription>
           </div>
 
@@ -488,8 +487,8 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                 await loadAll()
                 setSuccessMessage(
                   reviewed
-                    ? 'As duas versões foram revisadas e salvas.'
-                    : 'As duas versões foram salvas como rascunho.',
+                    ? 'O mapa interativo foi revisado e salvo.'
+                    : 'O mapa interativo foi salvo como rascunho.',
                 )
               }}
             />
@@ -504,8 +503,8 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                     </Badge>
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
-                    Selecione elementos de conhecimento elegíveis ou redija diretamente novas
-                    formulações.
+                    Revise as respostas e sua leitura, confira a prévia e compartilhe quando estiver
+                    pronta.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -554,117 +553,122 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                 </div>
               )}
 
-              {/* CANDIDATOS DETERMINÍSTICOS (Item 25) */}
-              <div className="space-y-2 pt-2 border-t border-border/40">
-                <span className="text-xs font-semibold text-foreground block">
-                  Possíveis Elementos para o Mapa (Candidatos Determinísticos sem IA)
-                </span>
-                <p className="text-[11px] text-muted-foreground">
-                  Conhecimentos consolidados e relatos da participante aptos para sustentação.
-                </p>
-
-                {candidates.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic py-2">
-                    Nenhum elemento de conhecimento elegível encontrado para este enrollment.
+              <details className="rounded-lg border p-3">
+                <summary className="cursor-pointer text-sm font-medium">
+                  Notas adicionais do mapa (opcional)
+                </summary>
+                {/* CANDIDATOS DETERMINÍSTICOS (Item 25) */}
+                <div className="space-y-2 pt-2 border-t border-border/40">
+                  <span className="text-xs font-semibold text-foreground block">
+                    Possíveis Elementos para o Mapa (Candidatos Determinísticos sem IA)
+                  </span>
+                  <p className="text-[11px] text-muted-foreground">
+                    Conhecimentos consolidados e relatos da participante aptos para sustentação.
                   </p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto p-1">
-                    {candidates.map((cand) => (
-                      <div
-                        key={cand.id}
-                        onClick={() => handleSelectCandidate(cand)}
-                        className={`p-3 rounded-lg border text-left cursor-pointer transition-all ${
-                          selectedCandidate?.id === cand.id
-                            ? 'border-primary bg-primary/10 shadow-xs'
-                            : 'border-border/60 bg-card hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between text-[10px] text-muted-foreground pb-1">
-                          <span className="font-mono uppercase">
-                            {cand.knowledgeItem.concept_key}
-                          </span>
-                          <span className="capitalize">{cand.knowledgeItem.temporality}</span>
-                        </div>
-                        <p className="text-xs text-foreground font-medium line-clamp-2">
-                          {cand.knowledgeItem.statement}
-                        </p>
-                        <div className="pt-2 flex flex-wrap items-center gap-1">
-                          <Badge variant="outline" className="text-[9px] py-0 px-1.5">
-                            {cand.sourceContextSummary}
-                          </Badge>
-                          {cand.knowledgeItem.status === 'observing' && (
-                            <Badge
-                              variant="secondary"
-                              className="text-[9px] py-0 px-1.5 bg-amber-500/10 text-amber-800"
-                            >
-                              Em observação
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
-              {/* FORMULÁRIO DE REDAÇÃO HUMANA (Item 24) */}
-              <div className="space-y-3 pt-3 border-t border-border/50">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="w-full sm:w-1/3 space-y-1">
-                    <Label className="text-xs font-medium">Seção de Destino (11 Seções)</Label>
-                    <select
-                      value={targetSection}
-                      onChange={(e) => setTargetSection(e.target.value as CerMapSection)}
-                      className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 text-foreground shadow-xs"
-                    >
-                      {Object.values(CER_MAP_SECTIONS).map((sec) => (
-                        <option key={sec} value={sec}>
-                          {CER_MAP_SECTION_LABELS[sec]}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[10px] text-muted-foreground">
-                      {CER_MAP_SECTION_DESCRIPTIONS[targetSection]}
+                  {candidates.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic py-2">
+                      Nenhum elemento de conhecimento elegível encontrado para este enrollment.
                     </p>
-                  </div>
-
-                  <div className="w-full sm:w-2/3 space-y-1">
-                    <Label className="text-xs font-medium">
-                      Formulação Participante-Facing (Síntese Humana)
-                    </Label>
-                    <Textarea
-                      placeholder="Redija como a pessoa se reconhece ou vivencia este traço..."
-                      value={formulatedText}
-                      onChange={(e) => setFormulatedText(e.target.value)}
-                      className="text-xs min-h-[72px]"
-                    />
-                  </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto p-1">
+                      {candidates.map((cand) => (
+                        <div
+                          key={cand.id}
+                          onClick={() => handleSelectCandidate(cand)}
+                          className={`p-3 rounded-lg border text-left cursor-pointer transition-all ${
+                            selectedCandidate?.id === cand.id
+                              ? 'border-primary bg-primary/10 shadow-xs'
+                              : 'border-border/60 bg-card hover:border-primary/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground pb-1">
+                            <span className="font-mono uppercase">
+                              {cand.knowledgeItem.concept_key}
+                            </span>
+                            <span className="capitalize">{cand.knowledgeItem.temporality}</span>
+                          </div>
+                          <p className="text-xs text-foreground font-medium line-clamp-2">
+                            {cand.knowledgeItem.statement}
+                          </p>
+                          <div className="pt-2 flex flex-wrap items-center gap-1">
+                            <Badge variant="outline" className="text-[9px] py-0 px-1.5">
+                              {cand.sourceContextSummary}
+                            </Badge>
+                            {cand.knowledgeItem.status === 'observing' && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[9px] py-0 px-1.5 bg-amber-500/10 text-amber-800"
+                              >
+                                Em observação
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between pt-1">
-                  <div className="text-[11px] text-muted-foreground">
-                    {selectedCandidate ? (
-                      <span>
-                        Fonte vinculada:{' '}
-                        <code className="font-mono text-[10px]">
-                          {selectedCandidate.knowledgeItem.concept_key}
-                        </code>
-                      </span>
-                    ) : (
-                      <span>Redação livre profissional para o rascunho</span>
-                    )}
+                {/* FORMULÁRIO DE REDAÇÃO HUMANA (Item 24) */}
+                <div className="space-y-3 pt-3 border-t border-border/50">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="w-full sm:w-1/3 space-y-1">
+                      <Label className="text-xs font-medium">Seção de Destino (11 Seções)</Label>
+                      <select
+                        value={targetSection}
+                        onChange={(e) => setTargetSection(e.target.value as CerMapSection)}
+                        className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 text-foreground shadow-xs"
+                      >
+                        {Object.values(CER_MAP_SECTIONS).map((sec) => (
+                          <option key={sec} value={sec}>
+                            {CER_MAP_SECTION_LABELS[sec]}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-muted-foreground">
+                        {CER_MAP_SECTION_DESCRIPTIONS[targetSection]}
+                      </p>
+                    </div>
+
+                    <div className="w-full sm:w-2/3 space-y-1">
+                      <Label className="text-xs font-medium">
+                        Formulação Participante-Facing (Síntese Humana)
+                      </Label>
+                      <Textarea
+                        placeholder="Redija como a pessoa se reconhece ou vivencia este traço..."
+                        value={formulatedText}
+                        onChange={(e) => setFormulatedText(e.target.value)}
+                        className="text-xs min-h-[72px]"
+                      />
+                    </div>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={handleAddItem}
-                    disabled={savingItem || !formulatedText.trim()}
-                    className="text-xs h-8 gap-1.5"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{savingItem ? 'Adicionando...' : 'Adicionar ao Rascunho'}</span>
-                  </Button>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="text-[11px] text-muted-foreground">
+                      {selectedCandidate ? (
+                        <span>
+                          Fonte vinculada:{' '}
+                          <code className="font-mono text-[10px]">
+                            {selectedCandidate.knowledgeItem.concept_key}
+                          </code>
+                        </span>
+                      ) : (
+                        <span>Redação livre profissional para o rascunho</span>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={handleAddItem}
+                      disabled={savingItem || !formulatedText.trim()}
+                      className="text-xs h-8 gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{savingItem ? 'Adicionando...' : 'Adicionar ao Rascunho'}</span>
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              </details>
             </div>
 
             {/* LISTA DE ITENS ATUAIS NO RASCUNHO */}

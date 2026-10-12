@@ -322,6 +322,10 @@ const rules: Record<string, Record<string, Rule>> = {
     },
     percebo_mas_hesito: {
       text: 'Você percebe o desconforto, mas hesita em falar para preservar o clima ou a outra pessoa. Seu conforto também precisa participar do encontro; a comunicação pode proteger a intimidade.',
+      strength: [
+        'Reconhecer meu desconforto',
+        'Percebo quando algo não está confortável, mesmo que ainda seja difícil comunicar.',
+      ],
       difficulty: [
         'Expressar desconforto na intimidade',
         'Percebo o incômodo, mas hesito em comunicar.',
@@ -336,6 +340,13 @@ const rules: Record<string, Record<string, Rule>> = {
     },
   },
   expressao_escolhas_preferencias: {
+    espero_a_outra_pessoa_perguntar: {
+      text: 'Você relata que expressar suas escolhas fica mais fácil quando a outra pessoa pergunta e abre espaço. Reconhecer essa condição ajuda a construir uma comunicação com mais escuta.',
+      strength: [
+        'Reconhecer o que facilita minha voz',
+        'A escuta e o espaço explícito para responder facilitam expressar minhas escolhas.',
+      ],
+    },
     falo_com_liberdade: {
       text: 'Você consegue expressar preferências e mudar de ideia. Essa liberdade é uma força para construir encontros com reciprocidade.',
       strength: [
@@ -361,6 +372,10 @@ const rules: Record<string, Record<string, Rule>> = {
     },
     preciso_de_tempo: {
       text: 'Você precisa de calma e tempo para desacelerar e sentir. Um ritmo sem pressa é uma condição importante para aproximar atenção e experiência corporal.',
+      strength: [
+        'Conhecer meu ritmo',
+        'Reconheço que calma e tempo ajudam a perceber minhas sensações.',
+      ],
     },
     atencao_vai_para_a_mente: {
       text: 'Sua atenção costuma ir para pensamentos e preocupações. O encontro com o corpo pode precisar de mais tempo e condições de presença.',

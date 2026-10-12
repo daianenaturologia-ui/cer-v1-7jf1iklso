@@ -53,16 +53,20 @@ export function CerMapReadingsEditor({
               ...snapshot,
               generatedAt: updated.generatedAt,
               sourceResponseIds: updated.sourceResponseIds,
+              elementReadings: updated.elementReadings,
+              references: updated.references,
+              integration: snapshot.integration || updated.integration,
               lifeEvents,
               lifeDirections,
               lifeConnections: [],
               dimensions: updated.dimensions.map((d) => ({
                 ...d,
                 summary:
-                  snapshot.dimensions.find((previous) => previous.id === d.id)?.summary || '',
+                  snapshot.dimensions.find((previous) => previous.id === d.id)?.summary ||
+                  d.summary,
                 interpretation:
                   snapshot.dimensions.find((previous) => previous.id === d.id)?.interpretation ||
-                  '',
+                  d.interpretation,
               })),
             }
           : { ...updated, lifeEvents, lifeDirections },
@@ -114,8 +118,10 @@ export function CerMapReadingsEditor({
             />
           </label>
           {snapshot.dimensions.map((dimension, index) => (
-            <fieldset key={dimension.id} className="border rounded-lg p-3 space-y-3">
-              <legend className="text-sm font-semibold px-1">{dimension.title}</legend>
+            <details key={dimension.id} className="border rounded-lg p-3 space-y-3">
+              <summary className="text-sm font-semibold cursor-pointer">
+                Revisar {dimension.title}
+              </summary>
               <label className="block text-sm space-y-1">
                 <span>Síntese em linguagem simples · leitura inicial</span>
                 <Textarea
@@ -138,13 +144,26 @@ export function CerMapReadingsEditor({
                     change({
                       ...snapshot,
                       dimensions: snapshot.dimensions.map((d, i) =>
-                        i === index ? { ...d, interpretation: e.target.value } : d,
+                        i === index
+                          ? {
+                              ...d,
+                              interpretation: e.target.value,
+                              ...(d.personalSections?.length
+                                ? {
+                                    personalSections: [
+                                      { ...d.personalSections[0], text: e.target.value },
+                                      ...d.personalSections.slice(1),
+                                    ],
+                                  }
+                                : {}),
+                            }
+                          : d,
                       ),
                     })
                   }
                 />
               </label>
-            </fieldset>
+            </details>
           ))}
           <label className="block text-sm space-y-1">
             <span>Leitura integrada · o que ajuda a construir o próximo caminho</span>

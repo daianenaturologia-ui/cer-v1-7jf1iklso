@@ -1,4 +1,6 @@
 import { cerCarePlanService } from '@/services/cerCarePlanService'
+import { careReturnLabel } from '@/services/careReturnLabels'
+import { goalRoadmapService } from '@/services/goalRoadmap'
 import React, { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
@@ -36,13 +38,22 @@ export function ProfessionalJourneySummary({
       selfDevelopmentService.list(enrollmentId),
       cerCarePlanService.listAcceptancesByEnrollment(enrollmentId),
     ])
-      .then(([responses, progress, history, directions, steps, returns]) => {
+      .then(async ([responses, progress, history, directions, steps, returns]) => {
+        const visibleDirections = sharedLifeDirections(directions, enrollmentId)
+        const roadmaps = await Promise.all(
+          visibleDirections
+            .filter((d) => d.kind === 'future')
+            .map((d) => goalRoadmapService.load(enrollmentId, d.id)),
+        )
         if (!current) return
         const shared = professionalQuestionnaireResponses(responses.flat(), enrollmentId)
         setState({
           coverage: consciousnessCoverage(shared, progress),
           history: sharedLifeEvents(history, enrollmentId),
-          directions: sharedLifeDirections(directions, enrollmentId),
+          directions: visibleDirections,
+          roadmaps: roadmaps.filter(
+            (r) => r?.enrollment_id === enrollmentId && r.access_class === 'participant_shared',
+          ),
           steps: visibleDevelopment(steps, enrollmentId, true),
           returns: returns.filter(
             (r) =>
@@ -116,6 +127,14 @@ export function ProfessionalJourneySummary({
           </span>
         </Button>
       </div>
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm space-y-1">
+        <h3 className="font-semibold">Próximo passo do acompanhamento</h3>
+        <p>
+          {done === 6
+            ? 'As seis dimensões foram respondidas. Revise o mapa com a pessoa e conecte a direção escolhida a um cuidado que caiba no momento.'
+            : 'Acompanhe o preenchimento das dimensões e acolha as dúvidas. O mapa inicial pode ser revisto ao longo da jornada.'}
+        </p>
+      </div>
       <div className="rounded-2xl border bg-primary/5 p-5 space-y-3">
         <h3 className="font-semibold">A direção escolhida pela interagente</h3>
         {direction ? (
@@ -135,26 +154,35 @@ export function ProfessionalJourneySummary({
         ) : (
           <p className="text-sm">Ainda não há uma direção compartilhada.</p>
         )}
-        <Button size="sm" onClick={() => onOpen('equilibrio')}>
+        <Button size="sm" onClick={() => onOpen('evolucao', 'plano')}>
           Revisar nosso plano
         </Button>
       </div>
+      {state.roadmaps.length > 0 && (
+        <div className="rounded-xl border p-4 space-y-3">
+          <h3 className="font-semibold">Metas escolhidas pela interagente</h3>
+          {state.roadmaps.map((record: any) => (
+            <div key={record.id} className="space-y-2 text-sm">
+              {record.roadmap.milestones.map((m: any) => (
+                <div key={m.horizon}>
+                  <p className="font-medium">{m.title}</p>
+                  <p className="text-muted-foreground">
+                    Até {new Date(`${m.targetDate}T12:00:00`).toLocaleDateString('pt-BR')}
+                    {m.signal && ` · ${m.signal}`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ))}
+          <Button size="sm" variant="outline" onClick={() => onOpen('equilibrio')}>
+            Ver metas e ações
+          </Button>
+        </div>
+      )}
       {state.returns.length > 0 && (
         <div className="rounded-xl border p-4 text-sm space-y-1">
           <h3 className="font-semibold">Retorno sobre nosso foco</h3>
-          <p>
-            {(
-              {
-                accepted: 'Consegui experimentar',
-                wants_to_try: 'Quero tentar',
-                too_much: 'Foi muito',
-                wants_to_talk: 'Prefiro conversar',
-                wants_to_adapt: 'Quero adaptar',
-                not_now: 'Agora não',
-                alternative_requested: 'Quero outra possibilidade',
-              } as Record<string, string>
-            )[state.returns[0].response_type] || 'Retorno compartilhado'}
-          </p>
+          <p>{careReturnLabel(state.returns[0].response_type)}</p>
           {state.returns[0].shared_comment && <p>{state.returns[0].shared_comment}</p>}
         </div>
       )}

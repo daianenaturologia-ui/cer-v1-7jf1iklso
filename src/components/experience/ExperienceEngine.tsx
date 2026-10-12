@@ -430,6 +430,25 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           }
         }
 
+        if (canonicalId === 'exp-integracao-consciencia-07g') {
+          const { BUILD_07G_INTEGRACAO_PROMPTS } = await import('@/services/build07gPrompts')
+          promptList = promptList.map((prompt) => {
+            const authored = BUILD_07G_INTEGRACAO_PROMPTS.find(
+              (item) =>
+                item.id === prompt.id ||
+                (item.schema_config as any)?.prompt_key ===
+                  (prompt.schema_config as any)?.prompt_key,
+            )
+            return authored
+              ? {
+                  ...prompt,
+                  prompt_text: authored.prompt_text,
+                  helper_text: authored.helper_text,
+                  schema_config: authored.schema_config,
+                }
+              : prompt
+          })
+        }
         setExperience(exp)
         setMoments(momentList)
         setPrompts(promptList)
