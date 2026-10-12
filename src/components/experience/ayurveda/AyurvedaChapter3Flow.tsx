@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
+import { AyurvedaStepHeader } from './AyurvedaStepHeader'
 import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import { experienceResponseService } from '@/services/experienceEngine'
 import type { ExperienceResponseRecord } from '@/types/cer'
@@ -57,6 +58,7 @@ interface Props {
   experienceId: string
   respondentUserId: string
   initialStep?: number
+  mode?: 'intro' | 'answering' | 'ready_to_complete' | 'completed' | 'review' | 'correcting'
   onBackToHub: () => void
   onCompleted?: () => void
 }
@@ -66,6 +68,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   experienceId,
   respondentUserId,
   initialStep = 1,
+  mode,
   onBackToHub,
   onCompleted,
 }) => {
@@ -76,18 +79,24 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
+  const [isExiting, setIsExiting] = useState(false)
   const exitSafely = async () => {
+    if (isExiting) return
+    setIsExiting(true)
     try {
       await saver.flush()
       onBackToHub()
     } catch {
       /* retain edits */
+    } finally {
+      setIsExiting(false)
     }
   }
 
+  const isReviewMode = mode === 'review'
   const [saving, setSaving] = useState(false)
   const [showVoice, setShowVoice] = useState(false)
-  const [isCorrectionMode, setIsCorrectionMode] = useState(false)
+  const [isCorrectionMode, setIsCorrectionMode] = useState(mode === 'correcting')
   const [isReassessment, setIsReassessment] = useState(false)
   const [showCorrectionConfirmation, setShowCorrectionConfirmation] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
@@ -865,9 +874,25 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     )
   }
 
+  const stepTitles: Record<number, string> = {
+    1: 'Áreas de mudança atual',
+    2: 'Direção das mudanças',
+    3: 'Início das mudanças',
+    4: 'Contexto das mudanças',
+    5: 'Corpo agora e medicamentos',
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-4">
       {saver.status}
+      {!isReviewMode && (
+        <AyurvedaStepHeader
+          chapterLabel="Capítulo 3 • Mudanças Atuais"
+          stepLabel={`Etapa ${step} de 5 • ${stepTitles[step] || ''}`}
+          onSaveAndContinueLater={exitSafely}
+          isExiting={isExiting}
+        />
+      )}
       <div className="space-y-2">
         <Badge variant="outline">Capítulo 3 • Etapa {step} de 5</Badge>
         {isCorrectionMode && (
@@ -1404,6 +1429,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
         <Button
           variant="outline"
           onClick={step === 1 ? exitSafely : () => setStep((current) => current - 1)}
+          disabled={isExiting}
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
           {step === 1 ? 'Capítulos' : 'Voltar'}

@@ -36,6 +36,7 @@ import { AyurvedaTela3Hair } from './AyurvedaTela3Hair'
 import { AyurvedaTela4Temperature } from './AyurvedaTela4Temperature'
 import { AyurvedaTela5Habits } from './AyurvedaTela5Habits'
 import { AyurvedaClosing } from './AyurvedaClosing'
+import { AyurvedaStepHeader } from './AyurvedaStepHeader'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
 import { ExperienceResponseRecord, EnrollmentExperienceRecord } from '@/types/cer'
 
@@ -858,13 +859,19 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     )
     return valid
   }
+  const [isExiting, setIsExiting] = useState(false)
+
   const exitSafely = async () => {
+    if (isExiting) return
+    setIsExiting(true)
     try {
       await saver.flush()
       if (onExitToHub) onExitToHub()
       else setStage('hub')
     } catch {
       /* the saving alert keeps the current answers visible */
+    } finally {
+      setIsExiting(false)
     }
   }
   const advanceStep = async (nextStep: Chapter1Stage, stepOrder: number) => {
@@ -1205,6 +1212,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 4. Tela 1: Estrutura Corporal */}
       {stage === 'step1' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 1 • Corpo & Fisiologia"
+              stepLabel="Etapa 1 de 5 • Estrutura habitual"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaTela1Structure
             userPresentation={userPresentation}
             structureChoice={chapterState.structure_choice}
@@ -1244,6 +1260,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 5. Tela 2: Pele */}
       {stage === 'step2' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 1 • Corpo & Fisiologia"
+              stepLabel="Etapa 2 de 5 • Pele"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaTela2Skin
             skinChoices={chapterState.skin_choices}
             onSave={handleSaveStep2}
@@ -1275,6 +1300,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 6. Tela 3: Cabelo */}
       {stage === 'step3' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 1 • Corpo & Fisiologia"
+              stepLabel="Etapa 3 de 5 • Cabelo"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaTela3Hair
             hairChoices={chapterState.hair_choices}
             onSave={handleSaveStep3}
@@ -1306,6 +1340,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 7. Tela 4: Temperatura */}
       {stage === 'step4' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 1 • Corpo & Fisiologia"
+              stepLabel="Etapa 4 de 5 • Temperatura"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaTela4Temperature
             temperatureChoice={chapterState.temperature_choice}
             onSave={handleSaveStep4}
@@ -1337,6 +1380,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 8. Tela 5: Sede, Bebida e Transpiração */}
       {stage === 'step5' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 1 • Corpo & Fisiologia"
+              stepLabel="Etapa 5 de 5 • Sede e Hábitos"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaTela5Habits
             thirstChoice={chapterState.thirst_choice}
             drinkTemperatureChoice={chapterState.drink_temperature_choice}

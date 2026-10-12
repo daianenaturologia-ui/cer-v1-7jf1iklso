@@ -34,6 +34,7 @@ import { AyurvedaC2Momento3Elimination } from './AyurvedaC2Momento3Elimination'
 import { AyurvedaC2Momento4Sleep } from './AyurvedaC2Momento4Sleep'
 import { AyurvedaC2Momento5Energy } from './AyurvedaC2Momento5Energy'
 import { AyurvedaChapter2Closing } from './AyurvedaChapter2Closing'
+import { AyurvedaStepHeader } from './AyurvedaStepHeader'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
 import { ExperienceResponseRecord, EnrollmentExperienceRecord } from '@/types/cer'
 
@@ -123,6 +124,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   const saver = useQuestionnaireSaving()
   const [loadError, setLoadError] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [isExiting, setIsExiting] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [recoveryError, setRecoveryError] = useState<string | null>(null)
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
@@ -1061,11 +1063,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   }
 
   const exitSafely = async () => {
+    if (isExiting) return
+    setIsExiting(true)
     try {
       await saver.flush()
       onBackToHub()
     } catch {
       /* retain edits */
+    } finally {
+      setIsExiting(false)
     }
   }
 
@@ -1134,6 +1140,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {/* Momento 1: Fome */}
       {stage === 'momento1' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 2 • Digestão & Rotina"
+              stepLabel="Momento 1 de 5 • Fome"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaC2Momento1Hunger
             hungerPatternChoices={chapterState.hunger_pattern}
             delayedMealChoices={chapterState.delayed_meal_response}
@@ -1173,6 +1188,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {/* Momento 2: Digestão */}
       {stage === 'momento2' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 2 • Digestão & Rotina"
+              stepLabel="Momento 2 de 5 • Digestão"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaC2Momento2Digestion
             postMealChoices={chapterState.post_meal}
             hungerReturnChoice={chapterState.hunger_return}
@@ -1210,6 +1234,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {/* Momento 3: Eliminação */}
       {stage === 'momento3' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 2 • Digestão & Rotina"
+              stepLabel="Momento 3 de 5 • Eliminação"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaC2Momento3Elimination
             bowelRhythmChoice={chapterState.bowel_rhythm}
             stoolPatternChoices={chapterState.stool_pattern}
@@ -1244,6 +1277,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {/* Momento 4: Sono */}
       {stage === 'momento4' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 2 • Digestão & Rotina"
+              stepLabel="Momento 4 de 5 • Sono"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaC2Momento4Sleep
             sleepPatternChoices={chapterState.sleep_pattern}
             wakingChoice={chapterState.waking}
@@ -1278,6 +1320,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {/* Momento 5: Energia */}
       {stage === 'momento5' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 2 • Digestão & Rotina"
+              stepLabel="Momento 5 de 5 • Energia & Disposição"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaC2Momento5Energy
             energyDistributionChoice={chapterState.energy_distribution}
             bodyPaceChoice={chapterState.body_pace}
