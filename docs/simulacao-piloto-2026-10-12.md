@@ -23,16 +23,26 @@ Foi conectada uma força a uma dificuldade, escrita uma estratégia e criado um 
 
 ## Verificação técnica independente
 
-225 testes de questionários em 21 arquivos; 77 testes focados em 14 arquivos (mapa, leitura, demo, privacidade, Linha da Vida, práticas e resumo); 17 testes do Planner em 6 arquivos. Tipos e build Vite passaram. Nenhuma chamada ou alteração de conteúdo real foi feita por esses testes.
+226 testes de questionários em 21 arquivos; 79 testes focados em 15 arquivos (mapa, leitura, demo, privacidade, Linha da Vida, práticas e resumo); 17 testes do Planner em 6 arquivos. Tipos e build Vite passaram. Nenhuma chamada ou alteração de conteúdo real foi feita por esses testes.
 
 A suíte antiga initial-map teve três expectativas de apresentação ainda incompatíveis com a leitura atual (linhas literais expostas e textos anteriores). Não foi declarada verde. As regras de publicação imutável e a revisão completa dessa suíte permanecem necessárias. Uma quarta expectativa de cobertura foi identificada durante a mudança e preservada para estado concluído sem respostas carregadas; cobertura com respostas de C1 não confunde capítulo com dimensão.
 
 ## Limites e pendências da simulação
 
-A data exata na Linha da Vida foi recusada pela automação, embora o campo DOM estivesse preenchido; ano aproximado funcionou. Necessário distinguir evento de entrada do navegador automatizado e bug do app em teste dedicado. Ditado de voz, autenticação/e-mail, conta real, servidor gerenciado, restauração de backup e Google Agenda externa não foram homologados. Não foi feita reinicialização da demonstração nem exclusão de dados. Não houve publicação em produção.
+A data exata na Linha da Vida foi retestada com entrada pelo teclado e salva em 12/08/2026. A recusa inicial era do preenchimento da automação, não um defeito confirmado do campo. Ditado de voz, autenticação/e-mail, conta real, servidor gerenciado, restauração de backup e Google Agenda externa não foram homologados. Não foi feita reinicialização da demonstração nem exclusão de dados. Não houve publicação em produção.
 
 ## Reteste na prévia 0.0.352 e complemento
 
 Sincronização direta pelo botão GitHub do Skip: build 0.0.352 concluído com sucesso. Na interface atualizada, a Visão geral mostrou 6/6 dimensões, 1 marco compartilhado e 1 passo com aprendizado; respostas profissionais de Sexualidade passaram de 13 para 10 e ficaram concluídas. Nem os textos privados de controle nem os valores técnicos das opções apareceram, incluindo com as respostas literais abertas. Sair da demonstração, reentrar e recarregar preservou respostas e plano; o plano apresentado passou a aparecer em Evolução > Acompanhamento. Foi enviado um retorno fictício “quero tentar”.
 
 Um reteste rápido detectou colisão entre prioridades criadas no mesmo milissegundo: a identificação demo usava Date.now(). O complemento usa UUID para planos, prioridades e apresentações, com regressão de criação simultânea. Também acrescenta o retorno atual compartilhado à Visão geral, ajusta singular/plural dos cartões, conta somente as seis dimensões na síntese de acompanhamento e remove o identificador técnico de direção da Mandala. Checagem de C4 confirma que a conclusão geral espera a gravação final.
+
+## Fechamento do reteste
+
+A sincronização intermediária do builder perdeu complementos apesar de build bem sucedido; foram reaplicados sobre a main atual. A conferência da interface confirmou singular dos cartões e “Retorno sobre nosso foco”, com resposta “Quero tentar” e comentário fictício. Não confundir sucesso do build com presença da funcionalidade.
+
+A investigação das três falhas restantes da suíte initial-map confirmou que o layout não disponibilizava detailedRows dos snapshots. Foi adicionado aprofundamento “Respostas e registros deste mapa” sob clique, sem reconstruir o mapa publicado a partir de respostas novas. Testes cobrem conteúdo publicado estável, texto legado acessível sob clique, exclusão de outras pessoas e rascunhos profissionais. Reteste completo: 46 testes / 11 arquivos passaram. Typecheck e build Vite também passaram após o ajuste.
+
+Os seis instrumentos e recursos educativos, linha, direção, agenda interna, plano compartilhado e retorno foram exercitados na UI. O ciclo clínico completo de práticas prescritas foi verificado por testes de serviço/componentes, não encerrado pela interface. A rodada não certifica voz, login real, sincronização entre dispositivos, Google Agenda, backup ou segregação no servidor. Não há evidência de restauração das respostas antigas da conta da usuária.
+
+Prévia final: 0.0.358, build concluído com sucesso em 12/10 às 15:19, observado no Inspetor de Build. Conferido na UI: botão “Respostas e registros deste mapa” abre os registros atuais da simulação. Integração da Consciência também preenchida em oito momentos, encerrada e status Concluída confirmado. A área Práticas foi aberta: estado vazio contextualizado, remetendo ao desenvolvimento educativo, pois não havia prática clínica prescrita.
