@@ -1,3 +1,4 @@
+import { useQuestionnaireSaving } from '@/hooks/useQuestionnaireSaving'
 import React, { useState, useEffect, useRef } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -119,6 +120,8 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   const isCorrecting = mode === 'correcting'
 
   const [loading, setLoading] = useState(true)
+  const saver = useQuestionnaireSaving()
+  const [loadError, setLoadError] = useState(false)
   const [saving, setSaving] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [recoveryError, setRecoveryError] = useState<string | null>(null)
@@ -175,12 +178,9 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   // Carregar respostas existentes com IDs canônicos AYV_C2
   const loadResponses = async (explicitTargetRevision?: number) => {
     setLoading(true)
+    setLoadError(false)
     try {
-      const enrList = await enrollmentExperienceService.listByEnrollment(enrollmentId)
-      const currentEnrExp = enrList.find(
-        (e) =>
-          e.experience_id === experienceId || (e as any).expand?.experience_id?.id === experienceId,
-      )
+      const currentEnrExp = await enrollmentExperienceService.getByEnrollmentAndExperience(enrollmentId, experienceId)
       if (currentEnrExp) {
         setEnrollmentExp(currentEnrExp)
       }
@@ -414,6 +414,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         }
       }
     } catch (err) {
+      setLoadError(true)
       console.error('Erro ao carregar respostas do Capítulo 2:', err)
     } finally {
       setLoading(false)
@@ -445,6 +446,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
     explicitRefusal?: boolean
     notesForProfessional?: string
   }) => {
+    saver.enqueue(params.promptId, async () => {
     const isUnsure =
       params.explicitUnsure !== undefined
         ? params.explicitUnsure
@@ -540,6 +542,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
         return next
       }
       return [...prev, saved]
+    })
     })
   }
 
@@ -724,6 +727,8 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   const handleCompleteChapter2 = async () => {
     setSaving(true)
     try {
+      await saver.flush()
+      saver.enqueue('completion', async () => {
       const nowIso = new Date().toISOString()
       const targetRev = currentActiveRev
 
@@ -793,7 +798,10 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       openedCorrection.current = false
       onCompleted?.()
       onBackToHub()
+      })
+      await saver.flush()
     } catch (e) {
+      saver.reportError()
       console.error('Erro ao concluir Capítulo 2:', e)
     } finally {
       setSaving(false)
@@ -1049,8 +1057,20 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
     )
   }
 
+  const exitSafely = async () => {
+    try { await saver.flush(); onBackToHub() } catch { /* retain edits */ }
+  }
+
+  if (loading) return <p role="status" className="p-4 text-sm text-muted-foreground">Carregando suas respostas…</p>
+
+  if (loadError) return <div role="alert" className="p-4 space-y-3">
+    <p>Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.</p>
+    <Button onClick={() => { void loadResponses() }}>Tentar carregar novamente</Button>
+  </div>
+
   return (
     <div className="w-full">
+      {saver.status}
       {/* Banner de Modo Revisão Somente-Leitura com identificação explícita do Capítulo 2 */}
       {isReviewOnly && (
         <div
@@ -1083,7 +1103,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {stage === 'opening' && (
         <AyurvedaChapter2Opening
           onStartQuestions={() => setStage('momento1')}
-          onBackToHub={onBackToHub}
+          onBackToHub={exitSafely}
         />
       )}
 
@@ -1096,7 +1116,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             treatmentVariant={treatmentVariant}
             onSaveHungerPattern={handleSaveHungerPattern}
             onSaveDelayedMeal={handleSaveDelayedMeal}
-            disabled={isReviewOnly}
+            disabled={isReviewOnly || saving}
           />
           <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             {isReviewOnly ? (
@@ -1137,7 +1157,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             onSavePostMeal={handleSavePostMeal}
             onSaveHungerReturn={handleSaveHungerReturn}
             onSaveFoodDemands={handleSaveFoodDemands}
-            disabled={isReviewOnly}
+            disabled={isReviewOnly || saving}
           />
           <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
@@ -1171,7 +1191,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             stoolPatternChoices={chapterState.stool_pattern}
             onSaveBowelRhythm={handleSaveBowelRhythm}
             onSaveStoolPattern={handleSaveStoolPattern}
-            disabled={isReviewOnly}
+            disabled={isReviewOnly || saving}
           />
           <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
@@ -1205,7 +1225,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             wakingChoice={chapterState.waking}
             onSaveSleepPattern={handleSaveSleepPattern}
             onSaveWaking={handleSaveWaking}
-            disabled={isReviewOnly}
+            disabled={isReviewOnly || saving}
           />
           <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
@@ -1241,7 +1261,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             onSaveEnergyDistribution={handleSaveEnergyDistribution}
             onSaveBodyPace={handleSaveBodyPace}
             onSaveHistoricalConfidence={handleSaveHistoricalConfidence}
-            disabled={isReviewOnly}
+            disabled={isReviewOnly || saving}
           />
           <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between pt-4 border-t border-border/40 gap-2">
             <Button
@@ -1273,7 +1293,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
           state={chapterState}
           isCompleted={isCompleted}
           treatmentVariant={treatmentVariant}
-          onSaveAndContinueLater={onBackToHub}
+          onSaveAndContinueLater={exitSafely}
           onCompleteChapter={handleCompleteChapter2}
           onReviewResponses={() => {
             if (onEnterReview) {
@@ -1282,7 +1302,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
             handleReviewResponses()
           }}
           onStartCorrection={handleStartCorrection}
-          onBackToHub={onBackToHub}
+          onBackToHub={exitSafely}
           loading={saving}
           correctionError={correctionError}
           onClearCorrectionError={() => setCorrectionError(null)}

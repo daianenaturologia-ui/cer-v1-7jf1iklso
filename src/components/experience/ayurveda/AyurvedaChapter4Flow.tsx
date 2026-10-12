@@ -1,3 +1,4 @@
+import { useQuestionnaireSaving } from '@/hooks/useQuestionnaireSaving'
 import React, { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2, MessageCircleQuestion } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -29,18 +30,26 @@ export const AyurvedaChapter4Flow: React.FC<Props> = ({
   onCompleted,
 }) => {
   const [responses, setResponses] = useState<ExperienceResponseRecord[]>([])
+  const saver = useQuestionnaireSaving()
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [saving, setSaving] = useState(false)
   useEffect(() => {
+    setLoadError(false)
+    setLoading(true)
     experienceResponseService
       .listResponsesByExperience(enrollmentId, experienceId)
-      .then(setResponses)
-  }, [enrollmentId, experienceId])
+      .then(setResponses).catch(() => setLoadError(true)).finally(() => setLoading(false))
+  }, [enrollmentId, experienceId, loadAttempt])
   const synthesis = useMemo(() => buildChapter4Synthesis(responses), [responses])
   const completed = isChapter4Completed(responses)
 
   const complete = async () => {
     setSaving(true)
     try {
+      await saver.flush()
+      saver.enqueue('completion', async () => {
       const now = new Date().toISOString()
       const saved = await experienceResponseService.saveResponse({
         enrollmentId,
@@ -65,6 +74,10 @@ export const AyurvedaChapter4Flow: React.FC<Props> = ({
       ;(saved as any).prompt_key = AYV_C4_COMPLETION.key
       setResponses((current) => [...current, saved])
       onCompleted?.()
+      })
+      await saver.flush()
+    } catch {
+      saver.reportError()
     } finally {
       setSaving(false)
     }
@@ -95,8 +108,16 @@ export const AyurvedaChapter4Flow: React.FC<Props> = ({
     </Card>
   )
 
+  if (loading) return <p role="status" className="p-4 text-sm text-muted-foreground">Carregando suas respostas…</p>
+
+  if (loadError) return <div role="alert" className="p-4 space-y-3">
+    <p>Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.</p>
+    <Button onClick={() => setLoadAttempt(value => value + 1)}>Tentar carregar novamente</Button>
+  </div>
+
   return (
     <div className="mx-auto max-w-3xl space-y-5 py-4">
+      {saver.status}
       <div className="space-y-2 text-center sm:text-left">
         <Badge variant="outline">Capítulo 4 • Síntese</Badge>
         <h2 className="font-serif text-2xl">Meu corpo em síntese</h2>

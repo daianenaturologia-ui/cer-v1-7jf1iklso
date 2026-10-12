@@ -15,6 +15,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  questionnaires-authenticated:
+    name: Authenticated questionnaire lifecycle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.5.2
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Questionnaire and avatar regressions
+        run: pnpm exec vitest run --config scripts/questionnaire-vitest.config.ts
+      - name: Typecheck application
+        run: pnpm exec tsc --noEmit -p tsconfig.app.json
+      - name: Build application
+        run: pnpm exec vite build
+      - name: Install official reference engine
+        run: |
+          set -euo pipefail
+          curl -fSL --retry 2 -o /tmp/pb-questionnaire.zip https://github.com/pocketbase/pocketbase/releases/download/v0.26.1/pocketbase_0.26.1_linux_amd64.zip
+          mkdir -p /tmp/pb-questionnaire
+          unzip -q /tmp/pb-questionnaire.zip pocketbase -d /tmp/pb-questionnaire
+          chmod +x /tmp/pb-questionnaire/pocketbase
+      - name: Authenticated synthetic server lifecycle
+        env:
+          CER_POCKETBASE_BINARY: /tmp/pb-questionnaire/pocketbase
+        run: python3 scripts/verify-authenticated-questionnaires.py
   # ============================================================================
   # JOB 1: QA Geral (Vitest completo, mantendo visíveis os 8 erros conhecidos)
   # ============================================================================
