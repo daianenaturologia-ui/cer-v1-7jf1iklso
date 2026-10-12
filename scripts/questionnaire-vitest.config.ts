@@ -3,12 +3,15 @@ import path from 'node:path'
 export default defineConfig({
   resolve: { alias: { '@': path.resolve(process.cwd(), 'src') } },
   test: {
-    environment: 'jsdom', setupFiles: ['src/test/setup.ts'],
+    environment: 'jsdom',
+    setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/services/privacyAuditBackend.test.ts',
       'src/services/liveQuestionnaire.test.ts',
       'src/services/liveQuestionnaireBackend.test.ts',
       'src/hooks/useQuestionnaireSaving.test.tsx',
       'src/components/experience/ayurveda/AyurvedaLiveSaving.test.tsx',
+      'src/components/experience/ayurveda/AyurvedaSaveAndContinueLater.test.tsx',
       'src/services/avatarCompositor.test.ts',
       'src/services/ayurvedaChapter1.test.tsx',
       'src/services/ayurvedaChapter2.test.tsx',

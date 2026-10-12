@@ -34,6 +34,7 @@ import { AyurvedaC2Momento3Elimination } from './AyurvedaC2Momento3Elimination'
 import { AyurvedaC2Momento4Sleep } from './AyurvedaC2Momento4Sleep'
 import { AyurvedaC2Momento5Energy } from './AyurvedaC2Momento5Energy'
 import { AyurvedaChapter2Closing } from './AyurvedaChapter2Closing'
+import { AyurvedaStepHeader } from './AyurvedaStepHeader'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
 import { ExperienceResponseRecord, EnrollmentExperienceRecord } from '@/types/cer'
 
@@ -123,6 +124,7 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   const saver = useQuestionnaireSaving()
   const [loadError, setLoadError] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [isExiting, setIsExiting] = useState(false)
   const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [recoveryError, setRecoveryError] = useState<string | null>(null)
   const [enrollmentExp, setEnrollmentExp] = useState<EnrollmentExperienceRecord | null>(null)
@@ -180,7 +182,10 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
     setLoading(true)
     setLoadError(false)
     try {
-      const currentEnrExp = await enrollmentExperienceService.getByEnrollmentAndExperience(enrollmentId, experienceId)
+      const currentEnrExp = await enrollmentExperienceService.getByEnrollmentAndExperience(
+        enrollmentId,
+        experienceId,
+      )
       if (currentEnrExp) {
         setEnrollmentExp(currentEnrExp)
       }
@@ -447,102 +452,102 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
     notesForProfessional?: string
   }) => {
     saver.enqueue(params.promptId, async () => {
-    const isUnsure =
-      params.explicitUnsure !== undefined
-        ? params.explicitUnsure
-        : params.optionIds.includes('dont_know') ||
-          params.optionIds.includes('no_pattern') ||
-          params.optionIds.includes('hard_to_remember')
+      const isUnsure =
+        params.explicitUnsure !== undefined
+          ? params.explicitUnsure
+          : params.optionIds.includes('dont_know') ||
+            params.optionIds.includes('no_pattern') ||
+            params.optionIds.includes('hard_to_remember')
 
-    const isRefusal =
-      params.explicitRefusal !== undefined
-        ? params.explicitRefusal
-        : params.optionIds.includes('refusal')
+      const isRefusal =
+        params.explicitRefusal !== undefined
+          ? params.explicitRefusal
+          : params.optionIds.includes('refusal')
 
-    const nowIso = new Date().toISOString()
-    const targetRev = currentActiveRev
-    const previousResponse = rawResponses.find(
-      (response) =>
-        getResponseRevisionNumber(response) === targetRev &&
-        getChapter2BasePromptId(response.prompt_id) === getChapter2BasePromptId(params.promptId),
-    )
-    const parentVersionId = previousResponse
-      ? getResponseParentVersionId(previousResponse)
-      : undefined
+      const nowIso = new Date().toISOString()
+      const targetRev = currentActiveRev
+      const previousResponse = rawResponses.find(
+        (response) =>
+          getResponseRevisionNumber(response) === targetRev &&
+          getChapter2BasePromptId(response.prompt_id) === getChapter2BasePromptId(params.promptId),
+      )
+      const parentVersionId = previousResponse
+        ? getResponseParentVersionId(previousResponse)
+        : undefined
 
-    const meta: AyurvedaCanonicalC2ResponseMetadata = {
-      prompt_key: params.promptKey,
-      canonical_prompt_id: params.promptId,
-      domain: 'ayurveda',
-      chapter_id: AYURVEDA_CHAPTER_2_ID,
-      moment_id: `momento-${params.momentNumber}`,
-      moment_number: params.momentNumber,
-      step_order: params.stepOrder,
-      option_ids: params.optionIds,
-      time_layer: 'habitual_adult',
-      source: 'participant_self_report',
-      explicit_unsure: isUnsure,
-      explicit_refusal: isRefusal,
-      historical_confidence: isUnsure ? 'unknown' : 'high',
-      answered_at: nowIso,
-      experience_version: AYURVEDA_CHAPTER_2_VERSION,
-      notes_for_professional: params.notesForProfessional,
-      revision_number: targetRev,
-      parent_version_id: parentVersionId,
-    }
-
-    // Usar o helper canônico getChapter2RevisionPromptId para obter o identificador físico
-    const basePromptId = getChapter2BasePromptId(params.promptId)
-    const promptIdToPersist = getChapter2RevisionPromptId(basePromptId, targetRev)
-
-    const saved = await experienceResponseService.saveResponse({
-      enrollmentId,
-      experienceId,
-      promptId: promptIdToPersist,
-      respondentUserId,
-      responseType: params.responseType,
-      promptVersion: 1,
-      promptKey: params.promptKey,
-      canonicalPromptId: basePromptId,
-      stepOrder: params.stepOrder,
-      accessClass: 'shared_care',
-      changeReason: `Resposta do participante ao Capítulo 2 (revisão ${targetRev})`,
-      structuredValue: {
-        value: params.value,
-        selectedOptionIds: Array.isArray(params.value) ? params.value : [params.value],
+      const meta: AyurvedaCanonicalC2ResponseMetadata = {
+        prompt_key: params.promptKey,
+        canonical_prompt_id: params.promptId,
+        domain: 'ayurveda',
+        chapter_id: AYURVEDA_CHAPTER_2_ID,
+        moment_id: `momento-${params.momentNumber}`,
+        moment_number: params.momentNumber,
+        step_order: params.stepOrder,
+        option_ids: params.optionIds,
+        time_layer: 'habitual_adult',
+        source: 'participant_self_report',
+        explicit_unsure: isUnsure,
+        explicit_refusal: isRefusal,
+        historical_confidence: isUnsure ? 'unknown' : 'high',
+        answered_at: nowIso,
+        experience_version: AYURVEDA_CHAPTER_2_VERSION,
+        notes_for_professional: params.notesForProfessional,
         revision_number: targetRev,
         parent_version_id: parentVersionId,
-        metadata: meta,
-      },
-    })
-    ;(saved as any).revision_number = targetRev
-    ;(saved as any).prompt_key = params.promptKey
-    ;(saved as any).canonical_prompt_id = params.promptId
-
-    setRawResponses((prev) => {
-      // Atualizar ou inserir na lista de respostas estritamente para a revisão ativa
-      const idx = prev.findIndex((r) => {
-        const rev = getResponseRevisionNumber(r)
-        if (rev !== targetRev) return false
-        const pId = r.prompt_id || (r as any).canonical_prompt_id
-        const pKey =
-          (r as any).prompt_key ||
-          (r.structured_value as any)?.prompt_key ||
-          (r.structured_value as any)?.metadata?.prompt_key
-        return (
-          r.id === saved.id ||
-          pId === promptIdToPersist ||
-          pId === params.promptId ||
-          pKey === params.promptKey
-        )
-      })
-      if (idx >= 0) {
-        const next = [...prev]
-        next[idx] = saved
-        return next
       }
-      return [...prev, saved]
-    })
+
+      // Usar o helper canônico getChapter2RevisionPromptId para obter o identificador físico
+      const basePromptId = getChapter2BasePromptId(params.promptId)
+      const promptIdToPersist = getChapter2RevisionPromptId(basePromptId, targetRev)
+
+      const saved = await experienceResponseService.saveResponse({
+        enrollmentId,
+        experienceId,
+        promptId: promptIdToPersist,
+        respondentUserId,
+        responseType: params.responseType,
+        promptVersion: 1,
+        promptKey: params.promptKey,
+        canonicalPromptId: basePromptId,
+        stepOrder: params.stepOrder,
+        accessClass: 'shared_care',
+        changeReason: `Resposta do participante ao Capítulo 2 (revisão ${targetRev})`,
+        structuredValue: {
+          value: params.value,
+          selectedOptionIds: Array.isArray(params.value) ? params.value : [params.value],
+          revision_number: targetRev,
+          parent_version_id: parentVersionId,
+          metadata: meta,
+        },
+      })
+      ;(saved as any).revision_number = targetRev
+      ;(saved as any).prompt_key = params.promptKey
+      ;(saved as any).canonical_prompt_id = params.promptId
+
+      setRawResponses((prev) => {
+        // Atualizar ou inserir na lista de respostas estritamente para a revisão ativa
+        const idx = prev.findIndex((r) => {
+          const rev = getResponseRevisionNumber(r)
+          if (rev !== targetRev) return false
+          const pId = r.prompt_id || (r as any).canonical_prompt_id
+          const pKey =
+            (r as any).prompt_key ||
+            (r.structured_value as any)?.prompt_key ||
+            (r.structured_value as any)?.metadata?.prompt_key
+          return (
+            r.id === saved.id ||
+            pId === promptIdToPersist ||
+            pId === params.promptId ||
+            pKey === params.promptKey
+          )
+        })
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = saved
+          return next
+        }
+        return [...prev, saved]
+      })
     })
   }
 
@@ -729,75 +734,75 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
     try {
       await saver.flush()
       saver.enqueue('completion', async () => {
-      const nowIso = new Date().toISOString()
-      const targetRev = currentActiveRev
+        const nowIso = new Date().toISOString()
+        const targetRev = currentActiveRev
 
-      const completionPromptId = getChapter2RevisionPromptId(
-        AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
-        targetRev,
-      )
+        const completionPromptId = getChapter2RevisionPromptId(
+          AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+          targetRev,
+        )
 
-      const completionResp = await experienceResponseService.saveResponse({
-        enrollmentId,
-        experienceId,
-        promptId: completionPromptId,
-        respondentUserId,
-        responseType: 'ChapterCompletion' as any,
-        promptVersion: 1,
-        promptKey: AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
-        canonicalPromptId: AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
-        stepOrder: 5,
-        accessClass: 'shared_care',
-        changeReason: `Conclusão canônica explícita do Capítulo 2 de Ayurveda (revisão ${targetRev})`,
-        structuredValue: {
-          completed: true,
-          completed_at: nowIso,
-          chapter_id: AYURVEDA_CHAPTER_2_ID,
-          experience_version: AYURVEDA_CHAPTER_2_VERSION,
-          revision_number: targetRev,
-          step_order: 5,
-          metadata: {
-            prompt_key: AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
-            canonical_prompt_id: AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+        const completionResp = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: completionPromptId,
+          respondentUserId,
+          responseType: 'ChapterCompletion' as any,
+          promptVersion: 1,
+          promptKey: AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
+          canonicalPromptId: AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+          stepOrder: 5,
+          accessClass: 'shared_care',
+          changeReason: `Conclusão canônica explícita do Capítulo 2 de Ayurveda (revisão ${targetRev})`,
+          structuredValue: {
             completed: true,
             completed_at: nowIso,
             chapter_id: AYURVEDA_CHAPTER_2_ID,
             experience_version: AYURVEDA_CHAPTER_2_VERSION,
             revision_number: targetRev,
+            step_order: 5,
+            metadata: {
+              prompt_key: AYV_C2_PROMPTS.CHAPTER_COMPLETION.key,
+              canonical_prompt_id: AYV_C2_PROMPTS.CHAPTER_COMPLETION.id,
+              completed: true,
+              completed_at: nowIso,
+              chapter_id: AYURVEDA_CHAPTER_2_ID,
+              experience_version: AYURVEDA_CHAPTER_2_VERSION,
+              revision_number: targetRev,
+            },
           },
-        },
-      })
-      ;(completionResp as any).revision_number = targetRev
-      ;(completionResp as any).prompt_key = AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
-      ;(completionResp as any).canonical_prompt_id = AYV_C2_PROMPTS.CHAPTER_COMPLETION.id
-
-      setRawResponses((prev) => {
-        const existingIdx = prev.findIndex((r) => {
-          const rev = getResponseRevisionNumber(r)
-          if (rev !== targetRev) return false
-          const pId = r.prompt_id || (r as any).canonical_prompt_id
-          const pKey =
-            (r as any).prompt_key ||
-            (r.structured_value as any)?.prompt_key ||
-            (r.structured_value as any)?.metadata?.prompt_key
-          return (
-            r.id === completionResp.id ||
-            pId === completionPromptId ||
-            pId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
-            pKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
-          )
         })
-        if (existingIdx >= 0) {
-          const updated = [...prev]
-          updated[existingIdx] = completionResp
-          return updated
-        }
-        return [...prev, completionResp]
-      })
+        ;(completionResp as any).revision_number = targetRev
+        ;(completionResp as any).prompt_key = AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+        ;(completionResp as any).canonical_prompt_id = AYV_C2_PROMPTS.CHAPTER_COMPLETION.id
 
-      openedCorrection.current = false
-      onCompleted?.()
-      onBackToHub()
+        setRawResponses((prev) => {
+          const existingIdx = prev.findIndex((r) => {
+            const rev = getResponseRevisionNumber(r)
+            if (rev !== targetRev) return false
+            const pId = r.prompt_id || (r as any).canonical_prompt_id
+            const pKey =
+              (r as any).prompt_key ||
+              (r.structured_value as any)?.prompt_key ||
+              (r.structured_value as any)?.metadata?.prompt_key
+            return (
+              r.id === completionResp.id ||
+              pId === completionPromptId ||
+              pId === AYV_C2_PROMPTS.CHAPTER_COMPLETION.id ||
+              pKey === AYV_C2_PROMPTS.CHAPTER_COMPLETION.key
+            )
+          })
+          if (existingIdx >= 0) {
+            const updated = [...prev]
+            updated[existingIdx] = completionResp
+            return updated
+          }
+          return [...prev, completionResp]
+        })
+
+        openedCorrection.current = false
+        onCompleted?.()
+        onBackToHub()
       })
       await saver.flush()
     } catch (e) {
@@ -1058,15 +1063,40 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
   }
 
   const exitSafely = async () => {
-    try { await saver.flush(); onBackToHub() } catch { /* retain edits */ }
+    if (isExiting) return
+    setIsExiting(true)
+    try {
+      await saver.flush()
+      onBackToHub()
+    } catch {
+      /* retain edits */
+    } finally {
+      setIsExiting(false)
+    }
   }
 
-  if (loading) return <p role="status" className="p-4 text-sm text-muted-foreground">Carregando suas respostas…</p>
+  if (loading)
+    return (
+      <p role="status" className="p-4 text-sm text-muted-foreground">
+        Carregando suas respostas…
+      </p>
+    )
 
-  if (loadError) return <div role="alert" className="p-4 space-y-3">
-    <p>Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.</p>
-    <Button onClick={() => { void loadResponses() }}>Tentar carregar novamente</Button>
-  </div>
+  if (loadError)
+    return (
+      <div role="alert" className="p-4 space-y-3">
+        <p>
+          Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.
+        </p>
+        <Button
+          onClick={() => {
+            void loadResponses()
+          }}
+        >
+          Tentar carregar novamente
+        </Button>
+      </div>
+    )
 
   return (
     <div className="w-full">
@@ -1110,6 +1140,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {/* Momento 1: Fome */}
       {stage === 'momento1' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 2 • Digestão & Rotina"
+              stepLabel="Momento 1 de 5 • Fome"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaC2Momento1Hunger
             hungerPatternChoices={chapterState.hunger_pattern}
             delayedMealChoices={chapterState.delayed_meal_response}
@@ -1149,6 +1188,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {/* Momento 2: Digestão */}
       {stage === 'momento2' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 2 • Digestão & Rotina"
+              stepLabel="Momento 2 de 5 • Digestão"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaC2Momento2Digestion
             postMealChoices={chapterState.post_meal}
             hungerReturnChoice={chapterState.hunger_return}
@@ -1186,6 +1234,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {/* Momento 3: Eliminação */}
       {stage === 'momento3' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 2 • Digestão & Rotina"
+              stepLabel="Momento 3 de 5 • Eliminação"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaC2Momento3Elimination
             bowelRhythmChoice={chapterState.bowel_rhythm}
             stoolPatternChoices={chapterState.stool_pattern}
@@ -1220,6 +1277,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {/* Momento 4: Sono */}
       {stage === 'momento4' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 2 • Digestão & Rotina"
+              stepLabel="Momento 4 de 5 • Sono"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaC2Momento4Sleep
             sleepPatternChoices={chapterState.sleep_pattern}
             wakingChoice={chapterState.waking}
@@ -1254,6 +1320,15 @@ export const AyurvedaChapter2Flow: React.FC<AyurvedaChapter2FlowProps> = ({
       {/* Momento 5: Energia */}
       {stage === 'momento5' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 2 • Digestão & Rotina"
+              stepLabel="Momento 5 de 5 • Energia & Disposição"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaC2Momento5Energy
             energyDistributionChoice={chapterState.energy_distribution}
             bodyPaceChoice={chapterState.body_pace}

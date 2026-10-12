@@ -40,7 +40,9 @@ export const AyurvedaChapter4Flow: React.FC<Props> = ({
     setLoading(true)
     experienceResponseService
       .listResponsesByExperience(enrollmentId, experienceId)
-      .then(setResponses).catch(() => setLoadError(true)).finally(() => setLoading(false))
+      .then(setResponses)
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false))
   }, [enrollmentId, experienceId, loadAttempt])
   const synthesis = useMemo(() => buildChapter4Synthesis(responses), [responses])
   const completed = isChapter4Completed(responses)
@@ -50,30 +52,30 @@ export const AyurvedaChapter4Flow: React.FC<Props> = ({
     try {
       await saver.flush()
       saver.enqueue('completion', async () => {
-      const now = new Date().toISOString()
-      const saved = await experienceResponseService.saveResponse({
-        enrollmentId,
-        experienceId,
-        promptId: AYV_C4_COMPLETION.id,
-        respondentUserId,
-        responseType: 'ChapterCompletion' as any,
-        promptVersion: 1,
-        promptKey: AYV_C4_COMPLETION.key,
-        canonicalPromptId: AYV_C4_COMPLETION.id,
-        stepOrder: 1,
-        accessClass: 'shared_care',
-        changeReason: 'Leitura e conclusão explícita do Capítulo 4 de Corpo & Fisiologia',
-        structuredValue: {
-          completed: true,
-          completed_at: now,
-          chapter_id: AYURVEDA_CHAPTER_4_ID,
-          experience_version: AYURVEDA_CHAPTER_4_VERSION,
-          metadata: { prompt_key: AYV_C4_COMPLETION.key, answered_at: now },
-        },
-      })
-      ;(saved as any).prompt_key = AYV_C4_COMPLETION.key
-      setResponses((current) => [...current, saved])
-      onCompleted?.()
+        const now = new Date().toISOString()
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: AYV_C4_COMPLETION.id,
+          respondentUserId,
+          responseType: 'ChapterCompletion' as any,
+          promptVersion: 1,
+          promptKey: AYV_C4_COMPLETION.key,
+          canonicalPromptId: AYV_C4_COMPLETION.id,
+          stepOrder: 1,
+          accessClass: 'shared_care',
+          changeReason: 'Leitura e conclusão explícita do Capítulo 4 de Corpo & Fisiologia',
+          structuredValue: {
+            completed: true,
+            completed_at: now,
+            chapter_id: AYURVEDA_CHAPTER_4_ID,
+            experience_version: AYURVEDA_CHAPTER_4_VERSION,
+            metadata: { prompt_key: AYV_C4_COMPLETION.key, answered_at: now },
+          },
+        })
+        ;(saved as any).prompt_key = AYV_C4_COMPLETION.key
+        setResponses((current) => [...current, saved])
+        onCompleted?.()
       })
       await saver.flush()
     } catch {
@@ -108,12 +110,24 @@ export const AyurvedaChapter4Flow: React.FC<Props> = ({
     </Card>
   )
 
-  if (loading) return <p role="status" className="p-4 text-sm text-muted-foreground">Carregando suas respostas…</p>
+  if (loading)
+    return (
+      <p role="status" className="p-4 text-sm text-muted-foreground">
+        Carregando suas respostas…
+      </p>
+    )
 
-  if (loadError) return <div role="alert" className="p-4 space-y-3">
-    <p>Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.</p>
-    <Button onClick={() => setLoadAttempt(value => value + 1)}>Tentar carregar novamente</Button>
-  </div>
+  if (loadError)
+    return (
+      <div role="alert" className="p-4 space-y-3">
+        <p>
+          Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.
+        </p>
+        <Button onClick={() => setLoadAttempt((value) => value + 1)}>
+          Tentar carregar novamente
+        </Button>
+      </div>
+    )
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 py-4">

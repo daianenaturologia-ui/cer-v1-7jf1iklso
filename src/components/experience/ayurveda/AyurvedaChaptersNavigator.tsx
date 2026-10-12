@@ -130,7 +130,10 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     setLoading(true)
     setLoadError(false)
     try {
-      const currentEnrExp = await enrollmentExperienceService.getByEnrollmentAndExperience(enrollmentId, experienceId)
+      const currentEnrExp = await enrollmentExperienceService.getByEnrollmentAndExperience(
+        enrollmentId,
+        experienceId,
+      )
       if (currentEnrExp) {
         setEnrollmentExp(currentEnrExp)
       }
@@ -668,12 +671,29 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
 
   // Renderização de acordo com o estado canônico
   const activeChapterId = navState.chapterId
-  if (loading) return <p role="status" className="p-4 text-sm text-muted-foreground">Carregando seus capítulos…</p>
+  if (loading)
+    return (
+      <p role="status" className="p-4 text-sm text-muted-foreground">
+        Carregando seus capítulos…
+      </p>
+    )
 
-  if (loadError) return <div role="alert" className="p-4 space-y-3">
-    <p>Não foi possível recuperar o progresso dos capítulos. Suas respostas serão carregadas antes de continuar.</p>
-    <Button onClick={() => { void reloadData() }}>Tentar carregar novamente</Button>
-  </div>
+  if (loadError)
+    return (
+      <div role="alert" className="p-4 space-y-3">
+        <p>
+          Não foi possível recuperar o progresso dos capítulos. Suas respostas serão carregadas
+          antes de continuar.
+        </p>
+        <Button
+          onClick={() => {
+            void reloadData()
+          }}
+        >
+          Tentar carregar novamente
+        </Button>
+      </div>
+    )
 
   if (activeChapterId === 'c1') {
     const currentStep = navState.currentStep

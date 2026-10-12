@@ -18,7 +18,7 @@ export interface AyurvedaTela1StructureProps {
   onSave: (data: {
     structureChoice?: string
     primaryStructureChoice?: string
-  secondaryStructureChoice?: string
+    secondaryStructureChoice?: string
     durationChoice?: string
   }) => void
   disabled?: boolean

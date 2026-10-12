@@ -36,6 +36,7 @@ import { AyurvedaTela3Hair } from './AyurvedaTela3Hair'
 import { AyurvedaTela4Temperature } from './AyurvedaTela4Temperature'
 import { AyurvedaTela5Habits } from './AyurvedaTela5Habits'
 import { AyurvedaClosing } from './AyurvedaClosing'
+import { AyurvedaStepHeader } from './AyurvedaStepHeader'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
 import { ExperienceResponseRecord, EnrollmentExperienceRecord } from '@/types/cer'
 
@@ -269,7 +270,10 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     setLoading(true)
     setLoadError(false)
     try {
-      const currentEnrExp = await enrollmentExperienceService.getByEnrollmentAndExperience(enrollmentId, experienceId)
+      const currentEnrExp = await enrollmentExperienceService.getByEnrollmentAndExperience(
+        enrollmentId,
+        experienceId,
+      )
       if (currentEnrExp) {
         setEnrollmentExp(currentEnrExp)
       }
@@ -377,126 +381,125 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
 
     if (isReviewOnly) return
     saver.enqueue('step1', async () => {
+      const physicalStructureId = getChapter1RevisionPromptId(
+        AYV_C1_PROMPTS.P1_STRUCTURE.id,
+        activeRevision,
+      )
+      const physicalDurationId = getChapter1RevisionPromptId(
+        AYV_C1_PROMPTS.P1_DURATION.id,
+        activeRevision,
+      )
 
-    const physicalStructureId = getChapter1RevisionPromptId(
-      AYV_C1_PROMPTS.P1_STRUCTURE.id,
-      activeRevision,
-    )
-    const physicalDurationId = getChapter1RevisionPromptId(
-      AYV_C1_PROMPTS.P1_DURATION.id,
-      activeRevision,
-    )
+      if (data.structureChoice) {
+        const isUnsure = data.structureChoice === 'dont_know'
+        const isRefusal = data.structureChoice === 'refusal'
+        const isChanged = data.structureChoice === 'changed_lot'
+        const meta: AyurvedaCanonicalResponseMetadata = {
+          prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key,
+          domain: 'ayurveda',
+          option_ids: [
+            data.structureChoice,
+            ...(data.primaryStructureChoice ? [data.primaryStructureChoice] : []),
+            ...(data.secondaryStructureChoice ? [data.secondaryStructureChoice] : []),
+          ],
+          time_layer: 'stable_history',
+          stability: isChanged ? 'changed' : isUnsure ? 'uncertain' : 'long_term',
+          source: 'participant_self_report',
+          historical_confidence: isChanged ? 'low' : isUnsure ? 'unknown' : 'high',
+          explicit_unsure: isUnsure,
+          explicit_refusal: isRefusal,
+          answered_at: new Date().toISOString(),
+          experience_version: AYURVEDA_EXPERIENCE_VERSION,
+          chapter_id: 'capitulo-1-estrutura-caracteristicas',
+          revision_number: activeRevision,
+          contradiction_flag: isChanged,
+          notes_for_professional: isChanged
+            ? 'Interagente relatou grande mudança corporal ou dificuldade de comparação.'
+            : undefined,
+        }
 
-    if (data.structureChoice) {
-      const isUnsure = data.structureChoice === 'dont_know'
-      const isRefusal = data.structureChoice === 'refusal'
-      const isChanged = data.structureChoice === 'changed_lot'
-      const meta: AyurvedaCanonicalResponseMetadata = {
-        prompt_key: AYV_C1_PROMPTS.P1_STRUCTURE.key,
-        domain: 'ayurveda',
-        option_ids: [
-          data.structureChoice,
-          ...(data.primaryStructureChoice ? [data.primaryStructureChoice] : []),
-          ...(data.secondaryStructureChoice ? [data.secondaryStructureChoice] : []),
-        ],
-        time_layer: 'stable_history',
-        stability: isChanged ? 'changed' : isUnsure ? 'uncertain' : 'long_term',
-        source: 'participant_self_report',
-        historical_confidence: isChanged ? 'low' : isUnsure ? 'unknown' : 'high',
-        explicit_unsure: isUnsure,
-        explicit_refusal: isRefusal,
-        answered_at: new Date().toISOString(),
-        experience_version: AYURVEDA_EXPERIENCE_VERSION,
-        chapter_id: 'capitulo-1-estrutura-caracteristicas',
-        revision_number: activeRevision,
-        contradiction_flag: isChanged,
-        notes_for_professional: isChanged
-          ? 'Interagente relatou grande mudança corporal ou dificuldade de comparação.'
-          : undefined,
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: physicalStructureId,
+          respondentUserId,
+          responseType: 'ChoiceCards',
+          promptVersion: 1,
+          promptKey: AYV_C1_PROMPTS.P1_STRUCTURE.key,
+          canonicalPromptId: AYV_C1_PROMPTS.P1_STRUCTURE.id,
+          stepOrder: 1,
+          accessClass: 'shared_care',
+          changeReason: 'Resposta do participante ao Capítulo 1',
+          structuredValue: {
+            value: data.structureChoice,
+            choice: data.structureChoice,
+            primary_choice: data.primaryStructureChoice,
+            secondary_choice: data.secondaryStructureChoice,
+            revision_number: activeRevision,
+            metadata: meta,
+          },
+        })
+        ;(saved as any).revision_number = activeRevision
+        setRawResponses((prev) => {
+          const next = prev.filter((r) => r.prompt_id !== physicalStructureId)
+          return [...next, saved]
+        })
       }
 
-      const saved = await experienceResponseService.saveResponse({
-        enrollmentId,
-        experienceId,
-        promptId: physicalStructureId,
-        respondentUserId,
-        responseType: 'ChoiceCards',
-        promptVersion: 1,
-        promptKey: AYV_C1_PROMPTS.P1_STRUCTURE.key,
-        canonicalPromptId: AYV_C1_PROMPTS.P1_STRUCTURE.id,
-        stepOrder: 1,
-        accessClass: 'shared_care',
-        changeReason: 'Resposta do participante ao Capítulo 1',
-        structuredValue: {
-          value: data.structureChoice,
-          choice: data.structureChoice,
-          primary_choice: data.primaryStructureChoice,
-          secondary_choice: data.secondaryStructureChoice,
+      if (data.durationChoice) {
+        const isUnsure = data.durationChoice === 'dont_know'
+        const isRefusal = data.durationChoice === 'refusal'
+        const isChanged = data.durationChoice === 'changed_lot'
+        const meta: AyurvedaCanonicalResponseMetadata = {
+          prompt_key: AYV_C1_PROMPTS.P1_DURATION.key,
+          domain: 'ayurveda',
+          option_ids: [data.durationChoice],
+          time_layer: 'stable_history',
+          stability:
+            data.durationChoice === 'lifelong'
+              ? 'lifelong'
+              : data.durationChoice === 'most_adult'
+                ? 'long_term'
+                : data.durationChoice === 'some_phases'
+                  ? 'partial'
+                  : isChanged
+                    ? 'changed'
+                    : 'uncertain',
+          source: 'participant_self_report',
+          historical_confidence: isChanged ? 'low' : isUnsure ? 'unknown' : 'high',
+          explicit_unsure: isUnsure,
+          explicit_refusal: isRefusal,
+          answered_at: new Date().toISOString(),
+          experience_version: AYURVEDA_EXPERIENCE_VERSION,
+          chapter_id: 'capitulo-1-estrutura-caracteristicas',
           revision_number: activeRevision,
-          metadata: meta,
-        },
-      })
-      ;(saved as any).revision_number = activeRevision
-      setRawResponses((prev) => {
-        const next = prev.filter((r) => r.prompt_id !== physicalStructureId)
-        return [...next, saved]
-      })
-    }
+        }
 
-    if (data.durationChoice) {
-      const isUnsure = data.durationChoice === 'dont_know'
-      const isRefusal = data.durationChoice === 'refusal'
-      const isChanged = data.durationChoice === 'changed_lot'
-      const meta: AyurvedaCanonicalResponseMetadata = {
-        prompt_key: AYV_C1_PROMPTS.P1_DURATION.key,
-        domain: 'ayurveda',
-        option_ids: [data.durationChoice],
-        time_layer: 'stable_history',
-        stability:
-          data.durationChoice === 'lifelong'
-            ? 'lifelong'
-            : data.durationChoice === 'most_adult'
-              ? 'long_term'
-              : data.durationChoice === 'some_phases'
-                ? 'partial'
-                : isChanged
-                  ? 'changed'
-                  : 'uncertain',
-        source: 'participant_self_report',
-        historical_confidence: isChanged ? 'low' : isUnsure ? 'unknown' : 'high',
-        explicit_unsure: isUnsure,
-        explicit_refusal: isRefusal,
-        answered_at: new Date().toISOString(),
-        experience_version: AYURVEDA_EXPERIENCE_VERSION,
-        chapter_id: 'capitulo-1-estrutura-caracteristicas',
-        revision_number: activeRevision,
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: physicalDurationId,
+          respondentUserId,
+          responseType: 'ChoiceCards',
+          promptVersion: 1,
+          promptKey: AYV_C1_PROMPTS.P1_DURATION.key,
+          canonicalPromptId: AYV_C1_PROMPTS.P1_DURATION.id,
+          stepOrder: 1,
+          accessClass: 'shared_care',
+          changeReason: 'Resposta do participante ao Capítulo 1',
+          structuredValue: {
+            value: data.durationChoice,
+            choice: data.durationChoice,
+            revision_number: activeRevision,
+            metadata: meta,
+          },
+        })
+        ;(saved as any).revision_number = activeRevision
+        setRawResponses((prev) => {
+          const next = prev.filter((r) => r.prompt_id !== physicalDurationId)
+          return [...next, saved]
+        })
       }
-
-      const saved = await experienceResponseService.saveResponse({
-        enrollmentId,
-        experienceId,
-        promptId: physicalDurationId,
-        respondentUserId,
-        responseType: 'ChoiceCards',
-        promptVersion: 1,
-        promptKey: AYV_C1_PROMPTS.P1_DURATION.key,
-        canonicalPromptId: AYV_C1_PROMPTS.P1_DURATION.id,
-        stepOrder: 1,
-        accessClass: 'shared_care',
-        changeReason: 'Resposta do participante ao Capítulo 1',
-        structuredValue: {
-          value: data.durationChoice,
-          choice: data.durationChoice,
-          revision_number: activeRevision,
-          metadata: meta,
-        },
-      })
-      ;(saved as any).revision_number = activeRevision
-      setRawResponses((prev) => {
-        const next = prev.filter((r) => r.prompt_id !== physicalDurationId)
-        return [...next, saved]
-      })
-    }
     })
   }
 
@@ -505,55 +508,54 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     setChapterState((prev) => ({ ...prev, skin_choices: choices }))
     if (isReviewOnly) return
     saver.enqueue('step2', async () => {
+      const physicalSkinId = getChapter1RevisionPromptId(AYV_C1_PROMPTS.P2_SKIN.id, activeRevision)
 
-    const physicalSkinId = getChapter1RevisionPromptId(AYV_C1_PROMPTS.P2_SKIN.id, activeRevision)
-
-    const isUnsure = choices.includes('dont_know')
-    const isRefusal = choices.includes('refusal')
-    const meta: AyurvedaCanonicalResponseMetadata = {
-      prompt_key: AYV_C1_PROMPTS.P2_SKIN.key,
-      domain: 'ayurveda',
-      option_ids: choices,
-      time_layer: 'habitual',
-      stability: isUnsure
-        ? 'uncertain'
-        : choices.includes('varies_region')
-          ? 'partial'
-          : 'long_term',
-      source: 'participant_self_report',
-      historical_confidence: isUnsure ? 'unknown' : 'high',
-      explicit_unsure: isUnsure,
-      explicit_refusal: isRefusal,
-      answered_at: new Date().toISOString(),
-      experience_version: AYURVEDA_EXPERIENCE_VERSION,
-      chapter_id: 'capitulo-1-estrutura-caracteristicas',
-      revision_number: activeRevision,
-    }
-
-    const saved = await experienceResponseService.saveResponse({
-      enrollmentId,
-      experienceId,
-      promptId: physicalSkinId,
-      respondentUserId,
-      responseType: 'MultiSelectCards',
-      promptVersion: 1,
-      promptKey: AYV_C1_PROMPTS.P2_SKIN.key,
-      canonicalPromptId: AYV_C1_PROMPTS.P2_SKIN.id,
-      stepOrder: 2,
-      accessClass: 'shared_care',
-      changeReason: 'Resposta do participante ao Capítulo 1',
-      structuredValue: {
-        selectedOptionIds: choices,
-        value: choices,
+      const isUnsure = choices.includes('dont_know')
+      const isRefusal = choices.includes('refusal')
+      const meta: AyurvedaCanonicalResponseMetadata = {
+        prompt_key: AYV_C1_PROMPTS.P2_SKIN.key,
+        domain: 'ayurveda',
+        option_ids: choices,
+        time_layer: 'habitual',
+        stability: isUnsure
+          ? 'uncertain'
+          : choices.includes('varies_region')
+            ? 'partial'
+            : 'long_term',
+        source: 'participant_self_report',
+        historical_confidence: isUnsure ? 'unknown' : 'high',
+        explicit_unsure: isUnsure,
+        explicit_refusal: isRefusal,
+        answered_at: new Date().toISOString(),
+        experience_version: AYURVEDA_EXPERIENCE_VERSION,
+        chapter_id: 'capitulo-1-estrutura-caracteristicas',
         revision_number: activeRevision,
-        metadata: meta,
-      },
-    })
-    ;(saved as any).revision_number = activeRevision
-    setRawResponses((prev) => {
-      const next = prev.filter((r) => r.prompt_id !== physicalSkinId)
-      return [...next, saved]
-    })
+      }
+
+      const saved = await experienceResponseService.saveResponse({
+        enrollmentId,
+        experienceId,
+        promptId: physicalSkinId,
+        respondentUserId,
+        responseType: 'MultiSelectCards',
+        promptVersion: 1,
+        promptKey: AYV_C1_PROMPTS.P2_SKIN.key,
+        canonicalPromptId: AYV_C1_PROMPTS.P2_SKIN.id,
+        stepOrder: 2,
+        accessClass: 'shared_care',
+        changeReason: 'Resposta do participante ao Capítulo 1',
+        structuredValue: {
+          selectedOptionIds: choices,
+          value: choices,
+          revision_number: activeRevision,
+          metadata: meta,
+        },
+      })
+      ;(saved as any).revision_number = activeRevision
+      setRawResponses((prev) => {
+        const next = prev.filter((r) => r.prompt_id !== physicalSkinId)
+        return [...next, saved]
+      })
     })
   }
 
@@ -562,58 +564,57 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     setChapterState((prev) => ({ ...prev, hair_choices: choices }))
     if (isReviewOnly) return
     saver.enqueue('step3', async () => {
+      const physicalHairId = getChapter1RevisionPromptId(AYV_C1_PROMPTS.P3_HAIR.id, activeRevision)
 
-    const physicalHairId = getChapter1RevisionPromptId(AYV_C1_PROMPTS.P3_HAIR.id, activeRevision)
-
-    const isUnsure = choices.includes('no_reference')
-    const isRefusal = choices.includes('refusal')
-    const meta: AyurvedaCanonicalResponseMetadata = {
-      prompt_key: AYV_C1_PROMPTS.P3_HAIR.key,
-      domain: 'ayurveda',
-      option_ids: choices,
-      time_layer: 'habitual',
-      stability: isUnsure
-        ? 'uncertain'
-        : choices.includes('mixed_varies')
-          ? 'partial'
-          : 'long_term',
-      source: 'participant_self_report',
-      historical_confidence: isUnsure ? 'unknown' : 'high',
-      explicit_unsure: isUnsure,
-      explicit_refusal: isRefusal,
-      answered_at: new Date().toISOString(),
-      experience_version: AYURVEDA_EXPERIENCE_VERSION,
-      chapter_id: 'capitulo-1-estrutura-caracteristicas',
-      revision_number: activeRevision,
-      notes_for_professional: isUnsure
-        ? 'Interagente indicou ausência de referência suficiente sobre o cabelo natural.'
-        : undefined,
-    }
-
-    const saved = await experienceResponseService.saveResponse({
-      enrollmentId,
-      experienceId,
-      promptId: physicalHairId,
-      respondentUserId,
-      responseType: 'MultiSelectCards',
-      promptVersion: 1,
-      promptKey: AYV_C1_PROMPTS.P3_HAIR.key,
-      canonicalPromptId: AYV_C1_PROMPTS.P3_HAIR.id,
-      stepOrder: 3,
-      accessClass: 'shared_care',
-      changeReason: 'Resposta do participante ao Capítulo 1',
-      structuredValue: {
-        selectedOptionIds: choices,
-        value: choices,
+      const isUnsure = choices.includes('no_reference')
+      const isRefusal = choices.includes('refusal')
+      const meta: AyurvedaCanonicalResponseMetadata = {
+        prompt_key: AYV_C1_PROMPTS.P3_HAIR.key,
+        domain: 'ayurveda',
+        option_ids: choices,
+        time_layer: 'habitual',
+        stability: isUnsure
+          ? 'uncertain'
+          : choices.includes('mixed_varies')
+            ? 'partial'
+            : 'long_term',
+        source: 'participant_self_report',
+        historical_confidence: isUnsure ? 'unknown' : 'high',
+        explicit_unsure: isUnsure,
+        explicit_refusal: isRefusal,
+        answered_at: new Date().toISOString(),
+        experience_version: AYURVEDA_EXPERIENCE_VERSION,
+        chapter_id: 'capitulo-1-estrutura-caracteristicas',
         revision_number: activeRevision,
-        metadata: meta,
-      },
-    })
-    ;(saved as any).revision_number = activeRevision
-    setRawResponses((prev) => {
-      const next = prev.filter((r) => r.prompt_id !== physicalHairId)
-      return [...next, saved]
-    })
+        notes_for_professional: isUnsure
+          ? 'Interagente indicou ausência de referência suficiente sobre o cabelo natural.'
+          : undefined,
+      }
+
+      const saved = await experienceResponseService.saveResponse({
+        enrollmentId,
+        experienceId,
+        promptId: physicalHairId,
+        respondentUserId,
+        responseType: 'MultiSelectCards',
+        promptVersion: 1,
+        promptKey: AYV_C1_PROMPTS.P3_HAIR.key,
+        canonicalPromptId: AYV_C1_PROMPTS.P3_HAIR.id,
+        stepOrder: 3,
+        accessClass: 'shared_care',
+        changeReason: 'Resposta do participante ao Capítulo 1',
+        structuredValue: {
+          selectedOptionIds: choices,
+          value: choices,
+          revision_number: activeRevision,
+          metadata: meta,
+        },
+      })
+      ;(saved as any).revision_number = activeRevision
+      setRawResponses((prev) => {
+        const next = prev.filter((r) => r.prompt_id !== physicalHairId)
+        return [...next, saved]
+      })
     })
   }
 
@@ -622,58 +623,57 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     setChapterState((prev) => ({ ...prev, temperature_choice: choice }))
     if (isReviewOnly) return
     saver.enqueue('step4', async () => {
+      const physicalTempId = getChapter1RevisionPromptId(
+        AYV_C1_PROMPTS.P4_TEMPERATURE.id,
+        activeRevision,
+      )
 
-    const physicalTempId = getChapter1RevisionPromptId(
-      AYV_C1_PROMPTS.P4_TEMPERATURE.id,
-      activeRevision,
-    )
-
-    const isUnsure = choice === 'dont_know'
-    const isRefusal = choice === 'refusal'
-    const meta: AyurvedaCanonicalResponseMetadata = {
-      prompt_key: AYV_C1_PROMPTS.P4_TEMPERATURE.key,
-      domain: 'ayurveda',
-      option_ids: [choice],
-      time_layer: 'habitual',
-      stability: isUnsure
-        ? 'uncertain'
-        : choice === 'alternates' || choice === 'varies_climate'
-          ? 'partial'
-          : 'long_term',
-      source: 'participant_self_report',
-      historical_confidence: isUnsure ? 'unknown' : 'high',
-      explicit_unsure: isUnsure,
-      explicit_refusal: isRefusal,
-      answered_at: new Date().toISOString(),
-      experience_version: AYURVEDA_EXPERIENCE_VERSION,
-      chapter_id: 'capitulo-1-estrutura-caracteristicas',
-      revision_number: activeRevision,
-    }
-
-    const saved = await experienceResponseService.saveResponse({
-      enrollmentId,
-      experienceId,
-      promptId: physicalTempId,
-      respondentUserId,
-      responseType: 'ChoiceCards',
-      promptVersion: 1,
-      promptKey: AYV_C1_PROMPTS.P4_TEMPERATURE.key,
-      canonicalPromptId: AYV_C1_PROMPTS.P4_TEMPERATURE.id,
-      stepOrder: 4,
-      accessClass: 'shared_care',
-      changeReason: 'Resposta do participante ao Capítulo 1',
-      structuredValue: {
-        value: choice,
-        choice,
+      const isUnsure = choice === 'dont_know'
+      const isRefusal = choice === 'refusal'
+      const meta: AyurvedaCanonicalResponseMetadata = {
+        prompt_key: AYV_C1_PROMPTS.P4_TEMPERATURE.key,
+        domain: 'ayurveda',
+        option_ids: [choice],
+        time_layer: 'habitual',
+        stability: isUnsure
+          ? 'uncertain'
+          : choice === 'alternates' || choice === 'varies_climate'
+            ? 'partial'
+            : 'long_term',
+        source: 'participant_self_report',
+        historical_confidence: isUnsure ? 'unknown' : 'high',
+        explicit_unsure: isUnsure,
+        explicit_refusal: isRefusal,
+        answered_at: new Date().toISOString(),
+        experience_version: AYURVEDA_EXPERIENCE_VERSION,
+        chapter_id: 'capitulo-1-estrutura-caracteristicas',
         revision_number: activeRevision,
-        metadata: meta,
-      },
-    })
-    ;(saved as any).revision_number = activeRevision
-    setRawResponses((prev) => {
-      const next = prev.filter((r) => r.prompt_id !== physicalTempId)
-      return [...next, saved]
-    })
+      }
+
+      const saved = await experienceResponseService.saveResponse({
+        enrollmentId,
+        experienceId,
+        promptId: physicalTempId,
+        respondentUserId,
+        responseType: 'ChoiceCards',
+        promptVersion: 1,
+        promptKey: AYV_C1_PROMPTS.P4_TEMPERATURE.key,
+        canonicalPromptId: AYV_C1_PROMPTS.P4_TEMPERATURE.id,
+        stepOrder: 4,
+        accessClass: 'shared_care',
+        changeReason: 'Resposta do participante ao Capítulo 1',
+        structuredValue: {
+          value: choice,
+          choice,
+          revision_number: activeRevision,
+          metadata: meta,
+        },
+      })
+      ;(saved as any).revision_number = activeRevision
+      setRawResponses((prev) => {
+        const next = prev.filter((r) => r.prompt_id !== physicalTempId)
+        return [...next, saved]
+      })
     })
   }
 
@@ -692,180 +692,203 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
 
     if (isReviewOnly) return
     saver.enqueue('step5', async () => {
+      const physicalThirstId = getChapter1RevisionPromptId(
+        AYV_C1_PROMPTS.P5_THIRST.id,
+        activeRevision,
+      )
+      const physicalDrinkId = getChapter1RevisionPromptId(
+        AYV_C1_PROMPTS.P5_DRINK_TEMP.id,
+        activeRevision,
+      )
+      const physicalSweatId = getChapter1RevisionPromptId(
+        AYV_C1_PROMPTS.P5_SWEAT.id,
+        activeRevision,
+      )
 
-    const physicalThirstId = getChapter1RevisionPromptId(
-      AYV_C1_PROMPTS.P5_THIRST.id,
-      activeRevision,
-    )
-    const physicalDrinkId = getChapter1RevisionPromptId(
-      AYV_C1_PROMPTS.P5_DRINK_TEMP.id,
-      activeRevision,
-    )
-    const physicalSweatId = getChapter1RevisionPromptId(AYV_C1_PROMPTS.P5_SWEAT.id, activeRevision)
+      // Bloco A: Sede
+      if (data.thirstChoice) {
+        const isUnsure = data.thirstChoice === 'dont_know'
+        const isRefusal = data.thirstChoice === 'refusal'
+        const meta: AyurvedaCanonicalResponseMetadata = {
+          prompt_key: AYV_C1_PROMPTS.P5_THIRST.key,
+          domain: 'ayurveda',
+          option_ids: [data.thirstChoice],
+          time_layer: 'habitual',
+          stability: isUnsure ? 'uncertain' : 'long_term',
+          source: 'participant_self_report',
+          historical_confidence: isUnsure ? 'unknown' : 'high',
+          explicit_unsure: isUnsure,
+          explicit_refusal: isRefusal,
+          answered_at: new Date().toISOString(),
+          experience_version: AYURVEDA_EXPERIENCE_VERSION,
+          chapter_id: 'capitulo-1-estrutura-caracteristicas',
+          revision_number: activeRevision,
+        }
 
-    // Bloco A: Sede
-    if (data.thirstChoice) {
-      const isUnsure = data.thirstChoice === 'dont_know'
-      const isRefusal = data.thirstChoice === 'refusal'
-      const meta: AyurvedaCanonicalResponseMetadata = {
-        prompt_key: AYV_C1_PROMPTS.P5_THIRST.key,
-        domain: 'ayurveda',
-        option_ids: [data.thirstChoice],
-        time_layer: 'habitual',
-        stability: isUnsure ? 'uncertain' : 'long_term',
-        source: 'participant_self_report',
-        historical_confidence: isUnsure ? 'unknown' : 'high',
-        explicit_unsure: isUnsure,
-        explicit_refusal: isRefusal,
-        answered_at: new Date().toISOString(),
-        experience_version: AYURVEDA_EXPERIENCE_VERSION,
-        chapter_id: 'capitulo-1-estrutura-caracteristicas',
-        revision_number: activeRevision,
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: physicalThirstId,
+          respondentUserId,
+          responseType: 'ChoiceCards',
+          promptVersion: 1,
+          promptKey: AYV_C1_PROMPTS.P5_THIRST.key,
+          canonicalPromptId: AYV_C1_PROMPTS.P5_THIRST.id,
+          stepOrder: 5,
+          accessClass: 'shared_care',
+          changeReason: 'Resposta do participante ao Capítulo 1',
+          structuredValue: {
+            value: data.thirstChoice,
+            choice: data.thirstChoice,
+            revision_number: activeRevision,
+            metadata: meta,
+          },
+        })
+        ;(saved as any).revision_number = activeRevision
+        setRawResponses((prev) => {
+          const next = prev.filter((r) => r.prompt_id !== physicalThirstId)
+          return [...next, saved]
+        })
       }
 
-      const saved = await experienceResponseService.saveResponse({
-        enrollmentId,
-        experienceId,
-        promptId: physicalThirstId,
-        respondentUserId,
-        responseType: 'ChoiceCards',
-        promptVersion: 1,
-        promptKey: AYV_C1_PROMPTS.P5_THIRST.key,
-        canonicalPromptId: AYV_C1_PROMPTS.P5_THIRST.id,
-        stepOrder: 5,
-        accessClass: 'shared_care',
-        changeReason: 'Resposta do participante ao Capítulo 1',
-        structuredValue: {
-          value: data.thirstChoice,
-          choice: data.thirstChoice,
+      // Bloco B: Bebida
+      if (data.drinkTemperatureChoice) {
+        const isUnsure = data.drinkTemperatureChoice === 'dont_know'
+        const isRefusal = data.drinkTemperatureChoice === 'refusal'
+        const meta: AyurvedaCanonicalResponseMetadata = {
+          prompt_key: AYV_C1_PROMPTS.P5_DRINK_TEMP.key,
+          domain: 'ayurveda',
+          option_ids: [data.drinkTemperatureChoice],
+          time_layer: 'habitual',
+          stability: isUnsure ? 'uncertain' : 'long_term',
+          source: 'participant_self_report',
+          historical_confidence: isUnsure ? 'unknown' : 'high',
+          explicit_unsure: isUnsure,
+          explicit_refusal: isRefusal,
+          answered_at: new Date().toISOString(),
+          experience_version: AYURVEDA_EXPERIENCE_VERSION,
+          chapter_id: 'capitulo-1-estrutura-caracteristicas',
           revision_number: activeRevision,
-          metadata: meta,
-        },
-      })
-      ;(saved as any).revision_number = activeRevision
-      setRawResponses((prev) => {
-        const next = prev.filter((r) => r.prompt_id !== physicalThirstId)
-        return [...next, saved]
-      })
-    }
+        }
 
-    // Bloco B: Bebida
-    if (data.drinkTemperatureChoice) {
-      const isUnsure = data.drinkTemperatureChoice === 'dont_know'
-      const isRefusal = data.drinkTemperatureChoice === 'refusal'
-      const meta: AyurvedaCanonicalResponseMetadata = {
-        prompt_key: AYV_C1_PROMPTS.P5_DRINK_TEMP.key,
-        domain: 'ayurveda',
-        option_ids: [data.drinkTemperatureChoice],
-        time_layer: 'habitual',
-        stability: isUnsure ? 'uncertain' : 'long_term',
-        source: 'participant_self_report',
-        historical_confidence: isUnsure ? 'unknown' : 'high',
-        explicit_unsure: isUnsure,
-        explicit_refusal: isRefusal,
-        answered_at: new Date().toISOString(),
-        experience_version: AYURVEDA_EXPERIENCE_VERSION,
-        chapter_id: 'capitulo-1-estrutura-caracteristicas',
-        revision_number: activeRevision,
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: physicalDrinkId,
+          respondentUserId,
+          responseType: 'ChoiceCards',
+          promptVersion: 1,
+          promptKey: AYV_C1_PROMPTS.P5_DRINK_TEMP.key,
+          canonicalPromptId: AYV_C1_PROMPTS.P5_DRINK_TEMP.id,
+          stepOrder: 5,
+          accessClass: 'shared_care',
+          changeReason: 'Resposta do participante ao Capítulo 1',
+          structuredValue: {
+            value: data.drinkTemperatureChoice,
+            choice: data.drinkTemperatureChoice,
+            revision_number: activeRevision,
+            metadata: meta,
+          },
+        })
+        ;(saved as any).revision_number = activeRevision
+        setRawResponses((prev) => {
+          const next = prev.filter((r) => r.prompt_id !== physicalDrinkId)
+          return [...next, saved]
+        })
       }
 
-      const saved = await experienceResponseService.saveResponse({
-        enrollmentId,
-        experienceId,
-        promptId: physicalDrinkId,
-        respondentUserId,
-        responseType: 'ChoiceCards',
-        promptVersion: 1,
-        promptKey: AYV_C1_PROMPTS.P5_DRINK_TEMP.key,
-        canonicalPromptId: AYV_C1_PROMPTS.P5_DRINK_TEMP.id,
-        stepOrder: 5,
-        accessClass: 'shared_care',
-        changeReason: 'Resposta do participante ao Capítulo 1',
-        structuredValue: {
-          value: data.drinkTemperatureChoice,
-          choice: data.drinkTemperatureChoice,
+      // Bloco C: Transpiração
+      if (data.sweatChoice) {
+        const isUnsure = data.sweatChoice === 'dont_know'
+        const isRefusal = data.sweatChoice === 'refusal'
+        const meta: AyurvedaCanonicalResponseMetadata = {
+          prompt_key: AYV_C1_PROMPTS.P5_SWEAT.key,
+          domain: 'ayurveda',
+          option_ids: [data.sweatChoice],
+          time_layer: 'habitual',
+          stability: isUnsure ? 'uncertain' : 'long_term',
+          source: 'participant_self_report',
+          historical_confidence: isUnsure ? 'unknown' : 'high',
+          explicit_unsure: isUnsure,
+          explicit_refusal: isRefusal,
+          answered_at: new Date().toISOString(),
+          experience_version: AYURVEDA_EXPERIENCE_VERSION,
+          chapter_id: 'capitulo-1-estrutura-caracteristicas',
           revision_number: activeRevision,
-          metadata: meta,
-        },
-      })
-      ;(saved as any).revision_number = activeRevision
-      setRawResponses((prev) => {
-        const next = prev.filter((r) => r.prompt_id !== physicalDrinkId)
-        return [...next, saved]
-      })
-    }
+        }
 
-    // Bloco C: Transpiração
-    if (data.sweatChoice) {
-      const isUnsure = data.sweatChoice === 'dont_know'
-      const isRefusal = data.sweatChoice === 'refusal'
-      const meta: AyurvedaCanonicalResponseMetadata = {
-        prompt_key: AYV_C1_PROMPTS.P5_SWEAT.key,
-        domain: 'ayurveda',
-        option_ids: [data.sweatChoice],
-        time_layer: 'habitual',
-        stability: isUnsure ? 'uncertain' : 'long_term',
-        source: 'participant_self_report',
-        historical_confidence: isUnsure ? 'unknown' : 'high',
-        explicit_unsure: isUnsure,
-        explicit_refusal: isRefusal,
-        answered_at: new Date().toISOString(),
-        experience_version: AYURVEDA_EXPERIENCE_VERSION,
-        chapter_id: 'capitulo-1-estrutura-caracteristicas',
-        revision_number: activeRevision,
+        const saved = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: physicalSweatId,
+          respondentUserId,
+          responseType: 'ChoiceCards',
+          promptVersion: 1,
+          promptKey: AYV_C1_PROMPTS.P5_SWEAT.key,
+          canonicalPromptId: AYV_C1_PROMPTS.P5_SWEAT.id,
+          stepOrder: 5,
+          accessClass: 'shared_care',
+          changeReason: 'Resposta do participante ao Capítulo 1',
+          structuredValue: {
+            value: data.sweatChoice,
+            choice: data.sweatChoice,
+            revision_number: activeRevision,
+            metadata: meta,
+          },
+        })
+        ;(saved as any).revision_number = activeRevision
+        setRawResponses((prev) => {
+          const next = prev.filter((r) => r.prompt_id !== physicalSweatId)
+          return [...next, saved]
+        })
       }
-
-      const saved = await experienceResponseService.saveResponse({
-        enrollmentId,
-        experienceId,
-        promptId: physicalSweatId,
-        respondentUserId,
-        responseType: 'ChoiceCards',
-        promptVersion: 1,
-        promptKey: AYV_C1_PROMPTS.P5_SWEAT.key,
-        canonicalPromptId: AYV_C1_PROMPTS.P5_SWEAT.id,
-        stepOrder: 5,
-        accessClass: 'shared_care',
-        changeReason: 'Resposta do participante ao Capítulo 1',
-        structuredValue: {
-          value: data.sweatChoice,
-          choice: data.sweatChoice,
-          revision_number: activeRevision,
-          metadata: meta,
-        },
-      })
-      ;(saved as any).revision_number = activeRevision
-      setRawResponses((prev) => {
-        const next = prev.filter((r) => r.prompt_id !== physicalSweatId)
-        return [...next, saved]
-      })
-    }
     })
   }
 
   // Atualizar progresso de etapa
   const validStructure = () => {
-    const valid = chapterState.structure_choice !== 'two_figures' || Boolean(chapterState.primary_structure_choice && chapterState.secondary_structure_choice && chapterState.primary_structure_choice !== chapterState.secondary_structure_choice)
-    setValidationError(valid ? null : 'Selecione as duas figuras que representam sua estrutura antes de avançar.')
+    const valid =
+      chapterState.structure_choice !== 'two_figures' ||
+      Boolean(
+        chapterState.primary_structure_choice &&
+        chapterState.secondary_structure_choice &&
+        chapterState.primary_structure_choice !== chapterState.secondary_structure_choice,
+      )
+    setValidationError(
+      valid ? null : 'Selecione as duas figuras que representam sua estrutura antes de avançar.',
+    )
     return valid
   }
+  const [isExiting, setIsExiting] = useState(false)
+
   const exitSafely = async () => {
+    if (isExiting) return
+    setIsExiting(true)
     try {
       await saver.flush()
       if (onExitToHub) onExitToHub()
       else setStage('hub')
-    } catch { /* the saving alert keeps the current answers visible */ }
+    } catch {
+      /* the saving alert keeps the current answers visible */
+    } finally {
+      setIsExiting(false)
+    }
   }
   const advanceStep = async (nextStep: Chapter1Stage, stepOrder: number) => {
     if (!isReviewOnly && stage === 'step1' && !validStructure()) return
     try {
       await saver.flush()
       if (enrollmentExp && !isReviewOnly) {
-        const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, { progressStatus: 'in_progress', stepOrder })
+        const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
+          progressStatus: 'in_progress',
+          stepOrder,
+        })
         setEnrollmentExp(updated)
       }
       setStage(nextStep)
-    } catch { saver.reportError() }
+    } catch {
+      saver.reportError()
+    }
   }
 
   // Concluir Capítulo 1 (exclusivo para a revisão ativa)
@@ -875,70 +898,70 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     try {
       await saver.flush()
       saver.enqueue('completion', async () => {
-      const nowIso = new Date().toISOString()
-      const physicalCompletionId = getChapter1RevisionPromptId(
-        AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
-        activeRevision,
-      )
+        const nowIso = new Date().toISOString()
+        const physicalCompletionId = getChapter1RevisionPromptId(
+          AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+          activeRevision,
+        )
 
-      // 1. Gravar registro canônico explícito de conclusão da revisão ativa do Capítulo 1
-      const completionResp = await experienceResponseService.saveResponse({
-        enrollmentId,
-        experienceId,
-        promptId: physicalCompletionId,
-        respondentUserId,
-        responseType: 'ChapterCompletion' as any,
-        promptVersion: 1,
-        promptKey: AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
-        canonicalPromptId: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
-        stepOrder: 5,
-        accessClass: 'shared_care',
-        changeReason: `Conclusão canônica da revisão ${activeRevision} do Capítulo 1 de Ayurveda`,
-        structuredValue: {
-          completed: true,
-          completed_at: nowIso,
-          chapter_id: 'capitulo-1-estrutura-caracteristicas',
-          experience_version: AYURVEDA_EXPERIENCE_VERSION,
-          step_order: 5,
-          revision_number: activeRevision,
-          metadata: {
-            prompt_key: AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
-            canonical_prompt_id: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+        // 1. Gravar registro canônico explícito de conclusão da revisão ativa do Capítulo 1
+        const completionResp = await experienceResponseService.saveResponse({
+          enrollmentId,
+          experienceId,
+          promptId: physicalCompletionId,
+          respondentUserId,
+          responseType: 'ChapterCompletion' as any,
+          promptVersion: 1,
+          promptKey: AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
+          canonicalPromptId: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+          stepOrder: 5,
+          accessClass: 'shared_care',
+          changeReason: `Conclusão canônica da revisão ${activeRevision} do Capítulo 1 de Ayurveda`,
+          structuredValue: {
             completed: true,
             completed_at: nowIso,
             chapter_id: 'capitulo-1-estrutura-caracteristicas',
             experience_version: AYURVEDA_EXPERIENCE_VERSION,
+            step_order: 5,
             revision_number: activeRevision,
+            metadata: {
+              prompt_key: AYV_C1_PROMPTS.CHAPTER_COMPLETION.key,
+              canonical_prompt_id: AYV_C1_PROMPTS.CHAPTER_COMPLETION.id,
+              completed: true,
+              completed_at: nowIso,
+              chapter_id: 'capitulo-1-estrutura-caracteristicas',
+              experience_version: AYURVEDA_EXPERIENCE_VERSION,
+              revision_number: activeRevision,
+            },
           },
-        },
-      })
-      ;(completionResp as any).revision_number = activeRevision
-
-      // 2. Preserva atualização de progresso de etapa no enrollmentExp
-      if (enrollmentExp) {
-        const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
-          progressStatus: 'completed',
-          stepOrder: 5,
         })
-        setEnrollmentExp(updated)
-      }
-      // Atualiza lista local de respostas com a de conclusão canônica
-      setRawResponses((prev) => {
-        const existingIdx = prev.findIndex(
-          (r) =>
-            r.prompt_id === physicalCompletionId ||
-            ((r as any).prompt_key === AYV_C1_PROMPTS.CHAPTER_COMPLETION.key &&
-              getChapter1ResponseRevisionNumber(r) === activeRevision),
-        )
-        if (existingIdx >= 0) {
-          const updated = [...prev]
-          updated[existingIdx] = completionResp
-          return updated
-        }
-        return [...prev, completionResp]
-      })
+        ;(completionResp as any).revision_number = activeRevision
 
-      onCompleted?.()
+        // 2. Preserva atualização de progresso de etapa no enrollmentExp
+        if (enrollmentExp) {
+          const updated = await enrollmentExperienceService.updateProgress(enrollmentExp.id, {
+            progressStatus: 'completed',
+            stepOrder: 5,
+          })
+          setEnrollmentExp(updated)
+        }
+        // Atualiza lista local de respostas com a de conclusão canônica
+        setRawResponses((prev) => {
+          const existingIdx = prev.findIndex(
+            (r) =>
+              r.prompt_id === physicalCompletionId ||
+              ((r as any).prompt_key === AYV_C1_PROMPTS.CHAPTER_COMPLETION.key &&
+                getChapter1ResponseRevisionNumber(r) === activeRevision),
+          )
+          if (existingIdx >= 0) {
+            const updated = [...prev]
+            updated[existingIdx] = completionResp
+            return updated
+          }
+          return [...prev, completionResp]
+        })
+
+        onCompleted?.()
       })
       await saver.flush()
     } catch (e) {
@@ -1053,17 +1076,37 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
     }
   }
 
-  if (loading) return <p role="status" className="p-4 text-sm text-muted-foreground">Carregando suas respostas…</p>
+  if (loading)
+    return (
+      <p role="status" className="p-4 text-sm text-muted-foreground">
+        Carregando suas respostas…
+      </p>
+    )
 
-  if (loadError) return <div role="alert" className="p-4 space-y-3">
-    <p>Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.</p>
-    <Button onClick={() => { void loadResponses() }}>Tentar carregar novamente</Button>
-  </div>
+  if (loadError)
+    return (
+      <div role="alert" className="p-4 space-y-3">
+        <p>
+          Não foi possível recuperar suas respostas. Vamos carregá-las novamente antes de continuar.
+        </p>
+        <Button
+          onClick={() => {
+            void loadResponses()
+          }}
+        >
+          Tentar carregar novamente
+        </Button>
+      </div>
+    )
 
   return (
     <div className="w-full">
       {saver.status}
-      {validationError && <p role="alert" className="text-sm text-destructive">{validationError}</p>}
+      {validationError && (
+        <p role="alert" className="text-sm text-destructive">
+          {validationError}
+        </p>
+      )}
       {/* Banner de Modo Revisão Somente-Leitura com identificação explícita do Capítulo 1 */}
       {isReviewOnly && (
         <div
@@ -1169,6 +1212,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 4. Tela 1: Estrutura Corporal */}
       {stage === 'step1' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 1 • Corpo & Fisiologia"
+              stepLabel="Etapa 1 de 5 • Estrutura habitual"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaTela1Structure
             userPresentation={userPresentation}
             structureChoice={chapterState.structure_choice}
@@ -1208,6 +1260,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 5. Tela 2: Pele */}
       {stage === 'step2' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 1 • Corpo & Fisiologia"
+              stepLabel="Etapa 2 de 5 • Pele"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaTela2Skin
             skinChoices={chapterState.skin_choices}
             onSave={handleSaveStep2}
@@ -1239,6 +1300,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 6. Tela 3: Cabelo */}
       {stage === 'step3' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 1 • Corpo & Fisiologia"
+              stepLabel="Etapa 3 de 5 • Cabelo"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaTela3Hair
             hairChoices={chapterState.hair_choices}
             onSave={handleSaveStep3}
@@ -1270,6 +1340,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 7. Tela 4: Temperatura */}
       {stage === 'step4' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 1 • Corpo & Fisiologia"
+              stepLabel="Etapa 4 de 5 • Temperatura"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaTela4Temperature
             temperatureChoice={chapterState.temperature_choice}
             onSave={handleSaveStep4}
@@ -1301,6 +1380,15 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
       {/* 8. Tela 5: Sede, Bebida e Transpiração */}
       {stage === 'step5' && (
         <div className="space-y-6">
+          {!isReviewOnly && (
+            <AyurvedaStepHeader
+              chapterLabel="Capítulo 1 • Corpo & Fisiologia"
+              stepLabel="Etapa 5 de 5 • Sede e Hábitos"
+              onSaveAndContinueLater={exitSafely}
+              disabled={saving}
+              isExiting={isExiting}
+            />
+          )}
           <AyurvedaTela5Habits
             thirstChoice={chapterState.thirst_choice}
             drinkTemperatureChoice={chapterState.drink_temperature_choice}

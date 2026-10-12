@@ -1,5 +1,9 @@
 import pb from '@/lib/pocketbase/client'
-import { normalizeLiveResponse, prepareLiveQuestionnaire, questionnaireRecordId } from './liveQuestionnaire'
+import {
+  normalizeLiveResponse,
+  prepareLiveQuestionnaire,
+  questionnaireRecordId,
+} from './liveQuestionnaire'
 import type {
   CerDimensionRecord,
   CerExperienceRecord,
@@ -60,7 +64,9 @@ export function resolveExperienceId(raw: string): string {
   if (!raw) return raw
   const trimmed = raw.trim()
 
-  const logical = Object.values(DIMENSION_TO_EXPERIENCE_ID).find(id => questionnaireRecordId('experience', id) === trimmed)
+  const logical = Object.values(DIMENSION_TO_EXPERIENCE_ID).find(
+    (id) => questionnaireRecordId('experience', id) === trimmed,
+  )
   if (logical) return logical
 
   // 1. Verificação direta no mapa
@@ -397,12 +403,20 @@ export const enrollmentExperienceService = {
 
       if (canonicalExpId.startsWith('exp-')) {
         const prepared = await prepareLiveQuestionnaire(enrollmentId, canonicalExpId)
-        return { ...prepared.enrollment_experience, experience_id: canonicalExpId } as EnrollmentExperienceRecord
+        return {
+          ...prepared.enrollment_experience,
+          experience_id: canonicalExpId,
+        } as EnrollmentExperienceRecord
       }
-      return await pb.collection('enrollment_experiences').getFirstListItem<EnrollmentExperienceRecord>(
-        pb.filter('enrollment_id = {:enrollment} && experience_id = {:experience}', { enrollment: enrollmentId, experience: canonicalExpId }),
-        { expand: 'experience_id,enrollment_id' },
-      )
+      return await pb
+        .collection('enrollment_experiences')
+        .getFirstListItem<EnrollmentExperienceRecord>(
+          pb.filter('enrollment_id = {:enrollment} && experience_id = {:experience}', {
+            enrollment: enrollmentId,
+            experience: canonicalExpId,
+          }),
+          { expand: 'experience_id,enrollment_id' },
+        )
     } catch (error) {
       if ((error as any)?.status === 404) return null
       throw error
@@ -461,14 +475,30 @@ export const enrollmentExperienceService = {
         }
       }) as unknown as EnrollmentExperienceRecord[]
     }
-    return await pb.collection('enrollment_experiences').getFullList<EnrollmentExperienceRecord>({
-      filter: `enrollment_id = "${enrollmentId}"`,
-      expand: 'experience_id.dimension_id',
-      sort: 'created',
-    }).then(records => records.map(record => ({
-      ...record, experience_id: resolveExperienceId(record.experience_id),
-      ...(record.expand?.experience_id ? { expand: { ...record.expand, experience_id: { ...record.expand.experience_id, id: resolveExperienceId(record.experience_id) } } } : {}),
-    })))
+    return await pb
+      .collection('enrollment_experiences')
+      .getFullList<EnrollmentExperienceRecord>({
+        filter: `enrollment_id = "${enrollmentId}"`,
+        expand: 'experience_id.dimension_id',
+        sort: 'created',
+      })
+      .then((records) =>
+        records.map((record) => ({
+          ...record,
+          experience_id: resolveExperienceId(record.experience_id),
+          ...(record.expand?.experience_id
+            ? {
+                expand: {
+                  ...record.expand,
+                  experience_id: {
+                    ...record.expand.experience_id,
+                    id: resolveExperienceId(record.experience_id),
+                  },
+                },
+              }
+            : {}),
+        })),
+      )
   },
 
   /**
@@ -609,7 +639,9 @@ export const enrollmentExperienceService = {
 
     return await pb.collection('enrollment_experiences').create<EnrollmentExperienceRecord>({
       enrollment_id: enrollmentId,
-      experience_id: resolveExperienceId(experienceId).startsWith('exp-') ? questionnaireRecordId('experience', resolveExperienceId(experienceId)) : experienceId,
+      experience_id: resolveExperienceId(experienceId).startsWith('exp-')
+        ? questionnaireRecordId('experience', resolveExperienceId(experienceId))
+        : experienceId,
       release_status: 'available',
       progress_status: 'not_started',
       current_step_order: 1,
@@ -635,11 +667,18 @@ export const experienceResponseService = {
         const responses = demoAdapter.listExperienceResponses(enrollmentId)
         return responses.find((r) => r.prompt_id === promptId) || null
       }
-      const actualPromptId = /^[a-z0-9]{15}$/.test(promptId) ? promptId : questionnaireRecordId('prompt', promptId)
-      const record = await pb.collection('experience_responses').getFirstListItem<ExperienceResponseRecord>(
-        pb.filter('enrollment_id = {:enrollment} && prompt_id = {:prompt}', { enrollment: enrollmentId, prompt: actualPromptId }),
-        { expand: 'prompt_id' },
-      )
+      const actualPromptId = /^[a-z0-9]{15}$/.test(promptId)
+        ? promptId
+        : questionnaireRecordId('prompt', promptId)
+      const record = await pb
+        .collection('experience_responses')
+        .getFirstListItem<ExperienceResponseRecord>(
+          pb.filter('enrollment_id = {:enrollment} && prompt_id = {:prompt}', {
+            enrollment: enrollmentId,
+            prompt: actualPromptId,
+          }),
+          { expand: 'prompt_id' },
+        )
       return normalizeLiveResponse(record)
     } catch (error) {
       if ((error as any)?.status === 404) return null
@@ -655,23 +694,34 @@ export const experienceResponseService = {
     experienceId: string,
   ): Promise<ExperienceResponseRecord[]> {
     const canonicalExpId = resolveExperienceId(experienceId)
-      const { demoAdapter } = await import('@/services/demoAdapter')
-      if (demoAdapter.isEnabled()) {
-        // Ayurveda já foi salvo sob códigos de dimensão e IDs de experiência.
-        // Ler todos os aliases preserva os registros originais e seu histórico.
-        if (canonicalExpId === 'exp-corpo-fisiologia-07b') {
-          return demoAdapter
-            .listExperienceResponses(enrollmentId)
-            .filter((response) => resolveExperienceId(response.experience_id) === canonicalExpId)
-        }
-        return demoAdapter.listExperienceResponses(enrollmentId, canonicalExpId)
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      // Ayurveda já foi salvo sob códigos de dimensão e IDs de experiência.
+      // Ler todos os aliases preserva os registros originais e seu histórico.
+      if (canonicalExpId === 'exp-corpo-fisiologia-07b') {
+        return demoAdapter
+          .listExperienceResponses(enrollmentId)
+          .filter((response) => resolveExperienceId(response.experience_id) === canonicalExpId)
       }
-      const actualExperienceId = canonicalExpId.startsWith('exp-') ? questionnaireRecordId('experience', canonicalExpId) : canonicalExpId
-      const records = await pb.collection('experience_responses').getFullList<ExperienceResponseRecord>({
-        filter: pb.filter('enrollment_id = {:enrollment} && experience_id = {:experience}', { enrollment: enrollmentId, experience: actualExperienceId }),
-        expand: 'prompt_id', sort: 'prompt_id.step_order',
+      return demoAdapter.listExperienceResponses(enrollmentId, canonicalExpId)
+    }
+    const actualExperienceId = canonicalExpId.startsWith('exp-')
+      ? questionnaireRecordId('experience', canonicalExpId)
+      : canonicalExpId
+    const records = await pb
+      .collection('experience_responses')
+      .getFullList<ExperienceResponseRecord>({
+        filter: pb.filter('enrollment_id = {:enrollment} && experience_id = {:experience}', {
+          enrollment: enrollmentId,
+          experience: actualExperienceId,
+        }),
+        expand: 'prompt_id',
+        sort: 'prompt_id.step_order',
       })
-      return records.map(record => ({ ...normalizeLiveResponse(record), experience_id: canonicalExpId }))
+    return records.map((record) => ({
+      ...normalizeLiveResponse(record),
+      experience_id: canonicalExpId,
+    }))
   },
 
   /**
@@ -742,7 +792,6 @@ export const experienceResponseService = {
       return demoAdapter.saveExperienceResponse(effectiveParams)
     }
 
-
     // Fallback gracioso para ambiente local sintético de teste
     if (
       params.experienceId === 'exp-corpo-fisiologia-07b' &&
@@ -769,25 +818,40 @@ export const experienceResponseService = {
     const prepared = canonicalExpId.startsWith('exp-')
       ? await prepareLiveQuestionnaire(params.enrollmentId, canonicalExpId, params.promptId)
       : { experience_id: canonicalExpId, prompt_id: params.promptId }
-    const existing = await experienceResponseService.getResponse(params.enrollmentId, prepared.prompt_id!)
+    const existing = await experienceResponseService.getResponse(
+      params.enrollmentId,
+      prepared.prompt_id!,
+    )
     const options = { expand: 'prompt_id' }
     let saved: ExperienceResponseRecord
     if (existing) {
-      saved = await pb.collection('experience_responses').update<ExperienceResponseRecord>(existing.id, {
-        structured_value: params.structuredValue,
-        free_text: params.freeText !== undefined ? params.freeText : existing.free_text,
-        ...(params.accessClass ? { access_class: params.accessClass } : {}),
-      }, options)
+      saved = await pb.collection('experience_responses').update<ExperienceResponseRecord>(
+        existing.id,
+        {
+          structured_value: params.structuredValue,
+          free_text: params.freeText !== undefined ? params.freeText : existing.free_text,
+          ...(params.accessClass ? { access_class: params.accessClass } : {}),
+        },
+        options,
+      )
     } else {
-      saved = await pb.collection('experience_responses').create<ExperienceResponseRecord>({
-        enrollment_id: params.enrollmentId, experience_id: prepared.experience_id,
-        prompt_id: prepared.prompt_id, respondent_user_id: params.respondentUserId,
-        response_type: params.responseType, access_class: params.accessClass || 'shared_care',
-        structured_value: params.structuredValue, free_text: params.freeText || '',
-        prompt_version: params.promptVersion, version: 1, status: 'saved',
-      }, options)
+      saved = await pb.collection('experience_responses').create<ExperienceResponseRecord>(
+        {
+          enrollment_id: params.enrollmentId,
+          experience_id: prepared.experience_id,
+          prompt_id: prepared.prompt_id,
+          respondent_user_id: params.respondentUserId,
+          response_type: params.responseType,
+          access_class: params.accessClass || 'shared_care',
+          structured_value: params.structuredValue,
+          free_text: params.freeText || '',
+          prompt_version: params.promptVersion,
+          version: 1,
+          status: 'saved',
+        },
+        options,
+      )
     }
     return { ...normalizeLiveResponse(saved), experience_id: canonicalExpId }
-
   },
 }
