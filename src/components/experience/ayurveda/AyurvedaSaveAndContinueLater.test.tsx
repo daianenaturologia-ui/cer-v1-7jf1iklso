@@ -258,10 +258,18 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
     unmountReview()
 
     // A correção deve carregar uma revisão existente, nunca uma revisão vazia.
-    vi.mocked(experienceResponseService.listResponsesByExperience).mockResolvedValue([{
-      id: 'c2-answer', prompt_id: AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id,
-      structured_value: { value: ['regular_hours'], selectedOptionIds: ['regular_hours'], revision_number: 1, metadata: { prompt_key: AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key, revision_number: 1 } },
-    }] as any)
+    vi.mocked(experienceResponseService.listResponsesByExperience).mockResolvedValue([
+      {
+        id: 'c2-answer',
+        prompt_id: AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id,
+        structured_value: {
+          value: ['regular_hours'],
+          selectedOptionIds: ['regular_hours'],
+          revision_number: 1,
+          metadata: { prompt_key: AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key, revision_number: 1 },
+        },
+      },
+    ] as any)
     // 5.3 Em modo de correção (correcting), a pausa está disponível!
     render(
       <AyurvedaChapter2Flow
@@ -329,9 +337,19 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
   })
 
   it('C3 não oferece salvar e sair para uma correção mantida apenas em memória', async () => {
-    render(<AyurvedaChapter3Flow enrollmentId="enr-c3-draft" experienceId="exp-c3" respondentUserId="test-user" mode="correcting" onBackToHub={vi.fn()} />)
+    render(
+      <AyurvedaChapter3Flow
+        enrollmentId="enr-c3-draft"
+        experienceId="exp-c3"
+        respondentUserId="test-user"
+        mode="correcting"
+        onBackToHub={vi.fn()}
+      />,
+    )
     await screen.findByText('Em quais áreas você percebe alguma mudança atualmente?')
-    expect(screen.queryByRole('button', { name: 'Salvar e continuar depois' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Salvar e continuar depois' }),
+    ).not.toBeInTheDocument()
   })
 
   it('6. C4: síntese sem etapas — voltar aos capítulos não marca completion', async () => {
