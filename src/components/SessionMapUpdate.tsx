@@ -65,7 +65,7 @@ export function SessionMapUpdate({
         summary: text,
       })
       setMessage(
-        'Atualização salva no rascunho. Confira as duas versões e publique no Mapa CER quando estiver pronta.',
+        'Atualização salva no rascunho. Revise a prévia do Mapa CER antes de compartilhar com a pessoa.',
       )
       setReviewed(false)
     } catch (e) {

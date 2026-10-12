@@ -225,9 +225,10 @@ export const BUILD_07G_INTEGRACAO_PROMPTS: CerPromptRecord[] = [
     step_title: 'Algumas coisas se parecem comigo',
     step_subtitle: 'Observando padrões que surgiram em diferentes dimensões da sua jornada.',
     component_type: 'ChoiceCards',
-    prompt_text: 'Algumas coisas parecem aparecer em diferentes partes da sua vida.',
+    prompt_text:
+      'Ao olhar para suas seis dimensões, você percebe algo que se repete em diferentes partes da sua vida?',
     helper_text:
-      'Veja como essas percepções ressoam em você. Isso não é um laudo nem define quem você é: reflete apenas o que você mesma já compartilhou.',
+      'Lembre do que você respondeu sobre corpo, emoções, reações, vínculos, intimidade e sentido. Pode ser um jeito de responder à pressão, uma necessidade ou um apoio. Considere apenas o que você reconhece; você também pode dizer que ainda não percebe uma conexão.',
     is_required: true,
     version: 1,
     schema_config: {
@@ -239,12 +240,12 @@ export const BUILD_07G_INTEGRACAO_PROMPTS: CerPromptRecord[] = [
       options: [
         {
           id: 'reconheco_essas_recorrencias',
-          title: 'Reconheço que isso faz parte do meu jeito de funcionar',
+          title: 'Sim, reconheço coisas que se repetem em diferentes áreas',
           description: 'Faz sentido olhar para como esses aspectos se repetem.',
         },
         {
           id: 'reconheco_em_partes',
-          title: 'Reconheço algumas, mas outras não parecem tão presentes',
+          title: 'Percebo algumas conexões, mas ainda estou compreendendo outras',
           description: 'Alguns pontos ressoam, enquanto outros pedem ajuste.',
         },
         {
@@ -254,7 +255,7 @@ export const BUILD_07G_INTEGRACAO_PROMPTS: CerPromptRecord[] = [
         },
         {
           id: 'nao_me_reconheco',
-          title: 'Não me reconheço nessas descrições',
+          title: 'Não percebo essas repetições na minha experiência',
           description: 'Sinto que meu funcionamento tem outras características.',
         },
         {
@@ -336,7 +337,7 @@ export const BUILD_07G_INTEGRACAO_PROMPTS: CerPromptRecord[] = [
     step_subtitle: 'Apoios que você já identificou em diferentes partes da sua experiência.',
     component_type: 'ChoiceCards',
     prompt_text:
-      'Você já identificou que alguns apoios costumam ajudar em diferentes momentos. Como isso se parece com você?',
+      'Pensando nos apoios que você acabou de registrar, como é recorrer a eles quando precisa?',
     helper_text:
       'Lembrando: saber que algo ajuda não significa que seja fácil de acessar o tempo todo.',
     is_required: true,

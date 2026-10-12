@@ -318,16 +318,12 @@ export function LifeDirections({
                           />
                         )}
                         {record.kind === 'future' && (readOnly || (planning && unlocked)) && (
-                          <details className="rounded-lg border p-3">
-                            <summary className="cursor-pointer text-sm font-medium">
-                              Metas e ações desta direção
-                            </summary>
-                            <GoalRoadmapPlanner
-                              source={record}
-                              readOnly={readOnly}
-                              strategies={strategies}
-                            />
-                          </details>
+                          <GoalRoadmapPlanner
+                            title="Metas e ações desta direção"
+                            source={record}
+                            readOnly={readOnly}
+                            strategies={strategies}
+                          />
                         )}
                         {!readOnly && unlocked && (
                           <Button size="sm" variant="outline" onClick={() => open(kind, record)}>

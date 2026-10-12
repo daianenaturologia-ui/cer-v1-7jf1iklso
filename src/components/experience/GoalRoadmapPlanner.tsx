@@ -16,10 +16,12 @@ export function GoalRoadmapPlanner({
   source,
   readOnly = false,
   strategies = [],
+  title = 'Metas, ações e meu ritmo',
 }: {
   source: LifeDirection
   readOnly?: boolean
   strategies?: string[]
+  title?: string
 }) {
   const [open, setOpen] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -112,7 +114,7 @@ export function GoalRoadmapPlanner({
       className="rounded-lg border border-primary/25 bg-primary/5 p-3"
       onToggle={(e) => setOpen(e.currentTarget.open)}
     >
-      <summary className="cursor-pointer font-medium">Metas, ações e meu ritmo</summary>
+      <summary className="cursor-pointer font-medium">{title}</summary>
       {open && (
         <div className="space-y-4 pt-3">
           <p className="text-sm">
@@ -206,6 +208,7 @@ export function GoalRoadmapPlanner({
                               )}
                               {!readOnly && (
                                 <ResourceAgendaForm
+                                  actionLabel={a.title}
                                   key={`${a.id}:${saved?.revision}`}
                                   enrollmentId={source.enrollment_id}
                                   repeatable
@@ -298,7 +301,7 @@ export function GoalRoadmapPlanner({
                     />
                   </label>
                   <label className="block text-sm">
-                    Prazo que faz sentido
+                    Prazo que faz sentido (obrigatório)
                     <Input
                       type="date"
                       aria-label={`Prazo de ${GOAL_HORIZONS[m.horizon].toLowerCase()}`}

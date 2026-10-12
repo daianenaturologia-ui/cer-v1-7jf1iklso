@@ -139,8 +139,8 @@ export const AttentionPanel: React.FC<AttentionPanelProps> = ({
                 : `Nenhum item na categoria "${selectedCategory}"`}
             </p>
             <p className="text-[11px] text-muted-foreground">
-              O fluxo de cuidado segue estável. As respostas e devolutivas dos participantes
-              aparecerão aqui quando demandarem seu olhar.
+              Não há sinalizações operacionais nesta lista. Consulte a Visão geral de cada
+              participante para acompanhar respostas, direção, metas e retornos.
             </p>
           </div>
         ) : (

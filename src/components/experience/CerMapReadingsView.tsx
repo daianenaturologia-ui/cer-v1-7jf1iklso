@@ -884,7 +884,7 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
             ) : dim.personalSections?.length ? (
               <div className="space-y-4">
                 <p className="leading-relaxed">{dim.explanation}</p>
-                <p className="leading-relaxed">{dim.summary}</p>
+                {dim.summary && <p className="leading-relaxed">{dim.summary}</p>}
                 <Accordion type="multiple" className="rounded-xl border px-4">
                   {dim.personalSections.map((section, i) => (
                     <AccordionItem key={`${i}-${section.title}`} value={`section-${i}`}>
@@ -903,27 +903,29 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="grid sm:grid-cols-2 gap-3">
-                          {(['strength', 'difficulty'] as const).map((kind) => (
-                            <div key={kind}>
-                              <h4 className="font-semibold mb-2">
-                                {kind === 'strength'
-                                  ? 'Forças e potencialidades'
-                                  : 'Pontos de atenção'}
-                              </h4>
-                              <ul className="space-y-2">
-                                {dim.insights
-                                  ?.filter((i) => i.kind === kind)
-                                  .map((i) => (
-                                    <li key={i.id}>
-                                      <span className="font-medium">{i.label}</span>
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        {i.description}
-                                      </p>
-                                    </li>
-                                  ))}
-                              </ul>
-                            </div>
-                          ))}
+                          {(['strength', 'difficulty'] as const)
+                            .filter((kind) => dim.insights?.some((i) => i.kind === kind))
+                            .map((kind) => (
+                              <div key={kind}>
+                                <h4 className="font-semibold mb-2">
+                                  {kind === 'strength'
+                                    ? 'Forças e potencialidades'
+                                    : 'Pontos de atenção'}
+                                </h4>
+                                <ul className="space-y-2">
+                                  {dim.insights
+                                    ?.filter((i) => i.kind === kind)
+                                    .map((i) => (
+                                      <li key={i.id}>
+                                        <span className="font-medium">{i.label}</span>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {i.description}
+                                        </p>
+                                      </li>
+                                    ))}
+                                </ul>
+                              </div>
+                            ))}
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -1522,7 +1524,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
           ) : (
             <div className="p-3 bg-muted/20 rounded-lg text-center">
               <p className="text-xs text-muted-foreground">
-                A distribuição percentual ainda não está disponível no snapshot publicado.
+                Esta leitura reúne tendências e evidências das suas respostas. Ela não mede uma
+                porcentagem de doshas no seu corpo.
               </p>
             </div>
           )}

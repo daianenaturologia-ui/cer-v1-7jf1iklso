@@ -457,9 +457,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
         {activeTab === 'preparacao' && (
           <div className="space-y-4">
             <div className="p-3 bg-muted/20 border border-border/40 rounded-lg text-xs space-y-1">
-              <p className="font-medium text-foreground">
-                Preparação calculada para o encontro com {participantName}
-              </p>
+              <p className="font-medium text-foreground">Para o encontro com {participantName}</p>
               <p className="text-muted-foreground text-[11px]">
                 Visão determinística em tempo real reunindo o último encontro, percepções recentes e
                 movimentos de consciência da interagente. Sem síntese de inteligência artificial.
@@ -594,7 +592,8 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                   </div>
                 ) : (
                   <p className="text-[11px] text-muted-foreground italic">
-                    Nenhuma percepção ou elemento registrado no momento.
+                    Ainda não há percepções profissionais registradas nesta seção. Consulte também o
+                    Mapa CER e as respostas da Consciência.
                   </p>
                 )}
               </div>
@@ -676,7 +675,8 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                   </div>
                 ) : (
                   <p className="text-[11px] text-muted-foreground italic">
-                    Sem novas atividades ou respostas desde o último encontro.
+                    Esta seção não trouxe novas atividades para o encontro. Confira na Visão geral
+                    as dimensões respondidas, a história e os passos compartilhados.
                   </p>
                 )}
               </div>
