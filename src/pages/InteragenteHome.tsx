@@ -2139,14 +2139,13 @@ export const InteragenteHome: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1">
                         <span className="text-muted-foreground text-[11px] block">
-                          Experiências Vivas
+                          Dimensões da Consciência
                         </span>
                         <span className="text-lg font-bold font-serif text-foreground">
                           {
-                            availableExperiences.filter((e) => e.release_status === 'completed')
-                              .length
+                            consciousnessCoverage(participantResponses, availableExperiences).filter((d) => d.completed).length
                           }{' '}
-                          de {availableExperiences.length}
+                          de {consciousnessCoverage(participantResponses, availableExperiences).length}
                         </span>
                         <p className="text-[11px] text-muted-foreground">
                           Momentos de percepção concluídos

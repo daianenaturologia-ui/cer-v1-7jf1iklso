@@ -3,6 +3,7 @@ import { expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ProfessionalJourneySummary } from './ProfessionalJourneySummary'
+vi.mock('@/services/cerCarePlanService',()=>({cerCarePlanService:{listAcceptancesByEnrollment:vi.fn(async()=>[])}}))
 const fixtures = vi.hoisted(() => ({ read: vi.fn(), steps: vi.fn() }))
 vi.mock('@/services/experienceEngine', () => ({
   experienceResponseService: { listResponsesByExperience: fixtures.read },
@@ -19,7 +20,7 @@ it('only shared steps reach the overview and its agenda shortcut is specific', a
   render(<ProfessionalJourneySummary enrollmentId="enrollment" name="Lia" onOpen={open}/>)
   expect(await screen.findByText('Caminhar 15 minutos')).toBeInTheDocument()
   expect(screen.queryByText('PRIVATE_CONTROL')).not.toBeInTheDocument()
-  await userEvent.click(screen.getByRole('button',{name:/Rotina · 1 passos/}))
+  await userEvent.click(screen.getByRole('button',{name:/Rotina · 1 passo/}))
   expect(open).toHaveBeenCalledWith('evolucao','planner')
 })
 it('failed reads show a recoverable error rather than an empty or stable care claim', async()=>{
