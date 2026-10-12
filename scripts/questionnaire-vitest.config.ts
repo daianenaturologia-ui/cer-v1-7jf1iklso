@@ -23,6 +23,7 @@ export default defineConfig({
       'src/components/experience/ayurveda/AyurvedaChapter2RevisionRecoveryM2B.test.tsx',
       'src/components/experience/ayurveda/AyurvedaChapter3Medication.test.tsx',
       'src/components/experience/ayurveda/AyurvedaChapter3Hub.test.tsx',
+      'src/lib/pocketbase/clientNodeImport.test.ts',
     ],
   },
 })
