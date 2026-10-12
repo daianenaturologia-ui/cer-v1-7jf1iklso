@@ -143,7 +143,10 @@ export function consciousnessCoverage(
     return {
       ...dimension,
       started: records.length > 0 || (!!state && state.progress_status !== 'not_started'),
-      completed: dimension.id === 'corpo' && records.length > 0 ? isChapter4Completed(records) : state?.progress_status === 'completed',
+      completed:
+        dimension.id === 'corpo' && records.length > 0
+          ? isChapter4Completed(records)
+          : state?.progress_status === 'completed',
     }
   })
 }

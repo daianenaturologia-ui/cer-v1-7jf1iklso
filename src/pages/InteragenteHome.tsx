@@ -319,7 +319,6 @@ export const InteragenteHome: React.FC = () => {
         } catch {
           /* intentionally ignored */
         }
-
       }
       if (activeEnr?.id && effectiveEngineEnabled) {
         const [exps, kiList, myRecogs, presList, mapData, resps] = await Promise.all([

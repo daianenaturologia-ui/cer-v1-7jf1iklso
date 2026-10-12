@@ -73,9 +73,15 @@ export const AyurvedaChapter4Flow: React.FC<Props> = ({
             metadata: { prompt_key: AYV_C4_COMPLETION.key, answered_at: now },
           },
         })
-        const progress = await enrollmentExperienceService.getByEnrollmentAndExperience(enrollmentId, experienceId)
+        const progress = await enrollmentExperienceService.getByEnrollmentAndExperience(
+          enrollmentId,
+          experienceId,
+        )
         if (!progress) throw new Error('Não foi possível localizar o progresso desta dimensão.')
-        await enrollmentExperienceService.updateProgress(progress.id, { completed: true, enrollmentId })
+        await enrollmentExperienceService.updateProgress(progress.id, {
+          completed: true,
+          enrollmentId,
+        })
         ;(saved as any).prompt_key = AYV_C4_COMPLETION.key
         setResponses((current) => [...current, saved])
         onCompleted?.()

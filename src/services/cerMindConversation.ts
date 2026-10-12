@@ -70,7 +70,12 @@ export function strongestMindPatterns(dimension?: CerMapReadingDimension, declar
   }
   const ranked = [...ranks]
     .filter(([, rank]) => rank > 0)
-    .sort((a, b) => Number(declared.includes(b[0])) - Number(declared.includes(a[0])) || b[1] - a[1] || priority.indexOf(a[0]) - priority.indexOf(b[0]))
+    .sort(
+      (a, b) =>
+        Number(declared.includes(b[0])) - Number(declared.includes(a[0])) ||
+        b[1] - a[1] ||
+        priority.indexOf(a[0]) - priority.indexOf(b[0]),
+    )
   return {
     keys: ranked.slice(0, 3).map(([key]) => key),
     tied: ranked.length > 3 && ranked[2][1] === ranked[3][1],

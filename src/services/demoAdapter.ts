@@ -2045,7 +2045,11 @@ class DemoAdapter {
     return sourceResponses.filter((r) => {
       if (enrollmentId && r.enrollment_id !== enrollmentId) return false
       if (experienceId && r.experience_id !== experienceId) return false
-      if (this.state.activePersona === 'daiane' && (!isSharedQuestionnaireRecord(r) || !['saved', 'revised'].includes(r.status))) return false
+      if (
+        this.state.activePersona === 'daiane' &&
+        (!isSharedQuestionnaireRecord(r) || !['saved', 'revised'].includes(r.status))
+      )
+        return false
       return true
     })
   }
@@ -2057,9 +2061,13 @@ class DemoAdapter {
         : this.state.experienceResponseVersions || []
 
     return sourceVersions.filter(
-      (version) => (!enrollmentId || version.enrollment_id === enrollmentId) &&
-        (this.state.activePersona !== 'daiane' || (isSharedQuestionnaireRecord(version) &&
-          this.state.experienceResponses.some(r => r.id === version.response_id && isSharedQuestionnaireRecord(r)))),
+      (version) =>
+        (!enrollmentId || version.enrollment_id === enrollmentId) &&
+        (this.state.activePersona !== 'daiane' ||
+          (isSharedQuestionnaireRecord(version) &&
+            this.state.experienceResponses.some(
+              (r) => r.id === version.response_id && isSharedQuestionnaireRecord(r),
+            ))),
     )
   }
 
