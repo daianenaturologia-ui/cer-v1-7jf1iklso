@@ -188,6 +188,7 @@ export const COMPONENT_TYPES = {
   TIMELINE: 'Timeline',
   FREE_REFLECTION: 'FreeReflection',
   SCENARIO_CHOICE: 'ScenarioChoice',
+  CHAPTER_COMPLETION: 'ChapterCompletion',
 } as const
 
 export type ComponentType = (typeof COMPONENT_TYPES)[keyof typeof COMPONENT_TYPES]

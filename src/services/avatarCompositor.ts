@@ -109,14 +109,8 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } {
 /**
  * Aplica colorização estética em pixels ImageData preservando iluminação e contornos.
  *
- * Algoritmo de Tinta Luminosa Preservadora:
- * 1. Base grayscale luminance L = 0.299*R + 0.587*G + 0.114*B (0..1).
- * 2. Tinta normalizada T_r, T_g, T_b (0..1).
- * 3. Multiplicação tonal: color = T * L.
- * 4. Proteção de realces/contornos:
- *    - Se L > 0.8, interpola suavemente com branco para manter luz.
- *    - Se L < 0.2, mantém escuridão do traço/sombra.
- * 5. Fator de máscara: apenas pixels onde maskAlpha > 0 recebem a tinta, ponderados pelo alfa da máscara.
+ * A luminância da base modula todos os canais da tinta na mesma proporção.
+ * A máscara limita a alteração à pele ou ao cabelo; o alfa original é preservado.
  */
 export function blendTintOnImageData(
   targetImageData: ImageData,
@@ -124,10 +118,6 @@ export function blendTintOnImageData(
   tintHex: string,
 ): void {
   const { r: tr, g: tg, b: tb } = hexToRgb(tintHex)
-  const normTr = tr / 255
-  const normTg = tg / 255
-  const normTb = tb / 255
-
   const data = targetImageData.data
   const maskData = maskImageData.data
   const len = data.length
@@ -146,22 +136,12 @@ export function blendTintOnImageData(
     // Luminância do pixel base (0 a 1)
     const lum = (0.299 * baseR + 0.587 * baseG + 0.114 * baseB) / 255
 
-    // Tinta modulada pela luminância
-    let blendedR: number
-    let blendedG: number
-    let blendedB: number
-
-    if (lum < 0.5) {
-      // Sombras preservadas: multiplicação pura
-      blendedR = 2 * lum * normTr * 255
-      blendedG = 2 * lum * normTg * 255
-      blendedB = 2 * lum * normTb * 255
-    } else {
-      // Luzes preservadas: interpolação para brilho
-      blendedR = (1 - 2 * (1 - lum) * (1 - normTr)) * 255
-      blendedG = (1 - 2 * (1 - lum) * (1 - normTg)) * 255
-      blendedB = (1 - 2 * (1 - lum) * (1 - normTb)) * 255
-    }
+    // Source midtones represent the chosen skin/hair color. Lighting scales all
+    // channels together so a dark brown keeps its hue instead of becoming gray.
+    const lighting = Math.max(0.08, Math.min(1.2, lum / 0.72))
+    const blendedR = Math.min(255, tr * lighting)
+    const blendedG = Math.min(255, tg * lighting)
+    const blendedB = Math.min(255, tb * lighting)
 
     const maskWeight = maskAlpha / 255
 
@@ -198,10 +178,14 @@ export function loadImage(url: string): Promise<HTMLImageElement> {
 /**
  * Compõe o avatar em um HTMLCanvasElement ou OffscreenCanvas
  */
+const renderRequests = new WeakMap<HTMLCanvasElement, number>()
+
 export async function renderAvatarToCanvas(
   config: AvatarConfiguration,
   targetCanvas: HTMLCanvasElement,
 ): Promise<void> {
+  const request = (renderRequests.get(targetCanvas) || 0) + 1
+  renderRequests.set(targetCanvas, request)
   const { presentation, structure, skinTone, hairColor } = config
   const paths = getAvatarAssetPaths(presentation, structure)
 
@@ -213,6 +197,8 @@ export async function renderAvatarToCanvas(
     loadImage(paths.skinMaskUrl),
     loadImage(paths.hairMaskUrl),
   ])
+
+  if (renderRequests.get(targetCanvas) !== request) return
 
   const width = 1024
   const height = 1536

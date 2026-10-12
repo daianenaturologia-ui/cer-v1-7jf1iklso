@@ -1,0 +1,53 @@
+// Additive catalog repair. Existing records and collection access rules are preserved.
+migrate((app) => {
+  const catalog = /* CATALOG_DATA */
+  function idFor(kind, logical) {
+    function hash(salt) {
+      let value = 2166136261
+      const input = salt + ':' + kind + ':' + logical
+      for (let i = 0; i < input.length; i++) value = Math.imul(value ^ input.charCodeAt(i), 16777619) >>> 0
+      return ('0000000' + value.toString(36)).slice(-7)
+    }
+    return 'c' + hash('cer1') + hash('cer2')
+  }
+  function saveNew(collectionName, id, values) {
+    try { app.findRecordById(collectionName, id); return } catch (_) {}
+    const record = new Record(app.findCollectionByNameOrId(collectionName), values)
+    record.set('id', id)
+    app.save(record)
+  }
+  // Only extend the two component enums; never replace existing allowed values.
+  for (const name of ['cer_prompts', 'experience_responses']) {
+    const collection = app.findCollectionByNameOrId(name)
+    const field = collection.fields.getByName(name === 'cer_prompts' ? 'component_type' : 'response_type')
+    const values = Array.from(field.values || [])
+    for (const value of [...new Set(catalog.prompts.map(p => p.component_type)), 'ChapterCompletion']) if (!values.includes(value)) values.push(value)
+    field.values = values
+    app.save(collection)
+  }
+  // Integration is a transversal experience; its dimension stays out of the active six-dimension list.
+  const integrationDimension = idFor('dimension', 'dim-integracao-07g')
+  saveNew('cer_dimensions', integrationDimension, { code: 'integracao_consciencia', title: 'Integração da Consciência', order_index: 8, is_active: false })
+  for (const experience of catalog.experiences) {
+    const values = Object.assign({}, experience)
+    delete values.id
+    if (values.dimension_id === 'dim-integracao-07g') values.dimension_id = integrationDimension
+    saveNew('cer_experiences', idFor('experience', experience.id), values)
+  }
+  for (const moment of catalog.moments) {
+    const values = Object.assign({}, moment)
+    delete values.id
+    values.experience_id = idFor('experience', moment.experience_id)
+    saveNew('cer_experience_moments', idFor('moment', moment.id), values)
+  }
+  for (const prompt of catalog.prompts) {
+    const values = Object.assign({}, prompt)
+    delete values.id
+    values.experience_id = idFor('experience', prompt.experience_id)
+    if (prompt.moment_id) values.moment_id = idFor('moment', prompt.moment_id)
+    values.schema_config = Object.assign({}, prompt.schema_config, { cer_logical_prompt_id: prompt.id })
+    saveNew('cer_prompts', idFor('prompt', prompt.id), values)
+  }
+}, () => {
+  // Deliberately retain catalog records: responses may already reference them.
+})
