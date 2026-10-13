@@ -137,43 +137,47 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
     [enrollmentId],
   )
 
-  const loadAll = useCallback(async () => {
-    const current = ++request.current
-    try {
-      setLoading(true)
-      const [rawSessList, prepData] = await Promise.all([
-        cerSessionService.listByEnrollment(enrollmentId),
-        computeSessionPreparation(enrollmentId),
-      ])
-      if (current !== request.current) return
-      const sessList = Array.isArray(rawSessList)
-        ? rawSessList.filter((s) => s.enrollment_id === enrollmentId)
-        : []
-      setSessions(sessList)
-      setPreparation(prepData)
+  const loadAll = useCallback(
+    async (preferredSessionId?: string) => {
+      const current = ++request.current
+      try {
+        setLoading(true)
+        const [rawSessList, prepData] = await Promise.all([
+          cerSessionService.listByEnrollment(enrollmentId),
+          computeSessionPreparation(enrollmentId),
+        ])
+        if (current !== request.current) return
+        const sessList = Array.isArray(rawSessList)
+          ? rawSessList.filter((s) => s.enrollment_id === enrollmentId)
+          : []
+        setSessions(sessList)
+        setPreparation(prepData)
 
-      // Sessão prioritária: em andamento ou primeira agendada
-      const inProgress = sessList.find((s) => s.status === 'in_progress')
-      const scheduled = sessList.find((s) => s.status === 'scheduled')
-      const target = inProgress || scheduled || sessList[0] || null
+        // Sessão prioritária: em andamento ou primeira agendada
+        const inProgress = sessList.find((s) => s.status === 'in_progress')
+        const scheduled = sessList.find((s) => s.status === 'scheduled')
+        const preferred = sessList.find((s) => s.id === preferredSessionId)
+        const target = preferred || inProgress || scheduled || sessList[0] || null
 
-      if (target) {
-        await selectSession(target)
-      } else {
-        setActiveSession(null)
-        setActiveNote(null)
-        setNoteDraft('')
+        if (target) {
+          await selectSession(target)
+        } else {
+          setActiveSession(null)
+          setActiveNote(null)
+          setNoteDraft('')
+        }
+      } catch (_err) {
+        if (current === request.current)
+          setFeedback({
+            message: 'Não foi possível carregar os encontros. Tente novamente.',
+            type: 'error',
+          })
+      } finally {
+        if (current === request.current) setLoading(false)
       }
-    } catch (_err) {
-      if (current === request.current)
-        setFeedback({
-          message: 'Não foi possível carregar os encontros. Tente novamente.',
-          type: 'error',
-        })
-    } finally {
-      if (current === request.current) setLoading(false)
-    }
-  }, [enrollmentId, selectSession])
+    },
+    [enrollmentId, selectSession],
+  )
 
   const invalidateRequests = useCallback(() => {
     request.current++
@@ -253,7 +257,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
       if (currentView !== viewVersion.current) return
       setScheduleOpen(false)
       if (currentView !== viewVersion.current) return
-      await loadAll()
+      await loadAll(newSess.id)
       if (currentView !== viewVersion.current) return
       await selectSession(newSess)
       setActiveTab('encontro')
@@ -282,7 +286,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
       if (currentView !== viewVersion.current) return
       await selectSession(updated)
       if (currentView !== viewVersion.current) return
-      await loadAll()
+      await loadAll(updated.id)
       if (currentView !== viewVersion.current) return
       setActiveTab('encontro')
       setFeedback({ message: 'Encontro iniciado.', type: 'success' })
@@ -318,7 +322,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
       if (currentView !== viewVersion.current) return
       await selectSession(completed)
       if (currentView !== viewVersion.current) return
-      await loadAll()
+      await loadAll(completed.id)
       if (currentView !== viewVersion.current) return
       setFeedback({
         message: 'Encontro concluído e registro preservado com segurança.',
@@ -343,7 +347,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
       if (currentView !== viewVersion.current) return
       await selectSession(cancelled)
       if (currentView !== viewVersion.current) return
-      await loadAll()
+      await loadAll(cancelled.id)
       if (currentView !== viewVersion.current) return
       setFeedback({ message: 'Encontro cancelado.', type: 'success' })
     } catch (err: unknown) {
