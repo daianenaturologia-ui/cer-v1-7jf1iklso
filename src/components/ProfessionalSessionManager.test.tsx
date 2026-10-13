@@ -219,3 +219,14 @@ it('interrompe o fechamento pendente quando a matrícula muda', async () => {
     'Nota atual',
   )
 })
+
+it('mostra o horário combinado no histórico e distingue encontro sem horário', async () => {
+  vi.mocked(cerSessionService.listByEnrollment).mockResolvedValue([
+    { ...session, scheduled_at: new Date('2026-10-15T14:00').toISOString() },
+    { ...session, id: 'unscheduled', status: 'scheduled' },
+  ])
+  render(<ProfessionalSessionManager enrollmentId="mine" participantName="Pessoa" />)
+  await userEvent.click(await screen.findByRole('button', { name: 'Histórico (2)' }))
+  expect(screen.getByText(/Encontro em 15 de outubro de 2026.*14:00/)).toBeInTheDocument()
+  expect(screen.getByText('Encontro sem horário definido')).toBeInTheDocument()
+})
