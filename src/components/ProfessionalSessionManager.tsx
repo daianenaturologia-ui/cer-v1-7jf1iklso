@@ -60,7 +60,10 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
   const [actionLoading, setActionLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'preparacao' | 'encontro' | 'historico'>('preparacao')
   const request = useRef(0)
+  const viewVersion = useRef(0)
   const selection = useRef(0)
+  // Rascunhos permanecem apenas nesta área; não guardar notas privadas no navegador.
+  const noteDrafts = useRef(new Map<string, string>())
   const [sessionLoading, setSessionLoading] = useState(false)
   const [sessionLoadFailed, setSessionLoadFailed] = useState(false)
   const [scheduleOpen, setScheduleOpen] = useState(false)
@@ -111,7 +114,11 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
         setObservations(
           obsList.filter((o) => o.enrollment_id === enrollmentId && o.session_id === sess.id),
         )
-        setNoteDraft(note?.text || '')
+        setNoteDraft(
+          sess.status === 'completed' || sess.status === 'cancelled'
+            ? note?.text || ''
+            : (noteDrafts.current.get(sess.id) ?? note?.text ?? ''),
+        )
       } catch {
         if (current !== selection.current) return
         setSessionLoadFailed(true)
@@ -171,10 +178,12 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
   const invalidateRequests = useCallback(() => {
     request.current++
     selection.current++
+    viewVersion.current++
   }, [])
 
   const handleCreateObservation = async () => {
     if (!activeSession || !observationText.trim()) return
+    const currentView = viewVersion.current
     try {
       setSavingObservation(true)
       await cerSessionObservationService.create({
@@ -182,24 +191,36 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
         observation_type: observationTypeChoice,
         text: observationText.trim(),
       })
+      if (currentView !== viewVersion.current) return
       setObservationText('')
       const updatedObs = await cerSessionObservationService.listBySession(activeSession.id)
-      setObservations(updatedObs)
+      if (currentView !== viewVersion.current) return
+      setObservations(
+        updatedObs.filter(
+          (o) => o.enrollment_id === enrollmentId && o.session_id === activeSession.id,
+        ),
+      )
       setFeedback({
-        message: 'Observação preservada com integridade epistemológica.',
+        message: 'Observação salva neste encontro.',
         type: 'success',
       })
     } catch (err: unknown) {
+      if (currentView !== viewVersion.current) return
       setFeedback({
         message: err instanceof Error ? err.message : 'Falha ao registrar observação.',
         type: 'error',
       })
     } finally {
-      setSavingObservation(false)
+      if (currentView === viewVersion.current) setSavingObservation(false)
     }
   }
 
   useEffect(() => {
+    const drafts = noteDrafts.current
+    drafts.clear()
+    setSavingNote(false)
+    setActionLoading(false)
+    setSavingObservation(false)
     setSessions([])
     setActiveSession(null)
     setActiveNote(null)
@@ -210,10 +231,14 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
     setFeedback(null)
     setScheduleOpen(false)
     loadAll()
-    return invalidateRequests
+    return () => {
+      invalidateRequests()
+      drafts.clear()
+    }
   }, [enrollmentId, loadAll, invalidateRequests])
 
   const handleCreateSession = async () => {
+    const currentView = viewVersion.current
     try {
       setActionLoading(true)
       const newSess = scheduleTarget
@@ -225,8 +250,11 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
             enrollmentId,
             scheduleAt ? new Date(scheduleAt).toISOString() : undefined,
           )
+      if (currentView !== viewVersion.current) return
       setScheduleOpen(false)
+      if (currentView !== viewVersion.current) return
       await loadAll()
+      if (currentView !== viewVersion.current) return
       await selectSession(newSess)
       setActiveTab('encontro')
       setFeedback({
@@ -236,35 +264,42 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
         type: 'success',
       })
     } catch (err: unknown) {
+      if (currentView !== viewVersion.current) return
       setFeedback({
         message: err instanceof Error ? err.message : 'Falha ao agendar encontro.',
         type: 'error',
       })
     } finally {
-      setActionLoading(false)
+      if (currentView === viewVersion.current) setActionLoading(false)
     }
   }
 
   const handleStartSession = async (sessId: string) => {
+    const currentView = viewVersion.current
     try {
       setActionLoading(true)
       const updated = await cerSessionService.startSession(sessId)
+      if (currentView !== viewVersion.current) return
       await selectSession(updated)
+      if (currentView !== viewVersion.current) return
       await loadAll()
+      if (currentView !== viewVersion.current) return
       setActiveTab('encontro')
       setFeedback({ message: 'Encontro iniciado.', type: 'success' })
     } catch (err: unknown) {
+      if (currentView !== viewVersion.current) return
       setFeedback({
         message: err instanceof Error ? err.message : 'Falha ao iniciar encontro.',
         type: 'error',
       })
     } finally {
-      setActionLoading(false)
+      if (currentView === viewVersion.current) setActionLoading(false)
     }
   }
 
   const handleCompleteSession = async (sessId: string) => {
     if (sessionLoading || sessionLoadFailed || savingNote) return
+    const currentView = viewVersion.current
     try {
       setActionLoading(true)
       // Se houver rascunho de nota modificado, salvar antes de completar
@@ -278,59 +313,87 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
         }
       }
 
+      if (currentView !== viewVersion.current) return
       const completed = await cerSessionService.completeSession(sessId)
+      if (currentView !== viewVersion.current) return
       await selectSession(completed)
+      if (currentView !== viewVersion.current) return
       await loadAll()
+      if (currentView !== viewVersion.current) return
       setFeedback({
         message: 'Encontro concluído e registro preservado com segurança.',
         type: 'success',
       })
     } catch (err: unknown) {
+      if (currentView !== viewVersion.current) return
       setFeedback({
         message: err instanceof Error ? err.message : 'Falha ao concluir encontro.',
         type: 'error',
       })
     } finally {
-      setActionLoading(false)
+      if (currentView === viewVersion.current) setActionLoading(false)
     }
   }
 
   const handleCancelSession = async (sessId: string) => {
+    const currentView = viewVersion.current
     try {
       setActionLoading(true)
       const cancelled = await cerSessionService.cancelSession(sessId)
+      if (currentView !== viewVersion.current) return
       await selectSession(cancelled)
+      if (currentView !== viewVersion.current) return
       await loadAll()
+      if (currentView !== viewVersion.current) return
       setFeedback({ message: 'Encontro cancelado.', type: 'success' })
     } catch (err: unknown) {
+      if (currentView !== viewVersion.current) return
       setFeedback({
         message: err instanceof Error ? err.message : 'Falha ao cancelar encontro.',
         type: 'error',
       })
     } finally {
-      setActionLoading(false)
+      if (currentView === viewVersion.current) setActionLoading(false)
     }
   }
 
   const handleSaveNote = async () => {
-    if (!activeSession || sessionLoading || sessionLoadFailed) return
+    if (
+      !activeSession ||
+      activeSession.enrollment_id !== enrollmentId ||
+      sessionLoading ||
+      sessionLoadFailed ||
+      savingNote
+    )
+      return
+    const current = selection.current
+    const sessionId = activeSession.id
+    const savedDraft = noteDraft
     try {
       setSavingNote(true)
       if (activeNote) {
         const updated = await cerSessionNoteService.update(activeNote.id, noteDraft)
+        if (current !== selection.current) return
+        if (updated.enrollment_id !== enrollmentId || updated.session_id !== sessionId)
+          throw new Error('A anotação salva não corresponde a este encontro.')
         setActiveNote(updated)
       } else {
         const created = await cerSessionNoteService.create(activeSession.id, noteDraft)
+        if (current !== selection.current) return
+        if (created.enrollment_id !== enrollmentId || created.session_id !== sessionId)
+          throw new Error('A anotação salva não corresponde a este encontro.')
         setActiveNote(created)
       }
+      if (noteDrafts.current.get(sessionId) === savedDraft) noteDrafts.current.delete(sessionId)
       setFeedback({ message: 'Nota profissional salva com sucesso.', type: 'success' })
     } catch (err: unknown) {
+      if (current !== selection.current) return
       setFeedback({
         message: err instanceof Error ? err.message : 'Falha ao salvar nota.',
         type: 'error',
       })
     } finally {
-      setSavingNote(false)
+      if (current === selection.current) setSavingNote(false)
     }
   }
 
@@ -363,7 +426,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
               </CardTitle>
             </div>
             <CardDescription className="text-xs">
-              Contexto longitudinal dos encontros individuais e anotações profissionais privadas
+              Prepare o encontro, registre suas notas privadas e retome o que já foi conversado.
             </CardDescription>
           </div>
 
@@ -372,7 +435,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
               variant="outline"
               size="sm"
               onClick={() => openSchedule()}
-              disabled={actionLoading}
+              disabled={actionLoading || savingNote || savingObservation}
               className="text-xs h-8 gap-1.5"
             >
               <PlusCircle className="w-3.5 h-3.5" />
@@ -382,7 +445,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
         </div>
 
         {/* Abas humanizadas: Para nosso encontro / No Encontro / Histórico */}
-        <div className="flex items-center gap-1.5 pt-3">
+        <div className="flex flex-wrap items-center gap-1.5 pt-3">
           <Button
             variant={activeTab === 'preparacao' ? 'default' : 'ghost'}
             size="sm"
@@ -459,8 +522,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
             <div className="p-3 bg-muted/20 border border-border/40 rounded-lg text-xs space-y-1">
               <p className="font-medium text-foreground">Para o encontro com {participantName}</p>
               <p className="text-muted-foreground text-[11px]">
-                Visão determinística em tempo real reunindo o último encontro, percepções recentes e
-                movimentos de consciência da interagente. Sem síntese de inteligência artificial.
+                Confira o último encontro, os recados compartilhados e o que merece atenção agora.
               </p>
             </div>
 
@@ -517,9 +579,9 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                     </div>
                   ))}
                   <p className="text-[10px] text-muted-foreground italic">
-                    Nota de governança: Recados aprovados são compartilhados voluntariamente pela
-                    participante para este encontro. O Caderno privado da interagente permanece
-                    inacessível. Nenhuma nota clínica é criada automaticamente.
+                    Estes recados foram compartilhados pela participante para este encontro. O
+                    Caderno privado da interagente permanece inacessível. Nenhuma nota clínica é
+                    criada automaticamente.
                   </p>
                 </div>
               ) : (
@@ -691,7 +753,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                 <Button
                   size="sm"
                   onClick={() => openSchedule()}
-                  disabled={actionLoading}
+                  disabled={actionLoading || savingNote || savingObservation}
                   className="text-xs h-8"
                 >
                   Agendar Primeiro Encontro
@@ -782,7 +844,11 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                           size="sm"
                           onClick={() => handleStartSession(activeSession.id)}
                           disabled={
-                            actionLoading || savingNote || sessionLoading || sessionLoadFailed
+                            actionLoading ||
+                            savingNote ||
+                            savingObservation ||
+                            sessionLoading ||
+                            sessionLoadFailed
                           }
                           className="text-xs h-8 gap-1.5"
                         >
@@ -794,7 +860,11 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                           size="sm"
                           onClick={() => handleCancelSession(activeSession.id)}
                           disabled={
-                            actionLoading || savingNote || sessionLoading || sessionLoadFailed
+                            actionLoading ||
+                            savingNote ||
+                            savingObservation ||
+                            sessionLoading ||
+                            sessionLoadFailed
                           }
                           className="text-xs h-8 text-muted-foreground hover:text-destructive"
                         >
@@ -810,7 +880,11 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                         size="sm"
                         onClick={() => handleCompleteSession(activeSession.id)}
                         disabled={
-                          actionLoading || savingNote || sessionLoading || sessionLoadFailed
+                          actionLoading ||
+                          savingNote ||
+                          savingObservation ||
+                          sessionLoading ||
+                          sessionLoadFailed
                         }
                         className="text-xs h-8 gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white"
                       >
@@ -866,11 +940,28 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                             : 'Espaço livre para reflexões, impressões subjetivas e registros do encontro...'
                     }
                     value={noteDraft}
-                    onChange={(e) => setNoteDraft(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setNoteDraft(value)
+                      if (value === (activeNote?.text ?? ''))
+                        noteDrafts.current.delete(activeSession.id)
+                      else noteDrafts.current.set(activeSession.id, value)
+                    }}
                     disabled={isReadOnly}
                     rows={6}
                     className="text-xs font-normal leading-relaxed resize-y"
                   />
+
+                  {!isCompleted &&
+                    !isCancelled &&
+                    !sessionLoading &&
+                    !sessionLoadFailed &&
+                    noteDraft !== (activeNote?.text ?? '') && (
+                      <p role="status" className="text-xs text-amber-800 dark:text-amber-200">
+                        Alterações ainda não salvas. Você pode consultar outro encontro e voltar ao
+                        rascunho. Salve antes de sair desta área.
+                      </p>
+                    )}
 
                   {isCompleted && (
                     <p className="text-[11px] text-muted-foreground italic flex items-center gap-1">
@@ -889,7 +980,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                 {isScheduled && (
                   <Button
                     variant="outline"
-                    disabled={actionLoading}
+                    disabled={actionLoading || savingNote || savingObservation}
                     onClick={() => openSchedule(activeSession)}
                   >
                     Definir ou alterar horário
@@ -919,8 +1010,8 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                       </Badge>
                     </div>
                     <p className="text-[11px] text-muted-foreground">
-                      Registre observações fiéis do encontro para fundamentação epistemológica
-                      segura. Nenhuma observação é obrigatória.
+                      Guarde algo que a pessoa contou ou que você observou. Este registro é opcional
+                      e privado.
                     </p>
                   </div>
 
@@ -965,6 +1056,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                             ? 'Palavras ou relatos trazidos pela própria interagente...'
                             : 'Fato diretamente observado em sessão, sem inferência explicativa...'
                         }
+                        disabled={savingObservation}
                         value={observationText}
                         onChange={(e) => setObservationText(e.target.value)}
                         rows={2}
@@ -1040,7 +1132,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                 <Button
                   size="sm"
                   onClick={() => openSchedule()}
-                  disabled={actionLoading}
+                  disabled={actionLoading || savingNote || savingObservation}
                   className="text-xs h-8"
                 >
                   <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
@@ -1102,7 +1194,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                       <Button
                         variant="ghost"
                         size="sm"
-                        disabled={actionLoading || savingNote}
+                        disabled={actionLoading || savingNote || savingObservation}
                         onClick={() => {
                           selectSession(sess)
                           setActiveTab('encontro')
