@@ -275,7 +275,7 @@ export function SelfDevelopmentJourney({
                 if (!open && !busy) setEditing(null)
               }}
             >
-              <DialogContent className="rounded-2xl max-h-[90vh]">
+              <DialogContent className="rounded-2xl max-h-[90vh] overflow-y-auto">
                 <DialogTitle className="font-serif">{editing.resource_snapshot.title}</DialogTitle>
                 <DialogDescription>Seu plano começa com três escolhas.</DialogDescription>
                 <form
@@ -356,6 +356,12 @@ export function SelfDevelopmentJourney({
                       <Input
                         type="datetime-local"
                         value={editing.scheduled_at ? localDate(editing.scheduled_at) : ''}
+                        onInput={(e) =>
+                          patch(
+                            'scheduled_at',
+                            e.currentTarget.value ? new Date(e.currentTarget.value).toISOString() : '',
+                          )
+                        }
                         onChange={(e) =>
                           patch(
                             'scheduled_at',
