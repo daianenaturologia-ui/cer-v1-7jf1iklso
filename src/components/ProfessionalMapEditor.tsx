@@ -498,8 +498,9 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <span>Rascunho Ativo (Versão {activeDraft.version_number})</span>
                     <Badge variant="outline" className="text-[10px] font-mono">
-                      {(activeDraft.items || []).length}{' '}
-                      {(activeDraft.items || []).length === 1 ? 'item' : 'itens'}
+                      {isCerMapReadingSnapshot(activeDraft.reading_snapshot)
+                        ? 'Leitura digital salva'
+                        : 'Leitura digital a preparar'}
                     </Badge>
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
@@ -560,7 +561,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                 {/* CANDIDATOS DETERMINÍSTICOS (Item 25) */}
                 <div className="space-y-2 pt-2 border-t border-border/40">
                   <span className="text-xs font-semibold text-foreground block">
-                    Possíveis Elementos para o Mapa (Candidatos Determinísticos sem IA)
+                    Registros disponíveis para apoiar sua leitura
                   </span>
                   <p className="text-[11px] text-muted-foreground">
                     Conhecimentos consolidados e relatos da participante aptos para sustentação.
@@ -568,7 +569,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
 
                   {candidates.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic py-2">
-                      Nenhum elemento de conhecimento elegível encontrado para este enrollment.
+                      Ainda não há registros disponíveis para acrescentar a este mapa.
                     </p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto p-1">
@@ -614,7 +615,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
                 <div className="space-y-3 pt-3 border-t border-border/50">
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="w-full sm:w-1/3 space-y-1">
-                      <Label className="text-xs font-medium">Seção de Destino (11 Seções)</Label>
+                      <Label className="text-xs font-medium">Onde incluir esta nota</Label>
                       <select
                         value={targetSection}
                         onChange={(e) => setTargetSection(e.target.value as CerMapSection)}
@@ -633,7 +634,7 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
 
                     <div className="w-full sm:w-2/3 space-y-1">
                       <Label className="text-xs font-medium">
-                        Formulação Participante-Facing (Síntese Humana)
+                        Texto que a interagente poderá ler
                       </Label>
                       <Textarea
                         placeholder="Redija como a pessoa se reconhece ou vivencia este traço..."
@@ -674,12 +675,16 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
             {/* LISTA DE ITENS ATUAIS NO RASCUNHO */}
             <div className="space-y-3">
               <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                Estrutura Atual do Rascunho v{activeDraft.version_number}
+                Notas adicionais do rascunho v{activeDraft.version_number}
               </h4>
 
               {!activeDraft.items || activeDraft.items.length === 0 ? (
                 <div className="p-6 text-center border border-dashed rounded-lg text-xs text-muted-foreground space-y-1">
-                  <p>Rascunho vazio. Adicione itens acima para compor o Mapa CER.</p>
+                  <p>
+                    {isCerMapReadingSnapshot(activeDraft.reading_snapshot)
+                      ? 'A leitura digital está salva acima. Não é necessário acrescentar notas para compor o mapa.'
+                      : 'Prepare a leitura digital acima. Se precisar, acrescente notas em “Notas adicionais do mapa”.'}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -783,8 +788,8 @@ export const ProfessionalMapEditor: React.FC<ProfessionalMapEditorProps> = ({
               O Mapa CER ainda não foi iniciado para esta interagente.
             </h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              O Mapa CER é uma síntese participante-facing, viva e versionada da compreensão atual.
-              Inicie um rascunho V1 para começar a selecionar elementos.
+              Prepare uma leitura para conversar com {participantName}, a partir das respostas
+              compartilhadas. Salve como rascunho, confira a prévia e compartilhe após a revisão.
             </p>
             <Button size="sm" onClick={handleCreateDraft} className="text-xs gap-1.5">
               <Plus className="w-3.5 h-3.5" />

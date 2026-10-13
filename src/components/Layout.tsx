@@ -53,6 +53,9 @@ export default function Layout() {
                 <span className="hidden sm:inline">Modo demonstração — dados fictícios</span>
                 <span className="sm:hidden">Demonstração</span>
               </span>
+              <span className="text-[10px] text-amber-900 dark:text-amber-200">
+                Registros salvos neste navegador
+              </span>
               <Badge
                 variant="outline"
                 className="max-w-full whitespace-normal text-[10px] bg-background/80 border-amber-500/40 text-foreground font-mono px-1.5 py-0"
