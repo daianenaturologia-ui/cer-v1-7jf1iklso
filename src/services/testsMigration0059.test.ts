@@ -16,6 +16,7 @@
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
+import vm from 'node:vm'
 
 describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration Corretiva 0059', () => {
   const migration59Path = path.resolve(
@@ -101,11 +102,10 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration Corretiva 00
   })
 
   it('6. Down-migration restaura exclusivamente as rules anteriores da 0049 original e falha se collection não encontrada', () => {
-    const downFunctionMatch = migration59Content.match(
-      /,\s*\(app\)\s*=>\s*\{([\s\S]*)\}\s*,?\s*\)$/,
-    )
-    expect(downFunctionMatch).not.toBeNull()
-    const downContent = downFunctionMatch![1]
+    let down: ((...args: any[]) => any) | undefined
+    vm.runInNewContext(migration59Content, { migrate: (_up: (...args: any[]) => any, rollback: (...args: any[]) => any) => { down = rollback } })
+    expect(down).toBeTypeOf('function')
+    const downContent = down!.toString()
 
     // Localiza a collection
     expect(downContent).toContain(
