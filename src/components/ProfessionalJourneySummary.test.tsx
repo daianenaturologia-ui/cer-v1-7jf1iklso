@@ -56,6 +56,34 @@ it('failed reads show a recoverable error rather than an empty or stable care cl
   expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeInTheDocument()
 })
 
+it('o resumo traz o próximo ajuste compartilhado e mantém ajustes privados fora da tela', async () => {
+  fixtures.read.mockResolvedValue([])
+  fixtures.directions.mockResolvedValue([])
+  fixtures.steps.mockResolvedValue([
+    {
+      id: 'private',
+      action: 'PRIVATE_ACTION',
+      next_step: 'PRIVATE_ADJUSTMENT',
+      status: 'reviewed',
+      access_class: 'participant_private',
+    },
+    {
+      id: 'shared',
+      action: 'Caminhar cinco minutos',
+      reflection: 'Foi possível começar pequeno',
+      next_step: 'Preparar o encerramento do expediente',
+      status: 'reviewed',
+      access_class: 'participant_shared',
+    },
+  ])
+  render(<ProfessionalJourneySummary enrollmentId="enrollment" name="Lia" onOpen={vi.fn()} />)
+  expect(
+    await screen.findByText(/Próximo ajuste: Preparar o encerramento do expediente/),
+  ).toBeVisible()
+  expect(screen.getByText('Aprendizado registrado')).toBeVisible()
+  expect(screen.queryByText('PRIVATE_ADJUSTMENT')).not.toBeInTheDocument()
+})
+
 it('surfaces shared goals while excluding private planning in the overview', async () => {
   fixtures.read.mockResolvedValue([])
   fixtures.steps.mockResolvedValue([])
