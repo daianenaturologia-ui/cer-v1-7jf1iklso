@@ -35,7 +35,10 @@ it('o horário digitado ao planejar permanece na agenda após reabrir', async ()
   await user.click(screen.getAllByRole('button', { name: 'Quero experimentar' })[0])
   await user.type(screen.getByLabelText('Que vida quero cultivar?'), 'Ter espaço para descansar')
   await user.type(screen.getByLabelText('Meu pequeno passo'), 'Encerrar o expediente')
-  await user.type(screen.getByLabelText('Quando isso cabe na minha vida?'), 'Segunda ao fim do trabalho')
+  await user.type(
+    screen.getByLabelText('Quando isso cabe na minha vida?'),
+    'Segunda ao fim do trabalho',
+  )
   await user.click(screen.getByText('Personalizar · horário, alternativa e sinais'))
   const moment = mondayOf(new Date())
   moment.setHours(17, 15)
