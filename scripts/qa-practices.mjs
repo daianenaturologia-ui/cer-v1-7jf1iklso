@@ -78,6 +78,7 @@ async function main() {
       'src/services/testsMigration0049.test.ts',
       'src/services/testsMigration0059.test.ts',
       'src/services/testsCadernoV1.test.ts',
+      'src/services/aiContextPrivacy.test.ts',
       'src/services/testsDemoCorrection.test.ts',
     ],
     1,
@@ -143,7 +144,7 @@ async function main() {
     )
 
     // Executamos a suíte de verificação que comprova que as integrações retornam BLOCKED
-    spawnSync(
+    const blockedVerification = spawnSync(
       'npx',
       [
         'vitest',
@@ -156,6 +157,14 @@ async function main() {
         env: process.env,
       },
     )
+
+    if (blockedVerification.status !== 0) {
+      steps.push({ stepNumber: 4, name: 'Verificação do bloqueio de integrações',
+        status: 'FAIL', durationMs: Date.now() - start4,
+        message: 'A suíte que comprova ausência de escritas falhou.' })
+      await finishPipeline()
+      return
+    }
 
     steps.push({
       stepNumber: 4,
@@ -209,6 +218,7 @@ async function main() {
       'src/services/testsMigration0049.test.ts',
       'src/services/testsMigration0059.test.ts',
       'src/services/testsCadernoV1.test.ts',
+      'src/services/aiContextPrivacy.test.ts',
       'src/services/testsCadernoPrivacyIntegration.test.ts',
       'src/services/testsDemoCorrection.test.ts',
     ],
@@ -234,7 +244,7 @@ async function main() {
   // ---------------------------------------------------------
   const step7 = runCommand(
     'npx',
-    ['tsc', '--noEmit'],
+    ['tsc', '-p', 'tsconfig.app.json', '--noEmit'],
     7,
     'Verificação de Tipos TypeScript (tsc --noEmit)',
   )

@@ -291,7 +291,7 @@ try:
             proc.terminate();proc.wait(timeout=5)
     errors=re.findall(r'^.*(?:ReferenceError|SyntaxError|TypeError).*$',(root/'server.log').read_text()+(root/'restore.log').read_text(),re.MULTILINE)
     assert not errors, 'Runtime hook errors: '+str(errors)
-    print(json.dumps({'engine':'PocketBase 0.26.1 reference only','scope':'Complete repository migrations/hooks, generated fictional fixtures; NOT live Skip homologation','scenarios':results,'allPassed':all(v['status']=='PASS' for v in results)},indent=2))
+    print(json.dumps({'engine':'PocketBase '+expected_version+' reference only','scope':'Complete repository migrations/hooks, generated fictional fixtures; NOT live Skip homologation','scenarios':results,'allPassed':all(v['status']=='PASS' for v in results)},indent=2))
     assert all(v['status']=='PASS' for v in results), 'One or more authenticated lifecycle checks failed'
 finally:
     if proc is not None and proc.poll() is None:proc.terminate();proc.wait(timeout=5)

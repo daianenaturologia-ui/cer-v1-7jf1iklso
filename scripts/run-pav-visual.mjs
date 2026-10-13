@@ -299,6 +299,11 @@ async function seedDisposableDatabase() {
 }
 
 async function main() {
+  const appOrigin = new URL(APP_URL)
+  if (!['localhost', '127.0.0.1'].includes(appOrigin.hostname) || !['http:', 'https:'].includes(appOrigin.protocol)) {
+    throw new Error('O teste visual exige app local isolado; nenhum navegador foi aberto.')
+  }
+
   console.log('\n======================================================================')
   console.log('  EXECUTOR VISUAL DO PRIMEIRO ATENDIMENTO — PLAYWRIGHT CHROMIUM')
   console.log('======================================================================\n')
@@ -363,7 +368,9 @@ async function main() {
     // Capturar tela do estado atual onde parou
     try {
       const stopPngPath = path.join(ARTIFACTS_DIR, `parou-etapa-${currentStepIndex + 1}.png`)
-      await page.screenshot({ path: stopPngPath, fullPage: true })
+      if (!new URL(page.url()).pathname.includes('/login')) {
+        await page.screenshot({ path: stopPngPath, fullPage: true })
+      }
       console.log(`[ARTEFATO] Captura do momento de parada salva em: ${stopPngPath}`)
     } catch (scErr) {
       console.error('Falha ao salvar captura de parada:', scErr)
@@ -394,7 +401,7 @@ async function main() {
     // Aguardar transição pós-login
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
     if (expectedUrlFragment) {
-      await page.waitForURL((url) => url.pathname.includes(expectedUrlFragment), { timeout: 10000 })
+      await page.waitForURL((url) => expectedUrlFragment === '/' ? url.pathname === '/' : url.pathname.startsWith(expectedUrlFragment), { timeout: 10000 })
     }
     await page.waitForLoadState('networkidle')
   }
@@ -421,7 +428,7 @@ async function main() {
     currentStepIndex = 0
     console.log(`\n[ETAPA 1] ${STEP_DEFINITIONS[0].title}...`)
 
-    await loginAs(seed.alice.email, seed.alice.password, '/app')
+    await loginAs(seed.alice.email, seed.alice.password, '/')
 
     // Garantir que está na home da interagente
     await page.waitForSelector('text=Seu Espaço Inicial de Acolhimento', { timeout: 15000 })
@@ -462,7 +469,7 @@ async function main() {
     await btnSend.click()
 
     // Aguardar mensagem de confirmação do envio
-    await page.waitForSelector('text=Relato Entregue para Daiane', { timeout: 10000 })
+    await page.waitForSelector('text=Enviado para', { timeout: 10000 })
 
     const img2Path = path.join(ARTIFACTS_DIR, STEP_DEFINITIONS[1].filename)
     await page.screenshot({ path: img2Path, fullPage: true })
@@ -480,7 +487,7 @@ async function main() {
     await loginAs(seed.prof.email, seed.prof.password, '/profissional')
 
     // Na lista de participantes, navegar diretamente para o prontuário de Alice
-    await page.goto(`${APP_URL}/profissional/${seed.alice.enrollmentId}`, {
+    await page.goto(`${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=sessoes`, {
       waitUntil: 'networkidle',
     })
 
@@ -504,14 +511,14 @@ async function main() {
     const btnNovoEncontro = page.locator('button:has-text("Novo Encontro")').first()
     await btnNovoEncontro.click()
 
-    // Aguardar feedback de agendamento ou aba de encontro atual
-    await page.waitForTimeout(1000)
+    await page.getByRole('button', { name: 'Criar encontro sem horário', exact: true }).click()
+    await page.getByRole('button', { name: 'Encontro Atual', exact: true }).click()
 
     // Clicar em "Iniciar Encontro" se estiver agendado
     const btnIniciar = page.locator('button:has-text("Iniciar Encontro")').first()
     if (await btnIniciar.isVisible()) {
       await btnIniciar.click()
-      await page.waitForTimeout(1000)
+      await page.getByLabel('Nota profissional privada').waitFor({ state: 'visible' })
     }
 
     // Preencher anotação privada da profissional
@@ -540,9 +547,7 @@ async function main() {
     console.log(`\n[ETAPA 5] ${STEP_DEFINITIONS[4].title}...`)
 
     // Navegar para Área 3 "Plano de Cuidado"
-    const btnTabPlano = page.locator('button:has-text("3. Plano de Cuidado")').first()
-    await btnTabPlano.click()
-    await page.waitForTimeout(1000)
+    await page.goto(`${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=evolucao&tool=plano`, { waitUntil: 'networkidle' })
 
     // Clicar em "Criar Primeiro Plano de Cuidado" ou "Novo Plano"
     const btnNovoPlano = page
@@ -556,7 +561,7 @@ async function main() {
       .first()
       .fill('Ritmo de descanso consciente e pausas restaurativas')
     await page
-      .locator('input[placeholder*="Intenção Terapêutica"]')
+      .locator('textarea[placeholder*="O que pode ajudar"]')
       .first()
       .fill('Estabelecer ritmo suave de pausas durante a rotina diária')
     await page.locator('button:has-text("Salvar Rascunho")').first().click()
@@ -569,11 +574,11 @@ async function main() {
     const btnAddPrio = page.locator('button:has-text("Adicionar Prioridade")').first()
     await btnAddPrio.click()
     await page
-      .locator('input[placeholder*="Título do Foco"]')
+      .locator('input[placeholder*="Práticas de regulação do ritmo respiratório"]')
       .first()
       .fill('Pausa de 5 minutos para respiração consciente')
     await page
-      .locator('textarea[placeholder*="Detalhes ou contextualização"]')
+      .locator('textarea[placeholder*="O que deseja desenvolver?"]')
       .first()
       .fill('Experimentar uma pausa breve no meio da tarde para descanso somático.')
     await page.locator('button:has-text("Adicionar Prioridade")').last().click()
@@ -595,7 +600,7 @@ async function main() {
 
     // No modal de preview obrigatório, selecionar canal pelo aplicativo se disponível e confirmar
     await page.waitForSelector('text=Preview Obrigatório de Apresentação', { timeout: 8000 })
-    const btnCanalApp = page.locator('button:has-text("Pelo Aplicativo")').first()
+    const btnCanalApp = page.locator('button:has-text("Pelo Aplicativo (Disponibilizar no App)")').first()
     if (await btnCanalApp.isVisible()) {
       await btnCanalApp.click()
     }
@@ -622,10 +627,11 @@ async function main() {
     console.log(`\n[ETAPA 6] ${STEP_DEFINITIONS[5].title}...`)
 
     await logout()
-    await loginAs(seed.alice.email, seed.alice.password, '/app')
+    await loginAs(seed.alice.email, seed.alice.password, '/')
 
-    // Localizar a seção "Próximo Passo do Nosso Cuidado"
-    await page.waitForSelector('text=Próximo Passo do Nosso Cuidado', { timeout: 15000 })
+    await page.getByRole('button', { name: '4. Evolução', exact: true }).click()
+    await page.getByRole('tab', { name: 'Acompanhamento', exact: true }).click()
+    await page.getByText('Nosso plano de ação', { exact: true }).waitFor()
 
     // Selecionar uma das 4 opções acolhedoras (ex: "quero tentar")
     const btnQueroTentar = page.locator('button:has-text("quero tentar")').first()
@@ -657,7 +663,7 @@ async function main() {
     await loginAs(seed.prof.email, seed.prof.password, '/profissional')
 
     // Ir para prontuário de A
-    await page.goto(`${APP_URL}/profissional/${seed.alice.enrollmentId}`, {
+    await page.goto(`${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=sessoes`, {
       waitUntil: 'networkidle',
     })
 
@@ -679,7 +685,7 @@ async function main() {
     console.log(`\n[ETAPA 8] ${STEP_DEFINITIONS[7].title}...`)
 
     await logout()
-    await loginAs(seed.beatriz.email, seed.beatriz.password, '/app')
+    await loginAs(seed.beatriz.email, seed.beatriz.password, '/')
 
     // Confirmar que Beatriz está em seu espaço
     await page.waitForSelector(`text=Olá, ${seed.beatriz.name}`, { timeout: 15000 })
