@@ -1,6 +1,6 @@
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, fireEvent } from '@testing-library/react'
+import { cleanup, render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ProfessionalSessionManager } from './ProfessionalSessionManager'
 import {
@@ -89,4 +89,133 @@ describe('Registro e fechamento do encontro', () => {
       new Date('2026-10-06T15:00').toISOString(),
     )
   })
+})
+
+describe('Continuidade da nota profissional', () => {
+  it('mantém o rascunho ao consultar outro encontro e voltar', async () => {
+    const second = { ...session, id: 'second', status: 'scheduled', created: '2026-10-06' }
+    vi.mocked(cerSessionService.listByEnrollment).mockResolvedValue([session, second])
+    vi.mocked(cerSessionNoteService.getBySessionId).mockImplementation(async (id) =>
+      id === 's' ? note : null,
+    )
+    render(<ProfessionalSessionManager enrollmentId="mine" participantName="Pessoa" />)
+    await userEvent.click(await screen.findByRole('button', { name: /^Encontro Atual/ }))
+    await userEvent.clear(screen.getByRole('textbox', { name: 'Nota profissional privada' }))
+    await userEvent.type(
+      screen.getByRole('textbox', { name: 'Nota profissional privada' }),
+      'Rascunho ainda não salvo',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Histórico (2)' }))
+    await userEvent.click(screen.getAllByRole('button', { name: 'Visualizar' })[1])
+    expect(await screen.findByRole('textbox', { name: 'Nota profissional privada' })).toHaveValue(
+      '',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Histórico (2)' }))
+    await userEvent.click(screen.getAllByRole('button', { name: 'Visualizar' })[0])
+    await waitFor(() =>
+      expect(screen.getByRole('textbox', { name: 'Nota profissional privada' })).toHaveValue(
+        'Rascunho ainda não salvo',
+      ),
+    )
+    expect(cerSessionNoteService.update).not.toHaveBeenCalled()
+  })
+
+  it('não substitui a nota de outra matrícula por um salvamento atrasado', async () => {
+    let resolveSave!: (value: any) => void
+    vi.mocked(cerSessionNoteService.update).mockReturnValue(
+      new Promise((resolve) => {
+        resolveSave = resolve
+      }),
+    )
+    const view = render(<ProfessionalSessionManager enrollmentId="mine" participantName="Pessoa" />)
+    await userEvent.click(await screen.findByRole('button', { name: /^Encontro Atual/ }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nota profissional privada' }), {
+      target: { value: 'Nota anterior em envio' },
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar Anotação' }))
+    expect(screen.getByRole('button', { name: 'Novo Encontro' })).toBeDisabled()
+    const other = { ...session, id: 'other-session', enrollment_id: 'other' }
+    const otherNote = {
+      ...note,
+      id: 'other-note',
+      session_id: other.id,
+      enrollment_id: 'other',
+      text: 'Nota da nova matrícula',
+    }
+    vi.mocked(cerSessionService.listByEnrollment).mockResolvedValue([other])
+    vi.mocked(cerSessionNoteService.getBySessionId).mockResolvedValue(otherNote)
+    view.rerender(<ProfessionalSessionManager enrollmentId="other" participantName="Outra" />)
+    await waitFor(() =>
+      expect(screen.getByRole('textbox', { name: 'Nota profissional privada' })).toHaveValue(
+        'Nota da nova matrícula',
+      ),
+    )
+    await act(async () => {
+      resolveSave({ ...note, text: 'Nota anterior em envio' })
+    })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nota profissional privada' }), {
+      target: { value: 'Nova edição' },
+    })
+    vi.mocked(cerSessionNoteService.update).mockResolvedValue({ ...otherNote, text: 'Nova edição' })
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar Anotação' }))
+    expect(cerSessionNoteService.update).toHaveBeenLastCalledWith('other-note', 'Nova edição')
+  })
+})
+
+it('mantém a nota e não conclui quando o salvamento falha', async () => {
+  vi.mocked(cerSessionNoteService.update).mockRejectedValue(new Error('Falha de conexão ao salvar'))
+  render(<ProfessionalSessionManager enrollmentId="mine" participantName="Pessoa" />)
+  await userEvent.click(await screen.findByRole('button', { name: /^Encontro Atual/ }))
+  fireEvent.change(screen.getByRole('textbox', { name: 'Nota profissional privada' }), {
+    target: { value: 'Rascunho para recuperar' },
+  })
+  await userEvent.click(screen.getByRole('button', { name: 'Concluir Encontro' }))
+  await screen.findByText('Falha de conexão ao salvar')
+  expect(cerSessionService.completeSession).not.toHaveBeenCalled()
+  expect(screen.getByRole('textbox', { name: 'Nota profissional privada' })).toHaveValue(
+    'Rascunho para recuperar',
+  )
+  vi.mocked(cerSessionNoteService.update).mockResolvedValue({
+    ...note,
+    text: 'Rascunho para recuperar',
+  })
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar Anotação' }))
+  await screen.findByText('Nota profissional salva com sucesso.')
+  expect(screen.queryByText(/Alterações ainda não salvas/)).toBeNull()
+})
+
+it('interrompe o fechamento pendente quando a matrícula muda', async () => {
+  let resolveSave!: (value: any) => void
+  vi.mocked(cerSessionNoteService.update).mockReturnValue(
+    new Promise((resolve) => {
+      resolveSave = resolve
+    }),
+  )
+  const view = render(<ProfessionalSessionManager enrollmentId="mine" participantName="Pessoa" />)
+  await userEvent.click(await screen.findByRole('button', { name: /^Encontro Atual/ }))
+  fireEvent.change(screen.getByRole('textbox', { name: 'Nota profissional privada' }), {
+    target: { value: 'Nota antiga' },
+  })
+  await userEvent.click(screen.getByRole('button', { name: 'Concluir Encontro' }))
+  const other = { ...session, id: 'other-session', enrollment_id: 'other' }
+  vi.mocked(cerSessionService.listByEnrollment).mockResolvedValue([other])
+  vi.mocked(cerSessionNoteService.getBySessionId).mockResolvedValue({
+    ...note,
+    session_id: other.id,
+    enrollment_id: 'other',
+    text: 'Nota atual',
+  })
+  view.rerender(<ProfessionalSessionManager enrollmentId="other" participantName="Outra" />)
+  await waitFor(() =>
+    expect(screen.getByRole('textbox', { name: 'Nota profissional privada' })).toHaveValue(
+      'Nota atual',
+    ),
+  )
+  await act(async () => {
+    resolveSave({ ...note, text: 'Nota antiga' })
+  })
+  expect(cerSessionService.completeSession).not.toHaveBeenCalled()
+  expect(screen.getByRole('textbox', { name: 'Nota profissional privada' })).toHaveValue(
+    'Nota atual',
+  )
 })
