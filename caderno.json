@@ -1,11 +1,11 @@
 {
   "job": "caderno-privacy-proof",
   "job_name": "Caderno Privacy Proof (CAD-01..07)",
-  "sha": "ef2e78e6898c365cddb3b8c1b797be9959fbe302",
+  "sha": "1e7a08d1b557bde714202ddf37b5bb748d564bff",
   "conclusion": "success",
-  "timestamp_utc": "2026-10-13T22:50:17.578Z",
-  "run_id": "38480394681",
-  "run_number": "492",
+  "timestamp_utc": "2026-10-13T22:52:34.079Z",
+  "run_id": "38480633695",
+  "run_number": "493",
   "summary": {
     "total": 7,
     "pass": 7,
