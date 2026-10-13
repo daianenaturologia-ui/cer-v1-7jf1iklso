@@ -1,14 +1,14 @@
 {
   "job": "primeiro-atendimento-verification",
   "job_name": "Primeiro Atendimento Verification (PAV-01..06)",
-  "sha": "ed15196173c841eb34aa6dd512a7e597f1b3cdbd",
+  "sha": "d651774d96bb6603c99183c4944fc20b09208dcb",
   "conclusion": "failure",
-  "timestamp_utc": "2026-10-13T11:00:34.838Z",
-  "run_id": "38387217246",
-  "run_number": "468",
+  "timestamp_utc": "2026-10-13T11:05:37.552Z",
+  "run_id": "38387801029",
+  "run_number": "469",
   "summary": {
-    "total": 1,
-    "pass": 0,
+    "total": 3,
+    "pass": 2,
     "fail": 1,
     "blocked": 0,
     "all_pass": false
@@ -16,15 +16,15 @@
   "scenarios": [
     {
       "id": "PAV-01",
-      "status": "NÃO EXECUTADO",
-      "description": "Cenário não reportado na suíte",
-      "details": "Ausente do resultado"
+      "status": "PASS",
+      "description": "Interagente A salva relato como rascunho (draft) — invisível à profissional vinculada",
+      "details": "RLS garantiu 0 itens na listagem e getOne negado (404/403) para a profissional"
     },
     {
       "id": "PAV-02",
-      "status": "NÃO EXECUTADO",
-      "description": "Cenário não reportado na suíte",
-      "details": "Ausente do resultado"
+      "status": "PASS",
+      "description": "Interagente A envia relato (approved/shared_care) — profissional vinculada lê com autoria correta",
+      "details": "Relato acessível no prontuário com participant_user_id=ivi7r336l8diylh e exibição validada (\"Enviado por Alice\")"
     },
     {
       "id": "PAV-03",
