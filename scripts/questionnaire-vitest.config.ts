@@ -6,6 +6,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/components/experience/CerMapReadingsView.test.tsx',
+      'src/services/testsConscienciaQaFixture.test.tsx',
       'src/services/pilotSimulation.test.ts',
       'src/components/ProfessionalJourneySummary.test.tsx',
       'src/components/experience/ProfessionalExperienceManager.test.tsx',
