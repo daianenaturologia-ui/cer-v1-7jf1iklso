@@ -1,0 +1,77 @@
+{
+  "job": "visual-demo-primeiro-atendimento",
+  "job_name": "Visual Demo — Primeiro Atendimento",
+  "sha": "ed15196173c841eb34aa6dd512a7e597f1b3cdbd",
+  "conclusion": "failure",
+  "timestamp_utc": "2026-10-13T11:01:07.104Z",
+  "run_id": "38387217246",
+  "run_number": "468",
+  "all_success": false,
+  "failure_reason": "Falha na semeadura da bancada efêmera: Conta ativa obrigatória.",
+  "steps": [
+    {
+      "num": 1,
+      "id": "01-relato-rascunho",
+      "title": "Interagente A: Relato Inicial em Rascunho",
+      "filename": "01-relato-rascunho.png",
+      "status": "NÃO EXECUTADO",
+      "note": ""
+    },
+    {
+      "num": 2,
+      "id": "02-relato-enviado",
+      "title": "Interagente A: Relato Enviado para Daiane",
+      "filename": "02-relato-enviado.png",
+      "status": "NÃO EXECUTADO",
+      "note": ""
+    },
+    {
+      "num": 3,
+      "id": "03-prontuario-relato",
+      "title": "Profissional: Prontuário com Relato Recebido",
+      "filename": "03-prontuario-relato.png",
+      "status": "NÃO EXECUTADO",
+      "note": ""
+    },
+    {
+      "num": 4,
+      "id": "04-nota-privada",
+      "title": "Profissional: Sessão Manual e Nota Privada",
+      "filename": "04-nota-privada.png",
+      "status": "NÃO EXECUTADO",
+      "note": ""
+    },
+    {
+      "num": 5,
+      "id": "05-plano-compartilhado",
+      "title": "Profissional: Plano de Cuidado Compartilhado",
+      "filename": "05-plano-compartilhado.png",
+      "status": "NÃO EXECUTADO",
+      "note": ""
+    },
+    {
+      "num": 6,
+      "id": "06-retorno-proximo-passo",
+      "title": "Interagente A: Retorno ao Próximo Passo",
+      "filename": "06-retorno-proximo-passo.png",
+      "status": "NÃO EXECUTADO",
+      "note": ""
+    },
+    {
+      "num": 7,
+      "id": "07-retorno-no-prontuario",
+      "title": "Profissional: Retorno da Interagente no Prontuário",
+      "filename": "07-retorno-no-prontuario.png",
+      "status": "NÃO EXECUTADO",
+      "note": ""
+    },
+    {
+      "num": 8,
+      "id": "08-interagente-b-sem-acesso",
+      "title": "Interagente B: Isolamento Estrito",
+      "filename": "08-interagente-b-sem-acesso.png",
+      "status": "NÃO EXECUTADO",
+      "note": ""
+    }
+  ]
+}
