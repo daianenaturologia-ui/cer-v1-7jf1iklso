@@ -193,13 +193,16 @@ export function ProfessionalJourneySummary({
             <div key={s.id} className="rounded-xl border p-3 text-sm">
               <p>{s.action}</p>
               <p className="text-muted-foreground">
-                {['completed', 'reviewed'].includes(s.status)
-                  ? 'Experimentado'
-                  : s.status === 'paused'
-                    ? 'Pausado'
-                    : 'Em percurso'}
+                {s.status === 'reviewed'
+                  ? 'Aprendizado registrado'
+                  : s.status === 'completed'
+                    ? 'Experimentado'
+                    : s.status === 'paused'
+                      ? 'Pausado'
+                      : 'Em percurso'}
               </p>
               {s.reflection && <p className="mt-1">{s.reflection}</p>}
+              {s.next_step && <p className="mt-1">Próximo ajuste: {s.next_step}</p>}
             </div>
           ))}
         </div>
