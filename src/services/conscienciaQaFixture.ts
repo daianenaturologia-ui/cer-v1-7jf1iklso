@@ -25,6 +25,11 @@
 import type { ExperienceResponseRecord, ExperienceResponseVersionRecord } from '@/types/cer'
 import { AYV_C1_PROMPTS } from '@/services/ayurvedaChapter1'
 import { AYV_C2_PROMPTS } from '@/services/ayurvedaChapter2'
+import {
+  AYV_C4_COMPLETION,
+  AYURVEDA_CHAPTER_4_ID,
+  AYURVEDA_CHAPTER_4_VERSION,
+} from '@/services/ayurvedaChapter4'
 
 export const QA_FIXTURE_ENROLLMENT_ID = 'demo-enr-01'
 export const QA_FIXTURE_USER_ID = 'demo-user-mariana'
@@ -497,6 +502,25 @@ export function buildConscienciaQaFixture(
           revision_number: 1,
           chapter_id: 'capitulo-2-ritmo-corpo',
         },
+      },
+    }),
+  )
+
+  // Conclusão explícita da síntese final do cenário fictício.
+  responses.push(
+    createResp({
+      id: 'qa-c4-comp',
+      experienceId: 'exp-corpo-fisiologia-07b',
+      promptId: AYV_C4_COMPLETION.id,
+      promptKey: AYV_C4_COMPLETION.key,
+      responseType: 'ChapterCompletion',
+      created: '2025-05-19T10:00:00.000Z',
+      structuredValue: {
+        completed: true,
+        completed_at: '2025-05-19T10:00:00.000Z',
+        chapter_id: AYURVEDA_CHAPTER_4_ID,
+        experience_version: AYURVEDA_CHAPTER_4_VERSION,
+        metadata: { prompt_key: AYV_C4_COMPLETION.key, answered_at: '2025-05-19T10:00:00.000Z' },
       },
     }),
   )

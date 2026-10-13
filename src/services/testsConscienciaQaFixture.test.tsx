@@ -1,8 +1,15 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ProfessionalConscienciaSection } from '@/components/ProfessionalConscienciaSection'
 import { demoAdapter } from '@/services/demoAdapter'
-import { buildConscienciaQaFixture } from '@/services/conscienciaQaFixture'
+import {
+  buildConscienciaQaFixture,
+  buildIntegratedAyurvedaQaFixture,
+} from '@/services/conscienciaQaFixture'
+import { consciousnessCoverage } from '@/services/cerMapReadings'
+import { enrollmentExperienceService } from '@/services/experienceEngine'
+import { AYV_C4_COMPLETION } from '@/services/ayurvedaChapter4'
 import { buildAyurvedaInterpretation } from '@/services/ayurvedaInterpretationEngine'
 import {
   buildRegulacaoInterpretation,
@@ -27,6 +34,8 @@ const mockEnrollment: any = {
 
 describe('Consciência QA Fixture & Cenário de Demonstração', () => {
   beforeEach(() => {
+    demoAdapter.setActivePersona('mariana')
+    demoAdapter.resetToDefaultState()
     demoAdapter.enableDemo()
     demoAdapter.setActiveScenario('default')
   })
@@ -73,14 +82,33 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
     const senResps = allResponses.filter((r) => r.experience_id === 'exp-sentido-conexao-07f')
 
     expect(c1c2Resps.length).toBeGreaterThanOrEqual(15)
-    expect(menteResps.length).toBe(13)
+    expect(menteResps.filter((r) => !(r.structured_value as any)?.completed).length).toBe(14)
     expect(regResps.length).toBeGreaterThanOrEqual(7)
     expect(relResps.length).toBeGreaterThanOrEqual(8)
     expect(sexResps.length).toBeGreaterThanOrEqual(7)
     expect(senResps.length).toBeGreaterThanOrEqual(6)
   })
 
-  it('motor de Ayurveda CER gera Prakriti, Vikriti, Agni e Ama sinalizado com fixture ativa', () => {
+  it('participante e profissional recebem as seis conclusões válidas no cenário completo', async () => {
+    demoAdapter.setActiveScenario('qa_consciencia_completa')
+    const progress = await enrollmentExperienceService.listByEnrollment('demo-enr-01')
+    for (const persona of ['mariana', 'daiane'] as const) {
+      demoAdapter.setActivePersona(persona)
+      const records = demoAdapter.listExperienceResponses('demo-enr-01')
+      expect(consciousnessCoverage(records, progress).filter((d) => d.completed)).toHaveLength(6)
+      const withoutSynthesis = records.filter((r) => r.prompt_id !== AYV_C4_COMPLETION.id)
+      expect(
+        consciousnessCoverage(withoutSynthesis, progress).filter((d) => d.completed),
+      ).toHaveLength(5)
+    }
+    expect(
+      buildIntegratedAyurvedaQaFixture().responses.some(
+        (r) => r.prompt_id === AYV_C4_COMPLETION.id,
+      ),
+    ).toBe(true)
+  })
+
+  it('motor separa constituição, sinais digestivos mistos e Ama com evidências', () => {
     const fixture = buildConscienciaQaFixture('demo-enr-01')
     const c1c2Resps = fixture.responses.filter(
       (r) => r.experience_id === 'exp-corpo-fisiologia-07b',
@@ -96,7 +124,7 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
     expect(ayv.vikritiHypothesis.primaryImbalance).toBeUndefined()
 
     // Verificação de Agni
-    expect(ayv.agniReading.type).toBe('Vishama Agni')
+    expect(ayv.agniReading.type).toBe('Indefinido / Em observação')
 
     // Verificação de Ama sinalizado (presente em 3 frentes: digestão, evacuação, despertar)
     expect(ayv.amaReading.presence).toBe('Sinalizada')
@@ -110,7 +138,7 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
       .filter((r) => r.experience_id === 'exp-corpo-fisiologia-07b')
       .map((r) => {
         const key = (r as any).prompt_key || (r.structured_value as any)?.prompt_key
-        if (key === 'ayv_c2_m3_elimination_pattern') {
+        if (key === 'ayv_c2_stool_pattern') {
           return {
             ...r,
             structured_value: {
@@ -120,12 +148,13 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
             },
           }
         }
-        if (key === 'ayv_c2_m5_energy_morning') {
+        if (key === 'ayv_c2_waking') {
           return {
             ...r,
             structured_value: {
               ...(r.structured_value as any),
-              value: 'normal_energy',
+              value: 'fresh_clear_start',
+              selectedOptionIds: ['fresh_clear_start'],
             },
           }
         }
@@ -198,21 +227,7 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
     const testEnrollmentId = 'demo-enr-01'
     const experienceId = 'exp-corpo-fisiologia-07b'
 
-    it('1) Cenário QA ativo → salvar resposta de C3 via saveExperienceResponse → listExperienceResponses inclui novos prompts com fixture íntegro', () => {
-      demoAdapter.setActiveScenario('qa_consciencia_completa')
-      const initialResponses = demoAdapter.listExperienceResponses(testEnrollmentId, experienceId)
-      const initialCount = initialResponses.length
-      expect(initialCount).toBeGreaterThanOrEqual(15)
-
-      // Verificar que antes de salvar, nenhum prompt ayv_c3 existe
-      const initialC3 = initialResponses.filter(
-        (r) =>
-          r.prompt_id.startsWith('ayv_c3_') ||
-          (r as any).prompt_key?.startsWith('ayv_c3_') ||
-          (r.structured_value as any)?.metadata?.prompt_key?.startsWith('ayv_c3_'),
-      )
-      expect(initialC3.length).toBe(0)
-
+    const saveCurrentChapter3 = () => {
       // Salva respostas de C3 (caminho curto: sem mudanças atuais)
       const now = new Date().toISOString()
       demoAdapter.saveExperienceResponse({
@@ -297,13 +312,38 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
           },
         },
       })
+    }
+
+    it('1) Cenário QA ativo → salvar resposta de C3 via saveExperienceResponse → listExperienceResponses inclui novos prompts com fixture íntegro', () => {
+      demoAdapter.setActiveScenario('qa_consciencia_completa')
+      const initialResponses = demoAdapter.listExperienceResponses(testEnrollmentId, experienceId)
+      const initialCount = initialResponses.length
+      expect(initialCount).toBeGreaterThanOrEqual(15)
+
+      // O cenário integrado já possui C3; novas gravações devem prevalecer.
+      const initialC3 = initialResponses.filter(
+        (r) =>
+          r.prompt_id.startsWith('ayv_c3_') ||
+          (r as any).prompt_key?.startsWith('ayv_c3_') ||
+          (r.structured_value as any)?.metadata?.prompt_key?.startsWith('ayv_c3_'),
+      )
+      expect(initialC3.length).toBe(9)
+
+      saveCurrentChapter3()
 
       const updatedResponses = demoAdapter.listExperienceResponses(testEnrollmentId, experienceId)
-      // Contém os registros originais do fixture + 3 novos registros de C3
-      expect(updatedResponses.length).toBe(initialCount + 3)
+      // Atualiza os três registros existentes sem duplicar as respostas.
+      expect(updatedResponses.length).toBe(initialCount)
 
       // Fixture íntegro: registros originais de C1/C2 continuam lá e inalterados
-      for (const orig of initialResponses) {
+      for (const orig of initialResponses.filter(
+        (r) =>
+          ![
+            AYV_C3_PROMPTS.DOMAINS.id,
+            AYV_C3_PROMPTS.CURRENT_HUNGER.id,
+            AYV_C3_PROMPTS.COMPLETION.id,
+          ].some((id) => id === r.prompt_id),
+      )) {
         const found = updatedResponses.find((r) => r.id === orig.id)
         expect(found).toBeDefined()
         expect(found?.prompt_id).toBe(orig.prompt_id)
@@ -321,6 +361,7 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
 
     it('2) Após salvar, deriveChapter3Status reflete conclusão e loadChapter3State recupera as respostas salvas', () => {
       demoAdapter.setActiveScenario('qa_consciencia_completa')
+      saveCurrentChapter3()
       const responses = demoAdapter.listExperienceResponses(testEnrollmentId, experienceId)
 
       const status = deriveChapter3Status(responses)
@@ -361,6 +402,7 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
       demoAdapter.setActiveScenario('default')
       expect(demoAdapter.getActiveScenario()).toBe('default')
 
+      saveCurrentChapter3()
       const normalResponses = demoAdapter.listExperienceResponses(testEnrollmentId, experienceId)
       // No cenário default, vem apenas do store — sem fixture injetado
       // Mariana tem as respostas de C3 salvas no store
