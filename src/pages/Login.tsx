@@ -281,8 +281,9 @@ export const Login: React.FC = () => {
                         <span>Ver demonstração — contas fictícias</span>
                       </Button>
                       <p className="mt-2 text-[11px] text-center text-muted-foreground leading-relaxed">
-                        Os registros da demonstração ficam neste navegador. Para retomar seus testes,
-                        use o mesmo navegador e dispositivo. Contas reais usam acesso por convite.
+                        Os registros da demonstração ficam neste navegador. Para retomar seus
+                        testes, use o mesmo navegador e dispositivo. Contas reais usam acesso por
+                        convite.
                       </p>
                     </div>
 
