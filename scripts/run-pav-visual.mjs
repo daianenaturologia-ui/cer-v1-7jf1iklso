@@ -303,7 +303,10 @@ async function seedDisposableDatabase() {
 
 async function main() {
   const appOrigin = new URL(APP_URL)
-  if (!['localhost', '127.0.0.1'].includes(appOrigin.hostname) || !['http:', 'https:'].includes(appOrigin.protocol)) {
+  if (
+    !['localhost', '127.0.0.1'].includes(appOrigin.hostname) ||
+    !['http:', 'https:'].includes(appOrigin.protocol)
+  ) {
     throw new Error('O teste visual exige app local isolado; nenhum navegador foi aberto.')
   }
 
@@ -405,9 +408,17 @@ async function main() {
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
     if (expectedUrlFragment === '/profissional') {
       // HomeDispatcher renders the professional panel at / after a direct login.
-      await page.getByRole('button', { name: 'Vincular Nova Participante', exact: true }).waitFor({ state: 'visible' })
+      await page
+        .getByRole('button', { name: 'Vincular Nova Participante', exact: true })
+        .waitFor({ state: 'visible' })
     } else if (expectedUrlFragment) {
-      await page.waitForURL((url) => expectedUrlFragment === '/' ? url.pathname === '/' : url.pathname.startsWith(expectedUrlFragment), { timeout: 10000 })
+      await page.waitForURL(
+        (url) =>
+          expectedUrlFragment === '/'
+            ? url.pathname === '/'
+            : url.pathname.startsWith(expectedUrlFragment),
+        { timeout: 10000 },
+      )
     }
     await page.waitForLoadState('networkidle')
   }
@@ -493,9 +504,12 @@ async function main() {
     await loginAs(seed.prof.email, seed.prof.password, '/profissional')
 
     // Na lista de participantes, navegar diretamente para o prontuário de Alice
-    await page.goto(`${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=sessoes`, {
-      waitUntil: 'networkidle',
-    })
+    await page.goto(
+      `${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=sessoes`,
+      {
+        waitUntil: 'networkidle',
+      },
+    )
 
     // No prontuário (Área 1: Resumo & Atenção), verificar que o relato de Alice aparece
     await page.waitForSelector('text=Recados da Interagente para este Encontro', { timeout: 15000 })
@@ -518,7 +532,9 @@ async function main() {
     await btnNovoEncontro.click()
 
     await page.getByRole('button', { name: 'Criar encontro sem horário', exact: true }).click()
-    await page.getByRole('button', { name: 'Iniciar Encontro', exact: true }).waitFor({ state: 'visible' })
+    await page
+      .getByRole('button', { name: 'Iniciar Encontro', exact: true })
+      .waitFor({ state: 'visible' })
 
     // Clicar em "Iniciar Encontro" se estiver agendado
     const btnIniciar = page.locator('button:has-text("Iniciar Encontro")').first()
@@ -553,7 +569,10 @@ async function main() {
     console.log(`\n[ETAPA 5] ${STEP_DEFINITIONS[4].title}...`)
 
     // Navegar para Área 3 "Plano de Cuidado"
-    await page.goto(`${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=evolucao&tool=plano`, { waitUntil: 'networkidle' })
+    await page.goto(
+      `${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=evolucao&tool=plano`,
+      { waitUntil: 'networkidle' },
+    )
 
     // Clicar em "Criar Primeiro Plano de Cuidado" ou "Novo Plano"
     const btnNovoPlano = page
@@ -669,9 +688,12 @@ async function main() {
     await loginAs(seed.prof.email, seed.prof.password, '/profissional')
 
     // Ir para prontuário de A
-    await page.goto(`${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=sessoes`, {
-      waitUntil: 'networkidle',
-    })
+    await page.goto(
+      `${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=sessoes`,
+      {
+        waitUntil: 'networkidle',
+      },
+    )
 
     // Na Área 1 (Resumo & Atenção), verificar card "Retornos ao Próximo Passo"
     await page.waitForSelector('text=Retornos ao Próximo Passo', { timeout: 15000 })
