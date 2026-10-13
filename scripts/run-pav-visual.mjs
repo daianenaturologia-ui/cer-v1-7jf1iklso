@@ -518,7 +518,7 @@ async function main() {
     await btnNovoEncontro.click()
 
     await page.getByRole('button', { name: 'Criar encontro sem horário', exact: true }).click()
-    await page.getByRole('button', { name: 'Encontro Atual', exact: true }).click()
+    await page.getByRole('button', { name: 'Iniciar Encontro', exact: true }).waitFor({ state: 'visible' })
 
     // Clicar em "Iniciar Encontro" se estiver agendado
     const btnIniciar = page.locator('button:has-text("Iniciar Encontro")').first()
