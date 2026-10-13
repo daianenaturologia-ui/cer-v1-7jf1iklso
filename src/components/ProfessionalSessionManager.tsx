@@ -1164,12 +1164,32 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-foreground font-medium">
-                          Encontro de{' '}
-                          {new Date(sess.created).toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
+                          {sess.scheduled_at ? (
+                            <>
+                              Encontro em{' '}
+                              {new Date(sess.scheduled_at).toLocaleString('pt-BR', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </>
+                          ) : sess.status === 'scheduled' ? (
+                            'Encontro sem horário definido'
+                          ) : (
+                            <>
+                              Encontro de{' '}
+                              {new Date(sess.started_at || sess.created).toLocaleDateString(
+                                'pt-BR',
+                                {
+                                  day: '2-digit',
+                                  month: 'long',
+                                  year: 'numeric',
+                                },
+                              )}
+                            </>
+                          )}
                         </span>
                         <Badge
                           variant="secondary"
