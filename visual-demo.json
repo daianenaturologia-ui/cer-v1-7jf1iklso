@@ -1,20 +1,20 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "ed15196173c841eb34aa6dd512a7e597f1b3cdbd",
+  "sha": "d651774d96bb6603c99183c4944fc20b09208dcb",
   "conclusion": "failure",
-  "timestamp_utc": "2026-10-13T11:01:07.104Z",
-  "run_id": "38387217246",
-  "run_number": "468",
+  "timestamp_utc": "2026-10-13T11:06:30.440Z",
+  "run_id": "38387801029",
+  "run_number": "469",
   "all_success": false,
-  "failure_reason": "Falha na semeadura da bancada efêmera: Conta ativa obrigatória.",
+  "failure_reason": "Interrompido na etapa 3 (Profissional: Prontuário com Relato Recebido): page.waitForURL: Timeout 10000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
   "steps": [
     {
       "num": 1,
       "id": "01-relato-rascunho",
       "title": "Interagente A: Relato Inicial em Rascunho",
       "filename": "01-relato-rascunho.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -22,7 +22,7 @@
       "id": "02-relato-enviado",
       "title": "Interagente A: Relato Enviado para Daiane",
       "filename": "02-relato-enviado.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -30,8 +30,8 @@
       "id": "03-prontuario-relato",
       "title": "Profissional: Prontuário com Relato Recebido",
       "filename": "03-prontuario-relato.png",
-      "status": "NÃO EXECUTADO",
-      "note": ""
+      "status": "FAIL",
+      "note": "page.waitForURL: Timeout 10000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
     },
     {
       "num": 4,
