@@ -1,0 +1,60 @@
+{
+  "job": "caderno-privacy-proof",
+  "job_name": "Caderno Privacy Proof (CAD-01..07)",
+  "sha": "ed15196173c841eb34aa6dd512a7e597f1b3cdbd",
+  "conclusion": "failure",
+  "timestamp_utc": "2026-10-13T11:00:34.110Z",
+  "run_id": "38387217246",
+  "run_number": "468",
+  "summary": {
+    "total": 1,
+    "pass": 0,
+    "fail": 1,
+    "blocked": 0,
+    "all_pass": false
+  },
+  "scenarios": [
+    {
+      "id": "CAD-01",
+      "status": "NÃO EXECUTADO",
+      "description": "Cenário não reportado na suíte",
+      "details": "Ausente do resultado"
+    },
+    {
+      "id": "CAD-02",
+      "status": "NÃO EXECUTADO",
+      "description": "Cenário não reportado na suíte",
+      "details": "Ausente do resultado"
+    },
+    {
+      "id": "CAD-03",
+      "status": "NÃO EXECUTADO",
+      "description": "Cenário não reportado na suíte",
+      "details": "Ausente do resultado"
+    },
+    {
+      "id": "CAD-04",
+      "status": "NÃO EXECUTADO",
+      "description": "Cenário não reportado na suíte",
+      "details": "Ausente do resultado"
+    },
+    {
+      "id": "CAD-05",
+      "status": "NÃO EXECUTADO",
+      "description": "Cenário não reportado na suíte",
+      "details": "Ausente do resultado"
+    },
+    {
+      "id": "CAD-06",
+      "status": "NÃO EXECUTADO",
+      "description": "Cenário não reportado na suíte",
+      "details": "Ausente do resultado"
+    },
+    {
+      "id": "CAD-07",
+      "status": "NÃO EXECUTADO",
+      "description": "Cenário não reportado na suíte",
+      "details": "Ausente do resultado"
+    }
+  ]
+}
