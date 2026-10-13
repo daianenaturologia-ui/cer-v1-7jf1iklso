@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "4e67caa712852b8066d3ee064d0bb9f260340638",
-  "conclusion": "failure",
-  "timestamp_utc": "2026-10-13T11:09:57.495Z",
-  "run_id": "38388165966",
-  "run_number": "470",
-  "all_success": false,
-  "failure_reason": "Interrompido na etapa 4 (Profissional: Sessão Manual e Nota Privada): locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Encontro Atual', exact: true })\n",
+  "sha": "806618a7357051bfa601f1b471d46938185361c6",
+  "conclusion": "success",
+  "timestamp_utc": "2026-10-13T11:12:40.902Z",
+  "run_id": "38388500684",
+  "run_number": "471",
+  "all_success": true,
+  "failure_reason": null,
   "steps": [
     {
       "num": 1,
@@ -38,15 +38,15 @@
       "id": "04-nota-privada",
       "title": "Profissional: Sessão Manual e Nota Privada",
       "filename": "04-nota-privada.png",
-      "status": "FAIL",
-      "note": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Encontro Atual', exact: true })\n"
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 5,
       "id": "05-plano-compartilhado",
       "title": "Profissional: Plano de Cuidado Compartilhado",
       "filename": "05-plano-compartilhado.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -54,7 +54,7 @@
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -62,7 +62,7 @@
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
       "filename": "07-retorno-no-prontuario.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -70,7 +70,7 @@
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
       "filename": "08-interagente-b-sem-acesso.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     }
   ]
