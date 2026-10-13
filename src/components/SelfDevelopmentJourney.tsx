@@ -359,7 +359,9 @@ export function SelfDevelopmentJourney({
                         onInput={(e) =>
                           patch(
                             'scheduled_at',
-                            e.currentTarget.value ? new Date(e.currentTarget.value).toISOString() : '',
+                            e.currentTarget.value
+                              ? new Date(e.currentTarget.value).toISOString()
+                              : '',
                           )
                         }
                         onChange={(e) =>
