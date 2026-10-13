@@ -6,6 +6,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/components/ProfessionalSessionManager.test.tsx',
+      'src/components/SessionMapUpdate.test.tsx',
       'src/components/SelfDevelopmentJourney.test.tsx',
       'src/components/WeeklyAgenda.test.tsx',
       'src/components/experience/LifeTimeline.test.tsx',
