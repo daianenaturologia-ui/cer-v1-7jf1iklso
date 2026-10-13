@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "d651774d96bb6603c99183c4944fc20b09208dcb",
+  "sha": "4e67caa712852b8066d3ee064d0bb9f260340638",
   "conclusion": "failure",
-  "timestamp_utc": "2026-10-13T11:06:30.440Z",
-  "run_id": "38387801029",
-  "run_number": "469",
+  "timestamp_utc": "2026-10-13T11:09:57.495Z",
+  "run_id": "38388165966",
+  "run_number": "470",
   "all_success": false,
-  "failure_reason": "Interrompido na etapa 3 (Profissional: Prontuário com Relato Recebido): page.waitForURL: Timeout 10000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
+  "failure_reason": "Interrompido na etapa 4 (Profissional: Sessão Manual e Nota Privada): locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Encontro Atual', exact: true })\n",
   "steps": [
     {
       "num": 1,
@@ -30,16 +30,16 @@
       "id": "03-prontuario-relato",
       "title": "Profissional: Prontuário com Relato Recebido",
       "filename": "03-prontuario-relato.png",
-      "status": "FAIL",
-      "note": "page.waitForURL: Timeout 10000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 4,
       "id": "04-nota-privada",
       "title": "Profissional: Sessão Manual e Nota Privada",
       "filename": "04-nota-privada.png",
-      "status": "NÃO EXECUTADO",
-      "note": ""
+      "status": "FAIL",
+      "note": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Encontro Atual', exact: true })\n"
     },
     {
       "num": 5,
