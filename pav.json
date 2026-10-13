@@ -1,17 +1,17 @@
 {
   "job": "primeiro-atendimento-verification",
   "job_name": "Primeiro Atendimento Verification (PAV-01..06)",
-  "sha": "d651774d96bb6603c99183c4944fc20b09208dcb",
-  "conclusion": "failure",
-  "timestamp_utc": "2026-10-13T11:05:37.552Z",
-  "run_id": "38387801029",
-  "run_number": "469",
+  "sha": "4e67caa712852b8066d3ee064d0bb9f260340638",
+  "conclusion": "success",
+  "timestamp_utc": "2026-10-13T11:08:47.638Z",
+  "run_id": "38388165966",
+  "run_number": "470",
   "summary": {
-    "total": 3,
-    "pass": 2,
-    "fail": 1,
+    "total": 6,
+    "pass": 6,
+    "fail": 0,
     "blocked": 0,
-    "all_pass": false
+    "all_pass": true
   },
   "scenarios": [
     {
@@ -24,31 +24,31 @@
       "id": "PAV-02",
       "status": "PASS",
       "description": "Interagente A envia relato (approved/shared_care) — profissional vinculada lê com autoria correta",
-      "details": "Relato acessível no prontuário com participant_user_id=ivi7r336l8diylh e exibição validada (\"Enviado por Alice\")"
+      "details": "Relato acessível no prontuário com participant_user_id=8v5a22g0yhrwotu e exibição validada (\"Enviado por Alice\")"
     },
     {
       "id": "PAV-03",
-      "status": "NÃO EXECUTADO",
-      "description": "Cenário não reportado na suíte",
-      "details": "Ausente do resultado"
+      "status": "PASS",
+      "description": "Profissional registra sessão e nota privada — interagente A não consegue acessar nota profissional",
+      "details": "RLS estrito bloqueou acesso da interagente à nota profissional (0 itens na lista e getOne negado)"
     },
     {
       "id": "PAV-04",
-      "status": "NÃO EXECUTADO",
-      "description": "Cenário não reportado na suíte",
-      "details": "Ausente do resultado"
+      "status": "PASS",
+      "description": "Plano em rascunho invisível à interagente A; após compartilhamento torna-se visível",
+      "details": "Rascunho bloqueado (list=0, getOne negado). Após transição deliberada para presented/active, acesso liberado à interagente."
     },
     {
       "id": "PAV-05",
-      "status": "NÃO EXECUTADO",
-      "description": "Cenário não reportado na suíte",
-      "details": "Ausente do resultado"
+      "status": "PASS",
+      "description": "Interagente A registra as 4 respostas ao próximo passo — profissional vê e zero notas clínicas geradas",
+      "details": "Todas as 4 respostas registradas e conferidas pela profissional. Total de notas clínicas inalterado (1 -> 1)."
     },
     {
       "id": "PAV-06",
-      "status": "NÃO EXECUTADO",
-      "description": "Cenário não reportado na suíte",
-      "details": "Ausente do resultado"
+      "status": "PASS",
+      "description": "Interagente B não vinculada não acessa relato, plano, nota e retorno de A por lista nem por ID real",
+      "details": "Isolamento RLS perfeito contra participante externa: list=0 e getOne negado para todos os 4 recursos de A."
     }
   ]
 }
