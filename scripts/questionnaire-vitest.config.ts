@@ -6,6 +6,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/components/SelfDevelopmentJourney.test.tsx',
+      'src/components/WeeklyAgenda.test.tsx',
+      'src/components/experience/LifeTimeline.test.tsx',
+      'src/components/experience/LifeDirections.test.tsx',
+      'src/components/experience/CarePlanStartingPoint.test.tsx',
+      'src/components/experience/GoalRoadmapPlanner.test.tsx',
       'src/components/experience/CerMapReadingsView.test.tsx',
       'src/services/testsConscienciaQaFixture.test.tsx',
       'src/services/pilotSimulation.test.ts',

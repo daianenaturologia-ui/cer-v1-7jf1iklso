@@ -1046,14 +1046,14 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
       {/* MODAL 3: CarePlanPresentationPreview (Preview Obrigatório e Dupla Perspectiva) */}
       <Dialog open={presentationPreviewDialogOpen} onOpenChange={setPresentationPreviewDialogOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold flex items-center gap-2">
               <Eye className="w-4 h-4 text-primary" />
-              Preview Obrigatório de Apresentação
+              Confira o plano antes de compartilhar
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Verifique exatamente o que será comunicado à participante antes do envio deliberado.
+              Revise o texto e os focos que chegarão à participante.
             </DialogDescription>
           </DialogHeader>
 
@@ -1085,10 +1085,14 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                 </span>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-foreground">
-                    Texto de Apresentação Editável:
+                  <label
+                    htmlFor="care-plan-presentation-text"
+                    className="text-[11px] font-medium text-foreground"
+                  >
+                    Como quero apresentar este plano
                   </label>
                   <Textarea
+                    id="care-plan-presentation-text"
                     value={presentationSummary}
                     onChange={(e) => setPresentationSummary(e.target.value)}
                     rows={5}
@@ -1120,28 +1124,28 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                 </div>
 
                 <p className="text-[11px] text-muted-foreground italic">
-                  Garantia Anti-Laundering: Nenhum rationale privado ou nota confidencial é exibido
-                  para a participante.
+                  A fundamentação profissional e as notas confidenciais ficam fora do plano
+                  compartilhado.
                 </p>
               </div>
             ) : (
               <div className="p-4 rounded-xl border border-border/70 bg-muted/20 space-y-3">
                 <span className="text-[10px] uppercase font-bold tracking-wider text-foreground">
-                  Visão Interna da Profissional (Fundamentação & Proveniência)
+                  Fundamentação profissional privada
                 </span>
 
                 <div className="p-2.5 rounded bg-background border border-border/60 space-y-1">
                   <span className="text-[10px] font-semibold text-muted-foreground uppercase">
-                    Rationale do Plano:
+                    Fundamentação do plano:
                   </span>
                   <p className="text-xs text-foreground">
-                    {selectedPlan?.professional_rationale || 'Nenhum rationale registrado.'}
+                    {selectedPlan?.professional_rationale || 'Nenhuma fundamentação registrada.'}
                   </p>
                 </div>
 
                 <div className="p-2.5 rounded bg-background border border-border/60 space-y-1">
                   <span className="text-[10px] font-semibold text-muted-foreground uppercase">
-                    Prioridades com Rationale Clínico:
+                    Fundamentação das prioridades:
                   </span>
                   <div className="space-y-1.5 pt-1">
                     {priorities.map((p) => (
@@ -1149,7 +1153,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                         <span className="font-semibold text-foreground">• {p.title}</span>
                         {p.professional_rationale && (
                           <p className="text-[11px] text-muted-foreground italic pl-3">
-                            Rationale: {p.professional_rationale}
+                            Fundamentação: {p.professional_rationale}
                           </p>
                         )}
                       </div>
@@ -1158,14 +1162,11 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                 </div>
 
                 <div className="p-2.5 rounded bg-amber-500/10 border border-amber-300 text-amber-900 dark:text-amber-200 text-[11px] space-y-1">
-                  <span className="font-semibold block">
-                    Regra Estrita de Privacidade (Anti-Laundering):
-                  </span>
+                  <span className="font-semibold block">Privacidade dos registros</span>
                   <p>
-                    A visão interna permite visualizar rationales clínicos autorizados. Porém, notas
-                    privadas de consentimento, anotações estritamente privadas da participante e
-                    paráfrases derivadas de conteúdo confidencial permanecem RIGOROSAMENTE
-                    INACESSÍVEIS.
+                    Aqui aparecem apenas as fundamentações profissionais autorizadas. Os relatos
+                    privados da participante e as notas privadas de consentimento permanecem
+                    reservados.
                   </p>
                 </div>
               </div>
@@ -1173,7 +1174,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
             <div className="space-y-1 pt-2">
               <label className="text-[11px] font-medium text-foreground">
-                Canal de Compartilhamento
+                Como vou compartilhar
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <Button
@@ -1181,18 +1182,18 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                   type="button"
                   variant={presentationChannel === 'session' ? 'default' : 'outline'}
                   onClick={() => setPresentationChannel('session')}
-                  className="h-7 text-xs"
+                  className="min-h-11 h-auto whitespace-normal text-xs py-2"
                 >
-                  Em Sessão (Diálogo Presencial/Online)
+                  Em sessão
                 </Button>
                 <Button
                   size="sm"
                   type="button"
                   variant={presentationChannel === 'app' ? 'default' : 'outline'}
                   onClick={() => setPresentationChannel('app')}
-                  className="h-7 text-xs"
+                  className="min-h-11 h-auto whitespace-normal text-xs py-2"
                 >
-                  Pelo Aplicativo (Disponibilizar no App)
+                  Pelo aplicativo
                 </Button>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import React from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { SelfDevelopmentJourney } from './SelfDevelopmentJourney'
@@ -9,6 +9,8 @@ import { selfDevelopmentService } from '@/services/selfDevelopment'
 import { careEpisodeInput, emptyCareEpisode } from '@/services/careEpisode'
 import { episodeReviewInput, emptyEpisodeReview } from '@/services/careEpisodeReview'
 import { lifeDirectionsService } from '@/services/lifeDirections'
+import { WeeklyAgenda } from './WeeklyAgenda'
+import { localDateInput, mondayOf } from '@/services/weeklyAgenda'
 vi.mock('@/lib/pocketbase/client', () => ({
   default: {
     collection: () => {
@@ -22,6 +24,40 @@ beforeEach(() => {
   demoAdapter.enableDemo('mariana')
 })
 afterEach(cleanup)
+it('o horário digitado ao planejar permanece na agenda após reabrir', async () => {
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <SelfDevelopmentJourney enrollmentId={DEMO_ENROLLMENT_ID} />
+    </MemoryRouter>,
+  )
+  await user.click(await screen.findByRole('button', { name: 'Escolher meu primeiro recurso' }))
+  await user.click(screen.getAllByRole('button', { name: 'Quero experimentar' })[0])
+  await user.type(screen.getByLabelText('Que vida quero cultivar?'), 'Ter espaço para descansar')
+  await user.type(screen.getByLabelText('Meu pequeno passo'), 'Encerrar o expediente')
+  await user.type(
+    screen.getByLabelText('Quando isso cabe na minha vida?'),
+    'Segunda ao fim do trabalho',
+  )
+  await user.click(screen.getByText('Personalizar · horário, alternativa e sinais'))
+  const moment = mondayOf(new Date())
+  moment.setHours(17, 15)
+  fireEvent.input(screen.getByLabelText('Reservar data e horário (opcional)'), {
+    target: { value: localDateInput(moment) },
+  })
+  await user.click(screen.getByRole('button', { name: 'Salvar meu passo' }))
+  await screen.findByText('Encerrar o expediente')
+  const [saved] = await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)
+  expect(saved.scheduled_at).toBe(moment.toISOString())
+  cleanup()
+  render(
+    <MemoryRouter>
+      <WeeklyAgenda enrollmentId={DEMO_ENROLLMENT_ID} />
+    </MemoryRouter>,
+  )
+  expect(await screen.findByRole('button', { name: 'Encerrar o expediente, 17:15' })).toBeVisible()
+  expect(screen.getByRole('tab', { name: 'Sem horário' })).toBeVisible()
+})
 it('uma situação explorada não vira tarefa no Planner nem exibe metadados do exercício', async () => {
   const source = await lifeDirectionsService.save({
     enrollment_id: DEMO_ENROLLMENT_ID,
