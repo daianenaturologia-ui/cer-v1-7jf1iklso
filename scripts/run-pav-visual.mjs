@@ -403,7 +403,10 @@ async function main() {
     await page.locator('button[type="submit"]:has-text("Entrar")').click()
     // Aguardar transição pós-login
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
-    if (expectedUrlFragment) {
+    if (expectedUrlFragment === '/profissional') {
+      // HomeDispatcher renders the professional panel at / after a direct login.
+      await page.getByRole('button', { name: 'Vincular Nova Participante', exact: true }).waitFor({ state: 'visible' })
+    } else if (expectedUrlFragment) {
       await page.waitForURL((url) => expectedUrlFragment === '/' ? url.pathname === '/' : url.pathname.startsWith(expectedUrlFragment), { timeout: 10000 })
     }
     await page.waitForLoadState('networkidle')

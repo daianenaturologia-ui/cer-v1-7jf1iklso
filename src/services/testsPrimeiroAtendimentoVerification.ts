@@ -320,13 +320,12 @@ export async function runPrimeiroAtendimentoVerificationTests(): Promise<
     const sessionRec = await clientProf.collection('cer_sessions').create({
       enrollment_id: enrollmentA.id,
       professional_user_id: userProf.id,
-      status: 'completed',
+      status: 'scheduled',
       scheduled_at: new Date().toISOString(),
-      started_at: new Date().toISOString(),
-      completed_at: new Date().toISOString(),
     })
     createdRecordIds.push({ collection: 'cer_sessions', id: sessionRec.id })
 
+    await clientProf.collection('cer_sessions').update(sessionRec.id, { status: 'in_progress' })
     const sessionNoteRec = await clientProf.collection('cer_session_notes').create({
       session_id: sessionRec.id,
       enrollment_id: enrollmentA.id,
@@ -334,6 +333,7 @@ export async function runPrimeiroAtendimentoVerificationTests(): Promise<
       text: 'Nota clínica estritamente privada da Dra. Daiane sobre a sessão com Alice.',
     })
     createdRecordIds.push({ collection: 'cer_session_notes', id: sessionNoteRec.id })
+    await clientProf.collection('cer_sessions').update(sessionRec.id, { status: 'completed' })
 
     // Interagente A tenta listar cer_session_notes
     const aliceNotesList = await clientAlice.collection('cer_session_notes').getFullList({
