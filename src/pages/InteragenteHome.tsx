@@ -772,12 +772,16 @@ export const InteragenteHome: React.FC = () => {
         </div>
 
         {/* BARRA DE NAVEGAÇÃO DAS 4 FASES */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-border/50">
+        <nav
+          aria-label="Etapas da jornada CER"
+          className="grid grid-cols-2 gap-2 pb-2 border-b border-border/50 sm:flex sm:items-center sm:gap-1.5"
+        >
           <Button
             size="sm"
             variant={activePhase === 'comece_aqui' ? 'default' : 'ghost'}
             onClick={() => setActivePhase('comece_aqui')}
-            className="h-8 text-xs px-3 gap-1.5 shrink-0"
+            aria-current={activePhase === 'comece_aqui' ? 'step' : undefined}
+            className="min-h-11 h-auto whitespace-normal text-xs px-2 py-2 gap-1.5 sm:min-h-8 sm:h-8 sm:px-3 sm:py-0 sm:whitespace-nowrap"
           >
             <HeartHandshake className="w-3.5 h-3.5" />
             <span>1. Comece aqui</span>
@@ -787,7 +791,8 @@ export const InteragenteHome: React.FC = () => {
             size="sm"
             variant={activePhase === 'consciencia' ? 'default' : 'ghost'}
             onClick={() => setActivePhase('consciencia')}
-            className="h-8 text-xs px-3 gap-1.5 shrink-0"
+            aria-current={activePhase === 'consciencia' ? 'step' : undefined}
+            className="min-h-11 h-auto whitespace-normal text-xs px-2 py-2 gap-1.5 sm:min-h-8 sm:h-8 sm:px-3 sm:py-0 sm:whitespace-nowrap"
           >
             <Brain className="w-3.5 h-3.5" />
             <span>2. Consciência</span>
@@ -797,7 +802,8 @@ export const InteragenteHome: React.FC = () => {
             size="sm"
             variant={activePhase === 'equilibrio' ? 'default' : 'ghost'}
             onClick={() => setActivePhase('equilibrio')}
-            className="h-8 text-xs px-3 gap-1.5 shrink-0"
+            aria-current={activePhase === 'equilibrio' ? 'step' : undefined}
+            className="min-h-11 h-auto whitespace-normal text-xs px-2 py-2 gap-1.5 sm:min-h-8 sm:h-8 sm:px-3 sm:py-0 sm:whitespace-nowrap"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>3. Equilíbrio & Realização</span>
@@ -807,12 +813,13 @@ export const InteragenteHome: React.FC = () => {
             size="sm"
             variant={activePhase === 'evolucao' ? 'default' : 'ghost'}
             onClick={() => setActivePhase('evolucao')}
-            className="h-8 text-xs px-3 gap-1.5 shrink-0"
+            aria-current={activePhase === 'evolucao' ? 'step' : undefined}
+            className="min-h-11 h-auto whitespace-normal text-xs px-2 py-2 gap-1.5 sm:min-h-8 sm:h-8 sm:px-3 sm:py-0 sm:whitespace-nowrap"
           >
             <Compass className="w-3.5 h-3.5" />
             <span>4. Evolução</span>
           </Button>
-        </div>
+        </nav>
 
         {/* ========================================================
             FASE 1: COMECE AQUI
