@@ -323,6 +323,10 @@ export async function traverseEpistemicProvenance(
   // Deduplicate sources by type + id
   const seenMap = new Map<string, ResolvedSourceItem>()
   for (const s of sources) {
+    // Query filters and server rules are the first boundary; keep a final boundary
+    // for legacy records and provenance branches before any text reaches AI.
+    if (s.access_class === 'participant_private') continue
+    if (s.source_type === 'knowledge_item' && s.access_class === 'professional_private') continue
     const sKey = `${s.source_type}:${s.source_id}`
     if (!seenMap.has(sKey)) {
       seenMap.set(sKey, s)
@@ -640,9 +644,13 @@ export async function resolveAuthorizedContext(
     }
   }
 
+  // Apply the same privacy boundary to the broad scan as to provenance traversal.
+  // Query filters alone must not decide which legacy records may enter AI context.
   // Deduplicate sources
   const seenMap = new Map<string, ResolvedSourceItem>()
   for (const s of sources) {
+    if (s.access_class === 'participant_private') continue
+    if (s.source_type === 'knowledge_item' && s.access_class === 'professional_private') continue
     const sKey = `${s.source_type}:${s.source_id}`
     if (!seenMap.has(sKey)) {
       seenMap.set(sKey, s)

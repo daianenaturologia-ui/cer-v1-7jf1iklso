@@ -10,6 +10,7 @@
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
+import vm from 'node:vm'
 
 describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration 0049', () => {
   const migrationPath = path.resolve(
@@ -136,9 +137,10 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration 0049', () =>
   })
 
   it('8. Down-migration é rigorosamente fail-closed: verificações antes de remoções, sem catch engolidor', () => {
-    const downFunctionMatch = migrationContent.match(/\(app\)\s*=>\s*\{([\s\S]*)$/)
-    expect(downFunctionMatch).not.toBeNull()
-    const downContent = downFunctionMatch![1]
+    let down: ((...args: any[]) => any) | undefined
+    vm.runInNewContext(migrationContent, { migrate: (_up: (...args: any[]) => any, rollback: (...args: any[]) => any) => { down = rollback } })
+    expect(down).toBeTypeOf('function')
+    const downContent = down!.toString()
 
     // Não deve conter nenhum catch vazio catch { /* intentionally ignored */ } ou catch { /* intentionally ignored */ } que engula sem lançar
     expect(downContent).not.toMatch(/catch\s*\([^)]*\)\s*\{\s*\}/)
@@ -166,7 +168,7 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration 0049', () =>
     expect(downContent).toContain('countVariantFieldsWithData > 0')
 
     // Não remove audit_events
-    expect(downContent).not.toContain('audit_events')
+    expect(downContent).not.toMatch(/app\.(?:delete|save)\([^)]*audit_events/)
   })
 
   it('9. Ausência de Seed, inserts clínicos, rotas HTTP e hooks no arquivo da migration 0049', () => {

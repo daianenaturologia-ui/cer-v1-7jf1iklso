@@ -10,6 +10,7 @@ export default defineConfig({
       'src/components/ProfessionalJourneySummary.test.tsx',
       'src/components/experience/ProfessionalExperienceManager.test.tsx',
       'src/services/privacyAuditBackend.test.ts',
+      'src/services/aiContextPrivacy.test.ts',
       'src/services/liveQuestionnaire.test.ts',
       'src/services/liveQuestionnaireBackend.test.ts',
       'src/hooks/useQuestionnaireSaving.test.tsx',

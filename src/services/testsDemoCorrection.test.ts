@@ -1,9 +1,10 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { demoAdapter, DEMO_ENROLLMENT_ID, DEMO_USER_MARIANA, DEMO_USER_DAIANE } from './demoAdapter'
 
 describe('Correção do Modo Demonstração CER V1 (Limpeza de Sementes e Autoria Fiel)', () => {
   beforeEach(() => {
-    demoAdapter.disableDemo()
+    demoAdapter.resetToDefaultState()
     demoAdapter.enableDemo('mariana')
   })
 
