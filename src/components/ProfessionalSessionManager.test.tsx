@@ -230,3 +230,22 @@ it('mostra o horário combinado no histórico e distingue encontro sem horário'
   expect(screen.getByText(/Encontro em 15 de outubro de 2026.*14:00/)).toBeInTheDocument()
   expect(screen.getByText('Encontro sem horário definido')).toBeInTheDocument()
 })
+
+it('mantém o encontro concluído visível quando existe outro agendado', async () => {
+  const next = { ...session, id: 'next', status: 'scheduled' }
+  vi.mocked(cerSessionService.listByEnrollment).mockResolvedValue([session, next])
+  vi.mocked(cerSessionService.completeSession).mockImplementation(async () => {
+    const completed = { ...session, status: 'completed' }
+    vi.mocked(cerSessionService.listByEnrollment).mockResolvedValue([completed, next])
+    return completed
+  })
+  render(<ProfessionalSessionManager enrollmentId="mine" participantName="Pessoa" />)
+  await userEvent.click(await screen.findByRole('button', { name: /^Encontro Atual/ }))
+  await userEvent.click(screen.getByRole('button', { name: 'Concluir Encontro' }))
+  await screen.findByText('Encontro concluído e registro preservado com segurança.')
+  expect(screen.getByRole('button', { name: 'Encontro Atual Concluído' })).toBeInTheDocument()
+  expect(screen.getByRole('textbox', { name: 'Nota profissional privada' })).toBeDisabled()
+  expect(screen.getByRole('textbox', { name: 'Nota profissional privada' })).toHaveValue(
+    'Texto privado anterior',
+  )
+})
