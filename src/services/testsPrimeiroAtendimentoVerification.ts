@@ -24,6 +24,7 @@
  */
 
 import PocketBase from 'pocketbase'
+import { disposableRoleAdmin } from './disposableRoleAdmin.ts'
 import pb from '../lib/pocketbase/client.ts'
 import {
   assertSafeMutableTestEnvironment,
@@ -128,7 +129,9 @@ export async function runPrimeiroAtendimentoVerificationTests(): Promise<
     })
     createdRecordIds.push({ collection: 'users', id: userProf.id })
 
-    await adminPb.collection('user_roles').create({
+    const rolePb = await disposableRoleAdmin(adminPb.baseUrl)
+
+    await rolePb.collection('user_roles').create({
       user_id: userProf.id,
       role: 'profissional',
       is_active: true,
@@ -151,7 +154,7 @@ export async function runPrimeiroAtendimentoVerificationTests(): Promise<
     })
     createdRecordIds.push({ collection: 'users', id: userAlice.id })
 
-    await adminPb.collection('user_roles').create({
+    await rolePb.collection('user_roles').create({
       user_id: userAlice.id,
       role: 'interagente',
       is_active: true,
@@ -174,7 +177,7 @@ export async function runPrimeiroAtendimentoVerificationTests(): Promise<
     })
     createdRecordIds.push({ collection: 'users', id: userBeatriz.id })
 
-    await adminPb.collection('user_roles').create({
+    await rolePb.collection('user_roles').create({
       user_id: userBeatriz.id,
       role: 'interagente',
       is_active: true,

@@ -219,6 +219,27 @@ jobs:
             cp "$hook" "${BENCH_TMP}/pb_hooks/$(basename "$hook" .js).pb.js"
           done
 
+          # Test-only role administrator: seed offline before request hooks are loaded.
+          cat > "${BENCH_TMP}/pb_migrations/9999_disposable_role_admin.js" <<'ROLE_ADMIN'
+          migrate((app) => {
+            const person = new Record(app.findCollectionByNameOrId('persons'));
+            person.set('full_name', 'Disposable Role Administrator');
+            person.set('email', 'role-admin@example.invalid');
+            app.save(person);
+            const user = new Record(app.findCollectionByNameOrId('users'));
+            user.set('email', 'role-admin@example.invalid');
+            user.set('person_id', person.id);
+            user.set('status', 'active');
+            user.setPassword('FixtureRoleAdmin123!');
+            app.save(user);
+            const role = new Record(app.findCollectionByNameOrId('user_roles'));
+            role.set('user_id', user.id);
+            role.set('role', 'admin');
+            role.set('is_active', true);
+            app.save(role);
+          }, () => {});
+          ROLE_ADMIN
+
           # 3. Criar superuser efêmero para permitir o bootstrap de dados de teste
           echo "Criando superuser efêmero na base de dados descartável..."
           pocketbase superuser upsert "${CER_BENCH_SUPERUSER_EMAIL}" "${CER_BENCH_SUPERUSER_PASSWORD}" \
@@ -416,6 +437,27 @@ jobs:
           for hook in pocketbase/hooks/*.js; do
             cp "$hook" "${BENCH_TMP}/pb_hooks/$(basename "$hook" .js).pb.js"
           done
+
+          # Test-only role administrator: seed offline before request hooks are loaded.
+          cat > "${BENCH_TMP}/pb_migrations/9999_disposable_role_admin.js" <<'ROLE_ADMIN'
+          migrate((app) => {
+            const person = new Record(app.findCollectionByNameOrId('persons'));
+            person.set('full_name', 'Disposable Role Administrator');
+            person.set('email', 'role-admin@example.invalid');
+            app.save(person);
+            const user = new Record(app.findCollectionByNameOrId('users'));
+            user.set('email', 'role-admin@example.invalid');
+            user.set('person_id', person.id);
+            user.set('status', 'active');
+            user.setPassword('FixtureRoleAdmin123!');
+            app.save(user);
+            const role = new Record(app.findCollectionByNameOrId('user_roles'));
+            role.set('user_id', user.id);
+            role.set('role', 'admin');
+            role.set('is_active', true);
+            app.save(role);
+          }, () => {});
+          ROLE_ADMIN
 
           # 3. Criar superuser efêmero para permitir o bootstrap de dados de teste
           echo "Criando superuser efêmero na base de dados descartável..."
@@ -624,6 +666,27 @@ jobs:
           for hook in pocketbase/hooks/*.js; do
             cp "$hook" "${BENCH_TMP}/pb_hooks/$(basename "$hook" .js).pb.js"
           done
+
+          # Test-only role administrator: seed offline before request hooks are loaded.
+          cat > "${BENCH_TMP}/pb_migrations/9999_disposable_role_admin.js" <<'ROLE_ADMIN'
+          migrate((app) => {
+            const person = new Record(app.findCollectionByNameOrId('persons'));
+            person.set('full_name', 'Disposable Role Administrator');
+            person.set('email', 'role-admin@example.invalid');
+            app.save(person);
+            const user = new Record(app.findCollectionByNameOrId('users'));
+            user.set('email', 'role-admin@example.invalid');
+            user.set('person_id', person.id);
+            user.set('status', 'active');
+            user.setPassword('FixtureRoleAdmin123!');
+            app.save(user);
+            const role = new Record(app.findCollectionByNameOrId('user_roles'));
+            role.set('user_id', user.id);
+            role.set('role', 'admin');
+            role.set('is_active', true);
+            app.save(role);
+          }, () => {});
+          ROLE_ADMIN
 
           # 3. Criar superuser efêmero para permitir o bootstrap de dados de teste
           echo "Criando superuser efêmero na base de dados descartável..."

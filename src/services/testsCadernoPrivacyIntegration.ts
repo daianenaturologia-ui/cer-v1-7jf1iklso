@@ -15,6 +15,7 @@
  */
 
 import PocketBase from 'pocketbase'
+import { disposableRoleAdmin } from './disposableRoleAdmin.ts'
 import pb from '../lib/pocketbase/client.ts'
 import {
   assertSafeMutableTestEnvironment,
@@ -155,17 +156,19 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
     createdRecordIds.push({ collection: 'users', id: userEstranho.id })
 
     // Papéis
-    await adminPb.collection('user_roles').create({
+    const rolePb = await disposableRoleAdmin(adminPb.baseUrl)
+
+    await rolePb.collection('user_roles').create({
       user_id: userInteragente.id,
       role: 'interagente',
       is_active: true,
     })
-    await adminPb.collection('user_roles').create({
+    await rolePb.collection('user_roles').create({
       user_id: userProfissional.id,
       role: 'profissional',
       is_active: true,
     })
-    await adminPb.collection('user_roles').create({
+    await rolePb.collection('user_roles').create({
       user_id: userEstranho.id,
       role: 'profissional',
       is_active: true,
@@ -409,7 +412,7 @@ export async function runCadernoPrivacyIntegrationTests(): Promise<CadernoPrivac
       })
       createdRecordIds.push({ collection: 'users', id: secondUser.id })
 
-      await adminPb.collection('user_roles').create({
+      await rolePb.collection('user_roles').create({
         user_id: secondUser.id,
         role: 'interagente',
         is_active: true,

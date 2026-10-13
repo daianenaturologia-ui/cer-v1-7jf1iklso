@@ -28,6 +28,11 @@ try:
         u.set('email',name+'@example.invalid');u.setPassword(PASSWORD);u.set('person_id',people[name].id);u.set('status','active');app.save(u);users[name]=u;
         save('user_roles',{user_id:u.id,role:['p','q'].includes(name)?'profissional':'interagente',is_active:true});
       }
+      const adminPerson=save('persons',{full_name:'Disposable Role Administrator',email:'role-admin@example.invalid'});
+      const roleAdmin=new Record(app.findCollectionByNameOrId('users'));
+      roleAdmin.set('email','role-admin@example.invalid');roleAdmin.setPassword('FixtureRoleAdmin123!');
+      roleAdmin.set('person_id',adminPerson.id);roleAdmin.set('status','active');app.save(roleAdmin);
+      save('user_roles',{user_id:roleAdmin.id,role:'admin',is_active:true});
       const practice=save('cer_practices',{internal_name:'Reference resource',participant_facing_name_base:'Reference resource',family:'reference',governance_modes:['self_guided'],status:'draft',created_by_user_id:users.p.id,item_nature:'support_resource'});
       const version=save('cer_practice_versions',{practice_id:practice.id,version_number:1,participant_title:'Reference resource',intensity:'low',consent_required:'not_required',author_user_id:users.p.id,status:'draft'});
       save('cer_practice_version_assets',{practice_version_id:version.id,asset_type:'document',title:'Reference protected file'});
@@ -97,6 +102,16 @@ try:
             except urllib.error.URLError: time.sleep(.1)
         else: raise RuntimeError('Health timeout')
         admin=ok('/api/collections/_superusers/auth-with-password',method='POST',body={'identity':'admin@example.invalid','password':password})['token']
+        role_admin_probe=subprocess.run(['node','--input-type=module','-e',
+            "import { disposableRoleAdmin } from './src/services/disposableRoleAdmin.ts';"
+            "const client=await disposableRoleAdmin(process.env.VITE_POCKETBASE_URL);"
+            "const records=await client.collection('user_roles').getFullList();"
+            "const target=records.find(r=>r.role==='interagente');"
+            "if(!target)throw new Error('Missing fixture role');"
+            "await client.collection('user_roles').update(target.id,{is_active:true});"
+            "process.stdout.write('ROLE_ADMIN_OK');"],capture_output=True,text=True,
+            env={**os.environ,'VITE_POCKETBASE_URL':base,'CER_ALLOW_MUTABLE_TESTS':'true'})
+        check('Disposable role administrator works with active request hooks',lambda:require(role_admin_probe.returncode==0 and role_admin_probe.stdout=='ROLE_ADMIN_OK'))
         actors={n:ok('/api/collections/users/auth-with-password',method='POST',body={'identity':n+'@example.invalid','password':password}) for n in ['a','b','p','q']}
         tokens={n:v['token'] for n,v in actors.items()}
         enrollments=record('enrollments',admin)['items']

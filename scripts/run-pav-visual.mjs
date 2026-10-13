@@ -38,6 +38,7 @@
 
 import { chromium } from '@playwright/test'
 import PocketBase from 'pocketbase'
+import { disposableRoleAdmin } from '../src/services/disposableRoleAdmin.ts'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -215,7 +216,9 @@ async function seedDisposableDatabase() {
     status: 'active',
   })
 
-  await adminPb.collection('user_roles').create({
+  const rolePb = await disposableRoleAdmin(adminPb.baseUrl)
+
+  await rolePb.collection('user_roles').create({
     user_id: userProf.id,
     role: 'profissional',
     is_active: true,
@@ -236,7 +239,7 @@ async function seedDisposableDatabase() {
     status: 'active',
   })
 
-  await adminPb.collection('user_roles').create({
+  await rolePb.collection('user_roles').create({
     user_id: userAlice.id,
     role: 'interagente',
     is_active: true,
@@ -269,7 +272,7 @@ async function seedDisposableDatabase() {
     status: 'active',
   })
 
-  await adminPb.collection('user_roles').create({
+  await rolePb.collection('user_roles').create({
     user_id: userBeatriz.id,
     role: 'interagente',
     is_active: true,
@@ -589,7 +592,7 @@ async function main() {
     const btnAtivar = page.locator('button:has-text("Ativar Plano")').first()
     if (await btnAtivar.isVisible()) {
       await btnAtivar.click()
-      await page.waitForSelector('text=Plano de Cuidado ativado com sucesso', { timeout: 8000 })
+      await page.waitForSelector('text=Plano ativado para o acompanhamento', { timeout: 8000 })
     }
 
     // Ação explícita de compartilhar plano com a participante

@@ -26,3 +26,7 @@ Os motores usam todas as migrations e hooks do repositório, contas estritamente
 ## Ainda necessário
 
 Confirmar a execução do teste visual atual no CI, revisar a suíte de apresentação antiga do mapa e o fixture QA incompleto de Corpo. Homologar na infraestrutura do piloto convite, segundo dispositivo, retomada e regras de privacidade; conferir migrações efetivamente instaladas, backup operacional e recuperação. O PR27 permanece separado, sem integração nesta rodada. Acervo, IA, mobile/acessibilidade, voz, Google Agenda e D35 permanecem nas pendências do projeto.
+
+## Ajuste após a primeira execução remota
+
+No run 38387217246, QA geral e publicação de todos os relatórios passaram. CAD, PAV e visual falharam ao preparar papéis com superuser; os hooks ativos exigem uma conta comum ativa autorizada. A preparação foi corrigida com um administrador estritamente fictício criado por migration somente na pasta temporária do CI, antes de carregar os hooks. Os testes usam essa conta apenas para atribuir papéis, mantendo os atores comuns em todas as sondas de privacidade. Nenhuma exceção foi acrescentada às regras do app. O novo cenário local confirmou o administrador fictício com hooks ativos: 87 cenários de cuidado/privacidade em PB0.26.1 passaram, incluindo restauração. A nova execução remota ainda precisa ser verificada.
