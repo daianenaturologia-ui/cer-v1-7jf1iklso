@@ -138,7 +138,11 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration 0049', () =>
 
   it('8. Down-migration é rigorosamente fail-closed: verificações antes de remoções, sem catch engolidor', () => {
     let down: ((...args: any[]) => any) | undefined
-    vm.runInNewContext(migrationContent, { migrate: (_up: (...args: any[]) => any, rollback: (...args: any[]) => any) => { down = rollback } })
+    vm.runInNewContext(migrationContent, {
+      migrate: (_up: (...args: any[]) => any, rollback: (...args: any[]) => any) => {
+        down = rollback
+      },
+    })
     expect(down).toBeTypeOf('function')
     const downContent = down!.toString()
 

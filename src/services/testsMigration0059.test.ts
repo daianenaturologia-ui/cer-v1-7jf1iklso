@@ -103,7 +103,11 @@ describe('LOTE 0049-A: Testes Estruturais e Estáticos da Migration Corretiva 00
 
   it('6. Down-migration restaura exclusivamente as rules anteriores da 0049 original e falha se collection não encontrada', () => {
     let down: ((...args: any[]) => any) | undefined
-    vm.runInNewContext(migration59Content, { migrate: (_up: (...args: any[]) => any, rollback: (...args: any[]) => any) => { down = rollback } })
+    vm.runInNewContext(migration59Content, {
+      migrate: (_up: (...args: any[]) => any, rollback: (...args: any[]) => any) => {
+        down = rollback
+      },
+    })
     expect(down).toBeTypeOf('function')
     const downContent = down!.toString()
 

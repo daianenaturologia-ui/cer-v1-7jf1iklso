@@ -159,9 +159,13 @@ async function main() {
     )
 
     if (blockedVerification.status !== 0) {
-      steps.push({ stepNumber: 4, name: 'Verificação do bloqueio de integrações',
-        status: 'FAIL', durationMs: Date.now() - start4,
-        message: 'A suíte que comprova ausência de escritas falhou.' })
+      steps.push({
+        stepNumber: 4,
+        name: 'Verificação do bloqueio de integrações',
+        status: 'FAIL',
+        durationMs: Date.now() - start4,
+        message: 'A suíte que comprova ausência de escritas falhou.',
+      })
       await finishPipeline()
       return
     }

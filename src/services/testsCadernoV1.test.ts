@@ -55,11 +55,13 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
   function auditCallbacks(source: string) {
     const callbacks: Array<(...args: any[]) => any> = []
     vm.runInNewContext(source, {
-      onRecordCreate() {}, onRecordUpdate() {}, onRecordDelete() {},
+      onRecordCreate() {},
+      onRecordUpdate() {},
+      onRecordDelete() {},
       onRecordAfterCreateSuccess: (fn: (...args: any[]) => any) => callbacks.push(fn),
       onRecordAfterUpdateSuccess: (fn: (...args: any[]) => any) => callbacks.push(fn),
     })
-    return callbacks.map(fn => fn.toString()).join('\n')
+    return callbacks.map((fn) => fn.toString()).join('\n')
   }
 
   // --------------------------------------------------------------------------
@@ -158,7 +160,9 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
       expect(auditCallbacks(journalLifecycleContent)).not.toContain("record.getString('content')")
       // Audit de message
       expect(messageLifecycleContent).toContain("action', 'NEXT_SESSION_MESSAGE_CREATED")
-      expect(auditCallbacks(messageLifecycleContent)).not.toContain("record.getString('message_text')")
+      expect(auditCallbacks(messageLifecycleContent)).not.toContain(
+        "record.getString('message_text')",
+      )
     })
 
     it('2.4 Hook de recado gerencia ciclo draft -> approved -> withdrawn e bloqueia reativação de retirado', () => {
@@ -256,7 +260,9 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
         'cerJournalService.listApprovedMessagesForProfessional(enrollmentId)',
       )
       // Confirma que não cria notas clínicas automaticamente
-      const preparation = sessionContent.slice(sessionContent.indexOf('export async function computeSessionPreparation'))
+      const preparation = sessionContent.slice(
+        sessionContent.indexOf('export async function computeSessionPreparation'),
+      )
       expect(preparation).not.toMatch(/cerSessionNoteService\.create/i)
       expect(preparation).not.toMatch(/collection\(['"]cer_session_notes['"]\)\.create/i)
     })

@@ -6,8 +6,8 @@ export async function disposableRoleAdmin(baseUrl: string): Promise<PocketBase> 
   assertSafeMutableTestEnvironment(baseUrl)
   const client = new PocketBase(baseUrl)
   client.autoCancellation(false)
-  await client.collection('users').authWithPassword(
-    'role-admin@example.invalid', 'FixtureRoleAdmin123!',
-  )
+  await client
+    .collection('users')
+    .authWithPassword('role-admin@example.invalid', 'FixtureRoleAdmin123!')
   return client
 }
