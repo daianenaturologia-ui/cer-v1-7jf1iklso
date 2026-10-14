@@ -136,4 +136,6 @@ it('separa o presente da direção futura e oferece a integração antes do plan
     screen.getByRole('button', { name: 'Integrar história e funcionamento no mapa' }),
   )
   expect(open).toHaveBeenCalledWith('consciencia')
+  await userEvent.click(screen.getByRole('button', { name: 'Revisar nosso plano' }))
+  expect(open).toHaveBeenCalledWith('equilibrio', 'plano')
 })

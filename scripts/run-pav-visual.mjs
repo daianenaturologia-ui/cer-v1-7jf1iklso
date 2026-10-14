@@ -570,7 +570,7 @@ async function main() {
 
     // Navegar para Área 3 "Plano de Cuidado"
     await page.goto(
-      `${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=evolucao&tool=plano`,
+      `${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=equilibrio&tool=plano`,
       { waitUntil: 'networkidle' },
     )
 

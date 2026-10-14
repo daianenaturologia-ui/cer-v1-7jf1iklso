@@ -8,6 +8,7 @@ export default defineConfig({
     include: [
       'src/services/demoAnswerPersistence.test.ts',
       'src/services/participantJourney.test.ts',
+      'src/services/professionalJourneyNavigation.test.ts',
       'src/services/testsMenteEmocoesDemoStabilization.test.ts',
       'src/components/experience/LifeJourney.test.tsx',
       'src/components/experience/MyNextStepWizard.test.tsx',
@@ -16,6 +17,8 @@ export default defineConfig({
       'src/components/SessionMapUpdate.test.tsx',
       'src/components/SelfDevelopmentJourney.test.tsx',
       'src/components/WeeklyAgenda.test.tsx',
+      'src/components/MandalaStructuredView.test.tsx',
+      'src/services/cerMandalaDemo.test.ts',
       'src/components/experience/LifeTimeline.test.tsx',
       'src/components/experience/LifeDirections.test.tsx',
       'src/components/experience/CarePlanStartingPoint.test.tsx',

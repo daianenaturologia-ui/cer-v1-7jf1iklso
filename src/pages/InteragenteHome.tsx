@@ -1,6 +1,7 @@
 import {
   readJourneyMoment,
   saveJourneyMoment,
+  careJourneyNextStep,
   nextConsciousnessExperience,
   type JourneyMoment,
 } from '@/services/participantJourney'
@@ -677,6 +678,11 @@ export const InteragenteHome: React.FC = () => {
   const journeyOwner = demoAdapter.isEnabled() ? 'demo-mariana' : user?.id || ''
   const [journeyMoment, setJourneyMoment] = useState<JourneyMoment>('past')
   const [mapFromJourney, setMapFromJourney] = useState(false)
+  const latestPlanResponse = selectedPlanResponses[presentedCarePlans[0]?.id]
+  const careNextStep = careJourneyNextStep(
+    presentedCarePlans.length > 0,
+    latestPlanResponse?.saved ? latestPlanResponse.response_type : undefined,
+  )
   const careAvailable =
     journeyMoment === 'care' || presentedCarePlans.length > 0 || assignments.length > 0
   useEffect(() => {
@@ -915,16 +921,17 @@ export const InteragenteHome: React.FC = () => {
                       map: 'Integrar minha história ao Mapa CER',
                       present: 'Olhar para minha vida presente',
                       future: 'Construir minhas direções futuras',
-                      care: 'Combinar o cuidado em Equilíbrio & Realização',
+                      care: careNextStep.label,
                     }[journeyMoment]
                   }
                 </p>
                 <Button
-                  onClick={() =>
-                    setActivePhase(journeyMoment === 'care' ? 'equilibrio' : 'evolucao')
-                  }
+                  onClick={() => {
+                    if (journeyMoment === 'care' && careNextStep.planner) navigate('/planner')
+                    else setActivePhase(journeyMoment === 'care' ? 'equilibrio' : 'evolucao')
+                  }}
                 >
-                  Retomar meu percurso
+                  {journeyMoment === 'care' ? careNextStep.button : 'Retomar meu percurso'}
                 </Button>
               </>
             )}
@@ -2139,6 +2146,24 @@ export const InteragenteHome: React.FC = () => {
                           </Card>
                         )
                       })}
+                    </div>
+                    <div className="rounded-xl border bg-primary/5 p-4 space-y-3">
+                      <h4 className="text-sm font-semibold">
+                        Meu próximo passo: dar espaço ao cuidado na semana
+                      </h4>
+                      <p className="text-sm">
+                        Escolha um começo que respeite sua energia e os combinados com Daiane. No
+                        Planner, registre quando pretende experimentá-lo. Na Mandala, acompanhe o
+                        plano e o que vai aprendendo. Você pode pedir um ajuste antes de começar.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button onClick={() => navigate('/planner')}>
+                          Levar meu cuidado para o Planner
+                        </Button>
+                        <Button variant="outline" onClick={() => navigate('/mandala')}>
+                          Acompanhar meu cuidado na Mandala
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ) : (
