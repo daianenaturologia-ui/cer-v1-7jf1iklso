@@ -1,16 +1,24 @@
-import React, { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import React, { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Eye, CheckCircle2, ChevronRight } from 'lucide-react'
+import { Eye, CheckCircle2 } from 'lucide-react'
 import {
   AYV_TELA1_STRUCTURE_OPTIONS,
   AYV_TELA1_DURATION_OPTIONS,
 } from '@/services/ayurvedaChapter1'
-import { AvatarPresentation } from '@/services/avatarCompositor'
+import {
+  AvatarPresentation,
+  AvatarStructure,
+  SkinToneId,
+  HairColorId,
+  DEFAULT_AVATAR_CONFIG,
+  renderAvatarToCanvas,
+} from '@/services/avatarCompositor'
 
 export interface AyurvedaTela1StructureProps {
   userPresentation?: AvatarPresentation
+  userSkinTone?: SkinToneId
+  userHairColor?: HairColorId
   structureChoice?: string
   primaryStructureChoice?: string
   secondaryStructureChoice?: string
@@ -31,7 +39,6 @@ const FIGURES_MAP = {
   female_light_narrow: {
     id: 'light_narrow',
     presentation: 'feminine',
-    file: '/assets/ayurveda/ayv-feminino-leve.png',
     alt: 'Figura feminina — estrutura leve ou estreita',
     label: 'Estrutura leve ou estreita',
     accessibleLabel: 'Figura feminina — estrutura leve ou estreita',
@@ -39,7 +46,6 @@ const FIGURES_MAP = {
   female_intermediate: {
     id: 'intermediate',
     presentation: 'feminine',
-    file: '/assets/ayurveda/ayv-feminino-intermediario.png',
     alt: 'Figura feminina — estrutura intermediária',
     label: 'Estrutura intermediária',
     accessibleLabel: 'Figura feminina — estrutura intermediária',
@@ -47,7 +53,6 @@ const FIGURES_MAP = {
   female_broad_solid: {
     id: 'broad_solid',
     presentation: 'feminine',
-    file: '/assets/ayurveda/ayv-feminino-amplo.png',
     alt: 'Figura feminina — estrutura ampla ou sólida',
     label: 'Estrutura ampla ou sólida',
     accessibleLabel: 'Figura feminina — estrutura ampla ou sólida',
@@ -55,7 +60,6 @@ const FIGURES_MAP = {
   male_light_narrow: {
     id: 'light_narrow',
     presentation: 'masculine',
-    file: '/assets/ayurveda/ayv-masculino-leve.png',
     alt: 'Figura masculina — estrutura leve ou estreita',
     label: 'Estrutura leve ou estreita',
     accessibleLabel: 'Figura masculina — estrutura leve ou estreita',
@@ -63,7 +67,6 @@ const FIGURES_MAP = {
   male_intermediate: {
     id: 'intermediate',
     presentation: 'masculine',
-    file: '/assets/ayurveda/ayv-masculino-intermediario.png',
     alt: 'Figura masculina — estrutura intermediária',
     label: 'Estrutura intermediária',
     accessibleLabel: 'Figura masculina — estrutura intermediária',
@@ -71,15 +74,68 @@ const FIGURES_MAP = {
   male_broad_solid: {
     id: 'broad_solid',
     presentation: 'masculine',
-    file: '/assets/ayurveda/ayv-masculino-amplo.png',
     alt: 'Figura masculina — estrutura ampla ou sólida',
     label: 'Estrutura ampla ou sólida',
     accessibleLabel: 'Figura masculina — estrutura ampla ou sólida',
   },
+} as const
+
+function PersonalizedStructureFigure({
+  presentation,
+  structure,
+  skinTone,
+  hairColor,
+  alt,
+}: {
+  presentation: AvatarPresentation
+  structure: AvatarStructure
+  skinTone: SkinToneId
+  hairColor: HairColorId
+  alt: string
+}) {
+  const canvas = useRef<HTMLCanvasElement>(null)
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  useEffect(() => {
+    let active = true
+    setStatus('loading')
+    if (canvas.current)
+      renderAvatarToCanvas({ presentation, structure, skinTone, hairColor }, canvas.current)
+        .then(() => {
+          if (active) setStatus('ready')
+        })
+        .catch(() => {
+          if (active) setStatus('error')
+        })
+    return () => {
+      active = false
+    }
+  }, [presentation, structure, skinTone, hairColor])
+  return (
+    <>
+      <canvas
+        ref={canvas}
+        role="img"
+        aria-label={alt}
+        className={`w-full h-full object-contain pointer-events-none opacity-100 ${status === 'ready' ? '' : 'invisible'}`}
+      />
+      {status !== 'ready' && (
+        <span
+          role="status"
+          className="absolute inset-0 flex items-center justify-center p-3 text-center text-xs text-muted-foreground"
+        >
+          {status === 'error'
+            ? 'Não foi possível carregar esta figura.'
+            : 'Preparando sua representação…'}
+        </span>
+      )}
+    </>
+  )
 }
 
 export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
   userPresentation = 'feminine',
+  userSkinTone = DEFAULT_AVATAR_CONFIG.skinTone,
+  userHairColor = DEFAULT_AVATAR_CONFIG.hairColor,
   structureChoice: initialStructure,
   primaryStructureChoice: initialPrimary,
   secondaryStructureChoice: initialSecondary,
@@ -206,8 +262,7 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
           {displayedFigures.map((fig, idx) => {
             const isTwoActive =
               selectedStructure === 'two_figures' && twoSelectedStructures.includes(fig.id)
-            const isSingleActive =
-              selectedStructure === fig.id && selectedStructure !== 'two_figures'
+            const isSingleActive = selectedStructure === fig.id
             const isSelected = isTwoActive || isSingleActive
 
             return (
@@ -244,11 +299,12 @@ export const AyurvedaTela1Structure: React.FC<AyurvedaTela1StructureProps> = ({
                 }`}
               >
                 <div className="relative w-full aspect-[2/3] max-h-56 overflow-hidden rounded-lg bg-muted/20 flex items-center justify-center mb-2">
-                  <img
-                    src={fig.file}
+                  <PersonalizedStructureFigure
+                    presentation={fig.presentation}
+                    structure={fig.id}
+                    skinTone={userSkinTone}
+                    hairColor={userHairColor}
                     alt={fig.alt}
-                    className="w-full h-full object-contain pointer-events-none opacity-100"
-                    loading="eager"
                   />
                   {isSelected && (
                     <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-sm z-10">

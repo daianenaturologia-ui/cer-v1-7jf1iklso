@@ -693,7 +693,7 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
       expect(selectedBtn.className).toContain('opacity-100')
       expect(selectedBtn.className).not.toContain('opacity-50')
 
-      const img = selectedBtn.querySelector('img')
+      const img = selectedBtn.querySelector('[role="img"]')
       expect(img).not.toBeNull()
       expect(img?.className).toContain('opacity-100')
       expect(img?.className).not.toContain('opacity-50')
