@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/components/experience/ayurveda/AyurvedaPersonalizedFigures.test.tsx',
       'src/components/ProfessionalSessionManager.test.tsx',
       'src/components/SessionMapUpdate.test.tsx',
       'src/components/SelfDevelopmentJourney.test.tsx',
