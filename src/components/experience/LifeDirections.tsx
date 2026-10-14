@@ -549,8 +549,7 @@ export function LifeDirections({
           </label>
           <p className="text-xs text-muted-foreground">
             Desmarcado: só você pode acessar. A inclusão no Mapa exige revisão profissional. Mapas
-            já publicados mantêm a versão compartilhada naquela ocasião. O ditado exige sua
-            confirmação; não guardamos o áudio.
+            já publicados mantêm a versão compartilhada naquela ocasião.
           </p>
           <div className="flex gap-2">
             <Button type="submit" disabled={busy}>

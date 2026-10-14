@@ -413,8 +413,7 @@ export function LifeTimeline({
           <p className="text-xs text-muted-foreground">
             Seu mapa inicial acompanha esta história. Desmarcado: ela aparece apenas para você.
             Compartilhar permite que sua profissional a considere na leitura conjunta. Mapas
-            profissionais já publicados preservam sua versão. O ditado precisa da sua confirmação;
-            não guardamos o áudio.
+            profissionais já publicados preservam sua versão.
           </p>
           <div className="flex gap-2">
             <Button type="submit" disabled={busy}>

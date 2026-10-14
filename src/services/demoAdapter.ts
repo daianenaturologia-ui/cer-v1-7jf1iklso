@@ -839,10 +839,6 @@ class DemoAdapter {
   }
 
   public enableDemo(persona: 'mariana' | 'daiane' = 'mariana'): void {
-    try {
-    } catch {
-      /* ignore */
-    }
     this.isDemoEnabled = true
     this.state.activePersona = persona
     this.migrateIncompatibleMenteEmocoes(this.state)
