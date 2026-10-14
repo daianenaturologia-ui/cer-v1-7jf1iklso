@@ -1911,32 +1911,62 @@ class DemoAdapter {
   }
 
   public createNextDraftFromPublished(publishedMapId: string, userId: string): CerMapRecord {
-    const pub = this.state.maps.find((m) => m.id === publishedMapId)
-    if (!pub) throw new Error('Mapa publicado não encontrado no modo demo')
+    const stored = this.state.maps.find((m) => m.id === publishedMapId)
+    const fixtureEnrollment = publishedMapId.startsWith('demo-map-qa-')
+      ? publishedMapId.slice('demo-map-qa-'.length)
+      : ''
+    const fixture =
+      this.activeScenario === 'qa_consciencia_completa' && fixtureEnrollment
+        ? this.getCurrentPublishedMap(fixtureEnrollment)
+        : null
+    const pub = stored || (fixture?.id === publishedMapId ? fixture : null)
+    if (!pub || pub.status !== 'published')
+      throw new Error('Mapa publicado não encontrado no modo demo')
+    const existing = this.getDraftMap(pub.enrollment_id)
+    if (existing) return structuredClone(existing)
+    const draftId = `demo-map-${crypto.randomUUID()}`
     const newDraft: CerMapRecord & {
       items: (CerMapItemRecord & { sources?: CerMapItemSourceRecord[] })[]
     } = {
-      id: `demo-map-${Date.now()}`,
+      id: draftId,
       enrollment_id: pub.enrollment_id,
       version_number: pub.version_number + 1,
       status: 'draft',
       created_by_user_id: userId,
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
-      items: pub.items.map((it) => ({
-        ...it,
-        id: `demo-map-item-${Date.now()}-${Math.random()}`,
-        map_id: `demo-map-${Date.now()}`,
-      })),
+      items: pub.items.map((it) => {
+        const itemId = `demo-map-item-${crypto.randomUUID()}`
+        return {
+          ...structuredClone(it),
+          id: itemId,
+          map_id: draftId,
+          sources: ((('sources' in it ? it.sources : []) as CerMapItemSourceRecord[]) || []).map(
+            (source) => ({
+              ...source,
+              id: `demo-src-${crypto.randomUUID()}`,
+              map_item_id: itemId,
+            }),
+          ),
+        }
+      }),
     }
     if (pub.reading_snapshot) {
       newDraft.reading_snapshot = structuredClone(pub.reading_snapshot)
       delete newDraft.reading_snapshot.reviewedAt
       delete newDraft.reading_snapshot.reviewedBy
     }
-    this.state.maps.unshift(newDraft)
-    this.saveState()
-    return newDraft
+    const previous = this.state.maps
+    // Persist the displayed QA version when explicitly beginning its review.
+    // This keeps its history stable while the editable copy evolves.
+    this.state.maps = [newDraft, ...(!stored ? [structuredClone(pub)] : []), ...previous]
+    try {
+      this.saveState()
+    } catch (error) {
+      this.state.maps = previous
+      throw error
+    }
+    return structuredClone(newDraft)
   }
 
   // 6. Respostas de Experiências da Consciência e Progresso de Enrollment (Demo)
