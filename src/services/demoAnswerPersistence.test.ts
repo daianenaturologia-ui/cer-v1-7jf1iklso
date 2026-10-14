@@ -108,3 +108,49 @@ it('falha de gravação não informa sucesso nem altera a versão em memória', 
   expect(demo.listExperienceResponses('demo-enr-01')[0].free_text).toBe('Original')
   expect(localStorage.getItem(storeKey)).toBe(original)
 })
+
+it('cria revisão do mapa QA sem alterar o publicado e preserva a hipótese na recarga', async () => {
+  let demo = await reload()
+  demo.enableDemo('daiane')
+  demo.setActiveScenario('qa_consciencia_completa')
+  const published = demo.getCurrentPublishedMap('demo-enr-01')!
+  const draft = demo.createNextDraftFromPublished(published.id, 'demo-user-daiane')
+  const original = structuredClone(demo.getCurrentPublishedMap('demo-enr-01')!)
+  expect(draft.status).toBe('draft')
+  expect(draft.version_number).toBe(2)
+  const loaded = demo.getDraftMap('demo-enr-01')!
+  expect(loaded.items.every((item) => item.map_id === draft.id)).toBe(true)
+  expect(loaded.reading_snapshot?.reviewedAt).toBeUndefined()
+  expect(demo.createNextDraftFromPublished(published.id, 'demo-user-daiane').id).toBe(draft.id)
+  const snapshot = structuredClone(loaded.reading_snapshot!)
+  snapshot.lifeConnections = [
+    {
+      eventId: 'fictional',
+      responseId: snapshot.sourceResponseIds[0],
+      text: 'Simulação: hipótese para conversar',
+      question: 'Faz sentido?',
+      recognition: 'Ainda não sabe',
+      resources: 'Apoio fictício',
+      priority: 'Pedir apoio',
+    },
+  ]
+  demo.saveMapReadingSnapshot(draft.id, snapshot)
+  demo = await reload()
+  demo.enableDemo('daiane')
+  expect(demo.getDraftMap('demo-enr-01')?.reading_snapshot?.lifeConnections).toEqual(
+    snapshot.lifeConnections,
+  )
+  expect(demo.getCurrentPublishedMap('demo-enr-01')).toEqual(original)
+  expect(() => demo.createNextDraftFromPublished('unknown', 'demo-user-daiane')).toThrow()
+})
+it('falha ao gravar a revisão não deixa um rascunho fantasma', async () => {
+  const demo = await reload()
+  demo.enableDemo('daiane')
+  demo.setActiveScenario('qa_consciencia_completa')
+  const published = demo.getCurrentPublishedMap('demo-enr-01')!
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new Error('quota')
+  })
+  expect(() => demo.createNextDraftFromPublished(published.id, 'demo-user-daiane')).toThrow('quota')
+  expect(demo.getDraftMap('demo-enr-01')).toBeNull()
+})
