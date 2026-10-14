@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "bedbb4c3000b9816de846ac604935f3800fbf4f8",
-  "conclusion": "failure",
-  "timestamp_utc": "2026-10-14T10:53:57.115Z",
-  "run_id": "38552570933",
-  "run_number": "498",
-  "all_success": false,
-  "failure_reason": "Interrompido na etapa 6 (Interagente A: Retorno ao Próximo Passo): locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: '4. Evolução', exact: true })\n",
+  "sha": "34bedda9ea78a734f4c850067c90dc126c3f9681",
+  "conclusion": "success",
+  "timestamp_utc": "2026-10-14T10:59:45.018Z",
+  "run_id": "38553334551",
+  "run_number": "499",
+  "all_success": true,
+  "failure_reason": null,
   "steps": [
     {
       "num": 1,
@@ -54,15 +54,15 @@
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "FAIL",
-      "note": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: '4. Evolução', exact: true })\n"
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 7,
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
       "filename": "07-retorno-no-prontuario.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -70,7 +70,7 @@
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
       "filename": "08-interagente-b-sem-acesso.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     }
   ]
