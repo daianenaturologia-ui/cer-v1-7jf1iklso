@@ -1,11 +1,11 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "3aa4a4ef2a0fe45bc0ef8467fe58e58e8455a2fc",
+  "sha": "3fcdde24780ae284acb165dcec842fbc4a2f360b",
   "conclusion": "success",
-  "timestamp_utc": "2026-10-14T19:55:52.294Z",
-  "run_id": "38627579484",
-  "run_number": "522",
+  "timestamp_utc": "2026-10-14T19:59:08.069Z",
+  "run_id": "38628074489",
+  "run_number": "523",
   "all_success": true,
   "failure_reason": null,
   "steps": [
