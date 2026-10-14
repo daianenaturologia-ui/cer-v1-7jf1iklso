@@ -22,6 +22,31 @@ interface MandalaStructuredViewProps {
   audience?: 'participant' | 'professional'
 }
 
+const careLabels: Record<string, string> = {
+  daily: 'Diário, com flexibilidade',
+  twice_a_week: 'Duas vezes por semana',
+  as_needed: 'Quando fizer sentido',
+  draft: 'Proposta para conferir',
+  planned: 'Planejado',
+  active: 'Em andamento',
+  paused: 'Pausado',
+  stopped: 'Interrompido',
+  completed: 'Concluído',
+  superseded: 'Substituído',
+  closed: 'Encerrado',
+  helped: 'Ajudou',
+  helped_a_bit: 'Ajudou um pouco',
+  no_perceived_difference: 'Não percebi diferença',
+  was_difficult: 'Foi difícil',
+  was_too_much: 'Foi demais',
+  could_not_do: 'Não consegui fazer',
+  chose_not_to_do: 'Escolhi não fazer',
+  adapted: 'Adaptei à minha maneira',
+  did_not_make_sense: 'Não fez sentido',
+  wants_to_tell: 'Quero contar com calma',
+}
+const careLabel = (value: string) => careLabels[value] || value.replace(/_/g, ' ')
+
 export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
   enrollmentId,
   onRefreshRequested,
@@ -197,7 +222,7 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-foreground">{exp.safe_title}</span>
                     <Badge variant="outline" className="text-[10px] capitalize">
-                      {exp.status === 'active' ? 'Ativo' : exp.status}
+                      {careLabel(exp.status)}
                     </Badge>
                   </div>
                   {exp.safe_summary && (
@@ -205,7 +230,9 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
                   )}
                   {(exp.frequency || exp.duration) && (
                     <p className="text-[10px] text-muted-foreground/80 font-mono">
-                      {[exp.frequency, exp.duration].filter(Boolean).join(' • ')}
+                      {[exp.frequency ? careLabel(exp.frequency) : '', exp.duration]
+                        .filter(Boolean)
+                        .join(' • ')}
                     </p>
                   )}
                 </div>
@@ -309,7 +336,7 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
                       </span>
                       <div className="flex items-center justify-between text-muted-foreground">
                         <Badge variant="secondary" className="text-[9px] capitalize py-0">
-                          {resp.response_type.replace(/_/g, ' ')}
+                          {careLabel(resp.response_type)}
                         </Badge>
                         <span className="text-[9px] font-mono">
                           {new Date(resp.date).toLocaleDateString('pt-BR')}
@@ -339,7 +366,7 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
               {mandala.care_cycle && (
                 <div className="p-2.5 rounded-lg bg-muted/20 border border-border/40 flex-1 space-y-1">
                   <span className="font-semibold text-foreground block">
-                    Ciclo #{mandala.care_cycle.cycle_number} ({mandala.care_cycle.status})
+                    Ciclo {mandala.care_cycle.cycle_number} · {careLabel(mandala.care_cycle.status)}
                   </span>
                   <p className="text-muted-foreground text-[11px]">
                     {mandala.care_cycle.focus_summary || 'Ciclo de experimentação e acolhimento.'}
