@@ -1,11 +1,11 @@
 {
   "job": "qa-general",
   "job_name": "General QA Practices (Etapa 1..9)",
-  "sha": "3aa4a4ef2a0fe45bc0ef8467fe58e58e8455a2fc",
+  "sha": "3fcdde24780ae284acb165dcec842fbc4a2f360b",
   "conclusion": "success",
-  "timestamp_utc": "2026-10-14T19:55:12.138Z",
-  "run_id": "38627579484",
-  "run_number": "522",
+  "timestamp_utc": "2026-10-14T19:58:49.327Z",
+  "run_id": "38628074489",
+  "run_number": "523",
   "pipeline_conclusion": "PARTIAL_BLOCKED (Testes de integração bloqueados por ausência de backend isolado)",
   "summary": {
     "total": 8,
@@ -19,14 +19,14 @@
       "step_number": 1,
       "name": "Testes Unitários Puros (testsCorrecao1A, testsLote3A, testsCorrecao3A1, testsMigration0049, testsMigration0059, testsCadernoV1 e testsDemoCorrection)",
       "status": "PASS",
-      "duration_ms": 4707,
+      "duration_ms": 3256,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 2,
       "name": "Teste da Trava de Segurança Canônica (safeMutableGate: 5 cenários determinísticos)",
       "status": "PASS",
-      "duration_ms": 765,
+      "duration_ms": 1138,
       "message": "Concluído com sucesso"
     },
     {
@@ -40,35 +40,35 @@
       "step_number": 4,
       "name": "Integração Mutável (7.A, 7.B, 7.C, 3.A, Caderno)",
       "status": "BLOCKED",
-      "duration_ms": 873,
+      "duration_ms": 1256,
       "message": "BLOQUEADO: URL do backend PocketBase não configurada ou vazia. Suíte de segurança comprovou bloqueio sem escritas."
     },
     {
       "step_number": 5,
       "name": "Regressões Funcionais Determinísticas (regras temporais, editorial gates, imutabilidade, schema 0049, rules 0059, caderno e demo)",
       "status": "PASS",
-      "duration_ms": 2036,
+      "duration_ms": 2719,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 6,
       "name": "Análise Estática de Código (oxlint src)",
       "status": "PASS",
-      "duration_ms": 310,
+      "duration_ms": 395,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 7,
       "name": "Verificação de Tipos TypeScript (tsc --noEmit)",
       "status": "PASS",
-      "duration_ms": 12539,
+      "duration_ms": 15298,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 8,
       "name": "Compilação de Produção (vite build)",
       "status": "PASS",
-      "duration_ms": 3504,
+      "duration_ms": 4079,
       "message": "Concluído com sucesso"
     }
   ]
