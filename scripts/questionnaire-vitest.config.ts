@@ -8,6 +8,7 @@ export default defineConfig({
     include: [
       'src/services/demoAnswerPersistence.test.ts',
       'src/services/participantJourney.test.ts',
+      'src/services/professionalJourneyNavigation.test.ts',
       'src/services/testsMenteEmocoesDemoStabilization.test.ts',
       'src/components/experience/LifeJourney.test.tsx',
       'src/components/experience/MyNextStepWizard.test.tsx',

@@ -1,3 +1,4 @@
+import { professionalJourneyTab } from '@/services/professionalJourneyNavigation'
 import { ProfessionalJourneySummary } from './ProfessionalJourneySummary'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CerArtStrip } from '@/components/CerArtwork'
@@ -76,16 +77,7 @@ export const ParticipantWorkspace: React.FC = () => {
       ? requestedTool
       : 'plano'
   // Normalização para a arquitetura aprovada (4 fases + sessões)
-  const currentTab: 'resumo' | 'sessoes' | 'consciencia' | 'equilibrio' | 'evolucao' =
-    rawTab === 'consciencia'
-      ? 'consciencia'
-      : rawTab === 'plano' || rawTab === 'experimentos' || rawTab === 'equilibrio'
-        ? 'equilibrio'
-        : rawTab === 'revisao' || rawTab === 'evolucao'
-          ? 'evolucao'
-          : rawTab === 'sessoes'
-            ? 'sessoes'
-            : 'resumo'
+  const currentTab = professionalJourneyTab(rawTab, requestedTool)
 
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [person, setPerson] = useState<PersonRecord | null>(null)
@@ -538,7 +530,7 @@ export const ParticipantWorkspace: React.FC = () => {
               >
                 {
                   {
-                    plano: 'Direção e metas',
+                    plano: 'Nosso plano',
                     biblioteca: 'Biblioteca de práticas',
                     mandala: 'Mandala',
                     planner: 'Planner',
@@ -556,14 +548,29 @@ export const ParticipantWorkspace: React.FC = () => {
                 planning
                 readOnly
               />
+              <CarePlanEditor
+                key={enrollment.id}
+                enrollmentId={enrollment.id}
+                participantName={participantName}
+              />
               <div className="rounded-xl border bg-primary/5 p-4 space-y-3">
+                <h3 className="font-semibold text-sm">Do plano à vida cotidiana</h3>
                 <p className="text-sm">
-                  Use esta direção para combinar o cuidado. O plano profissional e seus retornos
-                  ficam reunidos na Evolução.
+                  Conversem sobre as prioridades e as práticas de regulação antes de formular o
+                  plano. Depois de compartilhá-lo, a interagente escolhe o que cabe na sua semana;
+                  você acompanha os passos compartilhados no Planner e na Mandala.
                 </p>
-                <Button onClick={() => setSearchParams({ tab: 'evolucao', tool: 'plano' })}>
-                  Abrir plano de cuidado
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => openCareTool('biblioteca')}>
+                    Combinar uma prática
+                  </Button>
+                  <Button variant="outline" onClick={() => openCareTool('planner')}>
+                    Acompanhar no Planner
+                  </Button>
+                  <Button variant="outline" onClick={() => openCareTool('mandala')}>
+                    Rever na Mandala
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -618,34 +625,14 @@ export const ParticipantWorkspace: React.FC = () => {
       {/* EVOLUÇÃO */}
       <CerArtStrip variant="path" compact />
       {currentTab === 'evolucao' && (
-        <Tabs
-          defaultValue={
-            requestedTool === 'linha' ? 'caminho' : requestedTool === 'planner' ? 'agenda' : 'plano'
-          }
-          key={`evolution-${enrollment.id}-${requestedTool}`}
-        >
+        <Tabs defaultValue="caminho" key={`evolution-${enrollment.id}-${requestedTool}`}>
           <TabsList aria-label="Evolução da interagente" className="flex-wrap h-auto">
-            <TabsTrigger value="plano">Plano</TabsTrigger>
             <TabsTrigger value="caminho">Linha da Vida</TabsTrigger>
-            <TabsTrigger value="agenda">Agenda</TabsTrigger>
             <TabsTrigger value="revisao">Revisão</TabsTrigger>
           </TabsList>
-          <TabsContent value="plano" className="space-y-4 mt-4">
-            <CarePlanEditor
-              key={enrollment.id}
-              enrollmentId={enrollment.id}
-              participantName={participantName}
-            />
-            <Button variant="outline" onClick={() => openCareTool('biblioteca')}>
-              Combinar uma prática
-            </Button>
-          </TabsContent>
           <TabsContent value="caminho" className="space-y-4 mt-4">
             <LifeTimeline enrollmentId={enrollment.id} readOnly />
             <LifeDirections enrollmentId={enrollment.id} readOnly />
-          </TabsContent>
-          <TabsContent value="agenda" className="mt-4">
-            <ProfessionalPlannerView enrollmentId={enrollment.id} />
           </TabsContent>
           <TabsContent value="revisao" className="space-y-4 mt-4">
             <SelfDevelopmentJourney enrollmentId={enrollment.id} readOnly />

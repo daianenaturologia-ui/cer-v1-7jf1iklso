@@ -181,7 +181,7 @@ export function ProfessionalJourneySummary({
         ) : (
           <p className="text-sm">Ainda não há uma direção compartilhada.</p>
         )}
-        <Button size="sm" onClick={() => onOpen('evolucao', 'plano')}>
+        <Button size="sm" onClick={() => onOpen('equilibrio', 'plano')}>
           Revisar nosso plano
         </Button>
       </div>

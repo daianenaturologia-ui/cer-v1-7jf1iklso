@@ -23,3 +23,27 @@ export function nextConsciousnessExperience<
     dimensions.find((d) => d.experienceId !== exclude && !d.completed)
   )
 }
+
+export function careJourneyNextStep(hasPresentedPlan: boolean, responseType?: string) {
+  if (!hasPresentedPlan)
+    return {
+      label: 'Combinar o cuidado em Equilíbrio & Realização',
+      button: 'Retomar meu percurso',
+      planner: false,
+    }
+  if (
+    ['too_much', 'wants_to_talk', 'wants_to_adapt', 'not_now', 'alternative_requested'].includes(
+      responseType || '',
+    )
+  )
+    return {
+      label: 'Conversar com Daiane e ajustar o cuidado antes de seguir',
+      button: 'Rever meu plano e meu retorno',
+      planner: false,
+    }
+  return {
+    label: 'Escolher como meu plano de cuidado cabe nesta semana',
+    button: 'Levar meu cuidado para o Planner',
+    planner: true,
+  }
+}
