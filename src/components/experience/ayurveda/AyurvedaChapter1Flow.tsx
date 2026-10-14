@@ -25,7 +25,7 @@ import {
   AyurvedaChapter2Status,
   Chapter2TreatmentVariant,
 } from '@/services/ayurvedaChapter2'
-import { AvatarPresentation } from '@/services/avatarCompositor'
+import { AvatarPresentation, SkinToneId, HairColorId } from '@/services/avatarCompositor'
 import { AyurvedaChapter2Flow } from './AyurvedaChapter2Flow'
 import { AyurvedaChaptersHub } from './AyurvedaChaptersHub'
 import { AyurvedaPostAvatarTransition } from './AyurvedaPostAvatarTransition'
@@ -45,6 +45,8 @@ export interface AyurvedaChapter1FlowProps {
   experienceId: string
   respondentUserId: string
   userPresentation?: AvatarPresentation
+  userSkinTone?: SkinToneId
+  userHairColor?: HairColorId
   avatarDeferred?: boolean
   initialShowPostAvatarTransition?: boolean
   mode?: 'intro' | 'answering' | 'ready_to_complete' | 'completed' | 'review' | 'correcting' | 'hub'
@@ -76,6 +78,8 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
   experienceId,
   respondentUserId,
   userPresentation = 'feminine',
+  userSkinTone,
+  userHairColor,
   avatarDeferred = false,
   initialShowPostAvatarTransition = false,
   mode,
@@ -1223,6 +1227,8 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           )}
           <AyurvedaTela1Structure
             userPresentation={userPresentation}
+            userSkinTone={userSkinTone}
+            userHairColor={userHairColor}
             structureChoice={chapterState.structure_choice}
             primaryStructureChoice={chapterState.primary_structure_choice}
             secondaryStructureChoice={chapterState.secondary_structure_choice}

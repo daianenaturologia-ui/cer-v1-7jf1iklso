@@ -6,7 +6,7 @@ import { AyurvedaChapter2Flow } from './AyurvedaChapter2Flow'
 import { AyurvedaChapter3Flow } from './AyurvedaChapter3Flow'
 import { AyurvedaChapter4Flow } from './AyurvedaChapter4Flow'
 import { AyurvedaPostAvatarTransition } from './AyurvedaPostAvatarTransition'
-import { AvatarPresentation } from '@/services/avatarCompositor'
+import { AvatarPresentation, SkinToneId, HairColorId } from '@/services/avatarCompositor'
 import { deriveChapter1Status, AyurvedaChapter1Status } from '@/services/ayurvedaChapter1'
 import {
   deriveChapter2Status,
@@ -84,6 +84,8 @@ export interface AyurvedaChaptersNavigatorProps {
   experienceId: string
   respondentUserId: string
   userPresentation?: AvatarPresentation
+  userSkinTone?: SkinToneId
+  userHairColor?: HairColorId
   avatarDeferred?: boolean
   initialShowPostAvatarTransition?: boolean
   onClose?: () => void
@@ -96,6 +98,8 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   experienceId,
   respondentUserId,
   userPresentation = 'feminine',
+  userSkinTone,
+  userHairColor,
   avatarDeferred = false,
   initialShowPostAvatarTransition = false,
   onClose,
@@ -705,6 +709,8 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
         experienceId={experienceId}
         respondentUserId={respondentUserId}
         userPresentation={userPresentation}
+        userSkinTone={userSkinTone}
+        userHairColor={userHairColor}
         avatarDeferred={avatarDeferred}
         mode={c1Mode}
         revisionNumber={activeRev ?? undefined}
