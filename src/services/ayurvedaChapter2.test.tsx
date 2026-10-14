@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import React from 'react'
 import {
   deriveChapter2Status,
@@ -554,9 +554,15 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
       })
       expect(screen.getByText('Corrigir minhas respostas')).toBeInTheDocument()
 
+      // A revisão inicial é derivada após a leitura; aguardar os efeitos antes do clique.
+      await act(async () => {
+        await Promise.resolve()
+      })
       // 1. Clicar em "Corrigir minhas respostas"
       fireEvent.click(screen.getByText('Corrigir minhas respostas'))
-      expect(await screen.findByText('Confirmar abertura de correção do Capítulo 2')).toBeInTheDocument()
+      expect(
+        await screen.findByText('Confirmar abertura de correção do Capítulo 2'),
+      ).toBeInTheDocument()
 
       // Confirmar "Confirmar e corrigir"
       fireEvent.click(screen.getByText('Confirmar e corrigir'))
