@@ -17,6 +17,8 @@ export default defineConfig({
       'src/components/SessionMapUpdate.test.tsx',
       'src/components/SelfDevelopmentJourney.test.tsx',
       'src/components/WeeklyAgenda.test.tsx',
+      'src/components/MandalaStructuredView.test.tsx',
+      'src/services/cerMandalaDemo.test.ts',
       'src/components/experience/LifeTimeline.test.tsx',
       'src/components/experience/LifeDirections.test.tsx',
       'src/components/experience/CarePlanStartingPoint.test.tsx',
