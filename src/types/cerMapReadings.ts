@@ -96,7 +96,17 @@ export interface CerMapReadingSnapshot {
   }[]
   lifeDirections?: LifeDirection[]
   lifeEvents?: LifeEvent[]
-  lifeConnections?: { eventId: string; responseId: string; text: string; question: string }[]
+  lifeConnections?: {
+    eventId: string
+    responseId: string
+    text: string
+    question: string
+    feeling?: string
+    protection?: string
+    recognition?: string
+    resources?: string
+    priority?: string
+  }[]
   elementReadings?: Record<string, CerMapElementReading>
   dimensions: CerMapReadingDimension[]
   references: CerMapReference[]

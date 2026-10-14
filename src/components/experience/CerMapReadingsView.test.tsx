@@ -202,3 +202,55 @@ describe('Mapa CER: percurso de leitura e teclado', () => {
     }
   })
 })
+
+it('mostra as relações revisadas mesmo quando há uma leitura estruturada da história', async () => {
+  const snapshot = buildCerMapReadings([], 'enr', 'Lia')
+  snapshot.elementReadings = {
+    historia: {
+      summary: 'Leitura da história',
+      observations: [],
+      interpretation: '',
+      resources: [],
+      costs: [],
+      connections: [],
+      questions: [],
+    },
+  }
+  snapshot.lifeEvents = [
+    {
+      id: 'event',
+      enrollment_id: 'enr',
+      title: 'Mudança de escola',
+      emotions: ['Medo'],
+      narrative: 'Relato fictício',
+      time_kind: 'age',
+      time_value: '8',
+      access_class: 'participant_shared',
+    },
+  ]
+  snapshot.dimensions[1].detailedRows = [
+    { label: 'Resposta', text: 'Observo antes de me aproximar', sourceResponseId: 'r' },
+  ]
+  snapshot.lifeConnections = [
+    {
+      eventId: 'event',
+      responseId: 'r',
+      text: 'Relação a explorar',
+      question: 'Faz sentido?',
+      feeling: 'Medo',
+      protection: 'Observar',
+      recognition: 'Ainda não sabe',
+      resources: 'Professora',
+      priority: 'Pedir apoio',
+    },
+  ]
+  render(<CerMapReadingsView snapshot={snapshot} />)
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Abrir histórico e conexões da Linha da Vida' }),
+  )
+  const dialog = await screen.findByRole('dialog')
+  expect(dialog).toHaveTextContent('Hipótese para conversar')
+  expect(dialog).toHaveTextContent('Resposta atual: Observo antes de me aproximar')
+  expect(dialog).toHaveTextContent('O que reconhece ou questiona: Ainda não sabe')
+  expect(dialog).toHaveTextContent('Prioridade de cuidado: Pedir apoio')
+})

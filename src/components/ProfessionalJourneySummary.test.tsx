@@ -46,7 +46,7 @@ it('only shared steps reach the overview and its agenda shortcut is specific', a
   expect(await screen.findByText('Caminhar 15 minutos')).toBeInTheDocument()
   expect(screen.queryByText('PRIVATE_CONTROL')).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: /Rotina · 1 passo/ }))
-  expect(open).toHaveBeenCalledWith('evolucao', 'planner')
+  expect(open).toHaveBeenCalledWith('equilibrio', 'planner')
 })
 it('failed reads show a recoverable error rather than an empty or stable care claim', async () => {
   fixtures.read.mockRejectedValue(new Error('offline'))
@@ -112,4 +112,28 @@ it('surfaces shared goals while excluding private planning in the overview', asy
   expect(screen.queryByText('PRIVATE_PLAN')).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Ver metas e ações' }))
   expect(open).toHaveBeenCalledWith('equilibrio')
+})
+
+it('separa o presente da direção futura e oferece a integração antes do plano', async () => {
+  fixtures.read.mockResolvedValue([])
+  fixtures.steps.mockResolvedValue([])
+  fixtures.directions.mockResolvedValue([
+    {
+      id: 'future',
+      kind: 'future',
+      title: 'Quero descansar',
+      resources: 'Apoio',
+      limits: 'Energia',
+    },
+    { id: 'present', kind: 'present', title: 'Meu presente', narrative: 'Assumo muitas tarefas' },
+  ])
+  fixtures.roadmap.mockResolvedValue(null)
+  const open = vi.fn()
+  render(<ProfessionalJourneySummary enrollmentId="enrollment" name="Lia" onOpen={open} />)
+  expect(await screen.findByText('Quero descansar')).toBeVisible()
+  expect(screen.getByText('Meu presente · Assumo muitas tarefas')).toBeVisible()
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Integrar história e funcionamento no mapa' }),
+  )
+  expect(open).toHaveBeenCalledWith('consciencia')
 })

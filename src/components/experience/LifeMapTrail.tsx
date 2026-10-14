@@ -1,4 +1,5 @@
 import React from 'react'
+import type { CerMapReadingDimension } from '@/types/cerMapReadings'
 import { lifeTimeLabel, type LifeEvent } from '@/services/lifeTimeline'
 import { LIFE_HORIZONS, type LifeDirection } from '@/services/lifeDirections'
 
@@ -6,9 +7,11 @@ import { LIFE_HORIZONS, type LifeDirection } from '@/services/lifeDirections'
 export function LifeMapTrail({
   events,
   directions,
+  dimensions = [],
 }: {
   events: LifeEvent[]
   directions: LifeDirection[]
+  dimensions?: CerMapReadingDimension[]
 }) {
   if (!events.length && !directions.length) return null
   return (
@@ -41,6 +44,46 @@ export function LifeMapTrail({
               </div>
             </details>
           ))}
+        </div>
+      )}
+      {events.length > 0 && (
+        <div className="rounded-lg border border-primary/20 p-4 space-y-3">
+          <h4 className="font-medium">O que minha história ajuda a compreender?</h4>
+          <p className="text-sm">
+            Ao olhar um marco, pergunte-se: como eu me sentia, do que precisava e como buscava me
+            proteger? O que reconheço hoje e que apoios podem me ajudar?
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Você pode explorar essas relações com sua profissional, inclusive quando ainda não
+            souber a resposta. Um acontecimento não define sozinho seu funcionamento.
+          </p>
+          {dimensions
+            .filter(
+              (dimension) =>
+                ['mente', 'regulacao', 'relacoes'].includes(dimension.id) &&
+                dimension.detailedRows.some((row) => row.sourceResponseId),
+            )
+            .map((dimension) => (
+              <details key={dimension.id} className="text-sm">
+                <summary className="cursor-pointer font-medium">
+                  Minhas respostas atuais · {dimension.title}
+                </summary>
+                <ul className="mt-2 space-y-2">
+                  {dimension.detailedRows
+                    .filter((row) => row.sourceResponseId)
+                    .map((row, index) => (
+                      <li key={`${row.sourceResponseId}-${index}`}>
+                        <strong>{row.label}: </strong>
+                        {row.text}
+                      </li>
+                    ))}
+                </ul>
+              </details>
+            ))}
+          <p className="text-sm text-primary">
+            Depois desta leitura, volte ao percurso para olhar seu presente e escolher o que deseja
+            construir no futuro.
+          </p>
         </div>
       )}
       {directions.length > 0 && (

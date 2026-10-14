@@ -390,6 +390,9 @@ export function isCerMapReadingSnapshot(value: unknown): value is CerMapReadingS
           (c) =>
             c &&
             strings([c.eventId, c.responseId, c.text, c.question]) &&
+            [c.feeling, c.protection, c.recognition, c.resources, c.priority].every(
+              (value) => value === undefined || typeof value === 'string',
+            ) &&
             c.text.trim() &&
             s.lifeEvents?.some((e) => e.id === c.eventId) &&
             s.sourceResponseIds?.includes(c.responseId),

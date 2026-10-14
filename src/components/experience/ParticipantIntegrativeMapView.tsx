@@ -80,9 +80,16 @@ export function ParticipantIntegrativeMapView({
     }
   }, [enrollmentId])
   const ownLife = life.id === enrollmentId ? life : { events: [], directions: [], error: false }
+  const initial = enrollmentId
+    ? buildCerMapReadings(responses, enrollmentId, participantName, { literalOnly: true })
+    : null
   const trail = (
     <>
-      <LifeMapTrail events={ownLife.events} directions={ownLife.directions} />
+      <LifeMapTrail
+        events={ownLife.events}
+        directions={ownLife.directions}
+        dimensions={initial?.dimensions}
+      />
       {ownLife.error && (
         <p role="alert" className="text-sm text-destructive">
           Não foi possível atualizar os registros da Linha da Vida neste mapa. Feche e abra o mapa
@@ -98,9 +105,6 @@ export function ParticipantIntegrativeMapView({
         {trail}
       </div>
     )
-  const initial = enrollmentId
-    ? buildCerMapReadings(responses, enrollmentId, participantName, { literalOnly: true })
-    : null
   if (
     initial &&
     (initial.sourceResponseIds.length || ownLife.events.length || ownLife.directions.length)
