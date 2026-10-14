@@ -1193,39 +1193,65 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
                   Prakriti e Vikriti acrescentam a perspectiva ayurvédica à compreensão do corpo; a
                   Linha da Vida acrescenta os acontecimentos e aprendizados do seu percurso.
                 </p>
-                {!!snapshot.lifeConnections?.length && (
-                  <div className="border-t pt-3 space-y-2">
-                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                      Relações exploradas em conversa
-                    </h4>
-                    {snapshot.lifeConnections.map((conn, idx) => (
-                      <div key={idx} className="border rounded p-2.5 text-xs space-y-1">
-                        <p className="font-medium text-foreground">{conn.text}</p>
-                        {conn.question && (
-                          <p className="text-primary italic">Para investigar: {conn.question}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {!!snapshot.lifeEvents?.length && (
-                  <div className="border-t pt-3 space-y-2">
-                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                      Acontecimentos da sua história compartilhados
-                    </h4>
-                    {snapshot.lifeEvents.map((evt) => (
-                      <div key={evt.id} className="border rounded p-2 text-xs">
-                        <span className="font-medium block">
-                          {evt.title} ({lifeTimeLabel(evt)})
-                        </span>
-                        <span className="text-muted-foreground text-[11px] block">
-                          {evt.narrative}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </>
+            )}
+            {!!snapshot.lifeConnections?.length && (
+              <div className="border-t pt-3 space-y-2">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Relações exploradas em conversa
+                </h4>
+                {snapshot.lifeConnections.map((conn, idx) => (
+                  <div key={idx} className="border rounded p-2.5 text-xs space-y-1">
+                    <p className="font-semibold">Hipótese para conversar</p>
+                    <p>
+                      História:{' '}
+                      {snapshot.lifeEvents?.find((event) => event.id === conn.eventId)?.title}
+                    </p>
+                    <p>
+                      Resposta atual:{' '}
+                      {snapshot.dimensions
+                        .flatMap((dimension) => dimension.detailedRows)
+                        .find((row) => row.sourceResponseId === conn.responseId)?.text ||
+                        'Consultar a resposta de origem'}
+                    </p>
+                    <p className="font-medium text-foreground">{conn.text}</p>
+                    {(
+                      [
+                        ['feeling', 'Como se sentia'],
+                        ['protection', 'Proteção e repetição atual'],
+                        ['recognition', 'O que reconhece ou questiona'],
+                        ['resources', 'Apoios e recursos'],
+                        ['priority', 'Prioridade de cuidado'],
+                      ] as const
+                    ).map(([field, label]) =>
+                      conn[field] ? (
+                        <p key={field} className="whitespace-pre-wrap">
+                          <strong>{label}: </strong>
+                          {conn[field]}
+                        </p>
+                      ) : null,
+                    )}
+                    {conn.question && (
+                      <p className="text-primary italic">Para investigar: {conn.question}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {!!snapshot.lifeEvents?.length && (
+              <div className="border-t pt-3 space-y-2">
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Acontecimentos da sua história compartilhados
+                </h4>
+                {snapshot.lifeEvents.map((evt) => (
+                  <div key={evt.id} className="border rounded p-2 text-xs">
+                    <span className="font-medium block">
+                      {evt.title} ({lifeTimeLabel(evt)})
+                    </span>
+                    <span className="text-muted-foreground text-[11px] block">{evt.narrative}</span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         ),

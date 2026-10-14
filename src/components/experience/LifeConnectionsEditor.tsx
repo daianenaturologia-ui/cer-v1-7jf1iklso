@@ -30,6 +30,9 @@ export function LifeConnectionsEditor({
         Registre hipóteses para conversar com a pessoa, incluindo outras explicações e recursos. Ser
         prestativa, controlar ou se afastar não comprova negligência ou uma origem única.
       </p>
+      {!snapshot.lifeEvents?.length && (
+        <p className="text-sm">Aguarde a pessoa compartilhar os marcos que deseja conversar.</p>
+      )}
       {connections.map((connection, index) => (
         <div key={index} className="border rounded-lg p-3 space-y-3">
           <label className="block text-sm">
@@ -62,6 +65,26 @@ export function LifeConnectionsEditor({
               ))}
             </select>
           </label>
+          {(
+            [
+              ['feeling', 'Como a pessoa relata que se sentia naquele momento?'],
+              ['protection', 'Como buscava se proteger e o que percebe que se repete hoje?'],
+              [
+                'recognition',
+                'O que a pessoa reconhece, discorda ou ainda não sabe sobre esta relação?',
+              ],
+              ['resources', 'Que apoios e recursos encontrou ou pode encontrar hoje?'],
+              ['priority', 'Que necessidade atual merece prioridade no cuidado?'],
+            ] as const
+          ).map(([field, label]) => (
+            <label key={field} className="block text-sm">
+              {label}
+              <Textarea
+                value={connection[field] || ''}
+                onChange={(e) => update(index, { [field]: e.target.value })}
+              />
+            </label>
+          ))}
           <label className="block text-sm">
             Relação possível e explicações alternativas
             <Textarea
