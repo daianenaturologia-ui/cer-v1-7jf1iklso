@@ -1,54 +1,60 @@
 {
   "job": "caderno-privacy-proof",
   "job_name": "Caderno Privacy Proof (CAD-01..07)",
-  "sha": "9ec484f920509f4e678c36055149646cd6f79331",
-  "conclusion": "failure",
-  "timestamp_utc": "2026-10-14T19:09:10.577Z",
-  "run_id": "38621177105",
-  "run_number": "517",
-  "summary": null,
+  "sha": "26f399d0b454bed4d46df6744c6e345e6885a7b3",
+  "conclusion": "success",
+  "timestamp_utc": "2026-10-14T19:29:11.475Z",
+  "run_id": "38624027155",
+  "run_number": "518",
+  "summary": {
+    "total": 7,
+    "pass": 7,
+    "fail": 0,
+    "blocked": 0,
+    "all_pass": true
+  },
   "scenarios": [
     {
       "id": "CAD-01",
-      "status": "NÃO EXECUTADO",
-      "description": "Prova de privacidade do caderno",
-      "details": "Job interrompido antes ou durante a execução"
+      "status": "PASS",
+      "description": "Anotação do Caderno invisível para profissional (list e getOne)",
+      "details": "RLS bloqueou com sucesso: 0 retornos na lista e 404/403 no getOne direto"
     },
     {
       "id": "CAD-02",
-      "status": "NÃO EXECUTADO",
-      "description": "Prova de privacidade do caderno",
-      "details": "Job interrompido antes ou durante a execução"
+      "status": "PASS",
+      "description": "Versões do Caderno invisíveis para profissional (list e getOne)",
+      "details": "RLS bloqueou com sucesso: 0 retornos na lista de versões"
     },
     {
       "id": "CAD-03",
-      "status": "NÃO EXECUTADO",
-      "description": "Prova de privacidade do caderno",
-      "details": "Job interrompido antes ou durante a execução"
+      "status": "PASS",
+      "description": "Rascunho de recado invisível para profissional vinculada",
+      "details": "RLS e hook garantiram que status=draft permanece inacessível"
     },
     {
       "id": "CAD-04",
-      "status": "NÃO EXECUTADO",
-      "description": "Prova de privacidade do caderno",
-      "details": "Job interrompido antes ou durante a execução"
+      "status": "PASS",
+      "description": "Recado aprovado visível à profissional vinculada com vínculo ativo",
+      "details": "Profissional vinculada conseguiu visualizar recado aprovado (status=approved, access_class=shared_care)"
     },
     {
       "id": "CAD-05",
-      "status": "NÃO EXECUTADO",
-      "description": "Prova de privacidade do caderno",
-      "details": "Job interrompido antes ou durante a execução"
+      "status": "PASS",
+      "description": "Recado retirado inacessível por listagem E por ID direto",
+      "details": "RLS fail-closed bloqueou imediatamente acesso ao recado após transição para withdrawn"
     },
     {
       "id": "CAD-06",
-      "status": "NÃO EXECUTADO",
-      "description": "Prova de privacidade do caderno",
-      "details": "Job interrompido antes ou durante a execução"
+      "status": "PASS",
+      "description": "Tentativa de acesso por profissional não vinculada é negada",
+      "details": "RLS bloqueou profissional sem vínculo ativo ao recado aprovado"
     },
     {
       "id": "CAD-07",
-      "status": "NÃO EXECUTADO",
-      "description": "Prova de privacidade do caderno",
-      "details": "Job interrompido antes ou durante a execução"
+      "status": "PASS",
+      "description": "Tentativa de acesso a recado de outro enrollment por outra participante é negada",
+      "details": "RLS bloqueou com sucesso: 0 retornos na listagem e 404/403 no getOne direto"
     }
   ]
 }
