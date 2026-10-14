@@ -141,7 +141,11 @@ export const MandalaStructuredView: React.FC<MandalaStructuredViewProps> = ({
           </CardHeader>
           <CardContent className="space-y-2 text-xs">
             {mandala.active_priorities.length === 0 ? (
-              <p className="text-muted-foreground italic">Nenhuma prioridade ativa registrada.</p>
+              <p className="text-muted-foreground">
+                {audience === 'participant' && mandala.direction?.statement
+                  ? 'Seus focos estão no plano compartilhado, em “Direção atual do cuidado”, abaixo. Você pode rever o plano e conversar sobre ajustes com sua profissional.'
+                  : 'Nenhuma prioridade ativa registrada.'}
+              </p>
             ) : (
               mandala.active_priorities.map((p) => (
                 <div
