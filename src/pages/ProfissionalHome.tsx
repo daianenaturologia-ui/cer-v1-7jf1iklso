@@ -4,8 +4,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService, productService } from '@/services/cer'
 import { attentionService, AttentionItem } from '@/services/attentionService'
@@ -223,7 +226,7 @@ export const ProfissionalHome: React.FC = () => {
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         <CerArtStrip variant="leaves" compact />
         {/* Navegação Principal Profissional (Build 09C): Participantes · Sessões · Biblioteca · Auditoria */}
-        <div className="flex border-b border-border/60 pb-2 space-x-2 overflow-x-auto">
+        <nav aria-label="Navegação profissional" className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
           <Button
             variant={activeMainTab === 'participantes' ? 'default' : 'ghost'}
             size="sm"
@@ -233,6 +236,33 @@ export const ProfissionalHome: React.FC = () => {
             <Users className="w-3.5 h-3.5" />
             <span>Participantes</span>
           </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-xs gap-1.5">
+                <Compass className="w-3.5 h-3.5" />
+                <span>Workspace</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-72 max-h-80 overflow-y-auto">
+              <DropdownMenuLabel>Escolha a pessoa acompanhada</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {loading ? (
+                <DropdownMenuItem disabled>Carregando participantes...</DropdownMenuItem>
+              ) : enrollments.length === 0 ? (
+                <DropdownMenuItem disabled>Nenhum participante vinculado</DropdownMenuItem>
+              ) : (
+                enrollments.map((enr) => (
+                  <DropdownMenuItem key={enr.id} asChild>
+                    <Link to={`/profissional/participantes/${enr.id}`} className="flex-col items-start gap-1">
+                      <span>{enr.expand?.person_id?.preferred_name || enr.expand?.person_id?.full_name || 'Participante'}</span>
+                      <span className="text-xs text-muted-foreground">Abrir acompanhamento</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Button
             variant={activeMainTab === 'sessoes' ? 'default' : 'ghost'}
@@ -272,7 +302,7 @@ export const ProfissionalHome: React.FC = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </nav>
 
         {/* ABA 1: PARTICIPANTES & HOME COTIDIANA */}
         {activeMainTab === 'participantes' && (
