@@ -82,7 +82,8 @@ export function ProfessionalJourneySummary({
   const experienced = state.steps.filter((s: any) =>
     ['completed', 'reviewed'].includes(s.status),
   ).length
-  const direction = state.directions.at(-1)
+  const direction = state.directions.filter((value: any) => value.kind === 'future').at(-1)
+  const present = state.directions.filter((value: any) => value.kind === 'present').at(-1)
   return (
     <section aria-label={`Acompanhamento de ${name}`} className="space-y-5">
       <div className="flex justify-between items-start gap-3">
@@ -116,7 +117,7 @@ export function ProfessionalJourneySummary({
         <Button
           variant="outline"
           className="h-auto p-4 flex-col items-start gap-1 whitespace-normal"
-          onClick={() => onOpen('evolucao', 'planner')}
+          onClick={() => onOpen('equilibrio', 'planner')}
         >
           <strong>
             Rotina · {state.steps.length} {state.steps.length === 1 ? 'passo' : 'passos'}
@@ -131,8 +132,34 @@ export function ProfessionalJourneySummary({
         <h3 className="font-semibold">Próximo passo do acompanhamento</h3>
         <p>
           {done === 6
-            ? 'As seis dimensões foram respondidas. Revise o mapa com a pessoa e conecte a direção escolhida a um cuidado que caiba no momento.'
+            ? state.history.length
+              ? 'Integre os marcos compartilhados ao Mapa CER: sentimentos, modos de proteção, apoios e hipóteses que a pessoa reconhece ou questiona. Depois conversem sobre o presente, as metas e as prioridades de cuidado.'
+              : 'Convide a pessoa a olhar seu passado na Linha da Vida e compartilhar os marcos que deseja conversar. Retomem o Mapa CER antes de definir metas e cuidado.'
             : 'Acompanhe o preenchimento das dimensões e acolha as dúvidas. O mapa inicial pode ser revisto ao longo da jornada.'}
+        </p>
+      </div>
+      <div className="rounded-xl border p-4 space-y-3">
+        <h3 className="font-semibold">Da história ao cuidado</h3>
+        <p className="text-sm">
+          No Mapa CER, relacione cada hipótese a um marco compartilhado e a uma resposta atual.
+          Registre o que a pessoa reconhece, os recursos e a necessidade prioritária.
+        </p>
+        <Button size="sm" variant="outline" onClick={() => onOpen('consciencia')}>
+          Integrar história e funcionamento no mapa
+        </Button>
+        <h4 className="text-sm font-semibold">Como a pessoa descreve o presente</h4>
+        {present ? (
+          <p className="text-sm whitespace-pre-wrap">
+            {present.title} · {present.narrative}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Ainda não há um relato do presente compartilhado.
+          </p>
+        )}
+        <p className="text-sm text-muted-foreground">
+          Após conversar sobre a direção futura, combinem os exercícios de regulação. A profissional
+          prepara o plano de cuidado para orientar o Planner e a Mandala.
         </p>
       </div>
       <div className="rounded-2xl border bg-primary/5 p-5 space-y-3">

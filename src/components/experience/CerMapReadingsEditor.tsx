@@ -58,7 +58,11 @@ export function CerMapReadingsEditor({
               integration: snapshot.integration || updated.integration,
               lifeEvents,
               lifeDirections,
-              lifeConnections: [],
+              lifeConnections: (snapshot.lifeConnections || []).filter(
+                (connection) =>
+                  lifeEvents.some((event) => event.id === connection.eventId) &&
+                  updated.sourceResponseIds.includes(connection.responseId),
+              ),
               dimensions: updated.dimensions.map((d) => ({
                 ...d,
                 summary:
@@ -182,9 +186,9 @@ export function CerMapReadingsEditor({
           <section className="border rounded-lg p-3 space-y-3">
             <h4 className="font-medium">Histórias compartilhadas que sustentam esta versão</h4>
             <p className="text-sm text-muted-foreground">
-              Relatos da pessoa, sem interpretação automática. Atualizar as fontes retira as
-              hipóteses com fontes selecionadas para nova revisão. Confira também o texto sobre a
-              história: ele pode precisar mudar.
+              Relatos da pessoa, sem interpretação automática. Atualizar preserva as relações cujas
+              fontes continuam compartilhadas e exige nova revisão. Relações com fontes retiradas
+              deixam este rascunho; confira também os textos livres antes de salvá-lo.
             </p>
             {snapshot.lifeEvents?.map((event) => (
               <details key={event.id}>

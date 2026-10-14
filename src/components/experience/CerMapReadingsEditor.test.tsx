@@ -5,6 +5,7 @@ import { render, screen, cleanup, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CerMapReadingsEditor } from './CerMapReadingsEditor'
 import { buildCerMapReadings } from '@/services/cerMapReadings'
+import { lifeTimelineService } from '@/services/lifeTimeline'
 import { BUILD_07E_SEXUALIDADE_PROMPTS } from '@/services/build07ePrompts'
 vi.mock('@/services/lifeTimeline', () => ({
   lifeTimelineService: { list: vi.fn(async () => []) },
@@ -115,5 +116,74 @@ it('mantém edições quando falha ao salvar e informa a tentativa necessária',
   expect(screen.getByRole('alert')).toHaveTextContent('Falha de rede')
   expect(screen.getByLabelText('Apresentação do mapa')).toHaveValue(
     buildCerMapReadings([], 'enr', 'Teste').overview + 'Texto teste',
+  )
+})
+
+it('preserva hipóteses com fontes compartilhadas e retira as que perderam a fonte ao atualizar', async () => {
+  const p = BUILD_07E_SEXUALIDADE_PROMPTS.find(
+    (p) => (p.schema_config as any).prompt_key === 'comunicacao_desconforto_cena',
+  )!
+  const responses = [
+    {
+      id: 'r',
+      enrollment_id: 'enr',
+      experience_id: p.experience_id,
+      prompt_id: p.id,
+      structured_value: { value: 'percebo_mas_hesito' },
+      status: 'saved',
+      access_class: 'participant_shared',
+      created: '2026-10-12',
+      updated: '2026-10-12',
+    },
+  ] as any
+  vi.mocked(lifeTimelineService.list).mockResolvedValueOnce([
+    {
+      id: 'shared',
+      enrollment_id: 'enr',
+      title: 'Escola',
+      emotions: ['Medo'],
+      narrative: 'Relato fictício',
+      time_kind: 'age',
+      time_value: '8',
+      access_class: 'participant_shared',
+      updated: '2026-10-14',
+    },
+  ] as any)
+  const initial = buildCerMapReadings(responses, 'enr', 'Teste')
+  const connection = {
+    eventId: 'shared',
+    responseId: 'r',
+    text: 'Relação a explorar',
+    question: 'Faz sentido?',
+    feeling: 'Medo relatado',
+    protection: 'Observar antes de se aproximar',
+    recognition: 'Ainda não sabe',
+    resources: 'Uma professora',
+    priority: 'Pedir apoio',
+  }
+  initial.lifeConnections = [
+    connection,
+    { ...connection, eventId: 'withdrawn', text: 'Fonte retirada' },
+  ]
+  const save = vi.fn(async (_snapshot: any, _reviewed: boolean) => {})
+  render(
+    <CerMapReadingsEditor
+      initial={initial}
+      responses={responses}
+      enrollmentId="enr"
+      participantName="Teste"
+      onDirty={vi.fn()}
+      onSave={save}
+    />,
+  )
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Atualizar respostas e histórias do rascunho' }),
+  )
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar como rascunho' }))
+  expect(save.mock.calls[0][0].lifeConnections).toEqual([connection])
+  expect(save.mock.calls[0][1]).toBe(false)
+  expect(initial.lifeConnections).toHaveLength(2)
+  expect(screen.getByLabelText('Que necessidade atual merece prioridade no cuidado?')).toHaveValue(
+    'Pedir apoio',
   )
 })
