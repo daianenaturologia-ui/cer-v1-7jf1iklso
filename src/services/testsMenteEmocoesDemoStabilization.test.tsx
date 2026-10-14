@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+// @vitest-environment jsdom
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import {
   demoAdapter,
   DEMO_ENROLLMENT_ID,
@@ -18,7 +19,9 @@ import pb from '@/lib/pocketbase/client'
 import type { ExperienceResponseRecord } from '@/types/cer'
 
 describe('Estabilização dos Dados de Mente & Emoções no Modo Demonstração (Versão 0.0.120)', () => {
+  afterEach(cleanup)
   beforeEach(() => {
+    vi.restoreAllMocks()
     localStorage.clear()
     demoAdapter.disableDemo()
     demoAdapter.enableDemo('mariana')
@@ -135,7 +138,8 @@ describe('Estabilização dos Dados de Mente & Emoções no Modo Demonstração 
 
   // Teste D: Dados das outras áreas permanecem intactos
   it('D: Dados das outras áreas (sessões, notas, planos, mapas e outras experiências) permanecem intactos', () => {
-    // Criar dados em várias áreas
+    // Criar os registros da profissional com a persona correta.
+    demoAdapter.setActivePersona('daiane')
     const session = demoAdapter.createScheduledSession(DEMO_ENROLLMENT_ID, '2025-02-15T10:00:00Z')
     demoAdapter.createOrUpdateNote(session.id, 'Nota confidencial da sessão de alinhamento')
     const plan = demoAdapter.createDraftPlan({
@@ -401,15 +405,15 @@ describe('Estabilização dos Dados de Mente & Emoções no Modo Demonstração 
       />,
     )
 
-    // Texto EXATO exigido: "Esta demonstração foi atualizada. Para construir seu retrato com segurança, responda novamente à experiência Mente & Emoções."
+    // Texto EXATO exigido: "Suas respostas anteriores foram preservadas no histórico da Consciência. Continue pelas perguntas atuais sem apagar seus registros."
     expect(
       screen.getByText(
-        'Esta demonstração foi atualizada. Para construir seu retrato com segurança, responda novamente à experiência Mente & Emoções.',
+        'Suas respostas anteriores foram preservadas no histórico da Consciência. Continue pelas perguntas atuais sem apagar seus registros.',
       ),
     ).toBeTruthy()
 
-    // Botão com texto EXATO: "Refazer Mente & Emoções"
-    const retakeBtn = screen.getByRole('button', { name: /Refazer Mente & Emoções/i })
+    // Botão com texto EXATO: "Continuar Mente & Emoções"
+    const retakeBtn = screen.getByRole('button', { name: /Continuar Mente & Emoções/i })
     expect(retakeBtn).toBeTruthy()
 
     fireEvent.click(retakeBtn)
@@ -417,7 +421,7 @@ describe('Estabilização dos Dados de Mente & Emoções no Modo Demonstração 
   })
 
   // Reinício de Mente & Emoções no ExperienceEngine limpa e retorna à introdução
-  it('Refazer Mente & Emoções reinicia apenas a dimensão sem afetar outras áreas', async () => {
+  it('Continuar Mente & Emoções reinicia apenas a dimensão sem afetar outras áreas', async () => {
     // Preparar estado com mensagem na pré-consulta e resposta de Mente
     demoAdapter.createNextSessionMessage({
       enrollment_id: DEMO_ENROLLMENT_ID,
@@ -457,7 +461,7 @@ describe('Estabilização dos Dados de Mente & Emoções no Modo Demonstração 
 
   // Regressão da Migração exigida pelo prompt:
   // Cenário com progresso legado `completed` + respostas incompatíveis arquivadas + ausência das obrigatórias canônicas
-  // -> deve sair de completed, mostrar o aviso e exigir "Refazer Mente & Emoções".
+  // -> deve sair de completed, mostrar o aviso e exigir "Continuar Mente & Emoções".
   it('Regressão de migração: progresso legado completed com respostas incompatíveis arquivadas e obrigatórias ausentes sai de completed e mostra aviso', () => {
     const rawLegacyState = {
       activePersona: 'mariana' as const,
@@ -521,9 +525,9 @@ describe('Estabilização dos Dados de Mente & Emoções no Modo Demonstração 
 
     expect(
       screen.getByText(
-        'Esta demonstração foi atualizada. Para construir seu retrato com segurança, responda novamente à experiência Mente & Emoções.',
+        'Suas respostas anteriores foram preservadas no histórico da Consciência. Continue pelas perguntas atuais sem apagar seus registros.',
       ),
     ).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Refazer Mente & Emoções/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Continuar Mente & Emoções/i })).toBeTruthy()
   })
 })

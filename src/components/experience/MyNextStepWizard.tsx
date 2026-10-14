@@ -253,7 +253,7 @@ export function MyNextStepWizard({
             className="rounded-xl bg-primary/5 p-4 space-y-2"
             aria-label="Minha direção para o futuro"
           >
-            <h4 className="font-serif text-lg">Minha direção de cuidado</h4>
+            <h4 className="font-serif text-lg">Minha direção para o futuro</h4>
             <p className="text-sm whitespace-pre-wrap">
               <strong>Quero caminhar para: </strong>
               {value.title || 'Compreender o que está pesando e encontrar uma direção.'}
