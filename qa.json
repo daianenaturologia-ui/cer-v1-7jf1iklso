@@ -1,17 +1,17 @@
 {
   "job": "qa-general",
   "job_name": "General QA Practices (Etapa 1..9)",
-  "sha": "9ec484f920509f4e678c36055149646cd6f79331",
-  "conclusion": "failure",
-  "timestamp_utc": "2026-10-14T19:09:43.040Z",
-  "run_id": "38621177105",
-  "run_number": "517",
-  "pipeline_conclusion": "FAIL",
+  "sha": "26f399d0b454bed4d46df6744c6e345e6885a7b3",
+  "conclusion": "success",
+  "timestamp_utc": "2026-10-14T19:29:38.051Z",
+  "run_id": "38624027155",
+  "run_number": "518",
+  "pipeline_conclusion": "PARTIAL_BLOCKED (Testes de integração bloqueados por ausência de backend isolado)",
   "summary": {
-    "total": 7,
-    "pass": 5,
+    "total": 8,
+    "pass": 7,
     "blocked": 1,
-    "fail": 1,
+    "fail": 0,
     "skipped": 0
   },
   "steps": [
@@ -19,50 +19,57 @@
       "step_number": 1,
       "name": "Testes Unitários Puros (testsCorrecao1A, testsLote3A, testsCorrecao3A1, testsMigration0049, testsMigration0059, testsCadernoV1 e testsDemoCorrection)",
       "status": "PASS",
-      "duration_ms": 5053,
+      "duration_ms": 3809,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 2,
       "name": "Teste da Trava de Segurança Canônica (safeMutableGate: 5 cenários determinísticos)",
       "status": "PASS",
-      "duration_ms": 941,
+      "duration_ms": 837,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 3,
       "name": "Verificação do Ambiente (inspeção de segurança)",
       "status": "PASS",
-      "duration_ms": 0,
+      "duration_ms": 1,
       "message": "Ambiente protegido: URL do backend PocketBase não configurada ou vazia"
     },
     {
       "step_number": 4,
       "name": "Integração Mutável (7.A, 7.B, 7.C, 3.A, Caderno)",
       "status": "BLOCKED",
-      "duration_ms": 1096,
+      "duration_ms": 953,
       "message": "BLOQUEADO: URL do backend PocketBase não configurada ou vazia. Suíte de segurança comprovou bloqueio sem escritas."
     },
     {
       "step_number": 5,
       "name": "Regressões Funcionais Determinísticas (regras temporais, editorial gates, imutabilidade, schema 0049, rules 0059, caderno e demo)",
       "status": "PASS",
-      "duration_ms": 2396,
+      "duration_ms": 2130,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 6,
       "name": "Análise Estática de Código (oxlint src)",
       "status": "PASS",
-      "duration_ms": 403,
+      "duration_ms": 344,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 7,
       "name": "Verificação de Tipos TypeScript (tsc --noEmit)",
-      "status": "FAIL",
-      "duration_ms": 14821,
-      "message": "Processo encerrou com código 2"
+      "status": "PASS",
+      "duration_ms": 13385,
+      "message": "Concluído com sucesso"
+    },
+    {
+      "step_number": 8,
+      "name": "Compilação de Produção (vite build)",
+      "status": "PASS",
+      "duration_ms": 3614,
+      "message": "Concluído com sucesso"
     }
   ]
 }
