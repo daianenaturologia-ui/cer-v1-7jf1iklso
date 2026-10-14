@@ -5,7 +5,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { resourceExerciseService } from '@/services/cerResourceExercise'
 import { GoalRoadmapPlanner } from './GoalRoadmapPlanner'
 import { ResourceAgendaForm } from './ResourceAgendaForm'
-import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import { MyNextStepWizard, clearMyNextStepDraft } from './MyNextStepWizard'
 import { CareEpisodeExplorer } from './CareEpisodeExplorer'
 import {
@@ -21,12 +20,16 @@ export function LifeDirections({
   unlocked = true,
   perspective,
   planning = false,
+  enableActions = true,
+  allowEditing = true,
 }: {
   enrollmentId: string
   readOnly?: boolean
   unlocked?: boolean
   perspective?: LifeDirection['kind']
   planning?: boolean
+  enableActions?: boolean
+  allowEditing?: boolean
 }) {
   const [records, setRecords] = useState<LifeDirection[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,7 +37,6 @@ export function LifeDirections({
   const [editing, setEditing] = useState<LifeDirectionInput | null>(null)
   const [editingId, setEditingId] = useState<string>()
   const [busy, setBusy] = useState(false)
-  const [voice, setVoice] = useState(false)
   const [saved, setSaved] = useState('')
   const [retry, setRetry] = useState(0)
   const [strategies, setStrategies] = useState<string[]>([])
@@ -71,7 +73,7 @@ export function LifeDirections({
     setLoading(true)
     setError('')
     setSaved('')
-    setVoice(false)
+
     lifeDirectionsService
       .list(enrollmentId)
       .then((values) => {
@@ -110,7 +112,7 @@ export function LifeDirections({
         : undefined
     setEditingId(record?.id)
     setSaved('')
-    setVoice(false)
+
     setEditing(
       record || {
         enrollment_id: enrollmentId,
@@ -131,18 +133,13 @@ export function LifeDirections({
     setBusy(true)
     setError('')
     try {
-      const record = await lifeDirectionsService.save(
-        planning && editing.kind === 'future' && !editing.title.trim()
-          ? { ...editing, title: 'Compreender o que está me causando angústia' }
-          : editing,
-        editingId,
-      )
+      const record = await lifeDirectionsService.save(editing, editingId)
       if (planning && editing.kind === 'future') clearMyNextStepDraft(enrollmentId, editingId)
       setRecords((values) =>
         editingId ? values.map((v) => (v.id === editingId ? record : v)) : [...values, record],
       )
       setEditing(null)
-      setVoice(false)
+
       setSaved(
         planning
           ? 'Direção salva. Ela será a base da conversa sobre seu objetivo e os passos possíveis.'
@@ -193,30 +190,35 @@ export function LifeDirections({
         <p role="status">Carregando registros…</p>
       ) : (
         <>
-          {!planning && perspective === 'future' && !readOnly && unlocked && !error && (
-            <div className="relative grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-4">
-              <div
-                aria-hidden="true"
-                className="absolute top-10 left-10 right-10 border-t-2 border-primary/30"
-              />
-              {(['short', 'medium', 'long'] as const).map((horizon) => (
-                <button
-                  type="button"
-                  key={horizon}
-                  onClick={() => open('future', undefined, horizon)}
-                  className="relative flex flex-col items-center gap-2 text-center text-sm text-primary"
-                >
-                  <span className="rounded-full border border-primary/40 bg-background w-12 h-12 flex items-center justify-center text-xl">
-                    +
-                  </span>
-                  <span>{LIFE_HORIZONS[horizon]}</span>
-                </button>
-              ))}
-            </div>
-          )}
-          {!readOnly && unlocked && !error && (
+          {!planning &&
+            perspective === 'future' &&
+            !readOnly &&
+            allowEditing &&
+            unlocked &&
+            !error && (
+              <div className="relative grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-4">
+                <div
+                  aria-hidden="true"
+                  className="absolute top-10 left-10 right-10 border-t-2 border-primary/30"
+                />
+                {(['short', 'medium', 'long'] as const).map((horizon) => (
+                  <button
+                    type="button"
+                    key={horizon}
+                    onClick={() => open('future', undefined, horizon)}
+                    className="relative flex flex-col items-center gap-2 text-center text-sm text-primary"
+                  >
+                    <span className="rounded-full border border-primary/40 bg-background w-12 h-12 flex items-center justify-center text-xl">
+                      +
+                    </span>
+                    <span>{LIFE_HORIZONS[horizon]}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          {!readOnly && allowEditing && unlocked && !error && (
             <div className="flex flex-wrap gap-2">
-              {planning && !editing && (
+              {planning && perspective !== 'present' && !editing && (
                 <Button variant="outline" onClick={() => open('future')}>
                   {records.some((v) => v.kind === 'future')
                     ? 'Escolher outra direção'
@@ -292,7 +294,8 @@ export function LifeDirections({
                               </p>
                             ),
                         )}
-                        {planning &&
+                        {enableActions &&
+                          planning &&
                           record.kind === 'future' &&
                           record.first_step.trim() &&
                           !readOnly &&
@@ -309,23 +312,25 @@ export function LifeDirections({
                               initialGoal={record.title}
                             />
                           )}
-                        {record.kind === 'future' && (readOnly || (planning && unlocked)) && (
-                          <CareEpisodeExplorer
-                            key={`episode:${record.id}:${readOnly}`}
-                            source={record}
-                            readOnly={readOnly}
-                            strategies={strategies}
-                          />
-                        )}
-                        {record.kind === 'future' && (readOnly || (planning && unlocked)) && (
-                          <GoalRoadmapPlanner
-                            title="Metas e ações desta direção"
-                            source={record}
-                            readOnly={readOnly}
-                            strategies={strategies}
-                          />
-                        )}
-                        {!readOnly && unlocked && (
+                        {record.kind === 'future' &&
+                          (readOnly || (enableActions && planning && unlocked)) && (
+                            <CareEpisodeExplorer
+                              key={`episode:${record.id}:${readOnly}`}
+                              source={record}
+                              readOnly={readOnly}
+                              strategies={strategies}
+                            />
+                          )}
+                        {record.kind === 'future' &&
+                          (readOnly || (enableActions && planning && unlocked)) && (
+                            <GoalRoadmapPlanner
+                              title="Metas e ações desta direção"
+                              source={record}
+                              readOnly={readOnly}
+                              strategies={strategies}
+                            />
+                          )}
+                        {!readOnly && allowEditing && unlocked && (
                           <Button size="sm" variant="outline" onClick={() => open(kind, record)}>
                             Editar registro
                           </Button>
@@ -369,7 +374,7 @@ export function LifeDirections({
           onSave={() => void save()}
           onPause={() => {
             setEditing(null)
-            setVoice(false)
+
             setError('')
           }}
         />
@@ -430,22 +435,7 @@ export function LifeDirections({
               onChange={(e) => setEditing({ ...editing, narrative: e.target.value })}
             />
           </label>
-          <Button type="button" variant="outline" onClick={() => setVoice(!voice)}>
-            {voice ? 'Fechar ditado' : 'Contar por voz'}
-          </Button>
-          {voice && (
-            <VoiceInputCapture
-              targetLabel="presente e futuro"
-              onCancel={() => setVoice(false)}
-              onConfirmText={(text) => {
-                setEditing({
-                  ...editing,
-                  narrative: [editing.narrative, text].filter(Boolean).join('\n\n'),
-                })
-                setVoice(false)
-              }}
-            />
-          )}
+
           {planning && editing.kind === 'future' && (
             <label className="block text-sm space-y-1">
               O que desejo e consigo sustentar neste momento?
@@ -559,8 +549,7 @@ export function LifeDirections({
           </label>
           <p className="text-xs text-muted-foreground">
             Desmarcado: só você pode acessar. A inclusão no Mapa exige revisão profissional. Mapas
-            já publicados mantêm a versão compartilhada naquela ocasião. O ditado exige sua
-            confirmação; não guardamos o áudio.
+            já publicados mantêm a versão compartilhada naquela ocasião.
           </p>
           <div className="flex gap-2">
             <Button type="submit" disabled={busy}>
@@ -572,7 +561,7 @@ export function LifeDirections({
               disabled={busy}
               onClick={() => {
                 setEditing(null)
-                setVoice(false)
+
                 setError('')
               }}
             >

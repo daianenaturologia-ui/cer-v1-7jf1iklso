@@ -654,6 +654,19 @@ export const enrollmentExperienceService = {
  * Serviço de Respostas Canônicas e Histórico Versionado (RESPONSE MODEL)
  */
 export const experienceResponseService = {
+  async listResponsesByEnrollment(enrollmentId: string): Promise<ExperienceResponseRecord[]> {
+    const { demoAdapter } = await import('@/services/demoAdapter')
+    if (demoAdapter.isEnabled()) return demoAdapter.listExperienceResponses(enrollmentId)
+    const records = await pb
+      .collection('experience_responses')
+      .getFullList<ExperienceResponseRecord>({
+        filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
+        expand: 'prompt_id',
+        sort: 'created',
+        requestKey: null,
+      })
+    return records.map(normalizeLiveResponse)
+  },
   /**
    * Obter a resposta canônica de um prompt em um enrollment
    */

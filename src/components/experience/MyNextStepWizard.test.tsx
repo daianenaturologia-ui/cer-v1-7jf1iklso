@@ -52,7 +52,7 @@ describe('Rascunho da direção', () => {
     expect(screen.getByText('Expressar um limite')).toBeInTheDocument()
     expect(screen.getByText(/Seu rascunho foi retomado/)).toBeInTheDocument()
   })
-  it('não usa o rascunho de outra matrícula e limita áreas sem perder o relato', () => {
+  it('não usa o rascunho de outra matrícula e apresenta uma conversa sem listas de escolha', () => {
     localStorage.setItem(
       'cer-next-step-draft-v1:owner:one:new',
       JSON.stringify({ value: { ...empty, narrative: 'Privado da outra pessoa' }, step: 0 }),
@@ -61,14 +61,7 @@ describe('Rascunho da direção', () => {
     expect(
       screen.getByLabelText('Conte uma situação que mostre como isso aparece na sua vida hoje.'),
     ).toHaveValue('')
-    fireEvent.click(screen.getByRole('button', { name: /Corpo e saúde/ }))
-    fireEvent.click(screen.getByRole('button', { name: /^Emoções/ }))
-    fireEvent.click(screen.getByRole('button', { name: /^Relações/ }))
-    expect(screen.getByRole('status')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Relações/ })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
+    expect(screen.queryByRole('button', { name: /Corpo e saúde/ })).toBeNull()
   })
   it('limpa somente o rascunho salvo e preserva o de outra direção', () => {
     localStorage.setItem('cer-next-step-draft-v1:owner:one:new', 'draft')

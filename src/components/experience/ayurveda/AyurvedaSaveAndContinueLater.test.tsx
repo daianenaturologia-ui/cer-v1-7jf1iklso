@@ -1,3 +1,4 @@
+import { buildIntegratedAyurvedaQaFixture } from '@/services/conscienciaQaFixture'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -336,20 +337,31 @@ describe('Salvar e continuar depois durante perguntas (C1, C2, C3, C4)', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('C3 não oferece salvar e sair para uma correção mantida apenas em memória', async () => {
-    render(
-      <AyurvedaChapter3Flow
-        enrollmentId="enr-c3-draft"
-        experienceId="exp-c3"
-        respondentUserId="test-user"
-        mode="correcting"
-        onBackToHub={vi.fn()}
-      />,
+  it('C3 permite pausar e retomar a correção, sem substituir a versão concluída', async () => {
+    vi.mocked(experienceResponseService.listResponsesByExperience).mockResolvedValue(
+      buildIntegratedAyurvedaQaFixture().responses,
     )
-    await screen.findByText('Em quais áreas você percebe alguma mudança atualmente?')
+    const save = vi.spyOn(experienceResponseService, 'saveResponse')
+    const onBack = vi.fn()
+    const props = {
+      enrollmentId: 'enr-c3-draft',
+      experienceId: 'exp-c3',
+      respondentUserId: 'test-user',
+      onBackToHub: onBack,
+    }
+    const view = render(<AyurvedaChapter3Flow {...props} mode="correcting" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Começar correção' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Não percebo mudanças importantes agora' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar e continuar depois' }))
+    await waitFor(() => expect(onBack).toHaveBeenCalledOnce())
+    expect(save).not.toHaveBeenCalled()
+    view.unmount()
+    render(<AyurvedaChapter3Flow {...props} mode="answering" />)
     expect(
-      screen.queryByRole('button', { name: 'Salvar e continuar depois' }),
-    ).not.toBeInTheDocument()
+      await screen.findByRole('button', { name: 'Não percebo mudanças importantes agora' }),
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Salvar e continuar depois' })).toBeInTheDocument()
+    expect(save).not.toHaveBeenCalled()
   })
 
   it('6. C4: síntese sem etapas — voltar aos capítulos não marca completion', async () => {

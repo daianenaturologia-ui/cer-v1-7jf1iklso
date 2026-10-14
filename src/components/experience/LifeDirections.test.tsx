@@ -96,7 +96,7 @@ it('salva uma direção pelos três passos sem exigir clareza pronta', async () 
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
   fireEvent.click(screen.getByRole('button', { name: 'Ainda não tenho clareza da mudança' }))
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-  fireEvent.change(screen.getByLabelText('As condições que meu plano precisa respeitar'), {
+  fireEvent.change(screen.getByLabelText('O que precisamos respeitar'), {
     target: { value: 'Duas pausas por semana. Alimentação ainda não cabe.' },
   })
   expect(screen.getByRole('checkbox')).not.toBeChecked()
@@ -104,7 +104,7 @@ it('salva uma direção pelos três passos sem exigir clareza pronta', async () 
   await screen.findByText(/Direção salva/)
   expect(lifeDirectionsService.save).toHaveBeenCalledWith(
     expect.objectContaining({
-      title: 'Compreender o que está me causando angústia',
+      title: 'Ainda não sei o que desejo mudar',
       kind: 'future',
       horizon: 'open',
       narrative: 'Não consigo desligar do trabalho.',
@@ -136,9 +136,7 @@ it('reaproveita o presente e preserva suas condições sem modificar o original'
   ).toHaveValue('Cansaço')
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-  expect(screen.getByLabelText('As condições que meu plano precisa respeitar')).toHaveValue(
-    'Pouco tempo',
-  )
+  expect(screen.getByLabelText('O que precisamos respeitar')).toHaveValue('Pouco tempo')
   expect(old.kind).toBe('present')
   expect(lifeDirectionsService.save).not.toHaveBeenCalled()
 })
@@ -152,8 +150,12 @@ it('inclui uma estratégia do jogo apenas por escolha e mantém textos se salvar
   render(<LifeDirections enrollmentId="mariana" planning />)
   fireEvent.click(await screen.findByRole('button', { name: 'Escolher minha primeira direção' }))
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  fireEvent.change(
+    screen.getByLabelText('O que gostaria de conseguir viver ou fazer de maneira diferente?'),
+    { target: { value: 'Pedir apoio' } },
+  )
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-  const input = screen.getByLabelText('Meu começo e os apoios que quero usar')
+  const input = screen.getByLabelText('Recursos e apoios que podem ajudar')
   expect(input).toHaveValue('')
   fireEvent.click(
     await screen.findByRole('button', { name: 'Pedir apoio antes de assumir mais uma tarefa.' }),

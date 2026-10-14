@@ -1,32 +1,63 @@
 import React from 'react'
 import { it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { LifeJourney } from './LifeJourney'
 vi.mock('./LifeTimeline', () => ({
   LifeTimeline: () => <div>Minha história desde o nascimento</div>,
 }))
 vi.mock('./LifeDirections', () => ({
-  LifeDirections: ({ planning }: any) => (
-    <div>{planning ? 'Direção integrada' : 'Registro livre'}</div>
+  LifeDirections: ({ perspective, enableActions }: any) => (
+    <div>
+      Registros {perspective} {enableActions === false ? 'sem agenda' : ''}
+    </div>
   ),
 }))
-it('entra no passado e mantém objetivo combinado consultável no presente', async () => {
-  render(
+it('conduz o passado de volta ao mapa antes de abrir presente e futuro', () => {
+  const change = vi.fn(),
+    openMap = vi.fn()
+  const view = render(
+    <LifeJourney enrollmentId="enr" unlocked onMomentChange={change} onOpenMap={openMap} />,
+  )
+  expect(screen.getByText('Minha história desde o nascimento')).toBeInTheDocument()
+  expect(screen.queryByText('Registros present')).toBeNull()
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Concluir o passado por agora e voltar ao Mapa CER' }),
+  )
+  expect(change).toHaveBeenCalledWith('map')
+  view.rerender(
     <LifeJourney
       enrollmentId="enr"
       unlocked
+      moment="map"
+      onMomentChange={change}
+      onOpenMap={openMap}
+    />,
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Integrar minha história ao Mapa CER' }))
+  expect(openMap).toHaveBeenCalledOnce()
+  expect(screen.queryByText('Registros present')).toBeNull()
+})
+it('separa presente e futuro e guarda ações para depois da conversa de cuidado', () => {
+  const view = render(<LifeJourney enrollmentId="enr" unlocked moment="present" />)
+  expect(screen.getByText('Registros present')).toBeInTheDocument()
+  view.rerender(<LifeJourney enrollmentId="enr" unlocked moment="future" />)
+  expect(screen.getByText('Registros future sem agenda')).toBeInTheDocument()
+  expect(screen.queryByText('Registros present')).toBeNull()
+  view.rerender(
+    <LifeJourney
+      enrollmentId="enr"
+      unlocked
+      moment="care"
       objective={{ title: 'Nosso foco', summary: 'Cuidar do descanso' }}
     />,
   )
-  expect(screen.getByRole('tab', { name: 'Passado' })).toHaveAttribute('data-state', 'active')
-  expect(screen.getByText('Minha história desde o nascimento')).toBeInTheDocument()
-  expect(screen.queryByText('Perspectiva: future')).toBeNull()
-  await userEvent.click(screen.getByRole('tab', { name: 'Presente e futuro' }))
-  await userEvent.click(screen.getByText('Objetivo terapêutico combinado'))
   expect(screen.getByText('Cuidar do descanso')).toBeInTheDocument()
-  expect(screen.getByText(/definido e alterado junto com sua profissional/)).toBeInTheDocument()
-  expect(screen.queryByRole('textbox')).toBeNull()
-  expect(screen.getByText('Direção integrada')).toBeInTheDocument()
-  expect(screen.queryByRole('tab', { name: 'Futuro' })).toBeNull()
+  expect(
+    screen.getByRole('button', { name: 'Ir para Equilíbrio & Realização' }),
+  ).toBeInTheDocument()
+})
+it('não inicia relato antes de concluir as seis dimensões', () => {
+  render(<LifeJourney enrollmentId="enr" unlocked={false} />)
+  expect(screen.queryByText('Minha história desde o nascimento')).toBeNull()
+  expect(screen.queryByRole('button', { name: /Concluir o passado/ })).toBeNull()
 })

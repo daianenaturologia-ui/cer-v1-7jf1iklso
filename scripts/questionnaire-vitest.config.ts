@@ -6,6 +6,11 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/services/demoAnswerPersistence.test.ts',
+      'src/services/participantJourney.test.ts',
+      'src/services/testsMenteEmocoesDemoStabilization.test.ts',
+      'src/components/experience/LifeJourney.test.tsx',
+      'src/components/experience/MyNextStepWizard.test.tsx',
       'src/components/experience/ayurveda/AyurvedaPersonalizedFigures.test.tsx',
       'src/components/ProfessionalSessionManager.test.tsx',
       'src/components/SessionMapUpdate.test.tsx',
