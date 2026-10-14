@@ -1317,6 +1317,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             experienceId: 'exp-corpo-fisiologia-07b',
             respondentUserId,
             userPresentation: personAvatarData?.avatar_presentation || 'feminine',
+            userSkinTone: personAvatarData?.avatar_skin_tone,
+            userHairColor: personAvatarData?.avatar_hair_color,
             avatarDeferred: personAvatarData?.avatar_customization_status === 'deferred',
             initialShowPostAvatarTransition: justConfirmedAvatar,
             onClose,
