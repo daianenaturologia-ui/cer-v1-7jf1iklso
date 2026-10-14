@@ -309,19 +309,13 @@ describe('CER V1: Caderno Privado & Recado para a Próxima Sessão', () => {
       expect(voiceComponentContent).toContain('Processamento local on-device')
     })
 
-    it('7.3 CadernoSection integra VoiceInputCapture tanto no Caderno quanto no Recado', () => {
+    it('7.3 Caderno e Recado mantêm escrita sem entradas de voz', () => {
       const cadernoSectionPath = path.resolve(process.cwd(), 'src/components/CadernoSection.tsx')
-      const cadernoSectionContent = fs.readFileSync(cadernoSectionPath, 'utf-8')
-
-      expect(cadernoSectionContent).toContain('VoiceInputCapture')
-      expect(cadernoSectionContent).toContain('showVoiceEntry')
-      expect(cadernoSectionContent).toContain('showVoiceShare')
-      // Botão de iniciar fala no caderno e no recado com labels exatos do componente
-      expect(cadernoSectionContent).toContain('Falar anotação por voz')
-      expect(cadernoSectionContent).toContain('Falar recado por voz')
-      // Verifica integração com as propriedades do componente VoiceInputCapture
-      expect(cadernoSectionContent).toContain('targetLabel="anotação do Caderno"')
-      expect(cadernoSectionContent).toContain('targetLabel="recado para a terapeuta"')
+      const content = fs.readFileSync(cadernoSectionPath, 'utf-8')
+      expect(content).not.toContain('VoiceInputCapture')
+      expect(content).not.toContain('Falar anotação por voz')
+      expect(content).not.toContain('Falar recado por voz')
+      expect(content).toContain('<Textarea')
     })
   })
 })

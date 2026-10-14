@@ -138,6 +138,7 @@ interface SerConscienciaMapProps {
   hasPublishedMap: boolean
   hasInitialMap?: boolean
   onSelectExperience: (experienceId: string) => void
+  onContinueJourney?: () => void
   onOpenMap: () => void
 }
 
@@ -147,6 +148,7 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
   hasInitialMap = false,
   onSelectExperience,
   onOpenMap,
+  onContinueJourney,
 }) => {
   const hasPublishedMap = publishedMap || hasInitialMap
 
@@ -260,9 +262,16 @@ export const SerConscienciaMap: React.FC<SerConscienciaMapProps> = ({
               {isResuming ? 'Retomar' : 'Abrir'} {suggestedDimension.name}
             </Button>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              Você pode rever suas respostas nas esferas abaixo.
-            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Você pode rever suas respostas nas esferas abaixo.
+              </p>
+              {onContinueJourney && (
+                <Button size="sm" onClick={onContinueJourney}>
+                  Próximo passo: minha Linha da Vida
+                </Button>
+              )}
+            </div>
           )}
         </div>
 

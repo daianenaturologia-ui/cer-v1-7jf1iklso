@@ -1,6 +1,6 @@
 import React from 'react'
 import { Textarea } from '@/components/ui/textarea'
-import { Mic, MicOff, Info } from 'lucide-react'
+import { Info } from 'lucide-react'
 
 export interface FreeReflectionConfig {
   placeholder?: string
@@ -51,15 +51,6 @@ export const FreeReflection: React.FC<FreeReflectionProps> = ({
         />
 
         {/* Indicador de arquitetura futura para voz/transcrição (sem IA neste build) */}
-        {config?.voiceTranscriptionSupported && (
-          <div className="flex items-center justify-between pt-2 px-1 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-              <Mic className="w-3.5 h-3.5 opacity-60" />
-              <span>Gravação de áudio preparada para builds futuros (desativada no Build 02)</span>
-            </div>
-            <span className="font-mono text-[11px]">{value.length} caracteres</span>
-          </div>
-        )}
       </div>
 
       {/* OPEN-FIRST Pattern (Build 07A) */}

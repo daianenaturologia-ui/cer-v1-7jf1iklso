@@ -1433,8 +1433,8 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
                 <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <div className="space-y-2 flex-1">
                   <p className="font-medium text-foreground">
-                    Esta demonstração foi atualizada. Para construir seu retrato com segurança,
-                    responda novamente à experiência Mente & Emoções.
+                    Suas respostas anteriores foram preservadas no histórico da Consciência.
+                    Continue pelas perguntas atuais sem apagar seus registros.
                   </p>
                   {onRetakeExperience && (
                     <Button
@@ -1445,7 +1445,7 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
                       className="border-amber-600/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/10 font-medium text-xs h-8 gap-1.5"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
-                      Refazer Mente & Emoções
+                      Continuar Mente & Emoções
                     </Button>
                   )}
                 </div>

@@ -654,8 +654,8 @@ async function main() {
     await logout()
     await loginAs(seed.alice.email, seed.alice.password, '/')
 
-    await page.getByRole('button', { name: '4. Evolução', exact: true }).click()
-    await page.getByRole('tab', { name: 'Acompanhamento', exact: true }).click()
+    await page.getByRole('button', { name: '4. Equilíbrio & Realização', exact: true }).click()
+    await page.getByRole('tab', { name: 'Nosso plano', exact: true }).click()
     await page.getByText('Nosso plano de ação', { exact: true }).waitFor()
 
     // Selecionar uma das 4 opções acolhedoras (ex: "quero tentar")

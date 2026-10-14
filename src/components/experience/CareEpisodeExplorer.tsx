@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import { ResourceAgendaForm } from './ResourceAgendaForm'
 import { CareEpisodeFollowUp } from './CareEpisodeFollowUp'
 import { EPISODE_REVIEW_RESOURCE_ID, readEpisodeReview } from '@/services/careEpisodeReview'
@@ -63,8 +62,6 @@ function EpisodeForm({
   const [message, setMessage] = useState('')
   const [ready, setReady] = useState<string | null>(null)
   const [draftAvailable, setDraftAvailable] = useState(true)
-  const [voice, setVoice] = useState(false)
-  const [voiceField, setVoiceField] = useState<TextField>('facts')
   const key = draftKey(source, record)
   useEffect(() => {
     setValue(record ? readCareEpisode(record) || emptyCareEpisode() : emptyCareEpisode())
@@ -111,7 +108,6 @@ function EpisodeForm({
           rows={2}
           maxLength={300}
           value={value[name]}
-          onFocus={() => setVoiceField(name)}
           onChange={(e) => patch(name, e.target.value)}
         />
       </label>
@@ -153,8 +149,6 @@ function EpisodeForm({
         e.preventDefault()
         if (step < 2) {
           setStep(step + 1)
-          setVoice(false)
-          setVoiceField(step === 0 ? 'behavior' : 'alternative')
         } else void save()
       }}
     >
@@ -314,19 +308,7 @@ function EpisodeForm({
           </p>
         </div>
       )}
-      <Button type="button" variant="ghost" size="sm" onClick={() => setVoice(!voice)}>
-        {voice ? 'Fechar ditado' : 'Contar por voz'}
-      </Button>
-      {voice && (
-        <VoiceInputCapture
-          targetLabel={labels[voiceField]}
-          onCancel={() => setVoice(false)}
-          onConfirmText={(text) => {
-            patch(voiceField, [value[voiceField], text].filter(Boolean).join('\n'))
-            setVoice(false)
-          }}
-        />
-      )}
+
       {message && (
         <p role="status" className="text-xs">
           {message}
@@ -345,7 +327,6 @@ function EpisodeForm({
             disabled={busy}
             onClick={() => {
               setStep(step - 1)
-              setVoice(false)
             }}
           >
             Voltar

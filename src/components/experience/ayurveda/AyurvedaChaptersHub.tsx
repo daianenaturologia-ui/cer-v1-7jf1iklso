@@ -15,6 +15,7 @@ import { AyurvedaChapter3Status } from '@/services/ayurvedaChapter3'
 export interface AyurvedaChaptersHubProps {
   onStartChapter1?: () => void
   onStartChapter2?: () => void
+  onCorrectChapter3?: () => void
   onStartChapter3?: () => void
   onStartChapter4?: () => void
   onOpenCustomization?: () => void
@@ -58,6 +59,7 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
   onStartChapter1,
   onStartChapter2,
   onStartChapter3,
+  onCorrectChapter3,
   onStartChapter4,
   onOpenCustomization,
   onCorrectChapter1,
@@ -791,6 +793,11 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
                             : 'Retomar Capítulo 3'}
                         <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                       </Button>
+                      {completed && onCorrectChapter3 && (
+                        <Button variant="outline" size="sm" onClick={onCorrectChapter3}>
+                          Corrigir respostas do Capítulo 3
+                        </Button>
+                      )}
                     </div>
                   )}
                 </CardContent>

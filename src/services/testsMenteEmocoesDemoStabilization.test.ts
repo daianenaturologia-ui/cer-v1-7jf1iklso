@@ -290,8 +290,10 @@ describe('ESTABILIZAÇÃO DAS RESPOSTAS ANTIGAS DE MENTE & EMOÇÕES NO MODO DEM
     expect(sessions).toHaveLength(1)
     expect(sessions[0].id).toBe('demo-sess-01')
 
+    demoAdapter.setActivePersona('daiane')
     const note = demoAdapter.getSessionNote('demo-sess-01')
     expect(note?.text).toBe('Nota clínica da Daiane')
+    demoAdapter.setActivePersona('mariana')
 
     // Resposta de outra experiência preservada no estado ativo
     const corpoResponses = demoAdapter.listExperienceResponses(
