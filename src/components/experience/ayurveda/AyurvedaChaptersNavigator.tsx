@@ -90,6 +90,8 @@ export interface AyurvedaChaptersNavigatorProps {
   initialShowPostAvatarTransition?: boolean
   onClose?: () => void
   onCompleted?: () => void
+  nextStepLabel?: string
+  onNextStep?: () => void
   onOpenAvatarCustomization?: () => void
 }
 
@@ -104,6 +106,8 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
   initialShowPostAvatarTransition = false,
   onClose,
   onCompleted,
+  nextStepLabel,
+  onNextStep,
   onOpenAvatarCustomization,
 }) => {
   // Fonte única de verdade discriminada para capítulo, modo e etapa
@@ -704,28 +708,38 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     const c1Mode = navState.mode as AyurvedaNavigationChapterMode
     const activeRev = navState.activeRevision
     return (
-      <AyurvedaChapter1Flow
-        enrollmentId={enrollmentId}
-        experienceId={experienceId}
-        respondentUserId={respondentUserId}
-        userPresentation={userPresentation}
-        userSkinTone={userSkinTone}
-        userHairColor={userHairColor}
-        avatarDeferred={avatarDeferred}
-        mode={c1Mode}
-        revisionNumber={activeRev ?? undefined}
-        initialStep={currentStep ?? undefined}
-        onExitToHub={handleExitToHub}
-        onEnterReview={handleReviewChapter1}
-        onExitReview={handleExitReviewChapter1}
-        onStartCorrection={handleCorrectionStartedInC1}
-        onClose={onClose}
-        onCompleted={() => {
-          reloadData()
-          onCompleted?.()
-        }}
-        onOpenAvatarCustomization={onOpenAvatarCustomization}
-      />
+      <div>
+        <AyurvedaChapter1Flow
+          enrollmentId={enrollmentId}
+          experienceId={experienceId}
+          respondentUserId={respondentUserId}
+          userPresentation={userPresentation}
+          userSkinTone={userSkinTone}
+          userHairColor={userHairColor}
+          avatarDeferred={avatarDeferred}
+          mode={c1Mode}
+          revisionNumber={activeRev ?? undefined}
+          initialStep={currentStep ?? undefined}
+          onExitToHub={handleExitToHub}
+          onEnterReview={handleReviewChapter1}
+          onExitReview={handleExitReviewChapter1}
+          onStartCorrection={handleCorrectionStartedInC1}
+          onClose={onClose}
+          onCompleted={() => {
+            reloadData()
+            onCompleted?.()
+          }}
+          onOpenAvatarCustomization={onOpenAvatarCustomization}
+        />
+        {isC1Completed && navState.mode !== 'correcting' && (
+          <Button
+            className="mt-4 w-full h-auto whitespace-normal"
+            onClick={handleStartChapter2FromHub}
+          >
+            Próximo capítulo: Digestão & Rotina
+          </Button>
+        )}
+      </div>
     )
   }
 
@@ -734,54 +748,82 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
     const c2Mode = navState.mode as AyurvedaNavigationChapterMode
     const activeRev = navState.activeRevision
     return (
-      <AyurvedaChapter2Flow
-        enrollmentId={enrollmentId}
-        experienceId={experienceId}
-        respondentUserId={respondentUserId}
-        treatmentVariant={treatmentVariant}
-        mode={c2Mode}
-        revisionNumber={activeRev ?? undefined}
-        initialStep={currentStep ?? undefined}
-        onBackToHub={handleExitToHub}
-        onEnterReview={handleReviewChapter2}
-        onExitReview={handleExitReviewChapter2}
-        onStartCorrection={handleCorrectionStartedInC2}
-        onCompleted={() => {
-          reloadData()
-          onCompleted?.()
-        }}
-      />
+      <div>
+        <AyurvedaChapter2Flow
+          enrollmentId={enrollmentId}
+          experienceId={experienceId}
+          respondentUserId={respondentUserId}
+          treatmentVariant={treatmentVariant}
+          mode={c2Mode}
+          revisionNumber={activeRev ?? undefined}
+          initialStep={currentStep ?? undefined}
+          onBackToHub={handleExitToHub}
+          onEnterReview={handleReviewChapter2}
+          onExitReview={handleExitReviewChapter2}
+          onStartCorrection={handleCorrectionStartedInC2}
+          onCompleted={() => {
+            reloadData()
+            onCompleted?.()
+          }}
+        />
+        {isC2Completed && navState.mode !== 'correcting' && (
+          <Button
+            className="mt-4 w-full h-auto whitespace-normal"
+            onClick={handleStartChapter3FromHub}
+          >
+            Próximo capítulo: Mudanças Atuais
+          </Button>
+        )}
+      </div>
     )
   }
 
   if (activeChapterId === 'c3') {
     return (
-      <AyurvedaChapter3Flow
-        enrollmentId={enrollmentId}
-        experienceId={experienceId}
-        respondentUserId={respondentUserId}
-        initialStep={navState.currentStep ?? 1}
-        onBackToHub={handleExitToHub}
-        onCompleted={() => {
-          reloadData()
-          onCompleted?.()
-        }}
-      />
+      <div>
+        <AyurvedaChapter3Flow
+          enrollmentId={enrollmentId}
+          experienceId={experienceId}
+          respondentUserId={respondentUserId}
+          initialStep={navState.currentStep ?? 1}
+          mode={navState.mode as AyurvedaNavigationChapterMode}
+          onBackToHub={handleExitToHub}
+          onCompleted={() => {
+            reloadData()
+            onCompleted?.()
+          }}
+        />
+        {derivedC3.status === 'completed' && navState.mode !== 'correcting' && (
+          <Button
+            className="mt-4 w-full h-auto whitespace-normal"
+            onClick={handleStartChapter4FromHub}
+          >
+            Próximo capítulo: minha síntese
+          </Button>
+        )}
+      </div>
     )
   }
 
   if (activeChapterId === 'c4') {
     return (
-      <AyurvedaChapter4Flow
-        enrollmentId={enrollmentId}
-        experienceId={experienceId}
-        respondentUserId={respondentUserId}
-        onBackToHub={handleExitToHub}
-        onCompleted={() => {
-          reloadData()
-          onCompleted?.()
-        }}
-      />
+      <div>
+        <AyurvedaChapter4Flow
+          enrollmentId={enrollmentId}
+          experienceId={experienceId}
+          respondentUserId={respondentUserId}
+          onBackToHub={handleExitToHub}
+          onCompleted={() => {
+            reloadData()
+            onCompleted?.()
+          }}
+        />
+        {c4Completed && onNextStep && (
+          <Button className="mt-4 w-full h-auto whitespace-normal" onClick={onNextStep}>
+            {nextStepLabel || 'Continuar meu percurso'}
+          </Button>
+        )}
+      </div>
     )
   }
 
@@ -805,6 +847,9 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
       onStartChapter1={handleStartChapter1FromHub}
       onStartChapter2={handleStartChapter2FromHub}
       onStartChapter3={handleStartChapter3FromHub}
+      onCorrectChapter3={() =>
+        setNavState({ chapterId: 'c3', mode: 'correcting', currentStep: 6, activeRevision: null })
+      }
       onStartChapter4={handleStartChapter4FromHub}
       onOpenCustomization={onOpenAvatarCustomization}
       onCorrectChapter1={handleCorrectChapter1}

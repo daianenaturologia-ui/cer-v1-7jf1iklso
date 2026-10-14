@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import pb from '@/lib/pocketbase/client'
 import { demoAdapter } from '@/services/demoAdapter'
 import type { LifeDirection } from '@/services/lifeDirections'
@@ -45,8 +44,6 @@ function ReviewForm({
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [voice, setVoice] = useState(false)
-  const [voiceField, setVoiceField] = useState<ReviewField>('observation')
   useEffect(() => {
     setValue(emptyEpisodeReview(parent.id))
     setShared(false)
@@ -157,7 +154,6 @@ function ReviewForm({
               rows={2}
               maxLength={300}
               value={value[field]}
-              onFocus={() => setVoiceField(field)}
               onChange={(e) => patch(field, e.target.value)}
             />
           </label>
@@ -194,19 +190,6 @@ function ReviewForm({
             Esta situação está só para você. Para sua profissional acompanhar o retorno junto dela,
             compartilhe primeiro a situação.
           </p>
-        )}
-        <Button type="button" variant="ghost" size="sm" onClick={() => setVoice(!voice)}>
-          {voice ? 'Fechar ditado' : 'Contar por voz'}
-        </Button>
-        {voice && (
-          <VoiceInputCapture
-            targetLabel={labels[voiceField]}
-            onCancel={() => setVoice(false)}
-            onConfirmText={(text) => {
-              patch(voiceField, [value[voiceField], text].filter(Boolean).join('\n'))
-              setVoice(false)
-            }}
-          />
         )}
       </fieldset>
       {message && (

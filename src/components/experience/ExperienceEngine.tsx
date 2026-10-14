@@ -72,6 +72,8 @@ export interface ExperienceEngineProps {
   treatmentVariant?: 'feminino' | 'masculino' | 'neutro' | 'outro'
   onClose?: () => void
   onCompleted?: () => void
+  nextStepLabel?: string
+  onNextStep?: () => void
 }
 
 export const EMOTION_ID_TO_LABEL: Record<string, string> = {
@@ -121,6 +123,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
   personId,
   onClose,
   onCompleted,
+  nextStepLabel,
+  onNextStep,
 }) => {
   const [experience, setExperience] = useState<CerExperienceRecord | null>(null)
   const [isAvatarCustomizing, setIsAvatarCustomizing] = useState(false)
@@ -1322,6 +1326,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             avatarDeferred: personAvatarData?.avatar_customization_status === 'deferred',
             initialShowPostAvatarTransition: justConfirmedAvatar,
             onClose,
+            nextStepLabel,
+            onNextStep,
             onCompleted: () => {
               onCompleted?.()
             },
@@ -1381,28 +1387,23 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
               <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="space-y-2 flex-1 text-left">
                 <p className="font-medium text-foreground">
-                  Esta demonstração foi atualizada. Para construir seu retrato com segurança,
-                  responda novamente à experiência Mente & Emoções.
+                  Suas respostas anteriores foram preservadas no histórico da Consciência. Continue
+                  pelas perguntas atuais sem apagar seus registros.
                 </p>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={async () => {
-                    const { demoAdapter } = await import('@/services/demoAdapter')
-                    if (demoAdapter.isEnabled()) {
-                      demoAdapter.resetMenteEmocoes(enrollmentId)
-                    }
                     setMenteEmocoesNeedsRedo(false)
                     setHasIncompatibleMenteDemo(false)
-                    setResponsesMap({})
                     setCurrentStepIndex(0)
                     setEngineStage('moments')
                   }}
                   className="border-amber-600/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/10 font-medium text-xs h-8 gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Refazer Mente & Emoções
+                  Continuar Mente & Emoções
                 </Button>
               </div>
             </div>
@@ -1494,8 +1495,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
               Retrato Não Disponível
             </h2>
             <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-              Esta demonstração foi atualizada. Para construir seu retrato com segurança, responda
-              novamente à experiência Mente & Emoções.
+              Suas respostas anteriores foram preservadas no histórico da Consciência. Continue
+              pelas perguntas atuais sem apagar seus registros.
             </p>
           </div>
           <div
@@ -1503,28 +1504,23 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
             className="p-4 sm:p-5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-950 dark:text-amber-200 text-sm leading-relaxed space-y-3 text-left"
           >
             <p className="font-medium text-foreground">
-              Esta demonstração foi atualizada. Para construir seu retrato com segurança, responda
-              novamente à experiência Mente & Emoções.
+              Suas respostas anteriores foram preservadas no histórico da Consciência. Continue
+              pelas perguntas atuais sem apagar seus registros.
             </p>
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={async () => {
-                const { demoAdapter } = await import('@/services/demoAdapter')
-                if (demoAdapter.isEnabled()) {
-                  demoAdapter.resetMenteEmocoes(enrollmentId)
-                }
                 setMenteEmocoesNeedsRedo(false)
                 setHasIncompatibleMenteDemo(false)
-                setResponsesMap({})
                 setCurrentStepIndex(0)
                 setEngineStage('moments')
               }}
               className="border-amber-600/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/10 font-medium text-xs h-8 gap-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              Refazer Mente & Emoções
+              Continuar Mente & Emoções
             </Button>
           </div>
           <div className="pt-2">
@@ -1784,14 +1780,8 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
                 treatmentVariant={treatmentVariant}
                 hasIncompatibleDemoData={hasIncompatibleMenteDemo}
                 onRetakeExperience={async () => {
-                  const { demoAdapter } = await import('@/services/demoAdapter')
-                  if (demoAdapter.isEnabled()) {
-                    demoAdapter.resetMenteEmocoesExperience(enrollmentId)
-                  }
                   setShowMindEmotionsReport(false)
-                  setResponsesMap({})
-                  setCurrentStepIndex(0)
-                  setEngineStage('opening')
+                  await handleStartMenteEmocoesCorrection()
                 }}
               />
             )}
@@ -1849,6 +1839,16 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           </div>
         )}
 
+        {onNextStep && (
+          <Button
+            onClick={onNextStep}
+            disabled={closingSaving || Boolean(closingSaveError)}
+            className="w-full h-auto whitespace-normal"
+          >
+            {nextStepLabel || 'Continuar meu percurso'}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        )}
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Button
             onClick={onClose}

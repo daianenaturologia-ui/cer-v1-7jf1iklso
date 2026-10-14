@@ -1,3 +1,9 @@
+import {
+  readJourneyMoment,
+  saveJourneyMoment,
+  nextConsciousnessExperience,
+  type JourneyMoment,
+} from '@/services/participantJourney'
 import { JourneyNavigation } from '@/components/JourneyNavigation'
 import { CerMapUpdateNotice } from '@/components/CerMapUpdateNotice'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -10,7 +16,11 @@ import { consciousnessCoverage } from '@/services/cerMapReadings'
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
-import { enrollmentExperienceService, featureFlagService } from '@/services/experienceEngine'
+import {
+  enrollmentExperienceService,
+  experienceResponseService,
+  featureFlagService,
+} from '@/services/experienceEngine'
 import { CadernoSection } from '@/components/CadernoSection'
 import { CER_FEATURE_FLAGS } from '@/config/features'
 import {
@@ -103,10 +113,11 @@ export const InteragenteHome: React.FC = () => {
   const { user, person, logout } = useAuth()
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [loading, setLoading] = useState(true)
+  const [dataLoadError, setDataLoadError] = useState(false)
   const [engineEnabled, setEngineEnabled] = useState(true)
   const [availableExperiences, setAvailableExperiences] = useState<EnrollmentExperienceRecord[]>([])
   // Fase ativa na visão da Interagente:
-  // 1: comece_aqui | 2: consciencia | 3: equilibrio | 4: evolucao
+  // 1: comece_aqui | 2: consciencia | 3: evolucao | 4: equilibrio
   const [activePhase, setActivePhase] = useState<
     'comece_aqui' | 'consciencia' | 'equilibrio' | 'evolucao'
   >(phaseParams.get('etapa') === 'evolucao' ? 'evolucao' : 'comece_aqui')
@@ -195,6 +206,7 @@ export const InteragenteHome: React.FC = () => {
   const { toast } = useToast()
 
   const loadData = async () => {
+    setDataLoadError(false)
     if (!person?.id) {
       setLoading(false)
       return
@@ -336,15 +348,7 @@ export const InteragenteHome: React.FC = () => {
           demoAdapter.isEnabled()
             ? Promise.resolve(demoAdapter.getCurrentPublishedMap(activeEnr.id))
             : cerMapService.getCurrentPublishedMap(activeEnr.id),
-          demoAdapter.isEnabled()
-            ? Promise.resolve(demoAdapter.listExperienceResponses(activeEnr.id))
-            : pb
-                .collection('experience_responses')
-                .getFullList<ExperienceResponseRecord>({
-                  filter: `enrollment_id = "${activeEnr.id}"`,
-                  sort: 'created',
-                })
-                .catch(() => []),
+          experienceResponseService.listResponsesByEnrollment(activeEnr.id),
         ])
         setAvailableExperiences(exps)
         setKnowledgeItems(kiList)
@@ -416,6 +420,7 @@ export const InteragenteHome: React.FC = () => {
         }
       }
     } catch (err) {
+      setDataLoadError(true)
       console.error('Erro ao carregar dados do interagente:', err)
     } finally {
       setLoading(false)
@@ -665,6 +670,60 @@ export const InteragenteHome: React.FC = () => {
     }
   }
 
+  const coverage = consciousnessCoverage(participantResponses, availableExperiences)
+  const hasCompletedConsciousness = coverage.every((d) => d.completed)
+  const nextDimension = nextConsciousnessExperience(coverage)
+  const nextAfterActive = nextConsciousnessExperience(coverage, activeExperienceId || undefined)
+  const journeyOwner = demoAdapter.isEnabled() ? 'demo-mariana' : user?.id || ''
+  const [journeyMoment, setJourneyMoment] = useState<JourneyMoment>('past')
+  const [mapFromJourney, setMapFromJourney] = useState(false)
+  const careAvailable =
+    journeyMoment === 'care' || presentedCarePlans.length > 0 || assignments.length > 0
+  useEffect(() => {
+    if (!enrollment?.id || !journeyOwner) return
+    setJourneyMoment(readJourneyMoment(journeyOwner, enrollment.id))
+  }, [journeyOwner, enrollment?.id])
+  const changeJourneyMoment = (moment: JourneyMoment) => {
+    if (!enrollment?.id || !journeyOwner) return
+    try {
+      saveJourneyMoment(journeyOwner, enrollment.id, moment)
+      setJourneyMoment(moment)
+    } catch {
+      toast({
+        title: 'Não foi possível guardar seu ponto de retomada',
+        description: 'Seus relatos não foram alterados. Tente novamente.',
+        variant: 'destructive',
+      })
+    }
+  }
+  const continueJourney = () => {
+    setActiveExperienceId(null)
+    setActivePhase('evolucao')
+  }
+  const continueAfterExperience = async () => {
+    if (!enrollment) return
+    try {
+      const [responses, progress] = await Promise.all([
+        experienceResponseService.listResponsesByEnrollment(enrollment.id),
+        enrollmentExperienceService.listByEnrollment(enrollment.id),
+      ])
+      const next = nextConsciousnessExperience(
+        consciousnessCoverage(responses, progress),
+        activeExperienceId || undefined,
+      )
+      setParticipantResponses(responses)
+      setAvailableExperiences(progress)
+      setActiveExperienceId(next?.experienceId || null)
+      setActivePhase(next ? 'consciencia' : 'evolucao')
+    } catch {
+      toast({
+        title: 'Não foi possível carregar o próximo passo',
+        description: 'Suas respostas permanecem salvas. Tente novamente.',
+        variant: 'destructive',
+      })
+    }
+  }
+
   // Se precisa de Onboarding inicial
   if (showOnboarding) {
     return (
@@ -676,11 +735,6 @@ export const InteragenteHome: React.FC = () => {
       </div>
     )
   }
-
-  // Verificar se a etapa de consciência (todas as experiências ou 07G) foi concluída
-  const hasCompletedConsciousness =
-    availableExperiences.length > 0 &&
-    availableExperiences.every((ee) => ee.release_status === 'completed')
 
   return (
     <div className="min-h-screen min-w-0 max-w-full overflow-x-clip bg-background">
@@ -800,26 +854,82 @@ export const InteragenteHome: React.FC = () => {
 
           <Button
             size="sm"
-            variant={activePhase === 'equilibrio' ? 'default' : 'ghost'}
-            onClick={() => setActivePhase('equilibrio')}
-            aria-current={activePhase === 'equilibrio' ? 'step' : undefined}
-            className="min-h-11 h-auto whitespace-normal text-xs px-2 py-2 gap-1.5 sm:min-h-8 sm:h-8 sm:px-3 sm:py-0 sm:whitespace-nowrap"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>3. Equilíbrio & Realização</span>
-          </Button>
-
-          <Button
-            size="sm"
             variant={activePhase === 'evolucao' ? 'default' : 'ghost'}
             onClick={() => setActivePhase('evolucao')}
             aria-current={activePhase === 'evolucao' ? 'step' : undefined}
             className="min-h-11 h-auto whitespace-normal text-xs px-2 py-2 gap-1.5 sm:min-h-8 sm:h-8 sm:px-3 sm:py-0 sm:whitespace-nowrap"
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>4. Evolução</span>
+            <span>3. Evolução</span>
+          </Button>
+          <Button
+            size="sm"
+            variant={activePhase === 'equilibrio' ? 'default' : 'ghost'}
+            onClick={() => setActivePhase('equilibrio')}
+            aria-current={activePhase === 'equilibrio' ? 'step' : undefined}
+            className="min-h-11 h-auto whitespace-normal text-xs px-2 py-2 gap-1.5 sm:min-h-8 sm:h-8 sm:px-3 sm:py-0 sm:whitespace-nowrap"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>4. Equilíbrio & Realização</span>
           </Button>
         </nav>
+
+        {dataLoadError && (
+          <div role="alert" className="rounded-xl border p-4 space-y-2">
+            <p>
+              Não foi possível carregar seus registros. Isso não significa que suas respostas foram
+              apagadas.
+            </p>
+            <Button onClick={loadData}>Tentar carregar meus registros</Button>
+          </div>
+        )}
+        {!dataLoadError && hasSentIntakeOnce && !activeExperienceId && (
+          <section
+            aria-label="Seu próximo passo"
+            className="cer-reading-panel rounded-xl border border-primary/30 p-4 space-y-2"
+          >
+            <h2 className="font-serif text-lg">Seu próximo passo</h2>
+            {nextDimension ? (
+              <>
+                <p className="text-sm">
+                  {nextDimension.started
+                    ? 'Retome de onde parou:'
+                    : 'Continue pela próxima dimensão:'}{' '}
+                  {nextDimension.title}.
+                </p>
+                <Button
+                  onClick={() => {
+                    setActivePhase('consciencia')
+                    setActiveExperienceId(nextDimension.experienceId)
+                  }}
+                >
+                  {nextDimension.started ? 'Retomar' : 'Começar'} {nextDimension.title}
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm">
+                  {
+                    {
+                      past: 'Conhecer minha história na Linha da Vida',
+                      map: 'Integrar minha história ao Mapa CER',
+                      present: 'Olhar para minha vida presente',
+                      future: 'Construir minhas direções futuras',
+                      care: 'Combinar o cuidado em Equilíbrio & Realização',
+                    }[journeyMoment]
+                  }
+                </p>
+                <Button
+                  onClick={() =>
+                    setActivePhase(journeyMoment === 'care' ? 'equilibrio' : 'evolucao')
+                  }
+                >
+                  Retomar meu percurso
+                </Button>
+              </>
+            )}
+          </section>
+        )}
 
         {/* ========================================================
             FASE 1: COMECE AQUI
@@ -1590,10 +1700,57 @@ export const InteragenteHome: React.FC = () => {
                   </CollapsibleContent>
                 </Collapsible>
 
+                {demoAdapter.isEnabled() &&
+                  demoAdapter.getActivePersona() === 'mariana' &&
+                  demoAdapter
+                    .getRetiredExperienceResponses()
+                    .some((r) => r.enrollment_id === enrollment?.id) && (
+                    <details className="rounded-xl border p-4 space-y-3">
+                      <summary className="cursor-pointer font-medium">
+                        Minhas respostas anteriores preservadas
+                      </summary>
+                      <p className="text-sm text-muted-foreground">
+                        Algumas perguntas mudaram desde seus registros anteriores. Você pode
+                        consultar seus relatos aqui. Eles não serão ligados a outra pergunta por
+                        suposição.
+                      </p>
+                      {demoAdapter
+                        .getRetiredExperienceResponses()
+                        .filter((r) => r.enrollment_id === enrollment?.id)
+                        .map((r) => (
+                          <article key={r.id} className="border-t pt-3 text-sm">
+                            <p className="font-medium">
+                              {r.expand?.prompt_id?.prompt_text ||
+                                'Registro anterior de Mente & Emoções'}
+                            </p>
+                            <p className="whitespace-pre-wrap">
+                              {r.free_text ||
+                                (typeof (r.structured_value as any)?.value === 'string'
+                                  ? (r.structured_value as any).value
+                                  : 'Resposta preservada no histórico original. A leitura desta escolha precisa ser conferida com Daiane.')}
+                            </p>
+                          </article>
+                        ))}
+                    </details>
+                  )}
                 {/* O Ser em Seis Dimensões + Centro "Meu Mapa CER" (única entrada para o mapa) */}
                 <CerArtStrip variant="leaves" compact />
                 <SerConscienciaMap
-                  availableExperiences={availableExperiences}
+                  availableExperiences={availableExperiences.map((exp) => {
+                    const dimension = coverage.find((d) => d.experienceId === exp.experience_id)
+                    return dimension
+                      ? {
+                          ...exp,
+                          progress_status: dimension.completed
+                            ? 'completed'
+                            : dimension.started
+                              ? 'in_progress'
+                              : 'not_started',
+                          release_status: dimension.completed ? 'completed' : 'available',
+                        }
+                      : exp
+                  })}
+                  onContinueJourney={continueJourney}
                   hasPublishedMap={Boolean(currentMap)}
                   hasInitialMap={participantResponses.some(
                     (r) =>
@@ -1602,22 +1759,11 @@ export const InteragenteHome: React.FC = () => {
                       !['draft', 'superseded', 'discarded'].includes(r.status),
                   )}
                   onSelectExperience={(expId) => setActiveExperienceId(expId)}
-                  onOpenMap={() => setShowMapModal(true)}
+                  onOpenMap={() => {
+                    setMapFromJourney(false)
+                    setShowMapModal(true)
+                  }}
                 />
-
-                {/* Modal / Dialog do Meu Mapa CER para a Interagente */}
-                <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
-                  <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                    <ParticipantIntegrativeMapView
-                      responses={participantResponses}
-                      enrollmentId={enrollment?.id}
-                      participantName={person?.preferred_name || person?.full_name || 'você'}
-                      currentMap={currentMap}
-                      progress={availableExperiences}
-                      onClose={() => setShowMapModal(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
               </>
             )}
             {consciousnessCoverage(participantResponses, availableExperiences).every(
@@ -1820,159 +1966,40 @@ export const InteragenteHome: React.FC = () => {
             <div className="rounded-xl border p-4 space-y-2">
               <p className="text-sm">
                 Vamos escolher o que merece cuidado e encontrar um começo que cabe na sua vida. As
-                práticas e os ensinamentos apoiarão essa direção.
+                práticas são discutidas com Daiane, que construirá com você o plano de cuidado antes
+                de levá-lo ao Planner e à Mandala.
               </p>
               <Button variant="outline" onClick={() => setActivePhase('evolucao')}>
                 Ver minha trajetória na Evolução
               </Button>
-              <Button variant="ghost" onClick={() => navigate('/planner')}>
-                Levar para o meu dia · Planner
-              </Button>
+              {careAvailable ? (
+                <Button variant="ghost" onClick={() => navigate('/planner')}>
+                  Levar para o meu dia · Planner
+                </Button>
+              ) : (
+                <p className="text-sm">
+                  Antes de planejar ações, retome a história, o Mapa CER e suas direções na
+                  Evolução. O plano será combinado com Daiane.
+                </p>
+              )}
             </div>
             {enrollment && (
               <LifeDirections
                 key={`next-step-${enrollment.id}`}
+                allowEditing={false}
+                enableActions={careAvailable}
                 enrollmentId={enrollment.id}
                 planning
               />
             )}
-            <Tabs defaultValue="praticas">
-              <TabsList aria-label="Equilíbrio">
+            <Tabs defaultValue="plano">
+              <TabsList aria-label="Equilíbrio" className="h-auto flex-wrap">
+                <TabsTrigger value="plano">Nosso plano</TabsTrigger>
+                <TabsTrigger value="planejar">Metas e ações</TabsTrigger>
                 <TabsTrigger value="praticas">Práticas</TabsTrigger>
                 <TabsTrigger value="mandala">Mandala</TabsTrigger>
               </TabsList>
-              <TabsContent value="praticas" className="mt-4">
-                {/* Experimentos de Cuidado combinados */}
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        <span>Experimentos de Cuidado</span>
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Práticas combinadas para o seu momento, com foco na experiência e sem notas
-                        de desempenho.
-                      </p>
-                    </div>
-                    {assignments.length > 0 && (
-                      <Badge variant="outline" className="text-xs">
-                        {assignments.filter((a) => a.status === 'active').length} ativo(s)
-                      </Badge>
-                    )}
-                  </div>
-
-                  {assignments.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {assignments.map((asgn) => (
-                        <ExperimentCard
-                          key={asgn.id}
-                          assignment={asgn}
-                          onConfirm={handleConfirmExperiment}
-                          onResponseRecorded={loadData}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyState
-                      variant="experiments"
-                      title="Experimentos combinados"
-                      description="Os experimentos aparecem depois que algo for combinado com sua profissional."
-                      actionLabel="Ver detalhes na página de experimentos"
-                      onAction={() => navigate('/experimentos')}
-                    />
-                  )}
-                </div>
-              </TabsContent>
-              <TabsContent value="mandala" className="mt-4">
-                {/* Mandala Estruturada */}
-                {enrollment && (
-                  <div className="space-y-4 pt-4 border-t border-border/40">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
-                          <Compass className="w-4 h-4 text-primary" />
-                          <span>Sua Mandala de Cuidado Cotidiano</span>
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          Acompanhamento cíclico e dinâmico de práticas e recursos.
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate('/mandala')}
-                        className="text-xs h-7 gap-1"
-                      >
-                        <span>Página Completa</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    <MandalaStructuredView
-                      enrollmentId={enrollment.id}
-                      onRefreshRequested={loadData}
-                    />
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
-
-        {/* ========================================================
-            FASE 4: EVOLUÇÃO
-           ======================================================== */}
-        {activePhase === 'evolucao' && (
-          <div className="space-y-6">
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
-              <h2 className="font-serif text-lg">Minha trajetória</h2>
-              <p className="text-sm">
-                Conheça sua história, acolha seu presente e desenhe possibilidades para o futuro.
-              </p>
-              <Button variant="outline" onClick={() => setActivePhase('consciencia')}>
-                Rever meu Mapa CER
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/planner')}>
-                Experimentar no cotidiano · Planner
-              </Button>
-            </div>
-
-            <Tabs defaultValue="caminho">
-              <TabsList aria-label="Evolução" className="h-auto flex-wrap">
-                <TabsTrigger value="planejar">Planejar</TabsTrigger>
-                <TabsTrigger value="caminho">Linha da Vida</TabsTrigger>
-                <TabsTrigger value="cuidado">Acompanhamento</TabsTrigger>
-              </TabsList>
-              <TabsContent value="planejar" className="mt-4">
-                {enrollment && (
-                  <SelfDevelopmentJourney
-                    key={`development-${enrollment.id}`}
-                    enrollmentId={enrollment.id}
-                  />
-                )}
-              </TabsContent>
-              <TabsContent value="caminho" className="space-y-4 mt-4">
-                {enrollment && (
-                  <LifeJourney
-                    key={`life-${enrollment.id}`}
-                    enrollmentId={enrollment.id}
-                    unlocked={consciousnessCoverage(
-                      participantResponses,
-                      availableExperiences,
-                    ).every((d) => d.completed)}
-                    objective={
-                      presentedCarePlans[0]
-                        ? {
-                            title:
-                              presentedCarePlans[0].participant_title || 'Nosso foco de cuidado',
-                            summary: presentedCarePlans[0].participant_summary || '',
-                          }
-                        : undefined
-                    }
-                  />
-                )}
-              </TabsContent>
-              <TabsContent value="cuidado" className="space-y-4 mt-4">
+              <TabsContent value="plano" className="space-y-4 mt-4">
                 {/* Nosso plano de ação (Plano Compartilhado existente) */}
                 {presentedCarePlans.length > 0 ? (
                   <div className="space-y-4">
@@ -2253,6 +2280,151 @@ export const InteragenteHome: React.FC = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+              <TabsContent value="planejar" className="mt-4">
+                {!careAvailable && (
+                  <p className="text-sm">
+                    Retome seu percurso na Evolução antes de construir metas e ações do cuidado.
+                  </p>
+                )}
+                {enrollment && careAvailable && (
+                  <SelfDevelopmentJourney
+                    key={`development-${enrollment.id}`}
+                    enrollmentId={enrollment.id}
+                  />
+                )}
+              </TabsContent>
+              <TabsContent value="praticas" className="mt-4">
+                {/* Experimentos de Cuidado combinados */}
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <span>Experimentos de Cuidado</span>
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Práticas combinadas para o seu momento, com foco na experiência e sem notas
+                        de desempenho.
+                      </p>
+                    </div>
+                    {assignments.length > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        {assignments.filter((a) => a.status === 'active').length} ativo(s)
+                      </Badge>
+                    )}
+                  </div>
+
+                  {assignments.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {assignments.map((asgn) => (
+                        <ExperimentCard
+                          key={asgn.id}
+                          assignment={asgn}
+                          onConfirm={handleConfirmExperiment}
+                          onResponseRecorded={loadData}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      variant="experiments"
+                      title="Experimentos combinados"
+                      description="Os experimentos aparecem depois que algo for combinado com sua profissional."
+                      actionLabel="Ver detalhes na página de experimentos"
+                      onAction={() => navigate('/experimentos')}
+                    />
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="mandala" className="mt-4">
+                {/* Mandala Estruturada */}
+                {enrollment && (
+                  <div className="space-y-4 pt-4 border-t border-border/40">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
+                          <Compass className="w-4 h-4 text-primary" />
+                          <span>Sua Mandala de Cuidado Cotidiano</span>
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          Acompanhamento cíclico e dinâmico de práticas e recursos.
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate('/mandala')}
+                        className="text-xs h-7 gap-1"
+                      >
+                        <span>Página Completa</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <MandalaStructuredView
+                      enrollmentId={enrollment.id}
+                      onRefreshRequested={loadData}
+                    />
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
+
+        {/* ========================================================
+            FASE 4: EVOLUÇÃO
+           ======================================================== */}
+        {activePhase === 'evolucao' && (
+          <div className="space-y-6">
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
+              <h2 className="font-serif text-lg">Minha trajetória</h2>
+              <p className="text-sm">
+                Conheça sua história, acolha seu presente e desenhe possibilidades para o futuro.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setMapFromJourney(journeyMoment === 'map')
+                  setShowMapModal(true)
+                }}
+              >
+                Rever meu Mapa CER
+              </Button>
+            </div>
+
+            <Tabs defaultValue="caminho">
+              <TabsList aria-label="Evolução" className="h-auto flex-wrap">
+                <TabsTrigger value="caminho">Linha da Vida</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="caminho" className="space-y-4 mt-4">
+                {enrollment && (
+                  <LifeJourney
+                    key={`life-${enrollment.id}`}
+                    moment={journeyMoment}
+                    onMomentChange={changeJourneyMoment}
+                    onOpenMap={() => {
+                      setMapFromJourney(true)
+                      setShowMapModal(true)
+                    }}
+                    onOpenCare={() => setActivePhase('equilibrio')}
+                    enrollmentId={enrollment.id}
+                    unlocked={consciousnessCoverage(
+                      participantResponses,
+                      availableExperiences,
+                    ).every((d) => d.completed)}
+                    objective={
+                      presentedCarePlans[0]
+                        ? {
+                            title:
+                              presentedCarePlans[0].participant_title || 'Nosso foco de cuidado',
+                            summary: presentedCarePlans[0].participant_summary || '',
+                          }
+                        : undefined
+                    }
+                  />
+                )}
+              </TabsContent>
             </Tabs>
           </div>
         )}
@@ -2298,6 +2470,40 @@ export const InteragenteHome: React.FC = () => {
           </Dialog>
         )}
 
+        <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            {mapFromJourney && (
+              <div className="rounded-xl border bg-primary/5 p-4 space-y-2">
+                <h2 className="font-serif text-xl">Minha história e meu funcionamento</h2>
+                <p className="text-sm">
+                  Confira os marcos da Linha da Vida junto às seis dimensões. O que suas formas de
+                  proteção tentavam cuidar? Como ajudam ou dificultam sua vida hoje? As conexões
+                  serão aprofundadas com Daiane.
+                </p>
+              </div>
+            )}
+            <ParticipantIntegrativeMapView
+              responses={participantResponses}
+              enrollmentId={enrollment?.id}
+              participantName={person?.preferred_name || person?.full_name || 'você'}
+              currentMap={currentMap}
+              progress={availableExperiences}
+              onClose={() => setShowMapModal(false)}
+            />
+            {mapFromJourney && (
+              <Button
+                onClick={() => {
+                  changeJourneyMoment('present')
+                  setShowMapModal(false)
+                  setActivePhase('evolucao')
+                }}
+              >
+                Concluir esta leitura por agora e olhar meu presente
+              </Button>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Modal / Visão em Tela Cheia do Experience Engine */}
         {activeExperienceId && enrollment && user?.id && (
           <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-y-auto p-4 sm:p-6 flex flex-col justify-start">
@@ -2306,6 +2512,12 @@ export const InteragenteHome: React.FC = () => {
               enrollmentId={enrollment.id}
               respondentUserId={user.id}
               personId={person?.id}
+              nextStepLabel={
+                nextAfterActive
+                  ? `Próxima dimensão: ${nextAfterActive.title}`
+                  : 'Continuar para minha Linha da Vida'
+              }
+              onNextStep={continueAfterExperience}
               treatmentVariant={
                 person?.treatment_preference === 'feminino' ||
                 person?.treatment_preference === 'masculino' ||

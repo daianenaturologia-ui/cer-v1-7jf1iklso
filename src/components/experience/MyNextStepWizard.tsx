@@ -2,30 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { ArrowLeft, ArrowRight, Sprout } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import pb from '@/lib/pocketbase/client'
 import { demoAdapter } from '@/services/demoAdapter'
 import { validateLifeDirection, type LifeDirectionInput } from '@/services/lifeDirections'
 
-const AREAS = [
-  ['Corpo e saúde', 'Cuidar de como estou me sentindo fisicamente.'],
-  ['Emoções', 'Cuidar de algo que está pesando dentro de mim.'],
-  ['Relações', 'Transformar uma dificuldade nos meus vínculos.'],
-  ['Trabalho e estudos', 'Encontrar uma maneira melhor de realizar e me desenvolver.'],
-  ['Dinheiro e vida prática', 'Cuidar da minha estabilidade.'],
-  ['Rotina e energia', 'Tornar meus dias mais possíveis e agradáveis.'],
-  ['Sentido e direção', 'Compreender o que desejo para minha vida.'],
-  ['Ainda não sei', 'Sinto um incômodo, mas ainda não consigo dar nome a ele.'],
-] as const
-const STARTS = [
-  'Conversas e limites',
-  'Práticas emocionais ou corporais',
-  'Organização da rotina',
-  'Alimentação',
-  'Descanso',
-  'Apoio de outras pessoas',
-]
-const CONDITIONS = ['Tempo', 'Energia', 'Dinheiro', 'Saúde', 'Responsabilidades', 'Privacidade']
 const STEPS = ['Meu momento', 'Minha direção', 'Meu começo']
 
 export function clearMyNextStepDraft(enrollmentId: string, recordId?: string) {
@@ -59,7 +39,6 @@ export function MyNextStepWizard({
   onPause: () => void
 }) {
   const [step, setStep] = useState(0)
-  const [voice, setVoice] = useState(false)
   const [message, setMessage] = useState('')
   const [draftReady, setDraftReady] = useState<string | null>(null)
   const [draftAvailable, setDraftAvailable] = useState(true)
@@ -67,9 +46,6 @@ export function MyNextStepWizard({
   const draftKey = owner
     ? `cer-next-step-draft-v1:${owner}:${value.enrollment_id}:${recordId || 'new'}`
     : null
-  const selected = value.meaning.startsWith('Áreas de cuidado: ')
-    ? value.meaning.split('\n')[0].replace('Áreas de cuidado: ', '').split('; ')
-    : []
   useEffect(() => {
     if (draftKey) {
       try {
@@ -110,30 +86,6 @@ export function MyNextStepWizard({
       setDraftAvailable(false)
     }
   }, [value, step, draftReady, draftKey])
-  function area(label: string) {
-    const next =
-      label === 'Ainda não sei'
-        ? selected.includes(label)
-          ? []
-          : [label]
-        : selected.includes(label)
-          ? selected.filter((s) => s !== label)
-          : [...selected.filter((s) => s !== 'Ainda não sei'), label]
-    if (next.length > 2) {
-      setMessage('Escolha até duas áreas para começar. Você poderá mudar depois.')
-      return
-    }
-    const existing = value.meaning.startsWith('Áreas de cuidado: ')
-      ? value.meaning.split('\n').slice(1).join('\n')
-      : value.meaning
-    onChange({
-      ...value,
-      meaning: [next.length ? `Áreas de cuidado: ${next.join('; ')}` : '', existing]
-        .filter(Boolean)
-        .join('\n'),
-    })
-    setMessage('')
-  }
   function append(field: 'resources' | 'limits', text: string) {
     const lines = value[field].split('\n').filter(Boolean)
     if (!lines.includes(text)) {
@@ -145,18 +97,6 @@ export function MyNextStepWizard({
       onChange({ ...value, [field]: next })
     }
   }
-  function toggleSuggestion(field: 'resources' | 'limits', text: string) {
-    if (value[field].split('\n').includes(text)) {
-      onChange({
-        ...value,
-        [field]: value[field]
-          .split('\n')
-          .filter((line) => line !== text)
-          .join('\n'),
-      })
-    } else append(field, text)
-  }
-  const voiceField = step === 0 ? 'narrative' : step === 1 ? 'title' : 'limits'
   return (
     <form
       className="cer-reading-panel rounded-2xl border bg-card p-5 sm:p-7 space-y-5"
@@ -164,7 +104,7 @@ export function MyNextStepWizard({
         e.preventDefault()
         if (step < 2) {
           setStep(step + 1)
-          setVoice(false)
+
           setMessage('')
           return
         }
@@ -196,28 +136,9 @@ export function MyNextStepWizard({
           <h4 className="font-serif text-xl">O que merece cuidado agora</h4>
           <p className="text-sm text-muted-foreground">
             Você não precisa resolver tudo de uma vez. Vamos encontrar aquilo que merece atenção
-            primeiro. Escolha até duas áreas, se isso ajudar.
+            primeiro.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {AREAS.map(([label, description]) => (
-              <button
-                key={label}
-                type="button"
-                aria-pressed={selected.includes(label)}
-                onClick={() => area(label)}
-                className={`text-left rounded-xl border p-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${selected.includes(label) ? 'border-primary bg-primary/10' : 'hover:bg-primary/5'}`}
-              >
-                <span className="block text-sm font-medium">{label}</span>
-                <span className="block text-xs text-muted-foreground mt-1">{description}</span>
-              </button>
-            ))}
-          </div>
-          {selected.includes('Ainda não sei') && (
-            <p className="rounded-lg bg-primary/5 p-3 text-sm">
-              Tudo bem começar pelo incômodo. Pode contar um momento em que ele aparece e como
-              interfere no seu dia. Não precisamos encontrar uma explicação agora.
-            </p>
-          )}
+
           <label className="block text-sm space-y-2">
             <span>Conte uma situação que mostre como isso aparece na sua vida hoje.</span>
             <Textarea
@@ -262,9 +183,7 @@ export function MyNextStepWizard({
             type="button"
             variant="outline"
             className="h-auto whitespace-normal"
-            onClick={() =>
-              onChange({ ...value, title: 'Compreender o que está me causando angústia' })
-            }
+            onClick={() => onChange({ ...value, title: 'Ainda não sei o que desejo mudar' })}
           >
             Ainda não tenho clareza da mudança
           </Button>
@@ -275,36 +194,22 @@ export function MyNextStepWizard({
       )}
       {step === 2 && (
         <div className="space-y-4">
-          <h4 className="font-serif text-xl">Um começo que cabe na minha vida</h4>
+          <h4 className="font-serif text-xl">Minhas possibilidades e necessidades</h4>
           <p className="text-sm text-muted-foreground">
             Seu cuidado precisa considerar seu tempo, sua energia e suas condições de vida. Escolher
             menos também é válido.
           </p>
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Por onde gostaria de começar?</legend>
-            <div className="flex flex-wrap gap-2">
-              {STARTS.map((text) => (
-                <Button
-                  key={text}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  aria-pressed={value.resources.split('\n').includes(text)}
-                  className="h-auto whitespace-normal"
-                  onClick={() => toggleSuggestion('resources', text)}
-                >
-                  {text}
-                </Button>
-              ))}
-            </div>
+            <legend className="text-sm font-medium">Quais recursos e apoios tenho?</legend>
+
             <label className="block text-sm space-y-1">
-              <span>Meu começo e os apoios que quero usar</span>
+              <span>Recursos e apoios que podem ajudar</span>
               <Textarea
                 rows={2}
                 maxLength={5000}
                 value={value.resources}
                 onChange={(e) => onChange({ ...value, resources: e.target.value })}
-                placeholder="Pode escolher uma sugestão ou contar com suas palavras."
+                placeholder="Conte com suas palavras. Pode deixar em aberto."
               />
             </label>
           </fieldset>
@@ -312,22 +217,9 @@ export function MyNextStepWizard({
             <legend className="text-sm font-medium">
               O que precisamos respeitar para esse começo funcionar?
             </legend>
-            <div className="flex flex-wrap gap-2">
-              {CONDITIONS.map((text) => (
-                <Button
-                  key={text}
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  aria-pressed={value.limits.split('\n').includes(text)}
-                  onClick={() => toggleSuggestion('limits', text)}
-                >
-                  {text}
-                </Button>
-              ))}
-            </div>
+
             <label className="block text-sm space-y-1">
-              <span>As condições que meu plano precisa respeitar</span>
+              <span>O que precisamos respeitar</span>
               <Textarea
                 rows={3}
                 maxLength={5000}
@@ -359,7 +251,7 @@ export function MyNextStepWizard({
           )}
           <div
             className="rounded-xl bg-primary/5 p-4 space-y-2"
-            aria-label="Minha direção de cuidado"
+            aria-label="Minha direção para o futuro"
           >
             <h4 className="font-serif text-lg">Minha direção de cuidado</h4>
             <p className="text-sm whitespace-pre-wrap">
@@ -394,30 +286,7 @@ export function MyNextStepWizard({
           </p>
         </div>
       )}
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        disabled={busy}
-        onClick={() => setVoice(!voice)}
-      >
-        {voice ? 'Fechar ditado' : 'Contar por voz'}
-      </Button>
-      {voice && (
-        <VoiceInputCapture
-          targetLabel={STEPS[step]}
-          onCancel={() => setVoice(false)}
-          onConfirmText={(text) => {
-            const next = [value[voiceField], text].filter(Boolean).join('\n\n')
-            if (next.length > (voiceField === 'title' ? 160 : 5000)) {
-              setMessage('O texto excede o espaço deste campo. Resuma ou edite antes de confirmar.')
-              return
-            }
-            onChange({ ...value, [voiceField]: next })
-            setVoice(false)
-          }}
-        />
-      )}
+
       {message && (
         <p role="status" className="text-sm">
           {message}
@@ -431,7 +300,6 @@ export function MyNextStepWizard({
             disabled={busy}
             onClick={() => {
               setStep(step - 1)
-              setVoice(false)
             }}
           >
             <ArrowLeft className="w-4 h-4 mr-1" />

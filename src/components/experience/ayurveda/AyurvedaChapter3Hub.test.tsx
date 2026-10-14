@@ -61,4 +61,17 @@ describe('Hub — liberação do Capítulo 3', () => {
     await user.click(screen.getByRole('button', { name: /Ver minha síntese/i }))
     expect(onStartChapter4).toHaveBeenCalledTimes(1)
   })
+  it('oferece corrigir C3 diretamente no painel de capítulos concluídos', async () => {
+    const correct = vi.fn()
+    render(
+      <AyurvedaChaptersHub
+        chapter1Status="completed"
+        chapter2Status="completed"
+        chapter3Status="completed"
+        onCorrectChapter3={correct}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir respostas do Capítulo 3' }))
+    expect(correct).toHaveBeenCalledOnce()
+  })
 })

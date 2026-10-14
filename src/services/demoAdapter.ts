@@ -206,6 +206,7 @@ function getInitialState(): DemoStateStore {
 export type DemoScenarioMode = 'default' | 'qa_consciencia_completa'
 
 class DemoAdapter {
+  private restoreError = false
   private state: DemoStateStore
   private isDemoEnabled: boolean = false
   private activeScenario: DemoScenarioMode = 'default'
@@ -404,7 +405,7 @@ class DemoAdapter {
 
     if (modified) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+        if (!this.restoreError) localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
       } catch {
         /* ignore */
       }
@@ -466,7 +467,7 @@ class DemoAdapter {
 
     if (modified) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+        if (!this.restoreError) localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
       } catch {
         /* ignore */
       }
@@ -538,28 +539,57 @@ class DemoAdapter {
   }
 
   private loadState(): DemoStateStore {
+    // Keep every original cache. A preview update must never discard a person's answers.
+    let merged = getInitialState()
+    let found = false
+    let legacyImported = false
     try {
-      // Remoção explícita dos caches legados para evitar contaminação por sementes antigas
-      localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
-      localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
-
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const parsed: DemoStateStore = JSON.parse(raw)
-        if (!Array.isArray(parsed.experienceResponseVersions)) {
-          parsed.experienceResponseVersions = []
-        }
-        const sanitized = this.sanitizeVisibleDemoStore(parsed)
-        const migratedMente = this.migrateIncompatibleMenteEmocoes(sanitized)
-        const sanitizedAyv = this.sanitizeFalseAyurvedaChapter1Completion(migratedMente)
-        const migratedC1 = this.migrateLegacyChapter1ResponsesInStore(sanitizedAyv)
-        const migratedC2 = this.migrateLegacyChapter2ResponsesInStore(migratedC1)
-        return migratedC2
-      }
-    } catch (e) {
-      console.warn('Falha ao restaurar estado de demonstração:', e)
+      legacyImported =
+        JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}').legacyCachesImported === true
+    } catch {
+      /* preserve unreadable data */
     }
-    return getInitialState()
+    for (const key of legacyImported
+      ? [STORAGE_KEY]
+      : [LEGACY_STORAGE_KEY_V1, LEGACY_STORAGE_KEY_V2, STORAGE_KEY]) {
+      const raw = localStorage.getItem(key)
+      if (!raw) continue
+      try {
+        const parsed = JSON.parse(raw)
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+          throw new Error('Invalid state')
+        const previous = merged
+        merged = { ...merged, ...parsed }
+        for (const field of Object.keys(previous) as (keyof DemoStateStore)[]) {
+          const oldValue = previous[field]
+          const newValue = parsed[field]
+          if (Array.isArray(oldValue)) {
+            const values = new Map<string, unknown>()
+            for (const record of [...oldValue, ...(Array.isArray(newValue) ? newValue : [])]) {
+              const id = (record as any)?.id
+              values.set(typeof id === 'string' ? id : JSON.stringify(record), record)
+            }
+            ;(merged as any)[field] = [...values.values()]
+          }
+        }
+        merged.enrollmentExperienceProgress = {
+          ...previous.enrollmentExperienceProgress,
+          ...(parsed.enrollmentExperienceProgress || {}),
+        }
+        found = true
+      } catch {
+        // A corrupt current cache must not be overwritten with an empty journey.
+        if (key === STORAGE_KEY) this.restoreError = true
+      }
+    }
+    if (!found) return getInitialState()
+    ;(merged as any).legacyCachesImported = true
+    const sanitized = this.sanitizeVisibleDemoStore(merged)
+    const mente = this.migrateIncompatibleMenteEmocoes(sanitized)
+    const c1 = this.migrateLegacyChapter1ResponsesInStore(
+      this.sanitizeFalseAyurvedaChapter1Completion(mente),
+    )
+    return this.migrateLegacyChapter2ResponsesInStore(c1)
   }
 
   /**
@@ -662,7 +692,7 @@ class DemoAdapter {
 
       // Persistir o estado migrado no localStorage de forma limpa e idempotente
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+        if (!this.restoreError) localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
       } catch {
         /* ignore */
       }
@@ -755,15 +785,15 @@ class DemoAdapter {
   }
 
   private saveState(): void {
-    try {
-      localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
-      localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state))
-      localStorage.setItem('cer_demo_mode_active', this.isDemoEnabled ? 'true' : 'false')
-      this.notify()
-    } catch (e) {
-      console.warn('Falha ao persistir estado de demonstração:', e)
+    if (this.restoreError) {
+      throw new Error(
+        'Não foi possível recuperar os registros deste navegador. Os dados originais foram preservados; não vamos substituí-los por respostas vazias.',
+      )
     }
+    // A storage failure must reach the save queue, so the UI cannot claim success.
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state))
+    localStorage.setItem('cer_demo_mode_active', this.isDemoEnabled ? 'true' : 'false')
+    this.notify()
   }
 
   /** New care records share the existing demo reset and preserve all questionnaire data. */
@@ -810,8 +840,6 @@ class DemoAdapter {
 
   public enableDemo(persona: 'mariana' | 'daiane' = 'mariana'): void {
     try {
-      localStorage.removeItem(LEGACY_STORAGE_KEY_V1)
-      localStorage.removeItem(LEGACY_STORAGE_KEY_V2)
     } catch {
       /* ignore */
     }
@@ -843,7 +871,9 @@ class DemoAdapter {
     } catch {
       /* ignore */
     }
+    this.restoreError = false
     this.state = getInitialState()
+    ;(this.state as any).legacyCachesImported = true
     this.saveState()
   }
 
@@ -2085,131 +2115,137 @@ class DemoAdapter {
     canonicalPromptId?: string
     stepOrder?: number
   }): ExperienceResponseRecord {
-    // Resolução canônica universal defensiva:
-    const sObj =
-      typeof params.structuredValue === 'object' && params.structuredValue !== null
-        ? (params.structuredValue as any)
-        : null
-    const meta = sObj?.metadata || {}
+    const previousState = JSON.parse(JSON.stringify(this.state)) as DemoStateStore
+    try {
+      // Resolução canônica universal defensiva:
+      const sObj =
+        typeof params.structuredValue === 'object' && params.structuredValue !== null
+          ? (params.structuredValue as any)
+          : null
+      const meta = sObj?.metadata || {}
 
-    let effectivePromptKey = params.promptKey || meta.prompt_key || sObj?.prompt_key
-    let effectiveCanonicalPromptId =
-      params.canonicalPromptId ||
-      meta.canonical_prompt_id ||
-      sObj?.canonical_prompt_id ||
-      params.promptId
-    let effectiveStepOrder = params.stepOrder ?? meta.step_order ?? sObj?.step_order
+      let effectivePromptKey = params.promptKey || meta.prompt_key || sObj?.prompt_key
+      let effectiveCanonicalPromptId =
+        params.canonicalPromptId ||
+        meta.canonical_prompt_id ||
+        sObj?.canonical_prompt_id ||
+        params.promptId
+      let effectiveStepOrder = params.stepOrder ?? meta.step_order ?? sObj?.step_order
 
-    // Fallback por catálogo de Mente & Emoções se não identificado
-    if (!effectivePromptKey || effectiveStepOrder === undefined) {
-      const allPrompts = BUILD_07C_MENTE_PROMPTS
-      const matched = allPrompts.find(
-        (p) => p.id === params.promptId || p.id === effectiveCanonicalPromptId,
-      )
-      if (matched) {
-        if (!effectivePromptKey) effectivePromptKey = (matched.schema_config as any)?.prompt_key
-        if (effectiveStepOrder === undefined) effectiveStepOrder = matched.step_order
-        if (!effectiveCanonicalPromptId) effectiveCanonicalPromptId = matched.id
+      // Fallback por catálogo de Mente & Emoções se não identificado
+      if (!effectivePromptKey || effectiveStepOrder === undefined) {
+        const allPrompts = BUILD_07C_MENTE_PROMPTS
+        const matched = allPrompts.find(
+          (p) => p.id === params.promptId || p.id === effectiveCanonicalPromptId,
+        )
+        if (matched) {
+          if (!effectivePromptKey) effectivePromptKey = (matched.schema_config as any)?.prompt_key
+          if (effectiveStepOrder === undefined) effectiveStepOrder = matched.step_order
+          if (!effectiveCanonicalPromptId) effectiveCanonicalPromptId = matched.id
+        }
       }
-    }
 
-    // Se structuredValue for string/primitivo ou não tiver metadata, envolver defensivamente garantindo metadata
-    let enrichedStructuredValue = params.structuredValue
-    if (
-      typeof params.structuredValue === 'string' ||
-      typeof params.structuredValue === 'number' ||
-      typeof params.structuredValue === 'boolean'
-    ) {
-      enrichedStructuredValue = {
-        value: params.structuredValue,
-        prompt_key: effectivePromptKey,
-        canonical_prompt_id: effectiveCanonicalPromptId,
-        collection_origin: 'newly_collected',
-        metadata: {
+      // Se structuredValue for string/primitivo ou não tiver metadata, envolver defensivamente garantindo metadata
+      let enrichedStructuredValue = params.structuredValue
+      if (
+        typeof params.structuredValue === 'string' ||
+        typeof params.structuredValue === 'number' ||
+        typeof params.structuredValue === 'boolean'
+      ) {
+        enrichedStructuredValue = {
+          value: params.structuredValue,
           prompt_key: effectivePromptKey,
           canonical_prompt_id: effectiveCanonicalPromptId,
-          step_order: effectiveStepOrder,
-          participant_free_speech: typeof params.structuredValue === 'string',
-        },
-      }
-    } else if (sObj && !sObj.metadata) {
-      enrichedStructuredValue = {
-        ...sObj,
-        prompt_key: effectivePromptKey || sObj.prompt_key,
-        canonical_prompt_id: effectiveCanonicalPromptId || sObj.canonical_prompt_id,
-        metadata: {
+          collection_origin: 'newly_collected',
+          metadata: {
+            prompt_key: effectivePromptKey,
+            canonical_prompt_id: effectiveCanonicalPromptId,
+            step_order: effectiveStepOrder,
+            participant_free_speech: typeof params.structuredValue === 'string',
+          },
+        }
+      } else if (sObj && !sObj.metadata) {
+        enrichedStructuredValue = {
+          ...sObj,
           prompt_key: effectivePromptKey || sObj.prompt_key,
           canonical_prompt_id: effectiveCanonicalPromptId || sObj.canonical_prompt_id,
-          step_order: effectiveStepOrder,
-        },
+          metadata: {
+            prompt_key: effectivePromptKey || sObj.prompt_key,
+            canonical_prompt_id: effectiveCanonicalPromptId || sObj.canonical_prompt_id,
+            step_order: effectiveStepOrder,
+          },
+        }
       }
-    }
 
-    const existing = this.state.experienceResponses.find(
-      (r) => r.enrollment_id === params.enrollmentId && r.prompt_id === params.promptId,
-    )
-    if (existing) {
-      const snapshotVersion = existing.version || 1
-      const alreadySnapshotted = (this.state.experienceResponseVersions || []).some(
-        (version) =>
-          version.response_id === existing.id && version.version_number === snapshotVersion,
+      const existing = this.state.experienceResponses.find(
+        (r) => r.enrollment_id === params.enrollmentId && r.prompt_id === params.promptId,
       )
-      if (!alreadySnapshotted) {
-        if (!this.state.experienceResponseVersions) this.state.experienceResponseVersions = []
-        this.state.experienceResponseVersions.push({
-          id: `demo-resp-version-${existing.id}-${snapshotVersion}`,
-          response_id: existing.id,
-          enrollment_id: existing.enrollment_id,
-          experience_id: existing.experience_id,
-          prompt_id: existing.prompt_id,
-          respondent_user_id: existing.respondent_user_id,
-          response_type: existing.response_type,
-          access_class: existing.access_class,
-          structured_value: existing.structured_value,
-          free_text: existing.free_text,
-          version_number: snapshotVersion,
-          prompt_version: existing.prompt_version,
-          change_reason: 'Versão anterior preservada antes da correção',
-          created: existing.created,
-          updated: existing.updated,
-        })
+      if (existing) {
+        const snapshotVersion = existing.version || 1
+        const alreadySnapshotted = (this.state.experienceResponseVersions || []).some(
+          (version) =>
+            version.response_id === existing.id && version.version_number === snapshotVersion,
+        )
+        if (!alreadySnapshotted) {
+          if (!this.state.experienceResponseVersions) this.state.experienceResponseVersions = []
+          this.state.experienceResponseVersions.push({
+            id: `demo-resp-version-${existing.id}-${snapshotVersion}`,
+            response_id: existing.id,
+            enrollment_id: existing.enrollment_id,
+            experience_id: existing.experience_id,
+            prompt_id: existing.prompt_id,
+            respondent_user_id: existing.respondent_user_id,
+            response_type: existing.response_type,
+            access_class: existing.access_class,
+            structured_value: existing.structured_value,
+            free_text: existing.free_text,
+            version_number: snapshotVersion,
+            prompt_version: existing.prompt_version,
+            change_reason: 'Versão anterior preservada antes da correção',
+            created: existing.created,
+            updated: existing.updated,
+          })
+        }
+        if (params.accessClass) existing.access_class = params.accessClass
+        existing.structured_value = enrichedStructuredValue
+        existing.free_text = params.freeText !== undefined ? params.freeText : existing.free_text
+        existing.version = (existing.version || 1) + 1
+        existing.status = 'revised'
+        existing.updated = new Date().toISOString()
+        if (effectivePromptKey) (existing as any).prompt_key = effectivePromptKey
+        if (effectiveStepOrder !== undefined) (existing as any).step_order = effectiveStepOrder
+        if (effectiveCanonicalPromptId)
+          (existing as any).canonical_prompt_id = effectiveCanonicalPromptId
+        this.saveState()
+        return { ...existing }
+      } else {
+        const newResp: ExperienceResponseRecord = {
+          id: `demo-resp-${Date.now()}-${Math.random()}`,
+          enrollment_id: params.enrollmentId,
+          experience_id: params.experienceId,
+          prompt_id: params.promptId,
+          respondent_user_id: params.respondentUserId,
+          response_type: params.responseType,
+          access_class: params.accessClass || 'shared_care',
+          structured_value: enrichedStructuredValue,
+          free_text: params.freeText || '',
+          prompt_version: params.promptVersion,
+          version: 1,
+          status: 'saved',
+          created: new Date().toISOString(),
+          updated: new Date().toISOString(),
+        }
+        if (effectivePromptKey) (newResp as any).prompt_key = effectivePromptKey
+        if (effectiveStepOrder !== undefined) (newResp as any).step_order = effectiveStepOrder
+        if (effectiveCanonicalPromptId)
+          (newResp as any).canonical_prompt_id = effectiveCanonicalPromptId
+        this.state.experienceResponses.push(newResp)
+        this.saveState()
+        return newResp
       }
-      if (params.accessClass) existing.access_class = params.accessClass
-      existing.structured_value = enrichedStructuredValue
-      existing.free_text = params.freeText !== undefined ? params.freeText : existing.free_text
-      existing.version = (existing.version || 1) + 1
-      existing.status = 'revised'
-      existing.updated = new Date().toISOString()
-      if (effectivePromptKey) (existing as any).prompt_key = effectivePromptKey
-      if (effectiveStepOrder !== undefined) (existing as any).step_order = effectiveStepOrder
-      if (effectiveCanonicalPromptId)
-        (existing as any).canonical_prompt_id = effectiveCanonicalPromptId
-      this.saveState()
-      return { ...existing }
-    } else {
-      const newResp: ExperienceResponseRecord = {
-        id: `demo-resp-${Date.now()}-${Math.random()}`,
-        enrollment_id: params.enrollmentId,
-        experience_id: params.experienceId,
-        prompt_id: params.promptId,
-        respondent_user_id: params.respondentUserId,
-        response_type: params.responseType,
-        access_class: params.accessClass || 'shared_care',
-        structured_value: enrichedStructuredValue,
-        free_text: params.freeText || '',
-        prompt_version: params.promptVersion,
-        version: 1,
-        status: 'saved',
-        created: new Date().toISOString(),
-        updated: new Date().toISOString(),
-      }
-      if (effectivePromptKey) (newResp as any).prompt_key = effectivePromptKey
-      if (effectiveStepOrder !== undefined) (newResp as any).step_order = effectiveStepOrder
-      if (effectiveCanonicalPromptId)
-        (newResp as any).canonical_prompt_id = effectiveCanonicalPromptId
-      this.state.experienceResponses.push(newResp)
-      this.saveState()
-      return newResp
+    } catch (error) {
+      this.state = previousState
+      throw error
     }
   }
 }

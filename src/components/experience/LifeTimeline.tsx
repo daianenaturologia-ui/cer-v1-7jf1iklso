@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import {
   validateLifeEvent,
   lifeTimelineService,
@@ -27,7 +26,6 @@ export function LifeTimeline({
   const [editing, setEditing] = useState<LifeEventInput | null>(null)
   const [editingId, setEditingId] = useState<string>()
   const [busy, setBusy] = useState(false)
-  const [voice, setVoice] = useState(false)
   const [saved, setSaved] = useState('')
   const [selectedId, setSelectedId] = useState<string>()
   const load = () => {
@@ -78,7 +76,7 @@ export function LifeTimeline({
   }, [enrollmentId, readOnly])
   function open(event?: LifeEvent) {
     setEditingId(event?.id)
-    setVoice(false)
+
     setSaved('')
     setEditing(
       event || {
@@ -104,7 +102,7 @@ export function LifeTimeline({
         : [...events, event]
       setEvents(next)
       setEditing(null)
-      setVoice(false)
+
       setSelectedId(event.id)
       setSaved(
         'Acontecimento salvo. Sua história foi registrada; a interpretação do Mapa CER será atualizada em uma nova versão.',
@@ -398,22 +396,7 @@ export function LifeTimeline({
               onChange={(e) => setEditing({ ...editing, narrative: e.target.value })}
             />
           </label>
-          <Button type="button" variant="outline" onClick={() => setVoice(!voice)}>
-            {voice ? 'Fechar ditado' : 'Contar por voz'}
-          </Button>
-          {voice && (
-            <VoiceInputCapture
-              targetLabel="história"
-              onCancel={() => setVoice(false)}
-              onConfirmText={(text) => {
-                setEditing({
-                  ...editing,
-                  narrative: [editing.narrative, text].filter(Boolean).join('\n\n'),
-                })
-                setVoice(false)
-              }}
-            />
-          )}
+
           <label className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
@@ -443,7 +426,7 @@ export function LifeTimeline({
               disabled={busy}
               onClick={() => {
                 setEditing(null)
-                setVoice(false)
+
                 setError('')
               }}
             >

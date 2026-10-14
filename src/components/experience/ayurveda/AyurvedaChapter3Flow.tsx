@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  Mic,
   Plus,
   RotateCcw,
   Trash2,
@@ -19,7 +18,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { AyurvedaStepHeader } from './AyurvedaStepHeader'
-import { VoiceInputCapture } from '@/components/VoiceInputCapture'
 import { experienceResponseService } from '@/services/experienceEngine'
 import type { ExperienceResponseRecord } from '@/types/cer'
 import { CerArtStrip } from '@/components/CerArtwork'
@@ -84,10 +82,17 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     if (isExiting) return
     setIsExiting(true)
     try {
+      if (isCorrectionMode)
+        localStorage.setItem(
+          correctionDraftKey,
+          JSON.stringify({ baseRevision: correctionBaseRevisionRef.current, state, step }),
+        )
       await saver.flush()
       onBackToHub()
     } catch {
-      /* retain edits */
+      setCorrectionError(
+        'Não foi possível guardar suas alterações. Mantenha a tela aberta e tente novamente.',
+      )
     } finally {
       setIsExiting(false)
     }
@@ -95,15 +100,18 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
 
   const isReviewMode = mode === 'review'
   const [saving, setSaving] = useState(false)
-  const [showVoice, setShowVoice] = useState(false)
-  const [isCorrectionMode, setIsCorrectionMode] = useState(mode === 'correcting')
+  const [isCorrectionMode, setIsCorrectionMode] = useState(false)
   const [isReassessment, setIsReassessment] = useState(false)
-  const [showCorrectionConfirmation, setShowCorrectionConfirmation] = useState(false)
+  const [showCorrectionConfirmation, setShowCorrectionConfirmation] = useState(
+    mode === 'correcting',
+  )
   const [correctionError, setCorrectionError] = useState<string | null>(null)
   const [showCurrentBodyBlock, setShowCurrentBodyBlock] = useState(false)
   const [openAreaId, setOpenAreaId] = useState<AyurvedaC3AreaId | null>(null)
   const medicationItemsRef = useRef<AyurvedaMedicationItem[]>([])
   const revisionNumberRef = useRef(1)
+  const correctionBaseRevisionRef = useRef(1)
+  const correctionDraftKey = `cer-c3-correction-draft-v1:${respondentUserId}:${enrollmentId}:${experienceId}`
 
   useEffect(() => {
     let active = true
@@ -129,6 +137,31 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           })
         revisionNumberRef.current =
           (completion?.structured_value as any)?.metadata?.chapter_revision_number || 1
+        correctionBaseRevisionRef.current = revisionNumberRef.current
+        try {
+          const raw = localStorage.getItem(correctionDraftKey)
+          const draft = raw ? JSON.parse(raw) : null
+          if (
+            draft?.baseRevision === revisionNumberRef.current &&
+            draft?.state &&
+            typeof draft.state === 'object' &&
+            Number.isInteger(draft.step) &&
+            draft.step >= 1 &&
+            draft.step <= 6
+          ) {
+            setState(draft.state)
+            medicationItemsRef.current = draft.state.medication_items || []
+            revisionNumberRef.current = draft.baseRevision + 1
+            setIsCorrectionMode(true)
+            setShowCorrectionConfirmation(false)
+            setStep(draft.step)
+            return
+          }
+        } catch {
+          setCorrectionError(
+            'Não foi possível retomar a correção. A versão concluída permanece preservada.',
+          )
+        }
         if (derived.status === 'completed' || derived.status === 'ready_to_complete') setStep(6)
         else setStep(initialStep || derived.firstUnansweredStep)
       })
@@ -141,7 +174,21 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     return () => {
       active = false
     }
-  }, [enrollmentId, experienceId, initialStep, loadAttempt])
+  }, [enrollmentId, experienceId, initialStep, loadAttempt, correctionDraftKey])
+
+  useEffect(() => {
+    if (!isCorrectionMode || loading) return
+    try {
+      localStorage.setItem(
+        correctionDraftKey,
+        JSON.stringify({ baseRevision: correctionBaseRevisionRef.current, state, step }),
+      )
+    } catch {
+      setCorrectionError(
+        'Não foi possível guardar o rascunho da correção neste navegador. Mantenha esta tela aberta para concluir; a versão anterior está preservada.',
+      )
+    }
+  }, [isCorrectionMode, loading, state, step, correctionDraftKey])
 
   const derived = useMemo(() => deriveChapter3Status(responses), [responses])
   const shortPath = (state.changed_domains || []).some((id) =>
@@ -430,6 +477,11 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
         ;(saved as any).prompt_key = AYV_C3_PROMPTS.COMPLETION.key
         setResponses((current) => [...current, saved])
         setIsCorrectionMode(false)
+        try {
+          localStorage.removeItem(correctionDraftKey)
+        } catch {
+          /* completion was persisted */
+        }
         onCompleted?.()
         if (isCorrectionMode) onBackToHub()
       })
@@ -885,7 +937,12 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-4">
       {saver.status}
-      {!isReviewMode && !isCorrectionMode && (
+      {correctionError && (
+        <p role="alert" className="text-sm text-destructive">
+          {correctionError}
+        </p>
+      )}
+      {(!isReviewMode || isCorrectionMode) && !showCorrectionConfirmation && (
         <AyurvedaStepHeader
           chapterLabel="Capítulo 3 • Mudanças Atuais"
           stepLabel={`Etapa ${step} de 5 • ${stepTitles[step] || ''}`}
@@ -896,7 +953,9 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
       <div className="space-y-2">
         <Badge variant="outline">Capítulo 3 • Etapa {step} de 5</Badge>
         {isCorrectionMode && (
-          <Badge variant="secondary">Correção em andamento — versão anterior preservada</Badge>
+          <Badge variant="secondary">
+            Correção em andamento — rascunho neste navegador, versão anterior preservada
+          </Badge>
         )}
         <h2 className="font-serif text-2xl">O que está diferente agora</h2>
         <p className="text-xs leading-relaxed text-muted-foreground">
@@ -1402,26 +1461,6 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
               placeholder="Este registro é opcional."
             />
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowVoice((value) => !value)}
-          >
-            <Mic className="mr-1 h-4 w-4" />
-            Falar em vez de escrever
-          </Button>
-          {showVoice && (
-            <VoiceInputCapture
-              targetLabel="registro sobre as mudanças atuais"
-              onConfirmText={(text) => {
-                setState((previous) => ({ ...previous, optional_note: text }))
-                void persist(AYV_C3_PROMPTS.NOTE, text, [], text)
-                setShowVoice(false)
-              }}
-              onCancel={() => setShowVoice(false)}
-            />
-          )}
         </div>
       )}
 
