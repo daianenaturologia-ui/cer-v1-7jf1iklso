@@ -556,7 +556,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
 
       // 1. Clicar em "Corrigir minhas respostas"
       fireEvent.click(screen.getByText('Corrigir minhas respostas'))
-      expect(screen.getByText('Confirmar abertura de correção do Capítulo 2')).toBeInTheDocument()
+      expect(await screen.findByText('Confirmar abertura de correção do Capítulo 2')).toBeInTheDocument()
 
       // Confirmar "Confirmar e corrigir"
       fireEvent.click(screen.getByText('Confirmar e corrigir'))
