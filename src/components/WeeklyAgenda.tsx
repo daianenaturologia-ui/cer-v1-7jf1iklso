@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Sun, Leaf, Sparkles, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { CerIntro } from '@/components/CerArtwork'
 import { PlannerGentleGuide } from '@/components/PlannerGentleGuide'
 import {
   plannerNotesService,
@@ -19,7 +18,7 @@ import {
   type DevelopmentExperiment,
 } from '@/services/selfDevelopment'
 import {
-  mondayOf,
+  sundayOf,
   moveDay,
   localDateInput,
   eventsOnDay,
@@ -29,7 +28,7 @@ import {
 } from '@/services/weeklyAgenda'
 import type { CerPlannerItemRecord } from '@/types/cer'
 
-const dayNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const colors = {
   focus: 'bg-sky-100 text-sky-950 border-sky-200',
   rest: 'bg-amber-100 text-amber-950 border-amber-200',
@@ -53,10 +52,10 @@ export function WeeklyAgenda({
   onCompleteCare?: (id: string) => Promise<void>
   onRescheduleCare?: (id: string, iso: string) => Promise<void>
 }) {
-  const [week, setWeek] = useState(() => mondayOf(new Date()))
-  const [weekend, setWeekend] = useState(false)
-  const [allHours, setAllHours] = useState(false)
-  const [mobileDay, setMobileDay] = useState(Math.min((new Date().getDay() + 6) % 7, 4))
+  const [week, setWeek] = useState(() => sundayOf(new Date()))
+  const [agendaView, setAgendaView] = useState('agenda')
+  const [expanded, setExpanded] = useState(false)
+  const agendaRef = useRef<HTMLDivElement>(null)
   const [notes, setNotes] = useState<PlannerNote[]>([])
   const [steps, setSteps] = useState<DevelopmentExperiment[]>([])
   const [editing, setEditing] = useState<PlannerNoteInput | null>(null)
@@ -130,14 +129,20 @@ export function WeeklyAgenda({
     ],
     [notes, steps, careItems],
   )
-  const days = Array.from({ length: weekend ? 7 : 5 }, (_, i) => moveDay(week, i))
-  const firstHour = allHours ? 0 : 6,
-    lastHour = allHours ? 24 : 22
+  const days = Array.from({ length: 7 }, (_, i) => moveDay(week, i))
+  const firstHour = 0,
+    lastHour = 24
   const slots = Array.from(
     { length: (lastHour - firstHour) * 2 },
     (_, i) => firstHour * 60 + i * 30,
   )
-  const height = slots.length * 32
+  useEffect(() => {
+    if (!loading && agendaRef.current) {
+      const viewport = agendaRef.current
+      const row = viewport.querySelector<HTMLElement>('[data-agenda-slot]')
+      viewport.scrollTop = 12 * (row?.getBoundingClientRect().height || 12)
+    }
+  }, [loading, week, expanded, agendaView])
   const note = selected?.id.startsWith('note:')
     ? notes.find((n) => `note:${n.id}` === selected.id)
     : undefined
@@ -154,15 +159,6 @@ export function WeeklyAgenda({
   const contextual = careItems.filter(
     (c) => !c.scheduled_at && !['cancelled', 'superseded', 'completed'].includes(c.status),
   )
-  const outside =
-    !allHours &&
-    events.some(
-      (e) =>
-        days.some((d) => eventsOnDay([e], d).length) &&
-        (new Date(e.start).getHours() < 6 ||
-          new Date(e.start).getHours() >= 22 ||
-          (e.end && new Date(e.end).getHours() > 22)),
-    )
   function newNote(day: Date, minutes: number) {
     const start = new Date(day)
     start.setHours(0, minutes, 0, 0)
@@ -234,19 +230,15 @@ export function WeeklyAgenda({
   }
   return (
     <section aria-label={readOnly ? 'Agenda compartilhada' : 'Minha agenda'} className="space-y-4">
-      <CerIntro title="Uma semana que cabe na sua vida" variant="sun">
-        <p className="text-sm text-muted-foreground">
-          {readOnly ? (
-            'Somente os passos que a pessoa escolheu compartilhar.'
-          ) : (
-            <>
-              <strong>Foco</strong>, descanso e tempo para <strong>viver gostosamente.</strong>
-            </>
-          )}
+      <div className="flex flex-wrap items-baseline justify-between gap-1">
+        <h2 className="font-serif text-lg">Uma semana que cabe na sua vida</h2>
+        <p className="text-xs text-muted-foreground">
+          {readOnly
+            ? 'Somente os passos que a pessoa escolheu compartilhar.'
+            : 'Foco, descanso e tempo para viver gostosamente.'}
         </p>
-      </CerIntro>
-      {!readOnly && <PlannerGentleGuide />}
-      <Tabs defaultValue="agenda">
+      </div>
+      <Tabs value={agendaView} onValueChange={setAgendaView}>
         <TabsList aria-label="Visões do Planner" className="mb-3">
           <TabsTrigger value="agenda">Minha semana</TabsTrigger>
           <TabsTrigger value="loose">
@@ -288,143 +280,122 @@ export function WeeklyAgenda({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setWeek(mondayOf(new Date()))
-                  setMobileDay(Math.min((new Date().getDay() + 6) % 7, weekend ? 6 : 4))
+                  setWeek(sundayOf(new Date()))
                 }}
               >
                 Hoje
               </Button>
             </div>
-            <details className="text-xs">
-              <summary className="cursor-pointer p-2 rounded-md hover:bg-muted">
-                Visualização
-              </summary>
-              <div className="flex flex-wrap gap-3 p-2">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={weekend}
-                    onChange={(e) => {
-                      setWeekend(e.target.checked)
-                      setMobileDay((v) => Math.min(v, e.target.checked ? 6 : 4))
-                    }}
-                  />{' '}
-                  Fim de semana
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={allHours}
-                    onChange={(e) => setAllHours(e.target.checked)}
-                  />{' '}
-                  Todos os horários
-                </label>
-              </div>
-            </details>
-          </div>
-          {!readOnly && (
-            <p className="text-xs text-muted-foreground">
-              Clique em um horário para reservar um momento.
-            </p>
-          )}
-          {outside && (
-            <Button variant="link" size="sm" onClick={() => setAllHours(true)}>
-              Há momentos fora das 6h–22h · mostrar todos
+            <Button
+              size="sm"
+              variant="outline"
+              aria-pressed={expanded}
+              onClick={() => setExpanded((value) => !value)}
+            >
+              {expanded ? 'Ver semana compacta' : 'Ampliar agenda'}
             </Button>
-          )}
-          <div className="flex gap-1 md:hidden" aria-label="Escolher dia">
-            {days.map((d, i) => (
-              <Button
-                key={i}
-                size="sm"
-                variant={mobileDay === i ? 'default' : 'ghost'}
-                className="flex-1 px-1"
-                aria-pressed={mobileDay === i}
-                onClick={() => setMobileDay(i)}
-              >
-                {dayNames[i]} {d.getDate()}
-              </Button>
-            ))}
           </div>
+          <p className="text-xs text-muted-foreground">
+            Domingo a sábado · foco inicial das 6h às 23h. Role para outros horários e, em telas
+            menores, para os lados.{!readOnly && ' Clique em um horário para reservar um momento.'}
+          </p>
           {loading ? (
             <p role="status">Carregando sua semana…</p>
           ) : (
-            <div className="rounded-2xl border overflow-hidden bg-card">
-              <div
-                className="grid sticky top-0 bg-card border-b"
-                style={{ gridTemplateColumns: `48px repeat(${days.length},minmax(0,1fr))` }}
-              >
-                <div className="hidden md:block" />
-                {days.map((d, i) => (
-                  <div key={i} className="hidden md:block py-3 text-center text-sm border-l">
-                    <span className="text-muted-foreground">{dayNames[i]}</span>
-                    <span
-                      className={`ml-2 inline-flex w-8 h-8 items-center justify-center rounded-full ${d.toDateString() === new Date().toDateString() ? 'bg-primary text-primary-foreground' : 'bg-muted/40'}`}
-                    >
-                      {d.getDate()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="max-h-[580px] overflow-y-auto overscroll-contain">
-                <div className="flex" style={{ height }}>
-                  <div className="w-12 shrink-0 text-[10px] text-muted-foreground">
-                    {slots.map((m, i) => (
-                      <div key={m} style={{ height: 32 }} className="pr-2 text-right">
-                        {i % 2 === 0 ? `${String(Math.floor(m / 60)).padStart(2, '0')}:00` : ''}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex flex-1 min-w-0">
-                    {days.map((day, index) => (
-                      <div
-                        key={day.toISOString()}
-                        className={`relative flex-1 min-w-0 border-l ${index === mobileDay ? 'block' : 'hidden md:block'}`}
+            <div
+              ref={agendaRef}
+              role="region"
+              aria-label="Semana completa, domingo a sábado; role para outros horários"
+              tabIndex={0}
+              className="rounded-xl border overflow-auto overscroll-contain bg-card"
+              style={
+                {
+                  '--agenda-focus-height': 'clamp(340px, calc(100dvh - 290px), 540px)',
+                  '--agenda-slot': expanded ? '28px' : 'calc(var(--agenda-focus-height) / 36)',
+                  height: 'calc(var(--agenda-focus-height) + 38px)',
+                } as React.CSSProperties
+              }
+            >
+              <div style={{ minWidth: 608 }}>
+                <div
+                  className="grid sticky top-0 z-30 bg-card border-b h-[38px]"
+                  style={{ gridTemplateColumns: `48px repeat(${days.length},minmax(0,1fr))` }}
+                >
+                  <div className="sticky left-0 bg-card z-40" />
+                  {days.map((d, i) => (
+                    <div key={i} className="py-1 text-center text-xs border-l">
+                      <span className="text-muted-foreground">{dayNames[i]}</span>
+                      <span
+                        className={`ml-1 inline-flex w-7 h-7 items-center justify-center rounded-full ${d.toDateString() === new Date().toDateString() ? 'bg-primary text-primary-foreground' : 'bg-muted/40'}`}
                       >
-                        {slots.map((minutes) => (
-                          <button
-                            key={minutes}
-                            disabled={readOnly}
-                            aria-label={`${day.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}, ${String(Math.floor(minutes / 60)).padStart(2, '0')}:${minutes % 60 ? '30' : '00'}`}
-                            className={`block w-full h-8 text-left hover:bg-primary/5 focus-visible:bg-primary/10 focus-visible:outline-primary ${minutes % 60 ? 'border-b border-dashed border-border/30' : 'border-b border-border/50'} disabled:hover:bg-transparent`}
-                            onClick={() => newNote(day, minutes)}
-                          />
-                        ))}
-                        {eventLanes(eventsOnDay(events, day)).map(({ event, lane, lanes }) => {
-                          const begin = Math.max(
-                            Date.parse(event.start),
-                            day.getTime() + firstHour * 3600000,
-                          )
-                          const finish = Math.min(
-                            event.end ? Date.parse(event.end) : Date.parse(event.start) + 1800000,
-                            day.getTime() + lastHour * 3600000,
-                          )
-                          if (finish <= begin) return null
-                          const top =
-                            ((begin - day.getTime() - firstHour * 3600000) / 60000 / 30) * 32
-                          return (
+                        {d.getDate()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <div className="flex" style={{ height: 'calc(var(--agenda-slot) * 48)' }}>
+                    <div className="sticky left-0 z-20 bg-card w-12 shrink-0 text-[10px] text-muted-foreground">
+                      {slots.map((m, i) => (
+                        <div
+                          key={m}
+                          style={{ height: 'var(--agenda-slot)' }}
+                          className="pr-2 text-right"
+                        >
+                          {i % 2 === 0 ? `${String(Math.floor(m / 60)).padStart(2, '0')}:00` : ''}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex flex-1 min-w-0">
+                      {days.map((day) => (
+                        <div key={day.toISOString()} className="relative flex-1 min-w-0 border-l">
+                          {slots.map((minutes) => (
                             <button
-                              key={event.id}
-                              onClick={() => openEvent(event)}
-                              aria-label={`${event.title}, ${clock(event.start)}${event.completed ? ', realizado' : ''}`}
-                              className={`absolute z-10 rounded-lg border px-2 py-1 text-left text-xs overflow-hidden hover:brightness-95 focus-visible:ring-2 ring-primary ${colors[event.kind]} ${event.completed ? 'opacity-65' : ''}`}
-                              style={{
-                                top,
-                                height: Math.max(30, ((finish - begin) / 60000 / 30) * 32),
-                                left: `calc(${(lane / lanes) * 100}% + 2px)`,
-                                width: `calc(${100 / lanes}% - 4px)`,
-                              }}
-                            >
-                              <span className="font-medium block truncate">
-                                {event.completed ? '✓ ' : ''}
-                                {event.title}
-                              </span>
-                              <span className="text-[10px]">{clock(event.start)}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    ))}
+                              key={minutes}
+                              data-agenda-slot
+                              disabled={readOnly}
+                              aria-label={`${day.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}, ${String(Math.floor(minutes / 60)).padStart(2, '0')}:${minutes % 60 ? '30' : '00'}`}
+                              style={{ height: 'var(--agenda-slot)' }}
+                              className={`block w-full text-left hover:bg-primary/5 focus-visible:bg-primary/10 focus-visible:outline-primary ${minutes % 60 ? 'border-b border-dashed border-border/30' : 'border-b border-border/50'} disabled:hover:bg-transparent`}
+                              onClick={() => newNote(day, minutes)}
+                            />
+                          ))}
+                          {eventLanes(eventsOnDay(events, day)).map(({ event, lane, lanes }) => {
+                            const begin = Math.max(
+                              Date.parse(event.start),
+                              day.getTime() + firstHour * 3600000,
+                            )
+                            const finish = Math.min(
+                              event.end ? Date.parse(event.end) : Date.parse(event.start) + 1800000,
+                              day.getTime() + lastHour * 3600000,
+                            )
+                            if (finish <= begin) return null
+                            const top = ((begin - day.getTime()) / 86400000) * 100
+                            return (
+                              <button
+                                key={event.id}
+                                onClick={() => openEvent(event)}
+                                title={`${clock(event.start)} · ${event.title}`}
+                                aria-label={`${event.title}, ${clock(event.start)}${event.completed ? ', realizado' : ''}`}
+                                className={`absolute z-10 rounded-sm border px-1 py-0 text-left text-[10px] leading-[11px] overflow-hidden hover:brightness-95 focus-visible:ring-2 ring-primary ${colors[event.kind]} ${event.completed ? 'opacity-65' : ''}`}
+                                style={{
+                                  top: `${top}%`,
+                                  height: `${((finish - begin) / 86400000) * 100}%`,
+                                  minHeight: 'var(--agenda-slot)',
+                                  left: `calc(${(lane / lanes) * 100}% + 2px)`,
+                                  width: `calc(${100 / lanes}% - 4px)`,
+                                }}
+                              >
+                                <span className="font-medium block truncate">
+                                  {event.completed ? '✓ ' : ''}
+                                  {event.title}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -787,6 +758,7 @@ export function WeeklyAgenda({
           )}
         </DialogContent>
       </Dialog>
+      {!readOnly && <PlannerGentleGuide />}
     </section>
   )
 }

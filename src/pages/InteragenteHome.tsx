@@ -123,9 +123,16 @@ export const InteragenteHome: React.FC = () => {
   // 1: comece_aqui | 2: consciencia | 3: evolucao | 4: equilibrio
   const [activePhase, setActivePhase] = useState<
     'comece_aqui' | 'consciencia' | 'equilibrio' | 'evolucao'
-  >(phaseParams.get('etapa') === 'evolucao' ? 'evolucao' : 'comece_aqui')
+  >(
+    phaseParams.get('etapa') === 'evolucao'
+      ? 'evolucao'
+      : phaseParams.get('etapa') === 'equilibrio'
+        ? 'equilibrio'
+        : 'comece_aqui',
+  )
   useEffect(() => {
     if (phaseParams.get('etapa') === 'evolucao') setActivePhase('evolucao')
+    if (phaseParams.get('etapa') === 'equilibrio') setActivePhase('equilibrio')
   }, [phaseParams])
 
   const [activeExperienceId, setActiveExperienceId] = useState<string | null>(null)
@@ -2020,7 +2027,7 @@ export const InteragenteHome: React.FC = () => {
               <TabsList aria-label="Equilíbrio" className="h-auto flex-wrap">
                 <TabsTrigger value="plano">Nosso plano</TabsTrigger>
                 <TabsTrigger value="planejar">Metas e ações</TabsTrigger>
-                <TabsTrigger value="praticas">Práticas</TabsTrigger>
+                <TabsTrigger value="praticas">Biblioteca CER · Práticas</TabsTrigger>
                 <TabsTrigger value="mandala">Mandala</TabsTrigger>
               </TabsList>
               <TabsContent value="plano" className="space-y-4 mt-4">
@@ -2353,7 +2360,15 @@ export const InteragenteHome: React.FC = () => {
                   />
                 )}
               </TabsContent>
-              <TabsContent value="praticas" className="mt-4">
+              <TabsContent value="praticas" className="mt-4 space-y-4">
+                {enrollment && (
+                  <SelfDevelopmentJourney
+                    key={`library-${enrollment.id}`}
+                    enrollmentId={enrollment.id}
+                    carePlan
+                    libraryOnly
+                  />
+                )}
                 {/* Experimentos de Cuidado combinados */}
                 <div className="space-y-4 pt-2">
                   <div className="flex items-center justify-between">
