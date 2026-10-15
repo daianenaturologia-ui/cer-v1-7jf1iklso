@@ -19,13 +19,6 @@ migrate(
       { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
       { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
     ]
-    const select = (name, values, required = false, maxSelect = 1) => ({
-      name,
-      type: 'select',
-      values,
-      required,
-      maxSelect,
-    })
     app.save(
       new Collection({
         name: 'cer_cycle_profiles',
@@ -37,9 +30,10 @@ migrate(
         deleteRule: `${active} && ${owner}`,
         fields: [
           ...base(),
-          select(
-            'context',
-            [
+          {
+            name: 'context',
+            type: 'select',
+            values: [
               'natural',
               'irregular',
               'hormonal',
@@ -48,15 +42,14 @@ migrate(
               'pregnancy',
               'postpartum',
             ],
-            true,
-          ),
+            required: true,
+            maxSelect: 1,
+          },
           { name: 'cycle_length', type: 'number', min: 0, max: 45, onlyInt: true },
           { name: 'lunar_reflections', type: 'bool' },
           { name: 'planner_reminders', type: 'bool' },
         ],
-        indexes: [
-          'CREATE UNIQUE INDEX idx_cycle_profile_owner ON cer_cycle_profiles (enrollment_id)',
-        ],
+        indexes: [],
       }),
     )
     const read = `${active} && (${owner} || (${professional}))`
@@ -79,9 +72,10 @@ migrate(
             pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$',
           },
           { name: 'energy', type: 'number', min: 0, max: 5, onlyInt: true },
-          select(
-            'emotions',
-            [
+          {
+            name: 'emotions',
+            type: 'select',
+            values: [
               'Tranquila',
               'Alegre',
               'Triste',
@@ -92,12 +86,13 @@ migrate(
               'Introspectiva',
               'Outra',
             ],
-            false,
-            2,
-          ),
-          select(
-            'symptoms',
-            [
+            required: false,
+            maxSelect: 2,
+          },
+          {
+            name: 'symptoms',
+            type: 'select',
+            values: [
               'Sem desconforto',
               'Cólica',
               'Inchaço',
@@ -108,30 +103,53 @@ migrate(
               'Tensão',
               'Outro',
             ],
-            false,
-            8,
-          ),
+            required: false,
+            maxSelect: 8,
+          },
           { name: 'intensity', type: 'number', min: 0, max: 3, onlyInt: true },
-          select('appetite', ['Menor', 'Habitual', 'Maior', 'Diferente do habitual']),
-          select('impact', ['Não interferiu', 'Precisei adaptar', 'Impediu uma atividade']),
-          select('bleeding', ['Sem sangramento', 'Escape', 'Leve', 'Moderado', 'Intenso']),
+          {
+            name: 'appetite',
+            type: 'select',
+            values: ['Menor', 'Habitual', 'Maior', 'Diferente do habitual'],
+            required: false,
+            maxSelect: 1,
+          },
+          {
+            name: 'impact',
+            type: 'select',
+            values: ['Não interferiu', 'Precisei adaptar', 'Impediu uma atividade'],
+            required: false,
+            maxSelect: 1,
+          },
+          {
+            name: 'bleeding',
+            type: 'select',
+            values: ['Sem sangramento', 'Escape', 'Leve', 'Moderado', 'Intenso'],
+            required: false,
+            maxSelect: 1,
+          },
           { name: 'period_start', type: 'bool' },
           ...['sleep', 'context_note', 'reflection', 'need', 'care'].map((name) => ({
             name,
             type: 'text',
             max: 5000,
           })),
-          select('care_response', [
-            'Ajudou',
-            'Ajudou um pouco',
-            'Não percebi diferença',
-            'Me fez pior',
-          ]),
-          select('access_class', ['participant_private', 'participant_shared'], true),
+          {
+            name: 'care_response',
+            type: 'select',
+            values: ['Ajudou', 'Ajudou um pouco', 'Não percebi diferença', 'Me fez pior'],
+            required: false,
+            maxSelect: 1,
+          },
+          {
+            name: 'access_class',
+            type: 'select',
+            values: ['participant_private', 'participant_shared'],
+            required: true,
+            maxSelect: 1,
+          },
         ],
-        indexes: [
-          'CREATE UNIQUE INDEX idx_cycle_entry_day ON cer_cycle_entries (enrollment_id, day)',
-        ],
+        indexes: [],
       }),
     )
   },

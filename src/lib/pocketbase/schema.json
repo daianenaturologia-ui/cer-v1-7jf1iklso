@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-15T13:19:27.428Z",
+  "generatedAt": "2026-10-15T18:30:04.352Z",
   "collections": [
     {
       "name": "users",
@@ -7375,6 +7375,232 @@
       "indexes": [
         "CREATE UNIQUE INDEX idx_goal_roadmap_direction_owner ON cer_goal_roadmaps (direction_id, owner_id)"
       ]
+    },
+    {
+      "name": "cer_cycle_profiles",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != \"\" && @request.auth.status = \"active\" && enrollment_id.person_id = @request.auth.person_id",
+        "view": "@request.auth.id != \"\" && @request.auth.status = \"active\" && enrollment_id.person_id = @request.auth.person_id",
+        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && enrollment_id.person_id = @request.auth.person_id",
+        "update": "@request.auth.id != \"\" && @request.auth.status = \"active\" && enrollment_id.person_id = @request.auth.person_id && (@request.body.enrollment_id:isset = false || @request.body.enrollment_id = enrollment_id)",
+        "delete": "@request.auth.id != \"\" && @request.auth.status = \"active\" && enrollment_id.person_id = @request.auth.person_id"
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "context",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "natural",
+            "irregular",
+            "hormonal",
+            "perimenopause",
+            "menopause",
+            "pregnancy",
+            "postpartum"
+          ]
+        },
+        {
+          "name": "cycle_length",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "lunar_reflections",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "planner_reminders",
+          "type": "bool",
+          "required": false,
+          "system": false
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "cer_cycle_entries",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (enrollment_id.person_id = @request.auth.person_id || ((@collection.user_roles:cycle_actor.user_id ?= @request.auth.id && @collection.user_roles:cycle_actor.is_active ?= true && (@collection.user_roles:cycle_actor.role ?= \"profissional\" || @collection.user_roles:cycle_actor.role ?= \"admin\")) && access_class = \"participant_shared\" && @collection.professional_enrollment_access:cycle_scope.enrollment_id ?= enrollment_id && @collection.professional_enrollment_access:cycle_scope.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:cycle_scope.is_active ?= true))",
+        "view": "@request.auth.id != \"\" && @request.auth.status = \"active\" && (enrollment_id.person_id = @request.auth.person_id || ((@collection.user_roles:cycle_actor.user_id ?= @request.auth.id && @collection.user_roles:cycle_actor.is_active ?= true && (@collection.user_roles:cycle_actor.role ?= \"profissional\" || @collection.user_roles:cycle_actor.role ?= \"admin\")) && access_class = \"participant_shared\" && @collection.professional_enrollment_access:cycle_scope.enrollment_id ?= enrollment_id && @collection.professional_enrollment_access:cycle_scope.professional_user_id ?= @request.auth.id && @collection.professional_enrollment_access:cycle_scope.is_active ?= true))",
+        "create": "@request.auth.id != \"\" && @request.auth.status = \"active\" && enrollment_id.person_id = @request.auth.person_id",
+        "update": "@request.auth.id != \"\" && @request.auth.status = \"active\" && enrollment_id.person_id = @request.auth.person_id && (@request.body.enrollment_id:isset = false || @request.body.enrollment_id = enrollment_id) && (@request.body.day:isset = false || @request.body.day = day)",
+        "delete": "@request.auth.id != \"\" && @request.auth.status = \"active\" && enrollment_id.person_id = @request.auth.person_id"
+      },
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "enrollments"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "day",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "energy",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "emotions",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "Tranquila",
+            "Alegre",
+            "Triste",
+            "Irritada",
+            "Ansiosa",
+            "Sensível",
+            "Entusiasmada",
+            "Introspectiva",
+            "Outra"
+          ]
+        },
+        {
+          "name": "symptoms",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "Sem desconforto",
+            "Cólica",
+            "Inchaço",
+            "Dor de cabeça",
+            "Sensibilidade nas mamas",
+            "Calor / suor",
+            "Desconforto digestivo",
+            "Tensão",
+            "Outro"
+          ]
+        },
+        {
+          "name": "intensity",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "appetite",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["Menor", "Habitual", "Maior", "Diferente do habitual"]
+        },
+        {
+          "name": "impact",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["Não interferiu", "Precisei adaptar", "Impediu uma atividade"]
+        },
+        {
+          "name": "bleeding",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["Sem sangramento", "Escape", "Leve", "Moderado", "Intenso"]
+        },
+        {
+          "name": "period_start",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sleep",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "context_note",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "reflection",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "need",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "care",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "care_response",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["Ajudou", "Ajudou um pouco", "Não percebi diferença", "Me fez pior"]
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["participant_private", "participant_shared"]
+        }
+      ],
+      "indexes": []
     }
   ]
 }
