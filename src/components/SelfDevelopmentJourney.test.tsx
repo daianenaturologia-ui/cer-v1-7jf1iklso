@@ -305,3 +305,28 @@ it('leva a versão clínica ao rascunho preservando instruções, limites e orig
   expect(source.description).toContain('Como realizar: Instrução de teste')
   expect(source.source).toContain('versão version-2 (v2)')
 })
+
+it('a Biblioteca CER abre os recursos diretamente e leva a escolha ao plano sem duplicar registros', async () => {
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <SelfDevelopmentJourney enrollmentId={DEMO_ENROLLMENT_ID} carePlan libraryOnly />
+    </MemoryRouter>,
+  )
+  await user.click((await screen.findAllByRole('button', { name: 'Adicionar ao meu plano' }))[0])
+  await user.type(
+    screen.getByLabelText('O que esse cuidado significa para mim?'),
+    'Descansar melhor',
+  )
+  await user.type(screen.getByLabelText('Meu cuidado na prática'), 'Observar meu ritmo pela manhã')
+  await user.type(screen.getByLabelText('Quando isso cabe na minha vida?'), 'Depois do café')
+  await user.click(screen.getByRole('button', { name: 'Salvar no meu plano de cuidado' }))
+  expect(await screen.findByRole('link', { name: 'Abrir meu plano de cuidado' })).toHaveAttribute(
+    'href',
+    '/?etapa=equilibrio',
+  )
+  expect(await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)).toHaveLength(1)
+  expect(screen.getAllByRole('button', { name: 'Adicionar ao meu plano' }).length).toBeGreaterThan(
+    0,
+  )
+})

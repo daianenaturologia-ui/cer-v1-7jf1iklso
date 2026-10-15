@@ -1,6 +1,6 @@
 import React from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { WeeklyAgenda } from './WeeklyAgenda'
@@ -34,8 +34,12 @@ it('um clique no horário cria nota, persiste após reabrir e permite concluir/a
   const user = userEvent.setup()
   page()
   await user.click(await screen.findByRole('button', { name: /segunda-feira.*06:00/ }))
-  await user.type(screen.getByLabelText('O que cabe aqui?'), 'Pausa gostosa')
-  await user.type(screen.getByLabelText('Anotação (opcional)'), 'Tomar café sem pressa')
+  fireEvent.change(screen.getByLabelText('O que cabe aqui?'), {
+    target: { value: 'Pausa gostosa' },
+  })
+  fireEvent.change(screen.getByLabelText('Anotação (opcional)'), {
+    target: { value: 'Tomar café sem pressa' },
+  })
   await user.click(screen.getByRole('button', { name: 'Guardar momento' }))
   expect((await plannerNotesService.list(DEMO_ENROLLMENT_ID))[0].note).toBe('Tomar café sem pressa')
   cleanup()
@@ -75,7 +79,6 @@ it('leva passo sem horário para a semana e registra execução mantendo sua ori
   const start = mondayOf(new Date())
   start.setHours(9)
   const input = screen.getByLabelText('Reservar horário') as HTMLInputElement
-  const { fireEvent } = await import('@testing-library/react')
   fireEvent.change(input, { target: { value: localDateInput(start) } })
   await user.click(screen.getByRole('button', { name: 'Salvar horário' }))
   await user.click(screen.getByRole('tab', { name: 'Minha semana' }))
@@ -101,4 +104,31 @@ it('profissional vê somente compartilhados e não recebe controles de escrita o
   expect(
     (await screen.findByRole('button', { name: /segunda-feira.*06:00/ })).hasAttribute('disabled'),
   ).toBe(true)
+})
+
+it('abre os sete dias e mantém horários fora do foco acessíveis sem perder a semana ao ampliar', async () => {
+  const user = userEvent.setup()
+  page()
+  await screen.findByRole('region', {
+    name: 'Semana completa, domingo a sábado; role para outros horários',
+  })
+  for (const day of [
+    'domingo',
+    'segunda-feira',
+    'terça-feira',
+    'quarta-feira',
+    'quinta-feira',
+    'sexta-feira',
+    'sábado',
+  ]) {
+    expect(screen.getByRole('button', { name: new RegExp(`${day}.*06:00`) })).toBeVisible()
+    expect(screen.getByRole('button', { name: new RegExp(`${day}.*23:00`) })).toBeVisible()
+  }
+  expect(screen.getByRole('button', { name: /domingo.*00:00/ })).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Ampliar agenda' }))
+  expect(screen.getByRole('button', { name: 'Ver semana compacta' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  expect(screen.getByRole('button', { name: /sábado.*23:00/ })).toBeVisible()
 })
