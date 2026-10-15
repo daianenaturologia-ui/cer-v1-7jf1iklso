@@ -1,4 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import { PracticeSelector } from './PracticeSelector'
+import { demoAdapter } from '@/services/demoAdapter'
+import React, { useState, useEffect, useCallback } from 'react'
+import { SelfDevelopmentJourney } from './SelfDevelopmentJourney'
+import {
+  CARE_CATEGORIES,
+  clinicalCarePrioritySource,
+  type carePrioritySource,
+} from '@/services/carePlanFlow'
 import { careReturnLabel } from '@/services/careReturnLabels'
 import { GoalRoadmapPlanner } from './experience/GoalRoadmapPlanner'
 import { CarePlanStartingPoint } from './experience/CarePlanStartingPoint'
@@ -77,6 +85,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
   // Modais
   const [createPlanDialogOpen, setCreatePlanDialogOpen] = useState(false)
   const [createPriorityDialogOpen, setCreatePriorityDialogOpen] = useState(false)
+  const [clinicalLibraryOpen, setClinicalLibraryOpen] = useState(false)
   const [presentationPreviewDialogOpen, setPresentationPreviewDialogOpen] = useState(false)
   const [previewPerspective, setPreviewPerspective] = useState<'PROFESSIONAL' | 'PARTICIPANT'>(
     'PARTICIPANT',
@@ -123,6 +132,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
   // Formulário de nova prioridade
   const [prioTitle, setPrioTitle] = useState('')
   const [prioDescription, setPrioDescription] = useState('')
+  const [prioCategory, setPrioCategory] = useState('Outros cuidados')
   const [prioTherapeutic, setPrioTherapeutic] = useState(true) // IMPORTANTE
   const [prioPossibleNow, setPrioPossibleNow] = useState(true) // AGORA
   const [prioCapacityEstimate, setPrioCapacityEstimate] = useState<'baixa' | 'moderada' | 'alta'>(
@@ -261,6 +271,16 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
     }
   }
 
+  const prepareCareSource = useCallback((source: ReturnType<typeof carePrioritySource>) => {
+    setPrioCategory(source.category)
+    setPrioTitle(source.title)
+    setPrioDescription(source.description.replace(/^Categoria: [^\n]*\n\n/, ''))
+    setPrioProfessionalRationale(source.source)
+    setPrioPossibleNow(false)
+    setPrioTherapeutic(false)
+    setCreatePriorityDialogOpen(true)
+  }, [])
+
   // Ativar Plano
   const handleActivatePlan = async (planId: string) => {
     setActionLoading(true)
@@ -293,7 +313,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
         plan_id: selectedPlan.id,
         created_by_user_id: authUser?.id || '',
         title: prioTitle.trim(),
-        description: prioDescription.trim() || undefined,
+        description: `Categoria: ${prioCategory}\n\n${prioDescription.trim()}`,
         is_therapeutic_priority: prioTherapeutic,
         is_possible_now: prioPossibleNow,
         professional_rationale: prioProfessionalRationale.trim() || undefined,
@@ -326,6 +346,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
       // Se não for JSON, o texto da proposta é a descrição
     }
 
+    setPrioCategory('Outros cuidados')
     setPrioTitle(parsedTitle)
     setPrioDescription(parsedDescription)
     setPrioTherapeutic(true)
@@ -450,11 +471,31 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
       </CardHeader>
 
       <CardContent className="p-4 space-y-4">
+        <SelfDevelopmentJourney
+          key={`care-${enrollmentId}`}
+          enrollmentId={enrollmentId}
+          readOnly
+          carePlan
+          onPrepareCare={selectedPlan ? prepareCareSource : undefined}
+        />
+        {selectedPlan && !demoAdapter.isEnabled() && (
+          <Button variant="outline" onClick={() => setClinicalLibraryOpen(true)}>
+            Escolher prática da biblioteca clínica
+          </Button>
+        )}
+        {!selectedPlan && (
+          <p className="text-xs text-muted-foreground">
+            Crie um plano para revisar os cuidados compartilhados e escolher recursos da Biblioteca
+            CER.
+          </p>
+        )}
+
         <AyurvedaCarePriorities
           enrollmentId={enrollmentId}
           participantName={participantName}
           canPrepare={!!selectedPlan}
           onPrepare={(priority) => {
+            setPrioCategory('Outros cuidados')
             setPrioTitle(priority.title)
             setPrioDescription(priority.description)
             setPrioProfessionalRationale(priority.professionalRationale)
@@ -535,6 +576,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
               enrollmentId={enrollmentId}
               directionId={selectedPlan.direction_source_id}
               onPrepare={(choice) => {
+                setPrioCategory('Outros cuidados')
                 setPrioTitle(choice.title)
                 setPrioDescription(choice.description)
                 setPrioProfessionalRationale('')
@@ -637,7 +679,15 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setCreatePriorityDialogOpen(true)}
+                  onClick={() => {
+                    setPrioCategory('Outros cuidados')
+                    setPrioTitle('')
+                    setPrioDescription('')
+                    setPrioProfessionalRationale('')
+                    setPrioTherapeutic(true)
+                    setPrioPossibleNow(true)
+                    setCreatePriorityDialogOpen(true)
+                  }}
                   className="h-7 text-xs gap-1"
                 >
                   <Plus className="w-3 h-3" />
@@ -901,6 +951,23 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
         </DialogContent>
       </Dialog>
 
+      <Dialog open={clinicalLibraryOpen} onOpenChange={setClinicalLibraryOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Da Biblioteca CER para o plano de cuidado</DialogTitle>
+            <DialogDescription>
+              Escolha a prática e revise a indicação para esta pessoa antes de compartilhar o plano.
+            </DialogDescription>
+          </DialogHeader>
+          <PracticeSelector
+            onSelectPractice={(practice, version) => {
+              setClinicalLibraryOpen(false)
+              prepareCareSource(clinicalCarePrioritySource(practice, version))
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* MODAL 2: Adicionar Prioridade com interruptores IMPORTANTE vs AGORA */}
       <Dialog open={createPriorityDialogOpen} onOpenChange={setCreatePriorityDialogOpen}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
@@ -915,6 +982,19 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
           </DialogHeader>
 
           <div className="space-y-3.5 py-2 text-xs">
+            <label className="block space-y-1">
+              <span>Categoria do cuidado</span>
+              <select
+                aria-label="Categoria do cuidado"
+                className="w-full rounded-md border bg-background p-2"
+                value={prioCategory}
+                onChange={(e) => setPrioCategory(e.target.value)}
+              >
+                {CARE_CATEGORIES.map((category) => (
+                  <option key={category}>{category}</option>
+                ))}
+              </select>
+            </label>
             <div className="space-y-1">
               <label className="text-[11px] font-medium text-foreground">
                 Título do Foco / Prioridade *

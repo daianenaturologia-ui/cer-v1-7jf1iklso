@@ -61,3 +61,31 @@ it('não inicia relato antes de concluir as seis dimensões', () => {
   expect(screen.queryByText('Minha história desde o nascimento')).toBeNull()
   expect(screen.queryByRole('button', { name: /Concluir o passado/ })).toBeNull()
 })
+it('os cinco atalhos abrem seus destinos e respeitam o bloqueio inicial', () => {
+  const change = vi.fn(),
+    map = vi.fn(),
+    care = vi.fn()
+  const view = render(
+    <LifeJourney
+      enrollmentId="enr"
+      unlocked
+      onMomentChange={change}
+      onOpenMap={map}
+      onOpenCare={care}
+    />,
+  )
+  for (const [name, target] of [
+    ['1. Minha história', 'past'],
+    ['2. História no Mapa CER', 'map'],
+    ['3. Meu presente', 'present'],
+    ['4. Direções para o futuro', 'future'],
+    ['5. Equilíbrio & Realização', 'care'],
+  ]) {
+    fireEvent.click(screen.getByRole('button', { name }))
+    expect(change).toHaveBeenLastCalledWith(target)
+  }
+  expect(map).toHaveBeenCalledOnce()
+  expect(care).toHaveBeenCalledOnce()
+  view.rerender(<LifeJourney enrollmentId="enr" unlocked={false} onMomentChange={change} />)
+  expect(screen.getByRole('button', { name: '3. Meu presente' })).toBeDisabled()
+})

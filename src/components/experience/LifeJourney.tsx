@@ -42,12 +42,20 @@ export function LifeJourney({
         </p>
         <ol className="mt-4 grid gap-2 sm:grid-cols-5" aria-label="Percurso da Evolução">
           {JOURNEY_MOMENTS.map((item, i) => (
-            <li
-              key={item}
-              aria-current={item === moment ? 'step' : undefined}
-              className={`rounded-xl border p-2 text-xs ${item === moment ? 'border-primary bg-primary/10 text-primary font-semibold' : 'text-muted-foreground'}`}
-            >
-              {i + 1}. {labels[item]}
+            <li key={item}>
+              <Button
+                variant={item === moment ? 'default' : 'outline'}
+                className="h-auto min-h-12 w-full whitespace-normal text-left justify-start rounded-xl p-3 text-xs"
+                aria-current={item === moment ? 'step' : undefined}
+                disabled={!unlocked}
+                onClick={() => {
+                  onMomentChange?.(item)
+                  if (item === 'map') onOpenMap?.()
+                  if (item === 'care') onOpenCare?.()
+                }}
+              >
+                {i + 1}. {labels[item]}
+              </Button>
             </li>
           ))}
         </ol>
@@ -134,8 +142,9 @@ export function LifeJourney({
             <>
               <p className="text-sm">
                 Você já percorreu a história, o mapa, o presente e as direções futuras. Agora,
-                converse com Daiane sobre as práticas de regulação. O plano de cuidado será
-                construído por ela com você e, depois, levado ao Planner e à Mandala.
+                registre os cuidados que já fazem parte da sua vida e converse com Daiane sobre o
+                que precisa agora. Vocês constroem o plano juntos, e você escolhe o que levar ao
+                Planner.
               </p>
               {objective && (
                 <details className="rounded-xl border p-4">
