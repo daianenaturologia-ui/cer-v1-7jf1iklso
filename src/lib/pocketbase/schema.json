@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-15T18:30:04.352Z",
+  "generatedAt": "2026-10-15T18:45:13.113Z",
   "collections": [
     {
       "name": "users",
@@ -7442,7 +7442,9 @@
           "system": false
         }
       ],
-      "indexes": []
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_cycle_profile_owner` ON `cer_cycle_profiles` (enrollment_id)"
+      ]
     },
     {
       "name": "cer_cycle_entries",
@@ -7600,7 +7602,9 @@
           "selectValues": ["participant_private", "participant_shared"]
         }
       ],
-      "indexes": []
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_cycle_entry_day` ON `cer_cycle_entries` (enrollment_id, day)"
+      ]
     }
   ]
 }
