@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
 import { cerPlannerService } from '@/services/cerPlannerService'
 import { cerCycleInvitationService } from '@/services/cerCycleInvitationService'
+import { CyclePlannerReminder } from '@/components/CyclePlannerReminder'
 import { WeeklyAgenda } from '@/components/WeeklyAgenda'
 import { JourneyNavigation } from '@/components/JourneyNavigation'
 import { Button } from '@/components/ui/button'
@@ -84,13 +85,16 @@ export const PlannerPage: React.FC = () => {
             </Button>
           </p>
         ) : enrollment ? (
-          <WeeklyAgenda
-            key={enrollment.id}
-            enrollmentId={enrollment.id}
-            careItems={items}
-            onCompleteCare={complete}
-            onRescheduleCare={reschedule}
-          />
+          <div className="space-y-3">
+            <CyclePlannerReminder key={enrollment.id} enrollmentId={enrollment.id} />
+            <WeeklyAgenda
+              key={enrollment.id}
+              enrollmentId={enrollment.id}
+              careItems={items}
+              onCompleteCare={complete}
+              onRescheduleCare={reschedule}
+            />
+          </div>
         ) : (
           <p>
             Seu acompanhamento ainda não está disponível.{' '}

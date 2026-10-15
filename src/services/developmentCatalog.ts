@@ -15,6 +15,36 @@ export interface DevelopmentResource {
 // Conteúdo educativo de desenvolvimento. Sem diagnóstico, tratamento ou prescrição.
 export const DEVELOPMENT_CATALOG: DevelopmentResource[] = [
   {
+    id: 'cer-cycle-listening-v1',
+    title: 'Escutar meu ciclo, respeitar meu ritmo',
+    theme: 'Autoconhecimento',
+    duration: '1 a 3 minutos',
+    lesson:
+      'Observar energia, emoções e conforto corporal ao longo do tempo ajuda a reconhecer necessidades próprias. Cada ciclo pode ser diferente.',
+    instructions: [
+      'Registre como você está hoje na Mandala, sem procurar uma resposta esperada para a fase.',
+      'Perceba o que pede cuidado e considere também sono, estresse e acontecimentos.',
+      'Escolha um ajuste pequeno para a rotina e observe se ajudou.',
+    ],
+    fallback: 'Observe apenas sua energia hoje.',
+    reflection: 'O que reconheci em mim e que cuidado foi possível?',
+  },
+  {
+    id: 'cer-nature-connection-v1',
+    title: 'Um encontro com a natureza',
+    theme: 'Sentido e conexão',
+    duration: 'Um momento no seu ritmo',
+    lesson:
+      'A lua pode ser uma referência simbólica para contemplar mudanças e continuidade. Seu corpo tem seu próprio ritmo.',
+    instructions: [
+      'Se for confortável, observe o céu ou um elemento da natureza onde você está.',
+      'Perceba como está seu corpo, sem exigir uma sensação especial.',
+      'Escreva uma palavra sobre o que este encontro despertou.',
+    ],
+    fallback: 'Observe a luz pela janela por alguns instantes.',
+    reflection: 'O que me trouxe presença ou pertencimento?',
+  },
+  {
     id: 'cer-ritmo-v1',
     title: 'Meu ritmo, minhas pistas',
     theme: 'Autoconhecimento',

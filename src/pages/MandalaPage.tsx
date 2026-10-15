@@ -1,10 +1,8 @@
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { JourneyNavigation } from '@/components/JourneyNavigation'
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
-import { MandalaStructuredView } from '@/components/MandalaStructuredView'
-import { DevelopmentLearningView } from '@/components/DevelopmentLearningView'
+import { CycleMandala } from '@/components/CycleMandala'
 import { CerIntro } from '@/components/CerArtwork'
 import type { EnrollmentRecord } from '@/types/cer'
 import { Button } from '@/components/ui/button'
@@ -20,22 +18,30 @@ export const MandalaPage: React.FC = () => {
   const [revision, setRevision] = useState(0)
 
   useEffect(() => {
+    let active = true
     const load = async () => {
-      if (!user?.id) return
+      if (!user?.id) {
+        setEnrollment(null)
+        setLoading(false)
+        return
+      }
       setLoading(true)
       setEnrollment(null)
       setError(false)
       try {
-        const active = await enrollmentService.getActiveForUser(user.id)
-        setEnrollment(active)
+        const current = await enrollmentService.getActiveForUser(user.id)
+        if (active) setEnrollment(current)
       } catch (err) {
-        setError(true)
+        if (active) setError(true)
         console.error(err)
       } finally {
-        setLoading(false)
+        if (active) setLoading(false)
       }
     }
-    load()
+    void load()
+    return () => {
+      active = false
+    }
   }, [user?.id, revision])
 
   return (
@@ -45,9 +51,9 @@ export const MandalaPage: React.FC = () => {
           <JourneyNavigation />
         </div>
 
-        <CerIntro title="Minha Mandala" variant="waves">
+        <CerIntro title="Meu ciclo, meu ritmo" variant="waves">
           <p>
-            Um olhar para <strong>como você viveu</strong>, com espaço para perceber e aprender.
+            Um espaço para escutar seu corpo, perceber suas emoções e se conectar com a natureza.
           </p>
         </CerIntro>
 
@@ -71,18 +77,7 @@ export const MandalaPage: React.FC = () => {
             onAction={() => navigate('/')}
           />
         ) : (
-          <Tabs defaultValue="mandala">
-            <TabsList aria-label="Visões da Mandala">
-              <TabsTrigger value="mandala">Minha Mandala</TabsTrigger>
-              <TabsTrigger value="aprendizados">Aprendizados</TabsTrigger>
-            </TabsList>
-            <TabsContent value="mandala">
-              <MandalaStructuredView enrollmentId={enrollment.id} />
-            </TabsContent>
-            <TabsContent value="aprendizados">
-              <DevelopmentLearningView key={enrollment.id} enrollmentId={enrollment.id} />
-            </TabsContent>
-          </Tabs>
+          <CycleMandala key={enrollment.id} enrollmentId={enrollment.id} />
         )}
       </div>
     </div>

@@ -48,6 +48,7 @@ import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledg
 import { ProfessionalSessionManager } from '@/components/ProfessionalSessionManager'
 import { ProfessionalConscienciaSection } from '@/components/ProfessionalConscienciaSection'
 import { ProfessionalPlannerView } from '@/components/ProfessionalPlannerView'
+import { CycleMandala } from '@/components/CycleMandala'
 import { MandalaStructuredView } from '@/components/MandalaStructuredView'
 import { demoAdapter } from '@/services/demoAdapter'
 
@@ -558,7 +559,8 @@ export const ParticipantWorkspace: React.FC = () => {
                 <p className="text-sm">
                   Conversem sobre as prioridades e as práticas de regulação antes de formular o
                   plano. Depois de compartilhá-lo, a interagente escolhe o que cabe na sua semana;
-                  você acompanha os passos compartilhados no Planner e na Mandala.
+                  você acompanha os passos compartilhados no Planner e na Evolução. Na Mandala,
+                  observa o ritmo compartilhado pela pessoa.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={() => openCareTool('biblioteca')}>
@@ -568,7 +570,7 @@ export const ParticipantWorkspace: React.FC = () => {
                     Acompanhar no Planner
                   </Button>
                   <Button variant="outline" onClick={() => openCareTool('mandala')}>
-                    Rever na Mandala
+                    Ver ritmo compartilhado
                   </Button>
                 </div>
               </div>
@@ -613,8 +615,7 @@ export const ParticipantWorkspace: React.FC = () => {
             ))}
           {careTool === 'mandala' && (
             <div className="space-y-4">
-              <DevelopmentLearningView key={enrollment.id} enrollmentId={enrollment.id} readOnly />
-              <MandalaStructuredView enrollmentId={enrollment.id} audience="professional" />
+              <CycleMandala key={enrollment.id} enrollmentId={enrollment.id} readOnly />
             </div>
           )}
           {careTool === 'planner' && <ProfessionalPlannerView enrollmentId={enrollment.id} />}
@@ -629,10 +630,15 @@ export const ParticipantWorkspace: React.FC = () => {
           <TabsList aria-label="Evolução da interagente" className="flex-wrap h-auto">
             <TabsTrigger value="caminho">Linha da Vida</TabsTrigger>
             <TabsTrigger value="revisao">Revisão</TabsTrigger>
+            <TabsTrigger value="cuidados">Cuidado em movimento</TabsTrigger>
           </TabsList>
           <TabsContent value="caminho" className="space-y-4 mt-4">
             <LifeTimeline enrollmentId={enrollment.id} readOnly />
             <LifeDirections enrollmentId={enrollment.id} readOnly />
+          </TabsContent>
+          <TabsContent value="cuidados" className="space-y-4 mt-4">
+            <DevelopmentLearningView key={enrollment.id} enrollmentId={enrollment.id} readOnly />
+            <MandalaStructuredView enrollmentId={enrollment.id} audience="professional" />
           </TabsContent>
           <TabsContent value="revisao" className="space-y-4 mt-4">
             <SelfDevelopmentJourney enrollmentId={enrollment.id} readOnly />

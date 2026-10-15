@@ -103,6 +103,8 @@ import type {
   ExperienceResponseRecord,
 } from '@/types/cer'
 import { ExperimentCard } from '@/components/ExperimentCard'
+import { CycleMandala } from '@/components/CycleMandala'
+import { DevelopmentLearningView } from '@/components/DevelopmentLearningView'
 import { MandalaStructuredView } from '@/components/MandalaStructuredView'
 import { SerConscienciaMap } from '@/components/SerConscienciaMap'
 import { CerArtStrip } from '@/components/CerArtwork'
@@ -1161,9 +1163,8 @@ export const InteragenteHome: React.FC = () => {
                       compartilhada com você.
                     </li>
                     <li>
-                      <strong className="cer-emphasis">Mandala do Cuidado:</strong> uma visão de
-                      como suas prioridades, recursos, práticas e movimentos estão se organizando no
-                      cotidiano.
+                      <strong className="cer-emphasis">Mandala CER:</strong> um espaço para observar
+                      seu ciclo, sua energia, suas emoções e a lua, respeitando seu momento de vida.
                     </li>
                     <li>
                       <strong className="cer-emphasis">Planner:</strong> um espaço para transformar
@@ -2195,7 +2196,7 @@ export const InteragenteHome: React.FC = () => {
                       </h4>
                       <p className="text-sm">
                         Escolha um começo que respeite sua energia e os combinados com Daiane. No
-                        Planner, registre quando pretende experimentá-lo. Na Mandala, acompanhe o
+                        Planner, registre quando pretende experimentá-lo. Na Evolução, acompanhe o
                         plano e o que vai aprendendo. Você pode pedir um ajuste antes de começar.
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -2203,7 +2204,7 @@ export const InteragenteHome: React.FC = () => {
                           Levar meu cuidado para o Planner
                         </Button>
                         <Button variant="outline" onClick={() => navigate('/mandala')}>
-                          Acompanhar meu cuidado na Mandala
+                          Observar meu ciclo na Mandala
                         </Button>
                       </div>
                     </div>
@@ -2412,35 +2413,7 @@ export const InteragenteHome: React.FC = () => {
                 </div>
               </TabsContent>
               <TabsContent value="mandala" className="mt-4">
-                {/* Mandala Estruturada */}
-                {enrollment && (
-                  <div className="space-y-4 pt-4 border-t border-border/40">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
-                          <Compass className="w-4 h-4 text-primary" />
-                          <span>Sua Mandala de Cuidado Cotidiano</span>
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          Acompanhamento cíclico e dinâmico de práticas e recursos.
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate('/mandala')}
-                        className="text-xs h-7 gap-1"
-                      >
-                        <span>Página Completa</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    <MandalaStructuredView
-                      enrollmentId={enrollment.id}
-                      onRefreshRequested={loadData}
-                    />
-                  </div>
-                )}
+                {enrollment && <CycleMandala key={enrollment.id} enrollmentId={enrollment.id} />}
               </TabsContent>
             </Tabs>
           </div>
@@ -2470,6 +2443,7 @@ export const InteragenteHome: React.FC = () => {
             <Tabs defaultValue="caminho">
               <TabsList aria-label="Evolução" className="h-auto flex-wrap">
                 <TabsTrigger value="caminho">Linha da Vida</TabsTrigger>
+                <TabsTrigger value="cuidados">Meu cuidado em movimento</TabsTrigger>
               </TabsList>
 
               <TabsContent value="caminho" className="space-y-4 mt-4">
@@ -2497,6 +2471,17 @@ export const InteragenteHome: React.FC = () => {
                           }
                         : undefined
                     }
+                  />
+                )}
+              </TabsContent>
+              <TabsContent value="cuidados" className="space-y-4 mt-4">
+                {enrollment && (
+                  <DevelopmentLearningView key={enrollment.id} enrollmentId={enrollment.id} />
+                )}
+                {enrollment && (
+                  <MandalaStructuredView
+                    enrollmentId={enrollment.id}
+                    onRefreshRequested={loadData}
                   />
                 )}
               </TabsContent>

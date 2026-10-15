@@ -116,6 +116,37 @@ try:
         tokens={n:v['token'] for n,v in actors.items()}
         enrollments=record('enrollments',admin)['items']
         enroll={n:next(e for e in enrollments if e['person_id']==actors[n]['record']['person_id'])['id'] for n in ['a','b']}
+        # Cycle journal: real reference REST rules and request hooks, fictional fixtures only.
+        cycle_url='/api/collections/cer_cycle_entries/records'
+        profile_url='/api/collections/cer_cycle_profiles/records'
+        profile=record('cer_cycle_profiles',tokens['a'],'POST',{'enrollment_id':enroll['a'],'context':'natural','cycle_length':30,'lunar_reflections':True,'planner_reminders':True})
+        cycle_body={'enrollment_id':enroll['a'],'day':'2026-01-01','energy':2,'emotions':['Tranquila'],'reflection':'FICTIONAL_CYCLE_PRIVATE','bleeding':'Leve','period_start':True,'access_class':'participant_private'}
+        cycle=record('cer_cycle_entries',tokens['a'],'POST',cycle_body)
+        check('Cycle owner can reload persistent private entry',lambda:require(record('cer_cycle_entries',tokens['a'],id=cycle['id'])['reflection']=='FICTIONAL_CYCLE_PRIVATE'))
+        for actor in ['b','p','q']:
+            check('Cycle private entry denied to '+actor,lambda actor=actor:require(request(cycle_url+'/'+cycle['id'],tokens[actor])[0]==404 and record('cer_cycle_entries',tokens[actor])['items']==[]))
+            check('Cycle preferences stay private from '+actor,lambda actor=actor:require(request(profile_url+'/'+profile['id'],tokens[actor])[0]==404))
+        check('Cycle anonymous reads denied',lambda:require(request(cycle_url+'/'+cycle['id'])[0]==404))
+        check('Cycle duplicate day rejected',lambda:require(request(cycle_url,tokens['a'],'POST',cycle_body)[0]==400))
+        check('Cycle impossible date rejected by request hook',lambda:require(request(cycle_url,tokens['a'],'POST',{**cycle_body,'day':'2026-02-30'})[0]==400))
+        check('Cycle start without menstrual flow rejected',lambda:require(request(cycle_url,tokens['a'],'POST',{**cycle_body,'day':'2026-01-02','bleeding':'Escape'})[0]==400))
+        check('Cycle cannot bind to another owner',lambda:require(request(cycle_url,tokens['a'],'POST',{**cycle_body,'enrollment_id':enroll['b']})[0]==400))
+        record('cer_cycle_entries',tokens['a'],'PATCH',{'access_class':'participant_shared'},cycle['id'])
+        check('Cycle explicit sharing allows assigned active professional',lambda:require(record('cer_cycle_entries',tokens['p'],id=cycle['id'])['reflection']=='FICTIONAL_CYCLE_PRIVATE'))
+        check('Cycle sharing still excludes unrelated or revoked actors',lambda:require(request(cycle_url+'/'+cycle['id'],tokens['b'])[0]==404 and request(cycle_url+'/'+cycle['id'],tokens['q'])[0]==404))
+        check('Cycle professional cannot write or delete shared entry',lambda:require(request(cycle_url+'/'+cycle['id'],tokens['p'],'PATCH',{'reflection':'tampered'})[0]==404 and request(cycle_url+'/'+cycle['id'],tokens['p'],'DELETE')[0]==404))
+        check('Cycle owner cannot change enrollment or date',lambda:require(request(cycle_url+'/'+cycle['id'],tokens['a'],'PATCH',{'enrollment_id':enroll['b']})[0]==404 and request(cycle_url+'/'+cycle['id'],tokens['a'],'PATCH',{'day':'2026-01-02'})[0]==404))
+        cycle_link=next(v for v in record('professional_enrollment_access',admin)['items'] if v['enrollment_id']==enroll['a'] and v['professional_user_id']==actors['p']['record']['id'])
+        record('professional_enrollment_access',admin,'PATCH',{'is_active':False},cycle_link['id'])
+        check('Cycle access revocation takes effect on existing session',lambda:require(request(cycle_url+'/'+cycle['id'],tokens['p'])[0]==404))
+        record('professional_enrollment_access',admin,'PATCH',{'is_active':True},cycle_link['id'])
+        record('users',admin,'PATCH',{'status':'suspended'},actors['p']['record']['id'])
+        check('Cycle suspended professional denied with old token',lambda:require(request(cycle_url+'/'+cycle['id'],tokens['p'])[0]==404))
+        record('users',admin,'PATCH',{'status':'active'},actors['p']['record']['id'])
+        record('cer_cycle_entries',tokens['a'],'PATCH',{'access_class':'participant_private'},cycle['id'])
+        check('Cycle withdrawal immediately hides shared record',lambda:require(request(cycle_url+'/'+cycle['id'],tokens['p'])[0]==404))
+        record('cer_cycle_entries',tokens['a'],'DELETE',id=cycle['id'])
+        check('Cycle owner can delete their daily record',lambda:require(request(cycle_url+'/'+cycle['id'],tokens['a'])[0]==404))
         invite_endpoint='/backend/v1/cer/invite-participant'
         product=record('cer_products',admin)['items'][0]
         invite_body={'fullName':'Reference invited person','email':'fresh@example.invalid','productId':product['id'],'professionalUserId':actors['p']['record']['id']}
