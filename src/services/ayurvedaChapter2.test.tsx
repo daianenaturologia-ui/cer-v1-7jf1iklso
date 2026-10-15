@@ -1079,7 +1079,7 @@ describe('Ayurveda Capítulo 2A — O Ritmo do Meu Corpo', () => {
         })
 
         fireEvent.click(screen.getByText('Corrigir minhas respostas'))
-        fireEvent.click(screen.getByText('Confirmar e corrigir'))
+        fireEvent.click(await screen.findByRole('button', { name: 'Confirmar e corrigir' }))
 
         // Falhou: não pode abrir momento1, deve exibir o aviso com botão "Tentar novamente"
         await waitFor(() => {
