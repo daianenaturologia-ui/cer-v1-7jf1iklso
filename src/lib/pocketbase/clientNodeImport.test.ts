@@ -8,8 +8,7 @@ describe('PocketBase Client Node Runtime Import & Fail-Closed URL Resolution', (
 
   it('deve exportar getPocketBaseUrl e resolver URL loopback quando VITE_POCKETBASE_URL estiver definida no ambiente', async () => {
     // 1. Teste in-process isolando getPocketBaseUrl
-    const clientModule: any = await import('@/lib/pocketbase/client')
-    const getPocketBaseUrl = clientModule.getPocketBaseUrl
+    const { getPocketBaseUrl } = await import('@/lib/pocketbase/client')
     expect(typeof getPocketBaseUrl).toBe('function')
 
     const loopback = 'http://127.0.0.1:8090'
