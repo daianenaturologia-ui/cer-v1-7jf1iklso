@@ -1,3 +1,5 @@
+import { sharedPlanCareResource } from '@/services/carePlanFlow'
+import type { DevelopmentResource } from '@/services/developmentCatalog'
 import {
   readJourneyMoment,
   saveJourneyMoment,
@@ -683,6 +685,8 @@ export const InteragenteHome: React.FC = () => {
     presentedCarePlans.length > 0,
     latestPlanResponse?.saved ? latestPlanResponse.response_type : undefined,
   )
+  const [careTab, setCareTab] = useState('plano')
+  const [careResource, setCareResource] = useState<DevelopmentResource | null>(null)
   const careAvailable =
     journeyMoment === 'care' || presentedCarePlans.length > 0 || assignments.length > 0
   useEffect(() => {
@@ -1972,23 +1976,36 @@ export const InteragenteHome: React.FC = () => {
           <div className="space-y-6">
             <div className="rounded-xl border p-4 space-y-2">
               <p className="text-sm">
-                Vamos escolher o que merece cuidado e encontrar um começo que cabe na sua vida. As
-                práticas são discutidas com Daiane, que construirá com você o plano de cuidado antes
-                de levá-lo ao Planner e à Mandala.
+                Vamos escolher o que merece cuidado e encontrar um começo que cabe na sua vida. Você
+                pode registrar os cuidados que já faz, escolher recursos na Biblioteca CER e
+                construir o plano junto com Daiane. No Planner, você decide quando cada cuidado cabe
+                no seu dia.
               </p>
-              <Button variant="outline" onClick={() => setActivePhase('evolucao')}>
-                Ver minha trajetória na Evolução
-              </Button>
-              {careAvailable ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  className="h-auto whitespace-normal min-h-10"
+                  variant="outline"
+                  onClick={() => setActivePhase('evolucao')}
+                >
+                  Ver minha trajetória na Evolução
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setCareTab('plano')
+                    requestAnimationFrame(() => {
+                      const target = document.getElementById('meu-plano-de-cuidado')
+                      target?.focus({ preventScroll: true })
+                      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    })
+                  }}
+                >
+                  Meu plano de cuidado
+                </Button>
                 <Button variant="ghost" onClick={() => navigate('/planner')}>
                   Levar para o meu dia · Planner
                 </Button>
-              ) : (
-                <p className="text-sm">
-                  Antes de planejar ações, retome a história, o Mapa CER e suas direções na
-                  Evolução. O plano será combinado com Daiane.
-                </p>
-              )}
+              </div>
             </div>
             {enrollment && (
               <LifeDirections
@@ -1999,7 +2016,7 @@ export const InteragenteHome: React.FC = () => {
                 planning
               />
             )}
-            <Tabs defaultValue="plano">
+            <Tabs value={careTab} onValueChange={setCareTab}>
               <TabsList aria-label="Equilíbrio" className="h-auto flex-wrap">
                 <TabsTrigger value="plano">Nosso plano</TabsTrigger>
                 <TabsTrigger value="planejar">Metas e ações</TabsTrigger>
@@ -2007,6 +2024,17 @@ export const InteragenteHome: React.FC = () => {
                 <TabsTrigger value="mandala">Mandala</TabsTrigger>
               </TabsList>
               <TabsContent value="plano" className="space-y-4 mt-4">
+                <div id="meu-plano-de-cuidado" tabIndex={-1}>
+                  {enrollment && (
+                    <SelfDevelopmentJourney
+                      key={`care-${enrollment.id}`}
+                      enrollmentId={enrollment.id}
+                      carePlan
+                      initialCareResource={careResource}
+                      onCareResourceOpened={() => setCareResource(null)}
+                    />
+                  )}
+                </div>
                 {/* Nosso plano de ação (Plano Compartilhado existente) */}
                 {presentedCarePlans.length > 0 ? (
                   <div className="space-y-4">
@@ -2069,6 +2097,13 @@ export const InteragenteHome: React.FC = () => {
                               )}
                             </CardHeader>
                             <CardContent className="p-4 space-y-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCareResource(sharedPlanCareResource(planPres))}
+                              >
+                                Organizar um cuidado deste plano no Planner
+                              </Button>
                               <div className="space-y-2">
                                 <span className="text-xs font-medium text-foreground block">
                                   Como você se sente em relação a este próximo passo?

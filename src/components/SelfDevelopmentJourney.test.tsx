@@ -1,3 +1,4 @@
+import { sharedPlanCareResource, clinicalCarePrioritySource } from '@/services/carePlanFlow'
 import React from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -171,4 +172,136 @@ it('visão profissional não mostra privados nem oferece ações de autoria da p
   await screen.findByText('Nenhum passo educativo foi compartilhado ainda.')
   expect(screen.queryByText('Uma ação privada')).toBeNull()
   expect(screen.queryByRole('button', { name: 'Começar' })).toBeNull()
+})
+it('registra um cuidado existente, preserva a privacidade e o mesmo horário no Planner', async () => {
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <SelfDevelopmentJourney enrollmentId={DEMO_ENROLLMENT_ID} carePlan />
+    </MemoryRouter>,
+  )
+  await user.click(await screen.findByRole('button', { name: 'Adicionar cuidado que já faço' }))
+  await user.selectOptions(screen.getByLabelText('Categoria do cuidado'), 'Atividades físicas')
+  await user.type(screen.getByLabelText('O que esse cuidado significa para mim?'), 'Ter disposição')
+  await user.type(screen.getByLabelText('Meu cuidado na prática'), 'Minha caminhada habitual')
+  await user.type(screen.getByLabelText('Quando isso cabe na minha vida?'), 'Depois do café')
+  await user.click(screen.getByText('Personalizar · horário, alternativa e sinais'))
+  const moment = mondayOf(new Date())
+  moment.setHours(8, 30)
+  fireEvent.input(screen.getByLabelText('Reservar data e horário (opcional)'), {
+    target: { value: localDateInput(moment) },
+  })
+  await user.click(screen.getByRole('button', { name: 'Salvar no meu plano de cuidado' }))
+  await screen.findByText('Minha caminhada habitual')
+  let [record] = await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)
+  expect(record.resource_snapshot.care_plan).toEqual({
+    category: 'Atividades físicas',
+    origin: 'existing_routine',
+  })
+  expect(record.access_class).toBe('participant_private')
+  demoAdapter.setActivePersona('daiane')
+  expect(await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)).toEqual([])
+  demoAdapter.setActivePersona('mariana')
+  record = await selfDevelopmentService.save(
+    { ...record, access_class: 'participant_shared' },
+    record.id,
+  )
+  cleanup()
+  const prepare = vi.fn()
+  demoAdapter.setActivePersona('daiane')
+  render(
+    <MemoryRouter>
+      <SelfDevelopmentJourney
+        enrollmentId={DEMO_ENROLLMENT_ID}
+        carePlan
+        readOnly
+        onPrepareCare={prepare}
+      />
+    </MemoryRouter>,
+  )
+  await user.click(await screen.findByRole('button', { name: 'Revisar este cuidado para o plano' }))
+  expect(prepare).toHaveBeenCalledWith(
+    expect.objectContaining({
+      title: 'Minha caminhada habitual',
+      source: expect.stringContaining(record.id),
+    }),
+  )
+  expect(await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)).toHaveLength(1)
+  cleanup()
+  demoAdapter.setActivePersona('mariana')
+  render(
+    <MemoryRouter>
+      <WeeklyAgenda enrollmentId={DEMO_ENROLLMENT_ID} />
+    </MemoryRouter>,
+  )
+  expect(
+    await screen.findByRole('button', { name: 'Minha caminhada habitual, 08:30' }),
+  ).toBeVisible()
+})
+it('a escolha na biblioteca mantém o conteúdo de origem e só salva após a pessoa planejar', async () => {
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <SelfDevelopmentJourney enrollmentId={DEMO_ENROLLMENT_ID} carePlan />
+    </MemoryRouter>,
+  )
+  await user.click(await screen.findByRole('button', { name: 'Escolher na Biblioteca CER' }))
+  await user.click(screen.getAllByRole('button', { name: 'Adicionar ao meu plano' })[0])
+  expect(await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)).toEqual([])
+  expect(screen.getByText('Recurso de origem')).toBeVisible()
+  await user.type(
+    screen.getByLabelText('O que esse cuidado significa para mim?'),
+    'Respeitar meu ritmo',
+  )
+  await user.type(screen.getByLabelText('Meu cuidado na prática'), 'Observar uma atividade')
+  await user.type(screen.getByLabelText('Quando isso cabe na minha vida?'), 'No almoço')
+  await user.click(screen.getByRole('button', { name: 'Salvar no meu plano de cuidado' }))
+  await screen.findByText('Observar uma atividade')
+  const [saved] = await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)
+  expect(saved.resource_snapshot.care_plan?.origin).toBe('library')
+  expect(saved.resource_snapshot.instructions.length).toBeGreaterThan(0)
+  expect(saved.scheduled_at).toBe('')
+})
+
+it('organiza o plano profissional sem cortar o convite e sem criar ação automaticamente', async () => {
+  const invitation = 'Cuidado combinado. '.repeat(100)
+  const resource = sharedPlanCareResource({
+    id: 'presentation-1',
+    participant_title: 'Descanso',
+    participant_summary: 'Resumo compartilhado',
+    practical_invitation: invitation,
+  })
+  expect(resource.instructions.join('')).toBe(invitation)
+  render(
+    <MemoryRouter>
+      <SelfDevelopmentJourney
+        enrollmentId={DEMO_ENROLLMENT_ID}
+        carePlan
+        initialCareResource={resource}
+      />
+    </MemoryRouter>,
+  )
+  expect(await screen.findByRole('dialog', { name: 'Descanso' })).toBeVisible()
+  expect(await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)).toEqual([])
+  expect(resource.care_plan?.origin).toBe('professional_plan')
+})
+
+it('leva a versão clínica ao rascunho preservando instruções, limites e origem', () => {
+  const source = clinicalCarePrioritySource(
+    { id: 'practice-1', participant_facing_name_base: 'Prática de teste' } as any,
+    {
+      id: 'version-2',
+      version_number: 2,
+      participant_title: 'Título de teste',
+      participant_summary: 'Resumo de teste',
+      instructions: 'Instrução de teste',
+      stop_conditions: 'Condição de interrupção de teste',
+      guidance_requirements: 'Acompanhamento de teste',
+      duration: 'Duração de teste',
+    } as any,
+  )
+  expect(source.description).toContain('Quando interromper: Condição de interrupção de teste')
+  expect(source.description).toContain('Acompanhamento necessário: Acompanhamento de teste')
+  expect(source.description).toContain('Como realizar: Instrução de teste')
+  expect(source.source).toContain('versão version-2 (v2)')
 })

@@ -1,3 +1,5 @@
+import type { CareMetadata } from './carePlanFlow'
+
 export interface DevelopmentResource {
   id: string
   title: string
@@ -7,6 +9,7 @@ export interface DevelopmentResource {
   fallback: string
   reflection: string
   duration: string
+  care_plan?: CareMetadata
 }
 
 // Conteúdo educativo de desenvolvimento. Sem diagnóstico, tratamento ou prescrição.
