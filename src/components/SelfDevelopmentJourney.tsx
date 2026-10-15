@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,15 @@ import { lifeDirectionsService, type LifeDirection } from '@/services/lifeDirect
 import { isCareEpisode } from '@/services/careEpisode'
 import { EPISODE_REVIEW_RESOURCE_ID } from '@/services/careEpisodeReview'
 
+import {
+  CARE_CATEGORIES,
+  CARE_ORIGINS,
+  isPersonalCare,
+  personalCareResource,
+  libraryCareResource,
+  carePrioritySource,
+} from '@/services/carePlanFlow'
+
 const labels = {
   planned: 'Planejado',
   experimenting: 'Experimentando',
@@ -28,11 +37,20 @@ export function SelfDevelopmentJourney({
   enrollmentId,
   mode = 'plan',
   readOnly = false,
+  carePlan = false,
+  onPrepareCare,
+  initialCareResource,
+  onCareResourceOpened,
 }: {
   enrollmentId: string
   mode?: 'plan' | 'play'
   readOnly?: boolean
+  carePlan?: boolean
+  onPrepareCare?: (source: ReturnType<typeof carePrioritySource>) => void
+  initialCareResource?: DevelopmentResource | null
+  onCareResourceOpened?: () => void
 }) {
+  const canPrepareCare = !!onPrepareCare
   const [records, setRecords] = useState<DevelopmentExperiment[]>([])
   const [resources, setResources] = useState<DevelopmentResource[]>([])
   const [directions, setDirections] = useState<LifeDirection[]>([])
@@ -63,7 +81,10 @@ export function SelfDevelopmentJourney({
         if (active)
           setRecords(
             visibleDevelopment(values, enrollmentId, readOnly).filter(
-              (v) => !isCareEpisode(v) && v.resource_snapshot?.id !== EPISODE_REVIEW_RESOURCE_ID,
+              (v) =>
+                !isCareEpisode(v) &&
+                v.resource_snapshot?.id !== EPISODE_REVIEW_RESOURCE_ID &&
+                (carePlan ? isPersonalCare(v) : true),
             ),
           )
       })
@@ -76,7 +97,7 @@ export function SelfDevelopmentJourney({
       .finally(() => {
         if (active) setLoading(false)
       })
-    if (!readOnly)
+    if (!readOnly || canPrepareCare)
       selfDevelopmentService.catalog().then((result) => {
         if (active) {
           setResources(result.resources)
@@ -86,43 +107,59 @@ export function SelfDevelopmentJourney({
     return () => {
       active = false
     }
-  }, [enrollmentId, readOnly, revision])
-  async function open(resource: DevelopmentResource, previous?: DevelopmentExperiment) {
-    setError('')
-    setMessage('')
-    setEditingId(undefined)
-    setEditing({
-      enrollment_id: enrollmentId,
-      direction_id: previous?.direction_id || '',
-      resource_snapshot: resource,
-      goal: previous?.goal || '',
-      action: previous?.next_step || '',
-      context: '',
-      fallback: resource.fallback,
-      signal: '',
-      scheduled_at: '',
-      reflection: '',
-      next_step: '',
-      status: 'planned',
-      access_class: 'participant_private',
-    })
-    setDirections([])
-    try {
-      setDirections(
-        (await lifeDirectionsService.list(enrollmentId)).filter(
-          (d) => d.kind === 'future' && d.enrollment_id === enrollmentId,
-        ),
-      )
-    } catch {
-      setWarning(
-        'Você pode planejar sem vínculo. Seus registros de futuro não puderam ser carregados agora.',
-      )
+  }, [enrollmentId, readOnly, revision, carePlan, canPrepareCare])
+  const open = useCallback(
+    async (resource: DevelopmentResource, previous?: DevelopmentExperiment) => {
+      if (readOnly) {
+        onPrepareCare?.(carePrioritySource(resource))
+        setShowCatalog(false)
+        return
+      }
+      setError('')
+      setMessage('')
+      setEditingId(undefined)
+      setEditing({
+        enrollment_id: enrollmentId,
+        direction_id: previous?.direction_id || '',
+        resource_snapshot: resource,
+        goal: previous?.goal || '',
+        action: previous?.next_step || '',
+        context: '',
+        fallback: resource.fallback,
+        signal: '',
+        scheduled_at: '',
+        reflection: '',
+        next_step: '',
+        status: 'planned',
+        access_class: 'participant_private',
+      })
+      setDirections([])
+      try {
+        setDirections(
+          (await lifeDirectionsService.list(enrollmentId)).filter(
+            (d) => d.kind === 'future' && d.enrollment_id === enrollmentId,
+          ),
+        )
+      } catch {
+        setWarning(
+          'Você pode planejar sem vínculo. Seus registros de futuro não puderam ser carregados agora.',
+        )
+      }
+    },
+    [readOnly, onPrepareCare, enrollmentId],
+  )
+  useEffect(() => {
+    if (initialCareResource && !readOnly) {
+      void open(initialCareResource)
+      onCareResourceOpened?.()
     }
-  }
+  }, [initialCareResource, enrollmentId, readOnly, open, onCareResourceOpened])
   async function save(
     value: DevelopmentInput,
     id?: string,
-    text = 'Seu passo foi salvo. Ele já está disponível no Planner.',
+    text = carePlan
+      ? 'Cuidado salvo no seu plano e disponível no Planner. Sem horário, ele fica em “Sem horário”.'
+      : 'Seu passo foi salvo. Ele já está disponível no Planner.',
   ) {
     if (busy) return
     setBusy(true)
@@ -161,20 +198,38 @@ export function SelfDevelopmentJourney({
   return (
     <section
       className="rounded-xl border border-primary/30 p-4 sm:p-5 space-y-4"
-      aria-label={readOnly ? 'Desenvolvimento compartilhado' : 'Meu desenvolvimento'}
+      aria-label={
+        carePlan
+          ? readOnly
+            ? 'Cuidados compartilhados pela pessoa'
+            : 'Meu plano de cuidado'
+          : readOnly
+            ? 'Desenvolvimento compartilhado'
+            : 'Meu desenvolvimento'
+      }
     >
       <CerIntro
         title={
-          readOnly
-            ? 'Passos compartilhados'
-            : mode === 'play'
-              ? 'Meus pequenos passos'
-              : 'Um desejo, um pequeno passo'
+          carePlan
+            ? readOnly
+              ? 'Cuidados que a pessoa compartilhou'
+              : 'Meu plano de cuidado'
+            : readOnly
+              ? 'Passos compartilhados'
+              : mode === 'play'
+                ? 'Meus pequenos passos'
+                : 'Um desejo, um pequeno passo'
         }
         variant={mode === 'play' ? 'path' : 'seed'}
       >
         <p className="text-sm text-muted-foreground">
-          {readOnly ? (
+          {carePlan ? (
+            readOnly ? (
+              'Conheça a rotina que a pessoa compartilhou e revise o que fará parte da indicação profissional.'
+            ) : (
+              'Comece pelos cuidados que já fazem parte da sua vida. Escolha recursos da Biblioteca CER, ajuste ao seu ritmo e decida o que compartilhar com Daiane.'
+            )
+          ) : readOnly ? (
             <>
               Acompanhe o que a pessoa escolheu <strong>compartilhar.</strong>
             </>
@@ -221,13 +276,22 @@ export function SelfDevelopmentJourney({
         <p role="status">Carregando seus passos…</p>
       ) : (
         <>
-          {!readOnly && mode === 'plan' && view === 'plan' && !editing && (
+          {carePlan && !readOnly && mode === 'plan' && !editing && (
+            <Button onClick={() => open(personalCareResource())}>
+              Adicionar cuidado que já faço
+            </Button>
+          )}
+          {(!readOnly || onPrepareCare) && mode === 'plan' && view === 'plan' && !editing && (
             <Button variant="outline" onClick={() => setShowCatalog((v) => !v)}>
-              {showCatalog
-                ? 'Fechar acervo'
-                : records.length
-                  ? 'Escolher outro recurso'
-                  : 'Escolher meu primeiro recurso'}
+              {carePlan
+                ? showCatalog
+                  ? 'Fechar Biblioteca CER'
+                  : 'Escolher na Biblioteca CER'
+                : showCatalog
+                  ? 'Fechar acervo'
+                  : records.length
+                    ? 'Escolher outro recurso'
+                    : 'Escolher meu primeiro recurso'}
             </Button>
           )}
           {!readOnly && mode === 'play' && (
@@ -243,7 +307,7 @@ export function SelfDevelopmentJourney({
               </Link>
             </p>
           )}
-          {!readOnly && mode === 'plan' && showCatalog && !editing && (
+          {(!readOnly || onPrepareCare) && mode === 'plan' && showCatalog && !editing && (
             <div className="grid gap-3 sm:grid-cols-2">
               {resources.map((resource) => (
                 <article key={resource.id} className="rounded-lg border p-4 space-y-2">
@@ -261,8 +325,16 @@ export function SelfDevelopmentJourney({
                     </ol>
                     <p className="mt-2">Em um dia difícil: {resource.fallback}</p>
                   </details>
-                  <Button size="sm" disabled={busy} onClick={() => open(resource)}>
-                    Quero experimentar
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => open(carePlan ? libraryCareResource(resource) : resource)}
+                  >
+                    {readOnly
+                      ? 'Revisar para o plano'
+                      : carePlan
+                        ? 'Adicionar ao meu plano'
+                        : 'Quero experimentar'}
                   </Button>
                 </article>
               ))}
@@ -277,7 +349,11 @@ export function SelfDevelopmentJourney({
             >
               <DialogContent className="rounded-2xl max-h-[90vh] overflow-y-auto">
                 <DialogTitle className="font-serif">{editing.resource_snapshot.title}</DialogTitle>
-                <DialogDescription>Seu plano começa com três escolhas.</DialogDescription>
+                <DialogDescription>
+                  {carePlan
+                    ? 'Descreva seu cuidado e quando ele cabe na sua vida. A data é opcional; você pode ajustar depois no Planner.'
+                    : 'Seu plano começa com três escolhas.'}
+                </DialogDescription>
                 <form
                   className="rounded-lg border p-4 space-y-4"
                   onSubmit={(e) => {
@@ -285,6 +361,48 @@ export function SelfDevelopmentJourney({
                     void save(editing, editingId)
                   }}
                 >
+                  {carePlan &&
+                    editing.resource_snapshot.care_plan?.origin !== 'existing_routine' && (
+                      <details className="text-sm rounded-lg bg-muted/30 p-3" open>
+                        <summary>Recurso de origem</summary>
+                        <p className="whitespace-pre-wrap mt-2">
+                          {editing.resource_snapshot.lesson}
+                        </p>
+                        <ol className="list-decimal pl-5 mt-2">
+                          {editing.resource_snapshot.instructions.map((step, i) => (
+                            <li key={i}>{step}</li>
+                          ))}
+                        </ol>
+                      </details>
+                    )}
+                  {carePlan && editing.resource_snapshot.care_plan && (
+                    <label className="block text-sm space-y-1">
+                      <span>Categoria do cuidado</span>
+                      <select
+                        aria-label="Categoria do cuidado"
+                        className="w-full rounded-md border bg-background p-2"
+                        disabled={!!editingId}
+                        value={editing.resource_snapshot.care_plan.category}
+                        onChange={(e) =>
+                          patch('resource_snapshot', {
+                            ...editing.resource_snapshot,
+                            care_plan: {
+                              ...editing.resource_snapshot.care_plan!,
+                              category: e.target.value as (typeof CARE_CATEGORIES)[number],
+                            },
+                          })
+                        }
+                      >
+                        {CARE_CATEGORIES.map((category) => (
+                          <option key={category}>{category}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-muted-foreground">
+                        {CARE_ORIGINS[editing.resource_snapshot.care_plan.origin]}. Registrar um
+                        cuidado não substitui a revisão da indicação por Daiane.
+                      </p>
+                    </label>
+                  )}
                   <label className="block text-sm space-y-1">
                     <span>Vincular a um futuro da Linha da Vida (opcional)</span>
                     <select
@@ -318,7 +436,11 @@ export function SelfDevelopmentJourney({
                     </select>
                   </label>
                   <label className="block text-sm space-y-1">
-                    <span>Que vida quero cultivar?</span>
+                    <span>
+                      {carePlan
+                        ? 'O que esse cuidado significa para mim?'
+                        : 'Que vida quero cultivar?'}
+                    </span>
                     <Textarea
                       required
                       maxLength={5000}
@@ -328,7 +450,7 @@ export function SelfDevelopmentJourney({
                     />
                   </label>
                   <label className="block text-sm space-y-1">
-                    <span>Meu pequeno passo</span>
+                    <span>{carePlan ? 'Meu cuidado na prática' : 'Meu pequeno passo'}</span>
                     <Textarea
                       required
                       maxLength={5000}
@@ -409,7 +531,11 @@ export function SelfDevelopmentJourney({
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button disabled={busy} type="submit">
-                      {busy ? 'Salvando…' : 'Salvar meu passo'}
+                      {busy
+                        ? 'Salvando…'
+                        : carePlan
+                          ? 'Salvar no meu plano de cuidado'
+                          : 'Salvar meu passo'}
                     </Button>
                     <Button
                       type="button"
@@ -427,7 +553,9 @@ export function SelfDevelopmentJourney({
           {visible.length === 0 && !editing && (
             <p className="text-sm text-muted-foreground">
               {readOnly
-                ? 'Nenhum passo educativo foi compartilhado ainda.'
+                ? carePlan
+                  ? 'Nenhum cuidado foi compartilhado ainda. Os registros privados continuam com a pessoa.'
+                  : 'Nenhum passo educativo foi compartilhado ainda.'
                 : mode === 'play'
                   ? 'Seu próximo passo começa na Evolução. Escolha um recurso e planeje uma tentativa possível.'
                   : 'Você pode começar pequeno. Não precisa transformar a vida inteira de uma vez.'}
@@ -442,6 +570,12 @@ export function SelfDevelopmentJourney({
                     {record.access_class === 'participant_shared' ? 'Compartilhado' : 'Só meu'}
                   </span>
                   <h3 className="font-semibold">{record.action}</h3>
+                  {record.resource_snapshot.care_plan && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {record.resource_snapshot.care_plan.category} ·{' '}
+                      {CARE_ORIGINS[record.resource_snapshot.care_plan.origin]}
+                    </p>
+                  )}
 
                   {record.scheduled_at && (
                     <p className="text-xs">
@@ -468,6 +602,17 @@ export function SelfDevelopmentJourney({
                     <p>{record.reflection}</p>
                     {record.next_step && <p>Próximo ajuste: {record.next_step}</p>}
                   </div>
+                )}
+                {readOnly && onPrepareCare && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      onPrepareCare(carePrioritySource(record.resource_snapshot, record))
+                    }
+                  >
+                    Revisar este cuidado para o plano
+                  </Button>
                 )}
                 {!readOnly && (
                   <>
