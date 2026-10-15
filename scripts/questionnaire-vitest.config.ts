@@ -6,6 +6,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/services/cycleJournal.test.ts',
+      'src/components/CycleMandala.test.tsx',
       'src/services/demoAnswerPersistence.test.ts',
       'src/services/participantJourney.test.ts',
       'src/services/professionalJourneyNavigation.test.ts',
