@@ -1,6 +1,5 @@
 import { JourneyNavigation } from '@/components/JourneyNavigation'
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { enrollmentService } from '@/services/cer'
 import { cerPracticeAssignmentService } from '@/services/cerPracticeAssignmentService'
@@ -16,7 +15,7 @@ import { Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
 import { EmptyState } from '@/components/EmptyState'
-import { CerIntro } from '@/components/CerArtwork'
+import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
 
 export const ExperimentosPage: React.FC = () => {
   const { user } = useAuth()
@@ -78,20 +77,19 @@ export const ExperimentosPage: React.FC = () => {
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-4">
           <h1 className="text-xl font-serif font-bold text-foreground flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            <span>Minhas práticas</span>
+            <span>Biblioteca CER · Minhas práticas</span>
           </h1>
           <JourneyNavigation />
         </header>
 
-        <CerIntro title="Quero experimentar por conta própria" variant="seed">
-          <p className="text-sm text-muted-foreground">
-            Escolha recursos educativos, planeje uma tentativa e revise{' '}
-            <strong>o que aprendeu</strong>, sem esperar uma liberação.
-          </p>
-          <Link className="inline-block text-sm underline mt-2" to="/?etapa=evolucao">
-            Abrir meu desenvolvimento na Evolução
-          </Link>
-        </CerIntro>
+        {enrollment && (
+          <SelfDevelopmentJourney
+            key={enrollment.id}
+            enrollmentId={enrollment.id}
+            carePlan
+            libraryOnly
+          />
+        )}
         <h2 className="font-serif text-lg">Práticas do acompanhamento individual</h2>
         {loading ? (
           <p className="text-xs text-muted-foreground text-center py-12">
@@ -108,9 +106,9 @@ export const ExperimentosPage: React.FC = () => {
           <EmptyState
             variant="experiments"
             title="Experimentos combinados"
-            description="As práticas individuais aparecem quando forem combinadas no acompanhamento. Você pode seguir com os recursos educativos na Evolução."
-            actionLabel="Explorar a Evolução"
-            onAction={() => navigate('/?etapa=evolucao')}
+            description="As práticas individuais aparecem quando forem combinadas no acompanhamento. Você pode escolher recursos na Biblioteca CER acima."
+            actionLabel="Ver meu plano de cuidado"
+            onAction={() => navigate('/?etapa=equilibrio')}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

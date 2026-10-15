@@ -65,10 +65,10 @@ export const PlannerPage: React.FC = () => {
       setItems(await cerPlannerService.listForParticipant(enrollment.id, user.id))
   }
   return (
-    <div className="min-h-screen bg-background px-4 sm:px-6 py-6">
-      <main className="max-w-6xl mx-auto space-y-5">
+    <div className="min-h-screen bg-background px-3 sm:px-5 py-3">
+      <main className="max-w-7xl mx-auto space-y-3">
         <header className="flex flex-wrap gap-3 items-center justify-between">
-          <h1 className="font-serif text-2xl flex gap-2 items-center">
+          <h1 className="font-serif text-xl flex gap-2 items-center">
             <Calendar className="w-5 h-5 text-primary" />
             Minha agenda
           </h1>

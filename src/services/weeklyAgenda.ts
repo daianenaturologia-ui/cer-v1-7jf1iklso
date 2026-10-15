@@ -12,6 +12,12 @@ export function mondayOf(date: Date) {
   result.setDate(result.getDate() - ((result.getDay() + 6) % 7))
   return result
 }
+export function sundayOf(date: Date) {
+  const result = new Date(date)
+  result.setHours(0, 0, 0, 0)
+  result.setDate(result.getDate() - result.getDay())
+  return result
+}
 export function moveDay(date: Date, days: number) {
   const result = new Date(date)
   result.setDate(result.getDate() + days)

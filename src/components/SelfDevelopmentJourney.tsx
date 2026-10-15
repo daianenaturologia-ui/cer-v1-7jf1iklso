@@ -38,6 +38,7 @@ export function SelfDevelopmentJourney({
   mode = 'plan',
   readOnly = false,
   carePlan = false,
+  libraryOnly = false,
   onPrepareCare,
   initialCareResource,
   onCareResourceOpened,
@@ -46,6 +47,7 @@ export function SelfDevelopmentJourney({
   mode?: 'plan' | 'play'
   readOnly?: boolean
   carePlan?: boolean
+  libraryOnly?: boolean
   onPrepareCare?: (source: ReturnType<typeof carePrioritySource>) => void
   initialCareResource?: DevelopmentResource | null
   onCareResourceOpened?: () => void
@@ -65,7 +67,7 @@ export function SelfDevelopmentJourney({
   const [warning, setWarning] = useState('')
   const [message, setMessage] = useState('')
   const [revision, setRevision] = useState(0)
-  const [showCatalog, setShowCatalog] = useState(false)
+  const [showCatalog, setShowCatalog] = useState(libraryOnly)
   const [view, setView] = useState('plan')
   useEffect(() => {
     let active = true
@@ -169,7 +171,7 @@ export function SelfDevelopmentJourney({
       const saved = await selfDevelopmentService.save(value, id)
       setRecords((old) => (id ? old.map((r) => (r.id === id ? saved : r)) : [saved, ...old]))
       setEditing(null)
-      setShowCatalog(false)
+      setShowCatalog(libraryOnly)
       if (value.status === 'reviewed') setView('learn')
       setReviewing(undefined)
       setMessage(text)
@@ -186,8 +188,9 @@ export function SelfDevelopmentJourney({
   function patch<K extends keyof DevelopmentInput>(key: K, value: DevelopmentInput[K]) {
     setEditing((old) => (old ? { ...old, [key]: value } : old))
   }
-  const visible =
-    mode === 'play'
+  const visible = libraryOnly
+    ? []
+    : mode === 'play'
       ? records.filter((r) => !['reviewed', 'completed'].includes(r.status))
       : records.filter((r) =>
           view === 'learn'
@@ -199,31 +202,37 @@ export function SelfDevelopmentJourney({
     <section
       className="rounded-xl border border-primary/30 p-4 sm:p-5 space-y-4"
       aria-label={
-        carePlan
-          ? readOnly
-            ? 'Cuidados compartilhados pela pessoa'
-            : 'Meu plano de cuidado'
-          : readOnly
-            ? 'Desenvolvimento compartilhado'
-            : 'Meu desenvolvimento'
+        libraryOnly
+          ? 'Biblioteca CER'
+          : carePlan
+            ? readOnly
+              ? 'Cuidados compartilhados pela pessoa'
+              : 'Meu plano de cuidado'
+            : readOnly
+              ? 'Desenvolvimento compartilhado'
+              : 'Meu desenvolvimento'
       }
     >
       <CerIntro
         title={
-          carePlan
-            ? readOnly
-              ? 'Cuidados que a pessoa compartilhou'
-              : 'Meu plano de cuidado'
-            : readOnly
-              ? 'Passos compartilhados'
-              : mode === 'play'
-                ? 'Meus pequenos passos'
-                : 'Um desejo, um pequeno passo'
+          libraryOnly
+            ? 'Biblioteca CER'
+            : carePlan
+              ? readOnly
+                ? 'Cuidados que a pessoa compartilhou'
+                : 'Meu plano de cuidado'
+              : readOnly
+                ? 'Passos compartilhados'
+                : mode === 'play'
+                  ? 'Meus pequenos passos'
+                  : 'Um desejo, um pequeno passo'
         }
         variant={mode === 'play' ? 'path' : 'seed'}
       >
         <p className="text-sm text-muted-foreground">
-          {carePlan ? (
+          {libraryOnly ? (
+            'Um lugar para aprender, praticar e experimentar. Conheça cada recurso e escolha como incluí-lo no seu plano de cuidado e no Planner.'
+          ) : carePlan ? (
             readOnly ? (
               'Conheça a rotina que a pessoa compartilhou e revise o que fará parte da indicação profissional.'
             ) : (
@@ -241,7 +250,7 @@ export function SelfDevelopmentJourney({
           )}
         </p>
       </CerIntro>
-      {mode === 'plan' && (
+      {mode === 'plan' && !libraryOnly && (
         <Tabs value={view} onValueChange={setView}>
           <TabsList aria-label="Meu desenvolvimento">
             <TabsTrigger value="plan">Planejar</TabsTrigger>
@@ -266,8 +275,8 @@ export function SelfDevelopmentJourney({
         <p role="status" className="rounded-lg bg-primary/10 p-3 text-sm">
           {message}{' '}
           {mode === 'plan' && (
-            <Link className="underline" to="/planner">
-              Abrir Planner
+            <Link className="underline" to={libraryOnly ? '/?etapa=equilibrio' : '/planner'}>
+              {libraryOnly ? 'Abrir meu plano de cuidado' : 'Abrir Planner'}
             </Link>
           )}
         </p>
@@ -276,24 +285,28 @@ export function SelfDevelopmentJourney({
         <p role="status">Carregando seus passos…</p>
       ) : (
         <>
-          {carePlan && !readOnly && mode === 'plan' && !editing && (
+          {carePlan && !libraryOnly && !readOnly && mode === 'plan' && !editing && (
             <Button onClick={() => open(personalCareResource())}>
               Adicionar cuidado que já faço
             </Button>
           )}
-          {(!readOnly || onPrepareCare) && mode === 'plan' && view === 'plan' && !editing && (
-            <Button variant="outline" onClick={() => setShowCatalog((v) => !v)}>
-              {carePlan
-                ? showCatalog
-                  ? 'Fechar Biblioteca CER'
-                  : 'Escolher na Biblioteca CER'
-                : showCatalog
-                  ? 'Fechar acervo'
-                  : records.length
-                    ? 'Escolher outro recurso'
-                    : 'Escolher meu primeiro recurso'}
-            </Button>
-          )}
+          {!libraryOnly &&
+            (!readOnly || onPrepareCare) &&
+            mode === 'plan' &&
+            view === 'plan' &&
+            !editing && (
+              <Button variant="outline" onClick={() => setShowCatalog((v) => !v)}>
+                {carePlan
+                  ? showCatalog
+                    ? 'Fechar Biblioteca CER'
+                    : 'Escolher na Biblioteca CER'
+                  : showCatalog
+                    ? 'Fechar acervo'
+                    : records.length
+                      ? 'Escolher outro recurso'
+                      : 'Escolher meu primeiro recurso'}
+              </Button>
+            )}
           {!readOnly && mode === 'play' && (
             <Link className="inline-block text-sm underline" to="/?etapa=evolucao">
               Planejar ou revisar na Evolução
@@ -550,7 +563,7 @@ export function SelfDevelopmentJourney({
               </DialogContent>
             </Dialog>
           )}
-          {visible.length === 0 && !editing && (
+          {!libraryOnly && visible.length === 0 && !editing && (
             <p className="text-sm text-muted-foreground">
               {readOnly
                 ? carePlan
