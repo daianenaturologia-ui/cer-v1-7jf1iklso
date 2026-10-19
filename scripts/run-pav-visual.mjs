@@ -586,6 +586,7 @@ async function main() {
     await writtenPlan.getByRole('button', { name: 'Acrescentar ação', exact: true }).click()
     await writtenPlan.getByLabel('O que vamos experimentar').fill('Uma pausa possível')
     await writtenPlan.getByLabel('Como isso pode acontecer na vida prática').fill('Escolher um momento curto entre atividades.')
+    await writtenPlan.getByText('Minhas anotações profissionais · privadas', { exact: true }).click()
     await writtenPlan.getByLabel('Anotações que não entram no documento compartilhado').fill('PRIVATE_WRITTEN_PLAN_FIXTURE')
     await writtenPlan.getByRole('button', { name: 'Compartilhar para construir nas sessões', exact: true }).click()
     await writtenPlan.getByText('Versão compartilhada para construir nas sessões. As próximas edições continuam privadas até compartilhar novamente.', { exact: true }).waitFor()
