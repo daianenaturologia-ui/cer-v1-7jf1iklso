@@ -142,3 +142,52 @@ it('migração usa dono autenticado, compartilhamento explícito e bloqueia alte
     '@request.auth.user_roles_via_user_id.is_active',
   )
 })
+it('servidor permite reservar um título mas impede publicação incompleta e alteração de URL publicada', () => {
+  const draft = {
+    author_user_id: 'user',
+    title: 'Futuro',
+    lesson: '',
+    instructions: [],
+    status: 'draft',
+  }
+  const e = event(draft)
+  hooks['create:cer_development_resources'](e)
+  expect(e.next).toHaveBeenCalledOnce()
+  expect(() =>
+    hooks['update:cer_development_resources'](event({ ...draft, status: 'published' }, draft)),
+  ).toThrow('publicar')
+  const ready = {
+    ...draft,
+    lesson: 'Aprender',
+    instructions: ['Ler'],
+    material: { format: 'pdf', url: '', author: '', references: '', conditions: '' },
+  }
+  expect(() =>
+    hooks['create:cer_development_resources'](event({ ...ready, status: 'published' })),
+  ).toThrow('endereço')
+  const published = {
+    ...ready,
+    status: 'published',
+    material: { ...ready.material, url: 'https://example.org/test.pdf' },
+  }
+  expect(() =>
+    hooks['update:cer_development_resources'](
+      event(
+        {
+          ...published,
+          status: 'archived',
+          material: { ...published.material, url: 'https://example.org/changed.pdf' },
+        },
+        published,
+      ),
+    ),
+  ).toThrow('preservado')
+  expect(() =>
+    hooks['create:cer_development_resources'](
+      event({
+        ...published,
+        material: { ...published.material, url: 'https://user:secret@example.org/file.pdf' },
+      }),
+    ),
+  ).toThrow('HTTPS')
+})

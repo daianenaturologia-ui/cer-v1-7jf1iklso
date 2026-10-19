@@ -3,6 +3,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { selfDevelopmentService, type EditorialResource } from '@/services/selfDevelopment'
+import {
+  EMPTY_MATERIAL,
+  MATERIAL_FORMATS,
+  filterLibrary,
+  type MaterialFormat,
+} from '@/services/libraryMaterial'
 import { DEVELOPMENT_CATALOG } from '@/services/developmentCatalog'
 
 const empty = {
@@ -25,6 +31,8 @@ export function DevelopmentResourceEditor() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [query, setQuery] = useState('')
+  const [stateFilter, setStateFilter] = useState('all')
   useEffect(() => {
     let active = true
     selfDevelopmentService
@@ -41,8 +49,12 @@ export function DevelopmentResourceEditor() {
   }, [])
   function open(resource?: EditorialResource) {
     setEditingId(resource?.status === 'draft' ? resource.id : undefined)
-    setEditing(resource ? { ...resource, status: 'draft' } : empty)
-    setSteps(resource?.instructions.join('\n') || '')
+    setEditing(
+      resource
+        ? { ...resource, material: { ...EMPTY_MATERIAL, ...resource.material }, status: 'draft' }
+        : { ...empty, material: { ...EMPTY_MATERIAL } },
+    )
+    setSteps(resource?.instructions?.join('\n') || '')
     setError('')
     setMessage('')
   }
@@ -59,6 +71,7 @@ export function DevelopmentResourceEditor() {
           lesson: editing.lesson,
           fallback: editing.fallback,
           reflection: editing.reflection,
+          material: editing.material,
           instructions: steps
             .split('\n')
             .map((s) => s.trim())
@@ -85,6 +98,7 @@ export function DevelopmentResourceEditor() {
     }
   }
   async function archive(id: string) {
+    if (busy) return
     setBusy(true)
     setError('')
     try {
@@ -101,8 +115,8 @@ export function DevelopmentResourceEditor() {
     <section className="rounded-xl border p-4 space-y-4" aria-label="Acervo educativo">
       <h2 className="font-serif text-xl">Acervo de desenvolvimento</h2>
       <p className="text-sm text-muted-foreground">
-        {DEVELOPMENT_CATALOG.length} recursos disponíveis. Publique novos ensinamentos uma vez para
-        todos explorarem com autonomia.
+        O acervo inicial tem {DEVELOPMENT_CATALOG.length} recursos de texto. Prepare PDFs, áudios,
+        vídeos e novos textos aos poucos; rascunhos ficam somente na sua gestão.
       </p>
       <details>
         <summary className="text-sm cursor-pointer">Conhecer o acervo inicial</summary>
@@ -125,6 +139,27 @@ export function DevelopmentResourceEditor() {
         </p>
       )}
       {!editing && <Button onClick={() => open()}>Criar recurso educativo</Button>}
+      {!editing && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-sm space-y-1">
+            Buscar meus materiais
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} />
+          </label>
+          <label className="text-sm space-y-1">
+            Estado do material
+            <select
+              className="w-full rounded-md border bg-background p-2"
+              value={stateFilter}
+              onChange={(e) => setStateFilter(e.target.value)}
+            >
+              <option value="all">Todos os estados</option>
+              <option value="draft">Rascunhos</option>
+              <option value="published">Publicados</option>
+              <option value="archived">Retirados</option>
+            </select>
+          </label>
+        </div>
+      )}
       {editing && (
         <form
           className="space-y-3"
@@ -133,6 +168,11 @@ export function DevelopmentResourceEditor() {
             void save(false)
           }}
         >
+          <p className="text-sm text-muted-foreground">
+            Comece pelo nome e salve o rascunho. Complete a apresentação e as instruções antes de
+            publicar. Materiais publicados ficam disponíveis às pessoas com acesso ao acervo
+            educativo.
+          </p>
           {(['title', 'theme', 'duration'] as const).map((key) => (
             <label className="block text-sm space-y-1" key={key}>
               <span>
@@ -147,6 +187,93 @@ export function DevelopmentResourceEditor() {
               />
             </label>
           ))}
+          <fieldset className="border rounded-lg p-3 space-y-3">
+            <legend className="px-1 text-sm font-medium">Material e origem</legend>
+            <label className="block text-sm space-y-1">
+              <span>Formato do material</span>
+              <select
+                className="w-full rounded-md border bg-background p-2"
+                value={editing.material?.format || 'text'}
+                onChange={(e) =>
+                  setEditing((old) =>
+                    old
+                      ? {
+                          ...old,
+                          material: {
+                            ...EMPTY_MATERIAL,
+                            ...old.material,
+                            format: e.target.value as MaterialFormat,
+                          },
+                        }
+                      : old,
+                  )
+                }
+              >
+                {Object.entries(MATERIAL_FORMATS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {(['url', 'author', 'references', 'conditions'] as const).map((key) => (
+              <label className="block text-sm space-y-1" key={key}>
+                <span>
+                  {
+                    {
+                      url: 'Endereço do material (HTTPS)',
+                      author: 'Autoria e créditos',
+                      references: 'Fontes e referências',
+                      conditions: 'Orientações antes de começar',
+                    }[key]
+                  }
+                </span>
+                {key === 'url' || key === 'author' ? (
+                  <Input
+                    maxLength={key === 'url' ? 2000 : 3000}
+                    value={editing.material?.[key] || ''}
+                    onChange={(e) =>
+                      setEditing((old) =>
+                        old
+                          ? {
+                              ...old,
+                              material: {
+                                ...EMPTY_MATERIAL,
+                                ...old.material,
+                                [key]: e.target.value,
+                              },
+                            }
+                          : old,
+                      )
+                    }
+                  />
+                ) : (
+                  <Textarea
+                    maxLength={3000}
+                    value={editing.material?.[key] || ''}
+                    onChange={(e) =>
+                      setEditing((old) =>
+                        old
+                          ? {
+                              ...old,
+                              material: {
+                                ...EMPTY_MATERIAL,
+                                ...old.material,
+                                [key]: e.target.value,
+                              },
+                            }
+                          : old,
+                      )
+                    }
+                  />
+                )}
+              </label>
+            ))}
+            <p className="text-xs text-muted-foreground">
+              Vincule o PDF, áudio ou vídeo já hospedado. Use aqui materiais destinados ao acervo
+              educativo; os produtos para venda avulsa serão organizados no site.
+            </p>
+          </fieldset>
           <label className="block text-sm space-y-1">
             <span>O que este recurso ensina?</span>
             <Textarea
@@ -195,26 +322,42 @@ export function DevelopmentResourceEditor() {
         </form>
       )}
       <div className="space-y-2">
-        {records.map((r) => (
-          <article className="border rounded-lg p-3 space-y-1" key={r.id}>
-            <h3 className="font-semibold">{r.title}</h3>
-            <p className="text-sm">
-              {r.status === 'published'
-                ? 'Publicado · uso autônomo'
-                : r.status === 'archived'
-                  ? 'Retirado do acervo'
-                  : 'Rascunho'}
-            </p>
-            <Button size="sm" variant="outline" onClick={() => open(r)}>
-              {r.status === 'draft' ? 'Editar rascunho' : 'Criar nova versão'}
-            </Button>
-            {r.status !== 'archived' && (
-              <Button disabled={busy} size="sm" variant="ghost" onClick={() => archive(r.id)}>
-                Retirar do acervo
+        {!records.length && !editing && (
+          <p className="text-sm text-muted-foreground">
+            Seus novos materiais aparecerão aqui. Você pode prepará-los depois; o acervo inicial e o
+            restante do CER continuam disponíveis.
+          </p>
+        )}
+        {records.length > 0 &&
+          !filterLibrary(records, query).some(
+            (r) => stateFilter === 'all' || r.status === stateFilter,
+          ) && <p role="status">Nenhum material encontrado com esses filtros.</p>}
+        {filterLibrary(records, query)
+          .filter((r) => stateFilter === 'all' || r.status === stateFilter)
+          .map((r) => (
+            <article className="border rounded-lg p-3 space-y-1" key={r.id}>
+              <h3 className="font-semibold">{r.title}</h3>
+              <p className="text-xs text-muted-foreground">
+                {MATERIAL_FORMATS[r.material?.format || 'text']}
+                {r.theme ? ` · ${r.theme}` : ''}
+              </p>
+              <p className="text-sm">
+                {r.status === 'published'
+                  ? 'Publicado · uso autônomo'
+                  : r.status === 'archived'
+                    ? 'Retirado do acervo'
+                    : 'Rascunho'}
+              </p>
+              <Button size="sm" variant="outline" onClick={() => open(r)}>
+                {r.status === 'draft' ? 'Editar rascunho' : 'Criar nova versão'}
               </Button>
-            )}
-          </article>
-        ))}
+              {r.status !== 'archived' && (
+                <Button disabled={busy} size="sm" variant="ghost" onClick={() => archive(r.id)}>
+                  Retirar do acervo
+                </Button>
+              )}
+            </article>
+          ))}
       </div>
     </section>
   )

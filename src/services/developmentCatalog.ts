@@ -1,3 +1,4 @@
+import type { LibraryMaterial } from './libraryMaterial'
 import type { CareMetadata } from './carePlanFlow'
 
 export interface DevelopmentResource {
@@ -9,6 +10,7 @@ export interface DevelopmentResource {
   fallback: string
   reflection: string
   duration: string
+  material?: LibraryMaterial
   care_plan?: CareMetadata
 }
 
