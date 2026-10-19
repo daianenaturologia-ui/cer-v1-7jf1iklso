@@ -6,6 +6,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/services/developmentPlanDocument.test.ts',
+      'src/components/DevelopmentPlanWorkspace.test.tsx',
+      'src/components/DevelopmentPlanWorkflow.test.tsx',
       'src/services/selfDevelopment.test.ts',
       'src/services/libraryMaterial.test.ts',
       'src/components/DevelopmentResourceEditor.test.tsx',

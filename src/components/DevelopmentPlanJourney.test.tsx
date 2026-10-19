@@ -44,7 +44,7 @@ it('permite vincular futuro compartilhado, sem oferecer registros privados, e en
   ])
   render(<CarePlanEditor enrollmentId="e" participantName="Mariana" />)
   const user = userEvent.setup()
-  await screen.findByText('Nenhum Plano de Cuidado formulado ainda.')
+  await screen.findByText('Nenhum Plano de Desenvolvimento formulado ainda.')
   await user.click(screen.getByRole('button', { name: 'Novo Plano' }))
   const select = await screen.findByRole('combobox', {
     name: 'Direção compartilhada na Linha da Vida',

@@ -172,7 +172,7 @@ export const ProfissionalHome: React.FC = () => {
     if (journeyData?.current_stage === 'consciousness') {
       nextStep =
         journeyData.stage_status === 'integrado'
-          ? 'Consciência concluída — formular Plano de Cuidado'
+          ? 'Consciência concluída — formular Plano de Desenvolvimento'
           : 'Acompanhar respostas das experiências e Mandala'
     } else if (journeyData?.current_stage === 'equilibrium_realization') {
       nextStep = 'Acompanhar experimentos ativos e Cycle Review'

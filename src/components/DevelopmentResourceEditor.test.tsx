@@ -59,12 +59,12 @@ it('guarda só o título, retoma, exige completar e publica PDF com origem prese
   fill('Formato', 'audio')
   await screen.findByText(/Nenhum recurso encontrado/)
   fill('Formato', 'pdf')
-  expect(screen.getAllByRole('button', { name: 'Adicionar ao meu plano' })).toHaveLength(1)
+  expect(screen.getAllByRole('button', { name: 'Guardar prática pessoal' })).toHaveLength(1)
   fireEvent.click(screen.getByText('Conhecer a proposta'))
   expect(screen.getByRole('link', { name: /Abrir PDF/ }).getAttribute('href')).toBe(
     'https://example.org/ficticio.pdf',
   )
-  fireEvent.click(screen.getByRole('button', { name: 'Adicionar ao meu plano' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar prática pessoal' }))
   expect(await screen.findByText('Autoria: Autoria fictícia de teste')).toBeTruthy()
 })
 it('falha de gravação mantém conteúdo aberto e não anuncia publicação', async () => {

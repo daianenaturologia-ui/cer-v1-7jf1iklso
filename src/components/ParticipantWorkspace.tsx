@@ -1,3 +1,4 @@
+import { DevelopmentPlanWorkspace } from './DevelopmentPlanWorkspace'
 import { professionalJourneyTab } from '@/services/professionalJourneyNavigation'
 import { ProfessionalJourneySummary } from './ProfessionalJourneySummary'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -477,7 +478,7 @@ export const ParticipantWorkspace: React.FC = () => {
                   <p className="text-xs">
                     As experiências canônicas da participante foram concluídas. A síntese
                     integrativa, o Mapa e os desafios identificados estão prontos para fundamentar o
-                    Plano de Cuidado.
+                    Plano de Desenvolvimento.
                   </p>
                 </div>
                 <Button
@@ -531,7 +532,7 @@ export const ParticipantWorkspace: React.FC = () => {
               >
                 {
                   {
-                    plano: 'Nosso plano',
+                    plano: 'Plano de Desenvolvimento',
                     biblioteca: 'Biblioteca de práticas',
                     mandala: 'Mandala',
                     planner: 'Planner',
@@ -543,24 +544,37 @@ export const ParticipantWorkspace: React.FC = () => {
           </div>
           {careTool === 'plano' && (
             <div className="space-y-5">
-              <LifeDirections
-                key={`care-direction-${enrollment.id}`}
+              <DevelopmentPlanWorkspace
+                key={`document-${enrollment.id}`}
                 enrollmentId={enrollment.id}
-                planning
-                readOnly
-              />
-              <CarePlanEditor
-                key={enrollment.id}
-                enrollmentId={enrollment.id}
+                professional
                 participantName={participantName}
               />
+              <details className="rounded-xl border p-4">
+                <summary className="cursor-pointer text-sm">
+                  Consultar trajetória e registros anteriores de planejamento
+                </summary>
+                <div className="mt-4 space-y-4">
+                  <LifeDirections
+                    key={`care-direction-${enrollment.id}`}
+                    enrollmentId={enrollment.id}
+                    planning
+                    readOnly
+                  />
+                  <CarePlanEditor
+                    key={enrollment.id}
+                    enrollmentId={enrollment.id}
+                    participantName={participantName}
+                  />
+                </div>
+              </details>
               <div className="rounded-xl border bg-primary/5 p-4 space-y-3">
                 <h3 className="font-semibold text-sm">Do plano à vida cotidiana</h3>
                 <p className="text-sm">
                   Conversem sobre as prioridades e as práticas de regulação antes de formular o
-                  plano. Depois de compartilhá-lo, a interagente escolhe o que cabe na sua semana;
-                  você acompanha os passos compartilhados no Planner e na Evolução. Na Mandala,
-                  observa o ritmo compartilhado pela pessoa.
+                  plano. Depois de combinarem as ações, organizem juntas o que cabe na semana; você
+                  acompanha os passos compartilhados no Planner e na Evolução. Na Mandala, observa o
+                  ritmo compartilhado pela pessoa.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={() => openCareTool('biblioteca')}>

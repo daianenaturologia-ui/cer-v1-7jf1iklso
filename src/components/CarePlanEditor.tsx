@@ -191,7 +191,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
       }
     } catch (err: any) {
       console.error('Erro ao carregar planos de cuidado:', err)
-      setErrorMsg('Não foi possível carregar o plano de cuidado da participante.')
+      setErrorMsg('Não foi possível carregar o plano de desenvolvimento da participante.')
     } finally {
       setLoading(false)
     }
@@ -256,7 +256,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
         professional_context: newPlanIntent.trim() || undefined,
         professional_rationale: newPlanRationale.trim() || undefined,
       })
-      setSuccessMsg('Rascunho de Plano de Cuidado criado com sucesso.')
+      setSuccessMsg('Rascunho de Plano de Desenvolvimento criado com sucesso.')
       setCreatePlanDialogOpen(false)
       setNewPlanDirection('')
       setNewPlanIntent('')
@@ -391,12 +391,12 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
       const pres = await cerCarePlanService.createPresentation({
         plan_id: selectedPlan.id,
         priority_id: activePrios[0]?.id || undefined,
-        participant_title: 'Plano de Cuidado Compartilhado',
+        participant_title: 'Plano de Desenvolvimento Compartilhado',
         participant_summary: presentationSummary.trim(),
         channel: presentationChannel,
       })
       await cerCarePlanService.presentPresentation(pres.id)
-      setSuccessMsg('Plano de Cuidado apresentado para a participante com sucesso.')
+      setSuccessMsg('Plano de Desenvolvimento apresentado para a participante com sucesso.')
       setPresentationPreviewDialogOpen(false)
       await loadPlanDetails(selectedPlan.id)
       onPlanUpdated?.()
@@ -415,7 +415,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-primary" />
               <CardTitle className="text-sm font-semibold font-serif text-foreground">
-                Plano de Cuidado e Prioridades: {participantName}
+                Plano de Desenvolvimento e Prioridades: {participantName}
               </CardTitle>
               {selectedPlan && (
                 <Badge
@@ -530,13 +530,13 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
 
         {loading ? (
           <p className="text-xs text-muted-foreground text-center py-8">
-            Carregando Plano de Cuidado...
+            Carregando Plano de Desenvolvimento...
           </p>
         ) : !selectedPlan ? (
           <div className="text-center py-8 space-y-2 border border-dashed rounded-lg p-6">
             <FileText className="w-8 h-8 text-muted-foreground mx-auto" />
             <p className="text-xs font-medium text-foreground">
-              Nenhum Plano de Cuidado formulado ainda.
+              Nenhum Plano de Desenvolvimento formulado ainda.
             </p>
             <p className="text-[11px] text-muted-foreground max-w-md mx-auto">
               Após a conclusão da Consciência e do Mapa, formule o primeiro rascunho com a direção
@@ -547,7 +547,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
               onClick={() => setCreatePlanDialogOpen(true)}
               className="text-xs h-8 mt-2"
             >
-              Criar Primeiro Plano de Cuidado
+              Criar Primeiro Plano de Desenvolvimento
             </Button>
           </div>
         ) : (
@@ -834,7 +834,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">
-              Formular Novo Plano de Cuidado
+              Formular Novo Plano de Desenvolvimento
             </DialogTitle>
             <DialogDescription className="text-xs">
               Escolham juntos uma direção. O Mapa ajuda a compreender o funcionamento; a escolha
@@ -954,7 +954,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
       <Dialog open={clinicalLibraryOpen} onOpenChange={setClinicalLibraryOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Da Biblioteca CER para o plano de cuidado</DialogTitle>
+            <DialogTitle>Da Biblioteca CER para o plano de desenvolvimento</DialogTitle>
             <DialogDescription>
               Escolha a prática e revise a indicação para esta pessoa antes de compartilhar o plano.
             </DialogDescription>

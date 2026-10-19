@@ -31,3 +31,7 @@ Depois seguir para simulação integral do percurso da interagente e do painel p
 Implementação local e verificações concluídas. Duas tentativas de envio da branch foram rejeitadas pela revisão automática. O destino foi confirmado como público e pertencente à conexão; a segunda rejeição manteve a exigência de autorização expressa da usuária para divulgar estas alterações nesse repositório. Não foi usado outro canal para contornar o bloqueio. Não há PR novo nem instalação da alteração na prévia.
 
 Próxima ação depende dessa autorização: enviar a branch `codex/biblioteca-materiais-progressivos` ao repositório público `daianenaturologia-ui/cer-v1-7jf1iklso`, abrir PR, conferir CI no head final e, se aprovado e autorizado, integrar e instalar somente na prévia com a migração 0084. Produção permanece fora deste bloco.
+
+## Continuidade após autorização
+
+Autorização expressa recebida, PR49 integrado após todos os seis jobs de CI passarem. Biblioteca instalada na prévia 0.0.398, migration0084/hook confirmados. Rascunho após recarregar, publicação incompleta bloqueada, publicação fictícia, busca sem acentos, filtro vazio, inclusão no plano/Planner, retirada e preservação do snapshot conferidos no navegador. Cliente canônico restaurado e blob independente confirmado. Produção não publicada. A próxima reorganização é o plano escrito para construção em sessões; ver `plano-desenvolvimento-sessoes-2026-10-19.md`.

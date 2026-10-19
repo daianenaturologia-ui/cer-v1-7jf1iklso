@@ -1,3 +1,5 @@
+import { developmentPlanService } from '@/services/developmentPlanService'
+import { routineEvents, type PlanRoutine } from '@/services/developmentPlanDocument'
 import { ResourceMaterial } from '@/components/ResourceMaterial'
 import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
@@ -58,6 +60,8 @@ export function WeeklyAgenda({
   const [expanded, setExpanded] = useState(false)
   const agendaRef = useRef<HTMLDivElement>(null)
   const [notes, setNotes] = useState<PlannerNote[]>([])
+  const [routines, setRoutines] = useState<PlanRoutine[]>([])
+  const [routineError, setRoutineError] = useState('')
   const [steps, setSteps] = useState<DevelopmentExperiment[]>([])
   const [editing, setEditing] = useState<PlannerNoteInput | null>(null)
   const [editingId, setEditingId] = useState<string>()
@@ -72,6 +76,8 @@ export function WeeklyAgenda({
     let active = true
     setNotes([])
     setSteps([])
+    setRoutines([])
+    setRoutineError('')
     setEditing(null)
     setSelected(null)
     setError('')
@@ -79,10 +85,16 @@ export function WeeklyAgenda({
     Promise.all([
       readOnly ? Promise.resolve([]) : plannerNotesService.list(enrollmentId),
       selfDevelopmentService.list(enrollmentId),
+      developmentPlanService.routines(enrollmentId).catch(() => {
+        if (active)
+          setRoutineError('Não foi possível carregar as rotinas do Plano de Desenvolvimento.')
+        return []
+      }),
     ])
-      .then(([n, s]) => {
+      .then(([n, s, r]) => {
         if (active) {
           setNotes(n)
+          setRoutines(r)
           setSteps(visibleDevelopment(s, enrollmentId, readOnly))
         }
       })
@@ -99,6 +111,7 @@ export function WeeklyAgenda({
   }, [enrollmentId, readOnly, revision])
   const events = useMemo<AgendaEvent[]>(
     () => [
+      ...routineEvents(routines, week),
       ...notes
         .filter((n) => n.status !== 'archived')
         .map((n) => ({
@@ -128,7 +141,7 @@ export function WeeklyAgenda({
           completed: c.status === 'completed',
         })),
     ],
-    [notes, steps, careItems],
+    [notes, steps, careItems, routines, week],
   )
   const days = Array.from({ length: 7 }, (_, i) => moveDay(week, i))
   const firstHour = 0,
@@ -152,6 +165,9 @@ export function WeeklyAgenda({
     : undefined
   const care = selected?.id.startsWith('care:')
     ? careItems.find((c) => `care:${c.id}` === selected.id)
+    : undefined
+  const routine = selected?.id.startsWith('routine:')
+    ? routines.find((r) => selected.id.startsWith(`routine:${r.id}:`))
     : undefined
   const unscheduled = steps.filter(
     (s) =>
@@ -239,6 +255,14 @@ export function WeeklyAgenda({
             : 'Foco, descanso e tempo para viver gostosamente.'}
         </p>
       </div>
+      {routineError && (
+        <p role="alert" className="text-sm text-destructive">
+          {routineError}{' '}
+          <Button size="sm" variant="outline" onClick={() => setRevision((v) => v + 1)}>
+            Tentar novamente
+          </Button>
+        </p>
+      )}
       <Tabs value={agendaView} onValueChange={setAgendaView}>
         <TabsList aria-label="Visões do Planner" className="mb-3">
           <TabsTrigger value="agenda">Minha semana</TabsTrigger>
@@ -454,8 +478,8 @@ export function WeeklyAgenda({
             <p className="text-sm">Tudo que tem horário está na sua semana.</p>
           )}
           {!readOnly && (
-            <Link to="/?etapa=evolucao" className="text-sm text-primary underline">
-              Planejar um novo passo na Evolução
+            <Link to="/?etapa=equilibrio" className="text-sm text-primary underline">
+              Abrir meu Plano de Desenvolvimento
             </Link>
           )}
           {!readOnly && notes.some((n) => n.status === 'archived') && (
@@ -619,6 +643,37 @@ export function WeeklyAgenda({
           )}
           {selected && !editing && (
             <div className="space-y-4 text-sm">
+              {routine && (
+                <div className="space-y-3">
+                  <p className="text-xs text-primary">
+                    Do Plano de Desenvolvimento · rotina semanal
+                  </p>
+                  <p>
+                    <strong>Para: </strong>
+                    {routine.snapshot.goal}
+                  </p>
+                  <p className="whitespace-pre-wrap">{routine.snapshot.action.context}</p>
+                  {routine.snapshot.action.fallback && (
+                    <p>Se ficar difícil: {routine.snapshot.action.fallback}</p>
+                  )}
+                  {routine.snapshot.action.resource && (
+                    <details>
+                      <summary className="cursor-pointer">
+                        Apoio · {routine.snapshot.action.resource.title}
+                      </summary>
+                      <p>{routine.snapshot.action.resource.lesson}</p>
+                      <ResourceMaterial material={routine.snapshot.action.resource.material} />
+                    </details>
+                  )}
+                  <p className="text-xs">
+                    Horário combinado no fuso {routine.schedule.timezone}. A agenda exibe os
+                    horários deste dispositivo.
+                  </p>
+                  <Link className="underline text-primary" to="/?etapa=equilibrio">
+                    Rever o plano e organizar a rotina
+                  </Link>
+                </div>
+              )}
               {note && (
                 <p className="whitespace-pre-wrap">
                   {note.note || 'Um espaço reservado na sua semana.'}

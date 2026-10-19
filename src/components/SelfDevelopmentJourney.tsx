@@ -165,7 +165,7 @@ export function SelfDevelopmentJourney({
     value: DevelopmentInput,
     id?: string,
     text = carePlan
-      ? 'Cuidado salvo no seu plano e disponível no Planner. Sem horário, ele fica em “Sem horário”.'
+      ? 'Prática pessoal salva e disponível no Planner. Sem horário, ele fica em “Sem horário”.'
       : 'Seu passo foi salvo. Ele já está disponível no Planner.',
   ) {
     if (busy) return
@@ -212,7 +212,7 @@ export function SelfDevelopmentJourney({
           : carePlan
             ? readOnly
               ? 'Cuidados compartilhados pela pessoa'
-              : 'Meu plano de cuidado'
+              : 'Minhas práticas pessoais'
             : readOnly
               ? 'Desenvolvimento compartilhado'
               : 'Meu desenvolvimento'
@@ -225,7 +225,7 @@ export function SelfDevelopmentJourney({
             : carePlan
               ? readOnly
                 ? 'Cuidados que a pessoa compartilhou'
-                : 'Meu plano de cuidado'
+                : 'Minhas práticas pessoais'
               : readOnly
                 ? 'Passos compartilhados'
                 : mode === 'play'
@@ -236,7 +236,7 @@ export function SelfDevelopmentJourney({
       >
         <p className="text-sm text-muted-foreground">
           {libraryOnly ? (
-            'Um lugar para aprender, praticar e experimentar. Conheça cada recurso e escolha como incluí-lo no seu plano de cuidado e no Planner.'
+            'Um lugar para aprender, praticar e experimentar. Conheça os recursos para apoiar as ações combinadas com Daiane. Você também pode guardar uma prática pessoal.'
           ) : carePlan ? (
             readOnly ? (
               'Conheça a rotina que a pessoa compartilhou e revise o que fará parte da indicação profissional.'
@@ -281,7 +281,7 @@ export function SelfDevelopmentJourney({
           {message}{' '}
           {mode === 'plan' && (
             <Link className="underline" to={libraryOnly ? '/?etapa=equilibrio' : '/planner'}>
-              {libraryOnly ? 'Abrir meu plano de cuidado' : 'Abrir Planner'}
+              {libraryOnly ? 'Abrir Plano de Desenvolvimento' : 'Abrir Planner'}
             </Link>
           )}
         </p>
@@ -366,7 +366,7 @@ export function SelfDevelopmentJourney({
               {!resources.length && (
                 <p>
                   Novos materiais serão disponibilizados aos poucos. Você pode continuar pelo seu
-                  plano de cuidado.
+                  plano de desenvolvimento.
                 </p>
               )}
               {resources.length > 0 &&
@@ -404,7 +404,7 @@ export function SelfDevelopmentJourney({
                         {readOnly
                           ? 'Revisar para o plano'
                           : carePlan
-                            ? 'Adicionar ao meu plano'
+                            ? 'Guardar prática pessoal'
                             : 'Quero experimentar'}
                       </Button>
                     </article>
@@ -425,7 +425,7 @@ export function SelfDevelopmentJourney({
                 <DialogDescription>
                   {carePlan
                     ? 'Descreva seu cuidado e quando ele cabe na sua vida. A data é opcional; você pode ajustar depois no Planner.'
-                    : 'Seu plano começa com três escolhas.'}
+                    : 'Uma prática pessoal começa com três escolhas.'}
                 </DialogDescription>
                 <form
                   className="rounded-lg border p-4 space-y-4"
@@ -608,7 +608,7 @@ export function SelfDevelopmentJourney({
                       {busy
                         ? 'Salvando…'
                         : carePlan
-                          ? 'Salvar no meu plano de cuidado'
+                          ? 'Salvar prática pessoal'
                           : 'Salvar meu passo'}
                     </Button>
                     <Button
