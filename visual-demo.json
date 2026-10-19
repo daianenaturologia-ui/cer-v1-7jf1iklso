@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "4d793ea7539a43d541f01235f472072db01515f9",
-  "conclusion": "success",
-  "timestamp_utc": "2026-10-19T12:35:35.842Z",
-  "run_id": "39253101035",
-  "run_number": "550",
-  "all_success": true,
-  "failure_reason": null,
+  "sha": "278192d4d27413956223c4cf05717ec20996eed8",
+  "conclusion": "failure",
+  "timestamp_utc": "2026-10-19T19:42:26.817Z",
+  "run_id": "39312994979",
+  "run_number": "551",
+  "all_success": false,
+  "failure_reason": "Interrompido na etapa 5 (Profissional: Plano de Cuidado Compartilhado): locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Novo Plano\"), button:has-text(\"Criar Primeiro Plano de Cuidado\")').first()\n    - locator resolved to <button class=\"inline-flex items-center justify-center whitespace-nowrap font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 h-8 text-xs gap-1.5\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n",
   "steps": [
     {
       "num": 1,
@@ -46,15 +46,15 @@
       "id": "05-plano-compartilhado",
       "title": "Profissional: Plano de Cuidado Compartilhado",
       "filename": "05-plano-compartilhado.png",
-      "status": "PASS",
-      "note": ""
+      "status": "FAIL",
+      "note": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Novo Plano\"), button:has-text(\"Criar Primeiro Plano de Cuidado\")').first()\n    - locator resolved to <button class=\"inline-flex items-center justify-center whitespace-nowrap font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 h-8 text-xs gap-1.5\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
     },
     {
       "num": 6,
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -62,7 +62,7 @@
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
       "filename": "07-retorno-no-prontuario.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -70,7 +70,7 @@
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
       "filename": "08-interagente-b-sem-acesso.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     }
   ]
