@@ -13,7 +13,7 @@
  * - 02-relato-enviado.png ("Enviar para Daiane")
  * - 03-prontuario-relato.png (login profissional -> prontuário de A -> relato visível com autoria "Enviado por {nome}")
  * - 04-nota-privada.png (registrar sessão manual + nota privada)
- * - 05-plano-compartilhado.png (área "Plano de Cuidado" -> criar plano com próximo passo -> ação explícita de compartilhar)
+ * - 05-plano-compartilhado.png (área "Plano de Desenvolvimento" -> criar plano com próximo passo -> ação explícita de compartilhar)
  * - 06-retorno-proximo-passo.png (login interagente A -> /app -> "Próximo Passo do Nosso Cuidado" -> 1 das 4 respostas + comentário fictício)
  * - 07-retorno-no-prontuario.png (login profissional -> card "Retornos ao Próximo Passo" com resposta e autoria)
  * - 08-interagente-b-sem-acesso.png (login interagente B -> /app mostra que plano/relato de A não aparece)
@@ -36,6 +36,7 @@
  * 4. Zero senhas, tokens ou dados sensíveis em capturas, vídeos ou sumários.
  */
 
+import { randomBytes } from 'node:crypto'
 import { chromium } from '@playwright/test'
 import PocketBase from 'pocketbase'
 import { disposableRoleAdmin } from '../src/services/disposableRoleAdmin.ts'
@@ -90,9 +91,9 @@ const STEP_DEFINITIONS = [
     num: 5,
     id: '05-plano-compartilhado',
     filename: '05-plano-compartilhado.png',
-    title: 'Profissional: Plano de Cuidado Compartilhado',
+    title: 'Profissional: Plano de Desenvolvimento Compartilhado',
     description:
-      'Área 3 Plano de Cuidado -> criar plano com próximo passo -> compartilhar explicitamente',
+      'Área 3 Plano de Desenvolvimento -> criar plano com próximo passo -> compartilhar explicitamente',
   },
   {
     num: 6,
@@ -187,7 +188,8 @@ async function seedDisposableDatabase() {
     '[SEMEADURA] Conectando como superuser na base descartável para preparar contas fictícias...',
   )
   const adminEmail = process.env.CER_BENCH_SUPERUSER_EMAIL || 'bench-admin@cer.isolated'
-  const adminPass = process.env.CER_BENCH_SUPERUSER_PASSWORD || 'BenchAdminSecret123!'
+  const adminPass = process.env.CER_BENCH_SUPERUSER_PASSWORD
+  if (!adminPass) throw new Error('Configure a credencial temporária da bancada descartável.')
 
   const adminPb = new PocketBase(PB_URL)
   adminPb.autoCancellation(false)
@@ -199,7 +201,7 @@ async function seedDisposableDatabase() {
   }
 
   const runId = Date.now()
-  const defaultPassword = 'TestPassword123!'
+  const defaultPassword = randomBytes(24).toString('hex')
 
   // 1. Profissional Fictícia: Dra. Daiane Fictícia
   const personProf = await adminPb.collection('persons').create({
@@ -563,20 +565,40 @@ async function main() {
 
     // =========================================================================
     // ETAPA 5: 05-plano-compartilhado.png
-    // Profissional: Área 3 Plano de Cuidado -> criar plano com próximo passo -> compartilhar explicitamente
+    // Profissional: Área 3 Plano de Desenvolvimento -> criar plano com próximo passo -> compartilhar explicitamente
     // =========================================================================
     currentStepIndex = 4
     console.log(`\n[ETAPA 5] ${STEP_DEFINITIONS[4].title}...`)
 
-    // Navegar para Área 3 "Plano de Cuidado"
+    // Navegar para Área 3 "Plano de Desenvolvimento"
     await page.goto(
       `${APP_URL}/profissional/participantes/${seed.alice.enrollmentId}?tab=equilibrio&tool=plano`,
       { waitUntil: 'networkidle' },
     )
 
-    // Clicar em "Criar Primeiro Plano de Cuidado" ou "Novo Plano"
+    // New canonical written document, exercised on authenticated fictional accounts.
+    const writtenPlan = page.getByRole('region', { name: 'Construção do Plano de Desenvolvimento' })
+    await writtenPlan.getByLabel(/Seu momento atual/).fill('Síntese fictícia para construir o desenvolvimento em sessão.')
+    await writtenPlan.getByLabel(/O que merece atenção agora/).fill('Priorizar descanso e uma rotina possível.')
+    await writtenPlan.getByRole('button', { name: 'Acrescentar meta', exact: true }).click()
+    await writtenPlan.getByLabel('Mudança que queremos alcançar').fill('Ter espaço para descanso')
+    await writtenPlan.getByLabel('Como perceberemos avanço').fill('Perceber pausas possíveis durante a semana')
+    await writtenPlan.getByRole('button', { name: 'Acrescentar ação', exact: true }).click()
+    await writtenPlan.getByLabel('O que vamos experimentar').fill('Uma pausa possível')
+    await writtenPlan.getByLabel('Como isso pode acontecer na vida prática').fill('Escolher um momento curto entre atividades.')
+    await writtenPlan.getByLabel('Anotações que não entram no documento compartilhado').fill('PRIVATE_WRITTEN_PLAN_FIXTURE')
+    await writtenPlan.getByRole('button', { name: 'Compartilhar para construir nas sessões', exact: true }).click()
+    await writtenPlan.getByText('Versão compartilhada para construir nas sessões. As próximas edições continuam privadas até compartilhar novamente.', { exact: true }).waitFor()
+    await writtenPlan.getByLabel('Lemos juntas esta versão e combinamos as metas e ações para experimentar.').check()
+    await writtenPlan.getByRole('button', { name: 'Compartilhar plano combinado', exact: true }).click()
+    await writtenPlan.getByText('Plano combinado. Agora vocês podem organizar a rotina.', { exact: true }).waitFor()
+
+    // Keep proving the previous shared-care lifecycle through its explicit history entry.
+    await page.getByText('Consultar trajetória e registros anteriores de planejamento', { exact: true }).click()
+
+    // Clicar em "Criar Primeiro Plano de Desenvolvimento" ou "Novo Plano"
     const btnNovoPlano = page
-      .locator('button:has-text("Novo Plano"), button:has-text("Criar Primeiro Plano de Cuidado")')
+      .locator('button:has-text("Novo Plano"), button:has-text("Criar Primeiro Plano de Desenvolvimento")')
       .first()
     await btnNovoPlano.click()
 
@@ -591,7 +613,7 @@ async function main() {
       .fill('Estabelecer ritmo suave de pausas durante a rotina diária')
     await page.locator('button:has-text("Salvar Rascunho")').first().click()
 
-    await page.waitForSelector('text=Rascunho de Plano de Cuidado criado com sucesso', {
+    await page.waitForSelector('text=Rascunho de Plano de Desenvolvimento criado com sucesso', {
       timeout: 10000,
     })
 
@@ -635,7 +657,7 @@ async function main() {
     await btnConfirmarShare.click()
 
     await page.waitForSelector(
-      'text=Plano de Cuidado apresentado para a participante com sucesso',
+      'text=Plano de Desenvolvimento apresentado para a participante com sucesso',
       { timeout: 10000 },
     )
 
@@ -655,7 +677,10 @@ async function main() {
     await loginAs(seed.alice.email, seed.alice.password, '/')
 
     await page.getByRole('button', { name: '4. Equilíbrio & Realização', exact: true }).click()
-    await page.getByRole('tab', { name: 'Nosso plano', exact: true }).click()
+    await page.getByRole('tab', { name: 'Plano de Desenvolvimento', exact: true }).click()
+    await page.getByRole('article', { name: 'Leitura do Plano de Desenvolvimento' }).filter({ hasText: 'Síntese fictícia para construir o desenvolvimento em sessão.' }).waitFor()
+    if (await page.getByText('PRIVATE_WRITTEN_PLAN_FIXTURE', { exact: true }).count()) throw new Error('Professional private notes leaked into shared document')
+    await page.getByText('Práticas e planos anteriores', { exact: true }).click()
     await page.getByText('Nosso plano de ação', { exact: true }).waitFor()
 
     // Selecionar uma das 4 opções acolhedoras (ex: "quero tentar")
