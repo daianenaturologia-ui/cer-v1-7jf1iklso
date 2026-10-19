@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "278192d4d27413956223c4cf05717ec20996eed8",
+  "sha": "f36be1b78ca58b38dbad7b42eb637c082f102983",
   "conclusion": "failure",
-  "timestamp_utc": "2026-10-19T19:42:26.817Z",
-  "run_id": "39312994979",
-  "run_number": "551",
+  "timestamp_utc": "2026-10-19T19:46:03.135Z",
+  "run_id": "39313485526",
+  "run_number": "552",
   "all_success": false,
-  "failure_reason": "Interrompido na etapa 5 (Profissional: Plano de Cuidado Compartilhado): locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Novo Plano\"), button:has-text(\"Criar Primeiro Plano de Cuidado\")').first()\n    - locator resolved to <button class=\"inline-flex items-center justify-center whitespace-nowrap font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 h-8 text-xs gap-1.5\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n",
+  "failure_reason": "Interrompido na etapa 5 (Profissional: Plano de Desenvolvimento Compartilhado): locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Construção do Plano de Desenvolvimento' }).getByLabel('Anotações que não entram no documento compartilhado')\n    - locator resolved to <textarea maxlength=\"20000\" class=\"flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm mt-2\"></textarea>\n    - fill(\"PRIVATE_WRITTEN_PLAN_FIXTURE\")\n  - attempting fill action\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    60 × waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n",
   "steps": [
     {
       "num": 1,
@@ -44,10 +44,10 @@
     {
       "num": 5,
       "id": "05-plano-compartilhado",
-      "title": "Profissional: Plano de Cuidado Compartilhado",
+      "title": "Profissional: Plano de Desenvolvimento Compartilhado",
       "filename": "05-plano-compartilhado.png",
       "status": "FAIL",
-      "note": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Novo Plano\"), button:has-text(\"Criar Primeiro Plano de Cuidado\")').first()\n    - locator resolved to <button class=\"inline-flex items-center justify-center whitespace-nowrap font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 h-8 text-xs gap-1.5\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
+      "note": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Construção do Plano de Desenvolvimento' }).getByLabel('Anotações que não entram no documento compartilhado')\n    - locator resolved to <textarea maxlength=\"20000\" class=\"flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm mt-2\"></textarea>\n    - fill(\"PRIVATE_WRITTEN_PLAN_FIXTURE\")\n  - attempting fill action\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and editable\n      - element is not visible\n    - retrying fill action\n      - waiting 100ms\n    60 × waiting for element to be visible, enabled and editable\n       - element is not visible\n     - retrying fill action\n       - waiting 500ms\n"
     },
     {
       "num": 6,
