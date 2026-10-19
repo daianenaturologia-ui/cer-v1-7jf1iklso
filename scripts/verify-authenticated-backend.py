@@ -116,6 +116,62 @@ try:
         tokens={n:v['token'] for n,v in actors.items()}
         enrollments=record('enrollments',admin)['items']
         enroll={n:next(e for e in enrollments if e['person_id']==actors[n]['record']['person_id'])['id'] for n in ['a','b']}
+        # Written development plan: private preparation, immutable sharing and explicit routine commands.
+        plan_doc={'title':'Fictional Development Plan','moment':'FICTIONAL_SHARED_SYNTHESIS','priorities':'Fictional priority','goals':[{'id':'goal-one','title':'Fictional goal','progress':'Fictional sign','actions':[{'id':'action-one','title':'Fictional action','context':'Fictional context','fallback':''}]}],'next_session':'Review together'}
+        draft_url='/api/collections/cer_development_plan_drafts/records'
+        version_url='/api/collections/cer_development_plan_versions/records'
+        routine_url='/api/collections/cer_development_plan_routines/records'
+        plan_draft=record('cer_development_plan_drafts',tokens['p'],'POST',{'enrollment_id':enroll['a'],'author_id':actors['p']['record']['id'],'revision':1,'document':plan_doc,'private_notes':'FICTIONAL_PRIVATE_PROFESSIONAL'})
+        check('Plan professional draft persists',lambda:require(record('cer_development_plan_drafts',tokens['p'],id=plan_draft['id'])['private_notes']=='FICTIONAL_PRIVATE_PROFESSIONAL'))
+        for actor in ['a','b','q']:
+            check('Plan private draft denied to '+actor,lambda actor=actor:require(request(draft_url+'/'+plan_draft['id'],tokens[actor])[0]==404))
+        check('Plan anonymous draft denied',lambda:require(request(draft_url+'/'+plan_draft['id'])[0]==404))
+        check('Plan participant cannot create professional draft',lambda:require(request(draft_url,tokens['a'],'POST',{'enrollment_id':enroll['a'],'author_id':actors['a']['record']['id'],'revision':1,'document':plan_doc})[0] in (400,403)))
+        check('Plan stale revision rejected',lambda:require(request(draft_url+'/'+plan_draft['id'],tokens['p'],'PATCH',{'document':plan_doc,'revision':1})[0]==400))
+        check('Plan cannot change author or enrollment',lambda:require(request(draft_url+'/'+plan_draft['id'],tokens['p'],'PATCH',{'author_id':actors['q']['record']['id'],'revision':2})[0]==404 and request(draft_url+'/'+plan_draft['id'],tokens['p'],'PATCH',{'enrollment_id':enroll['b'],'revision':2})[0]==404))
+        presented=record('cer_development_plan_versions',tokens['p'],'POST',{'draft_id':plan_draft['id'],'enrollment_id':enroll['a'],'revision':1,'stage':'building','document':{'forged':'client'}})
+        check('Plan sharing uses server document without private notes',lambda:require(record('cer_development_plan_versions',tokens['a'],id=presented['id'])['document']==plan_doc and 'FICTIONAL_PRIVATE_PROFESSIONAL' not in json.dumps(presented)))
+        for actor in ['b','q']:
+            check('Plan shared version denied to '+actor,lambda actor=actor:require(request(version_url+'/'+presented['id'],tokens[actor])[0]==404))
+        check('Plan shared version immutable for professional and participant',lambda:require(request(version_url+'/'+presented['id'],tokens['p'],'PATCH',{'stage':'agreed'})[0] in (403,404) and request(version_url+'/'+presented['id'],tokens['a'],'DELETE')[0] in (403,404)))
+        schedule={'days':[1,3],'time':'09:00','duration':20,'timezone':'America/Sao_Paulo'}
+        day=time.strftime('%Y-%m-%d',time.gmtime())
+        routine_body={'enrollment_id':enroll['a'],'version_id':presented['id'],'action_id':'action-one','effective_day':day,'enabled':True,'schedule':schedule,'command_key':'fictional-command-one'}
+        check('Plan building version cannot create routines',lambda:require(request(routine_url,tokens['a'],'POST',routine_body)[0]==400))
+        changed={**plan_doc,'moment':'FICTIONAL_REVISED_SYNTHESIS'}
+        record('cer_development_plan_drafts',tokens['p'],'PATCH',{'document':changed,'revision':2},plan_draft['id'])
+        check('Plan private revision does not change visible shared version',lambda:require(record('cer_development_plan_versions',tokens['a'],id=presented['id'])['document']['moment']=='FICTIONAL_SHARED_SYNTHESIS'))
+        agreed=record('cer_development_plan_versions',tokens['p'],'POST',{'draft_id':plan_draft['id'],'enrollment_id':enroll['a'],'revision':2,'stage':'agreed'})
+        routine_body={**routine_body,'version_id':agreed['id']}
+        routine=record('cer_development_plan_routines',tokens['a'],'POST',{**routine_body,'snapshot':{'forged':'client'}})
+        check('Plan routine snapshot derived from agreed action',lambda:require(routine['snapshot']['action']['title']=='Fictional action' and routine['snapshot']['goal']=='Fictional goal'))
+        check('Plan duplicate routine command rejected',lambda:require(request(routine_url,tokens['a'],'POST',routine_body)[0]==400))
+        check('Plan routine cannot use another enrollment',lambda:require(request(routine_url,tokens['b'],'POST',{**routine_body,'enrollment_id':enroll['b'],'command_key':'foreign-command'})[0]==400))
+        check('Plan routine cannot invent an action',lambda:require(request(routine_url,tokens['a'],'POST',{**routine_body,'action_id':'foreign-action','command_key':'foreign-action-command'})[0]==400))
+        check('Plan invalid schedule rejected',lambda:require(request(routine_url,tokens['a'],'POST',{**routine_body,'schedule':{**schedule,'days':[9]},'command_key':'bad-days-command'})[0]==400))
+        check('Plan past schedule cannot rewrite history',lambda:require(request(routine_url,tokens['a'],'POST',{**routine_body,'effective_day':'2020-01-01','command_key':'past-command'})[0]==400))
+        check('Plan routines are append only',lambda:require(request(routine_url+'/'+routine['id'],tokens['a'],'PATCH',{'enabled':False})[0] in (403,404)))
+        for actor in ['b','q']:
+            check('Plan routine denied to '+actor,lambda actor=actor:require(request(routine_url+'/'+routine['id'],tokens[actor])[0]==404))
+        check('Plan linked professional can view routine',lambda:require(record('cer_development_plan_routines',tokens['p'],id=routine['id'])['snapshot']['action']['id']=='action-one'))
+        incomplete={**changed,'goals':[]}
+        record('cer_development_plan_drafts',tokens['p'],'PATCH',{'document':incomplete,'revision':3},plan_draft['id'])
+        check('Plan incomplete agreement rejected by server',lambda:require(request(version_url,tokens['p'],'POST',{'draft_id':plan_draft['id'],'enrollment_id':enroll['a'],'revision':3,'stage':'agreed'})[0]==400))
+        building=record('cer_development_plan_versions',tokens['p'],'POST',{'draft_id':plan_draft['id'],'enrollment_id':enroll['a'],'revision':3,'stage':'building'})
+        check('Plan old agreement cannot schedule silently after revision',lambda:require(request(routine_url,tokens['a'],'POST',{**routine_body,'command_key':'old-agreement-command'})[0]==400))
+        paused=record('cer_development_plan_routines',tokens['p'],'POST',{**routine_body,'enabled':False,'command_key':'pause-old-command'})
+        check('Plan historical action may be explicitly paused',lambda:require(not paused['enabled'] and record('cer_development_plan_versions',tokens['a'],id=agreed['id'])['document']==changed))
+        plan_link=next(v for v in record('professional_enrollment_access',admin)['items'] if v['enrollment_id']==enroll['a'] and v['professional_user_id']==actors['p']['record']['id'])
+        record('professional_enrollment_access',admin,'PATCH',{'is_active':False},plan_link['id'])
+        check('Plan revoked professional loses draft and shared access',lambda:require(request(draft_url+'/'+plan_draft['id'],tokens['p'])[0]==404 and request(version_url+'/'+agreed['id'],tokens['p'])[0]==404 and request(routine_url+'/'+routine['id'],tokens['p'])[0]==404))
+        record('professional_enrollment_access',admin,'PATCH',{'is_active':True},plan_link['id'])
+        concurrent_draft=record('cer_development_plan_drafts',tokens['q'],'POST',{'enrollment_id':enroll['b'],'author_id':actors['q']['record']['id'],'revision':1,'document':plan_doc})
+        from concurrent.futures import ThreadPoolExecutor
+        def concurrent_edit(marker):
+            return request(draft_url+'/'+concurrent_draft['id'],tokens['q'],'PATCH',{'document':{**plan_doc,'moment':marker},'revision':2})[0]
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            concurrent_results=list(executor.map(concurrent_edit,['first edit','second edit']))
+        check('Plan concurrent edits preserve one revision',lambda:require(sorted(concurrent_results)==[200,400]))
         # Progressive educational library: drafts, material metadata, snapshots and author isolation.
         library_url='/api/collections/cer_development_resources/records'
         draft_body={'author_user_id':actors['p']['record']['id'],'title':'FICTIONAL_FUTURE_AUDIO','status':'draft','instructions':[]}

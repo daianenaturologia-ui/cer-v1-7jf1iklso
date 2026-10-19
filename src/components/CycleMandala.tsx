@@ -850,7 +850,7 @@ export function CycleMandala({
               <Link to="/experimentos">Escolher na Biblioteca CER</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link to="/?etapa=equilibrio">Meu plano de cuidado</Link>
+              <Link to="/?etapa=equilibrio">Meu plano de desenvolvimento</Link>
             </Button>
             <Button asChild variant="outline">
               <Link to="/planner">Abrir meu Planner</Link>

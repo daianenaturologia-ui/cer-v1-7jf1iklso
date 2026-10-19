@@ -191,7 +191,7 @@ it('registra um cuidado existente, preserva a privacidade e o mesmo horário no 
   fireEvent.input(screen.getByLabelText('Reservar data e horário (opcional)'), {
     target: { value: localDateInput(moment) },
   })
-  await user.click(screen.getByRole('button', { name: 'Salvar no meu plano de cuidado' }))
+  await user.click(screen.getByRole('button', { name: 'Salvar prática pessoal' }))
   await screen.findByText('Minha caminhada habitual')
   let [record] = await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)
   expect(record.resource_snapshot.care_plan).toEqual({
@@ -246,7 +246,7 @@ it('a escolha na biblioteca mantém o conteúdo de origem e só salva após a pe
     </MemoryRouter>,
   )
   await user.click(await screen.findByRole('button', { name: 'Escolher na Biblioteca CER' }))
-  await user.click(screen.getAllByRole('button', { name: 'Adicionar ao meu plano' })[0])
+  await user.click(screen.getAllByRole('button', { name: 'Guardar prática pessoal' })[0])
   expect(await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)).toEqual([])
   expect(screen.getByText('Recurso de origem')).toBeVisible()
   await user.type(
@@ -255,7 +255,7 @@ it('a escolha na biblioteca mantém o conteúdo de origem e só salva após a pe
   )
   await user.type(screen.getByLabelText('Meu cuidado na prática'), 'Observar uma atividade')
   await user.type(screen.getByLabelText('Quando isso cabe na minha vida?'), 'No almoço')
-  await user.click(screen.getByRole('button', { name: 'Salvar no meu plano de cuidado' }))
+  await user.click(screen.getByRole('button', { name: 'Salvar prática pessoal' }))
   await screen.findByText('Observar uma atividade')
   const [saved] = await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)
   expect(saved.resource_snapshot.care_plan?.origin).toBe('library')
@@ -313,20 +313,20 @@ it('a Biblioteca CER abre os recursos diretamente e leva a escolha ao plano sem 
       <SelfDevelopmentJourney enrollmentId={DEMO_ENROLLMENT_ID} carePlan libraryOnly />
     </MemoryRouter>,
   )
-  await user.click((await screen.findAllByRole('button', { name: 'Adicionar ao meu plano' }))[0])
+  await user.click((await screen.findAllByRole('button', { name: 'Guardar prática pessoal' }))[0])
   await user.type(
     screen.getByLabelText('O que esse cuidado significa para mim?'),
     'Descansar melhor',
   )
   await user.type(screen.getByLabelText('Meu cuidado na prática'), 'Observar meu ritmo pela manhã')
   await user.type(screen.getByLabelText('Quando isso cabe na minha vida?'), 'Depois do café')
-  await user.click(screen.getByRole('button', { name: 'Salvar no meu plano de cuidado' }))
-  expect(await screen.findByRole('link', { name: 'Abrir meu plano de cuidado' })).toHaveAttribute(
+  await user.click(screen.getByRole('button', { name: 'Salvar prática pessoal' }))
+  expect(await screen.findByRole('link', { name: 'Abrir Plano de Desenvolvimento' })).toHaveAttribute(
     'href',
     '/?etapa=equilibrio',
   )
   expect(await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)).toHaveLength(1)
-  expect(screen.getAllByRole('button', { name: 'Adicionar ao meu plano' }).length).toBeGreaterThan(
+  expect(screen.getAllByRole('button', { name: 'Guardar prática pessoal' }).length).toBeGreaterThan(
     0,
   )
 })

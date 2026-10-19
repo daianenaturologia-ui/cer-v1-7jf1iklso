@@ -1,3 +1,4 @@
+import { DevelopmentPlanWorkspace } from '@/components/DevelopmentPlanWorkspace'
 import { sharedPlanCareResource } from '@/services/carePlanFlow'
 import type { DevelopmentResource } from '@/services/developmentCatalog'
 import {
@@ -1189,7 +1190,7 @@ export const InteragenteHome: React.FC = () => {
 
                 <p className="pt-1">
                   Se tiver dúvidas sobre o aplicativo ou sobre o acompanhamento, você pode falar
-                  comigo pelo WhatsApp: (49) 99194-6800.
+                  comigo pelo canal de atendimento que já utilizamos.
                 </p>
 
                 <p>
@@ -1984,10 +1985,9 @@ export const InteragenteHome: React.FC = () => {
           <div className="space-y-6">
             <div className="rounded-xl border p-4 space-y-2">
               <p className="text-sm">
-                Vamos escolher o que merece cuidado e encontrar um começo que cabe na sua vida. Você
-                pode registrar os cuidados que já faz, escolher recursos na Biblioteca CER e
-                construir o plano junto com Daiane. No Planner, você decide quando cada cuidado cabe
-                no seu dia.
+                Primeiro, você e Daiane constroem seu Plano de Desenvolvimento nas sessões. Depois
+                de combinarem as metas e ações, vocês organizam juntas a rotina no Planner. Não é
+                preciso escolher tudo sozinha.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -2008,221 +2008,232 @@ export const InteragenteHome: React.FC = () => {
                     })
                   }}
                 >
-                  Meu plano de cuidado
+                  Meu plano de desenvolvimento
                 </Button>
                 <Button variant="ghost" onClick={() => navigate('/planner')}>
                   Levar para o meu dia · Planner
                 </Button>
               </div>
             </div>
-            {enrollment && (
-              <LifeDirections
-                key={`next-step-${enrollment.id}`}
-                allowEditing={false}
-                enableActions={careAvailable}
-                enrollmentId={enrollment.id}
-                planning
-              />
-            )}
             <Tabs value={careTab} onValueChange={setCareTab}>
               <TabsList aria-label="Equilíbrio" className="h-auto flex-wrap">
-                <TabsTrigger value="plano">Nosso plano</TabsTrigger>
-                <TabsTrigger value="planejar">Metas e ações</TabsTrigger>
+                <TabsTrigger value="plano">Plano de Desenvolvimento</TabsTrigger>
+                <TabsTrigger value="planejar">Histórico de passos</TabsTrigger>
                 <TabsTrigger value="praticas">Biblioteca CER · Práticas</TabsTrigger>
                 <TabsTrigger value="mandala">Mandala</TabsTrigger>
               </TabsList>
               <TabsContent value="plano" className="space-y-4 mt-4">
-                <div id="meu-plano-de-cuidado" tabIndex={-1}>
-                  {enrollment && (
-                    <SelfDevelopmentJourney
-                      key={`care-${enrollment.id}`}
-                      enrollmentId={enrollment.id}
-                      carePlan
-                      initialCareResource={careResource}
-                      onCareResourceOpened={() => setCareResource(null)}
-                    />
-                  )}
-                </div>
-                {/* Nosso plano de ação (Plano Compartilhado existente) */}
-                {presentedCarePlans.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
-                        <Compass className="w-5 h-5 text-primary" />
-                        <span>Nosso plano de ação</span>
-                      </h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Este plano e próximo passo foram compartilhados por Daiane. Você pode
-                        registrar com leveza como isso soa para você agora.
-                      </p>
+                {enrollment && (
+                  <DevelopmentPlanWorkspace
+                    key={`document-${enrollment.id}`}
+                    enrollmentId={enrollment.id}
+                  />
+                )}
+                <details className="rounded-xl border p-4">
+                  <summary className="cursor-pointer text-sm">Práticas e planos anteriores</summary>
+                  <div className="mt-4 space-y-4">
+                    <div id="meu-plano-de-cuidado" tabIndex={-1}>
+                      {enrollment && (
+                        <SelfDevelopmentJourney
+                          key={`care-${enrollment.id}`}
+                          enrollmentId={enrollment.id}
+                          carePlan
+                          initialCareResource={careResource}
+                          onCareResourceOpened={() => setCareResource(null)}
+                        />
+                      )}
                     </div>
+                    {/* Nosso plano de ação (Plano Compartilhado existente) */}
+                    {presentedCarePlans.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <h3 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
+                            <Compass className="w-5 h-5 text-primary" />
+                            <span>Nosso plano de ação</span>
+                          </h3>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            Este plano e próximo passo foram compartilhados por Daiane. Você pode
+                            registrar com leveza como isso soa para você agora.
+                          </p>
+                        </div>
 
-                    <div className="space-y-4">
-                      {presentedCarePlans.map((planPres) => {
-                        const currentResp = selectedPlanResponses[planPres.id]
-                        const currentType = currentResp?.response_type
-                        const currentComment = currentResp?.shared_comment || ''
-                        const isSaved = currentResp?.saved
+                        <div className="space-y-4">
+                          {presentedCarePlans.map((planPres) => {
+                            const currentResp = selectedPlanResponses[planPres.id]
+                            const currentType = currentResp?.response_type
+                            const currentComment = currentResp?.shared_comment || ''
+                            const isSaved = currentResp?.saved
 
-                        const acceptanceOptions: {
-                          value: OperationalAcceptanceResponseType
-                          label: string
-                        }[] = [
-                          { value: 'accepted', label: 'consegui experimentar' },
-                          { value: 'wants_to_try', label: 'quero tentar' },
-                          { value: 'too_much', label: 'foi muito' },
-                          { value: 'wants_to_talk', label: 'prefiro conversar' },
-                        ]
+                            const acceptanceOptions: {
+                              value: OperationalAcceptanceResponseType
+                              label: string
+                            }[] = [
+                              { value: 'accepted', label: 'consegui experimentar' },
+                              { value: 'wants_to_try', label: 'quero tentar' },
+                              { value: 'too_much', label: 'foi muito' },
+                              { value: 'wants_to_talk', label: 'prefiro conversar' },
+                            ]
 
-                        return (
-                          <Card
-                            key={planPres.id}
-                            className="border-primary/40 bg-card/80 backdrop-blur-sm shadow-sm"
-                          >
-                            <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/15">
-                              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span className="font-semibold text-primary text-[11px] uppercase tracking-wider">
-                                  Plano Compartilhado por Daiane
-                                </span>
-                                <span className="text-[11px] text-muted-foreground font-mono">
-                                  {planPres.presented_at
-                                    ? new Date(planPres.presented_at).toLocaleDateString('pt-BR')
-                                    : 'Recente'}
-                                </span>
-                              </div>
-                              <h4 className="text-base font-serif font-medium text-foreground pt-1">
-                                {planPres.participant_title || 'Próximo Passo Proposto'}
-                              </h4>
-                              {planPres.participant_summary && (
-                                <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap pt-1 font-sans">
-                                  {planPres.participant_summary}
-                                </p>
-                              )}
-                              {planPres.practical_invitation && (
-                                <div className="p-2.5 rounded bg-primary/10 border border-primary/20 text-xs text-foreground italic mt-2">
-                                  &ldquo;{planPres.practical_invitation}&rdquo;
-                                </div>
-                              )}
-                            </CardHeader>
-                            <CardContent className="p-4 space-y-4">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCareResource(sharedPlanCareResource(planPres))}
+                            return (
+                              <Card
+                                key={planPres.id}
+                                className="border-primary/40 bg-card/80 backdrop-blur-sm shadow-sm"
                               >
-                                Organizar um cuidado deste plano no Planner
-                              </Button>
-                              <div className="space-y-2">
-                                <span className="text-xs font-medium text-foreground block">
-                                  Como você se sente em relação a este próximo passo?
-                                </span>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                  {acceptanceOptions.map((opt) => (
-                                    <Button
-                                      key={opt.value}
-                                      type="button"
-                                      variant={currentType === opt.value ? 'default' : 'outline'}
-                                      size="sm"
+                                <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/15">
+                                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                    <span className="font-semibold text-primary text-[11px] uppercase tracking-wider">
+                                      Plano Compartilhado por Daiane
+                                    </span>
+                                    <span className="text-[11px] text-muted-foreground font-mono">
+                                      {planPres.presented_at
+                                        ? new Date(planPres.presented_at).toLocaleDateString(
+                                            'pt-BR',
+                                          )
+                                        : 'Recente'}
+                                    </span>
+                                  </div>
+                                  <h4 className="text-base font-serif font-medium text-foreground pt-1">
+                                    {planPres.participant_title || 'Próximo Passo Proposto'}
+                                  </h4>
+                                  {planPres.participant_summary && (
+                                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap pt-1 font-sans">
+                                      {planPres.participant_summary}
+                                    </p>
+                                  )}
+                                  {planPres.practical_invitation && (
+                                    <div className="p-2.5 rounded bg-primary/10 border border-primary/20 text-xs text-foreground italic mt-2">
+                                      &ldquo;{planPres.practical_invitation}&rdquo;
+                                    </div>
+                                  )}
+                                </CardHeader>
+                                <CardContent className="p-4 space-y-4">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      setCareResource(sharedPlanCareResource(planPres))
+                                    }
+                                  >
+                                    Organizar um cuidado deste plano no Planner
+                                  </Button>
+                                  <div className="space-y-2">
+                                    <span className="text-xs font-medium text-foreground block">
+                                      Como você se sente em relação a este próximo passo?
+                                    </span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                      {acceptanceOptions.map((opt) => (
+                                        <Button
+                                          key={opt.value}
+                                          type="button"
+                                          variant={
+                                            currentType === opt.value ? 'default' : 'outline'
+                                          }
+                                          size="sm"
+                                          disabled={isSaved}
+                                          onClick={() => {
+                                            setSelectedPlanResponses((prev) => ({
+                                              ...prev,
+                                              [planPres.id]: {
+                                                response_type: opt.value,
+                                                shared_comment:
+                                                  prev[planPres.id]?.shared_comment || '',
+                                                saved: false,
+                                              },
+                                            }))
+                                          }}
+                                          className="justify-start text-xs h-9 px-3 text-left font-normal"
+                                        >
+                                          {opt.label}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-1.5 pt-1">
+                                    <label className="text-[11px] font-medium text-muted-foreground">
+                                      Quer contar mais alguma percepção sobre esse próximo passo?
+                                      (Opcional)
+                                    </label>
+                                    <Textarea
+                                      placeholder="Como você imagina tentar, o que pode facilitar ou dificultar..."
+                                      value={currentComment}
                                       disabled={isSaved}
-                                      onClick={() => {
+                                      onChange={(e) => {
                                         setSelectedPlanResponses((prev) => ({
                                           ...prev,
                                           [planPres.id]: {
-                                            response_type: opt.value,
-                                            shared_comment: prev[planPres.id]?.shared_comment || '',
+                                            response_type:
+                                              prev[planPres.id]?.response_type || 'wants_to_try',
+                                            shared_comment: e.target.value,
                                             saved: false,
                                           },
                                         }))
                                       }}
-                                      className="justify-start text-xs h-9 px-3 text-left font-normal"
-                                    >
-                                      {opt.label}
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
+                                      className="text-xs min-h-[64px]"
+                                    />
+                                  </div>
 
-                              <div className="space-y-1.5 pt-1">
-                                <label className="text-[11px] font-medium text-muted-foreground">
-                                  Quer contar mais alguma percepção sobre esse próximo passo?
-                                  (Opcional)
-                                </label>
-                                <Textarea
-                                  placeholder="Como você imagina tentar, o que pode facilitar ou dificultar..."
-                                  value={currentComment}
-                                  disabled={isSaved}
-                                  onChange={(e) => {
-                                    setSelectedPlanResponses((prev) => ({
-                                      ...prev,
-                                      [planPres.id]: {
-                                        response_type:
-                                          prev[planPres.id]?.response_type || 'wants_to_try',
-                                        shared_comment: e.target.value,
-                                        saved: false,
-                                      },
-                                    }))
-                                  }}
-                                  className="text-xs min-h-[64px]"
-                                />
-                              </div>
-
-                              <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
-                                <span className="text-[11px] text-muted-foreground italic">
-                                  {isSaved
-                                    ? 'Seu retorno foi compartilhado com Daiane.'
-                                    : 'Sua resposta ajuda Daiane a calibrar o ritmo junto com você.'}
-                                </span>
-                                {!isSaved && currentType && (
-                                  <Button
-                                    size="sm"
-                                    disabled={submittingPlanResponse === planPres.id}
-                                    onClick={() => handleSaveOperationalAcceptance(planPres.id)}
-                                    className="text-xs h-8 px-4 bg-primary text-primary-foreground hover:bg-primary/90"
-                                  >
-                                    {submittingPlanResponse === planPres.id
-                                      ? 'Enviando...'
-                                      : 'Enviar retorno para Daiane'}
-                                  </Button>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                    <div className="rounded-xl border bg-primary/5 p-4 space-y-3">
-                      <h4 className="text-sm font-semibold">
-                        Meu próximo passo: dar espaço ao cuidado na semana
-                      </h4>
-                      <p className="text-sm">
-                        Escolha um começo que respeite sua energia e os combinados com Daiane. No
-                        Planner, registre quando pretende experimentá-lo. Na Evolução, acompanhe o
-                        plano e o que vai aprendendo. Você pode pedir um ajuste antes de começar.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button onClick={() => navigate('/planner')}>
-                          Levar meu cuidado para o Planner
-                        </Button>
-                        <Button variant="outline" onClick={() => navigate('/mandala')}>
-                          Observar meu ciclo na Mandala
-                        </Button>
+                                  <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+                                    <span className="text-[11px] text-muted-foreground italic">
+                                      {isSaved
+                                        ? 'Seu retorno foi compartilhado com Daiane.'
+                                        : 'Sua resposta ajuda Daiane a calibrar o ritmo junto com você.'}
+                                    </span>
+                                    {!isSaved && currentType && (
+                                      <Button
+                                        size="sm"
+                                        disabled={submittingPlanResponse === planPres.id}
+                                        onClick={() => handleSaveOperationalAcceptance(planPres.id)}
+                                        className="text-xs h-8 px-4 bg-primary text-primary-foreground hover:bg-primary/90"
+                                      >
+                                        {submittingPlanResponse === planPres.id
+                                          ? 'Enviando...'
+                                          : 'Enviar retorno para Daiane'}
+                                      </Button>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                        <div className="rounded-xl border bg-primary/5 p-4 space-y-3">
+                          <h4 className="text-sm font-semibold">
+                            Meu próximo passo: dar espaço ao cuidado na semana
+                          </h4>
+                          <p className="text-sm">
+                            Escolha um começo que respeite sua energia e os combinados com Daiane.
+                            No Planner, registre quando pretende experimentá-lo. Na Evolução,
+                            acompanhe o plano e o que vai aprendendo. Você pode pedir um ajuste
+                            antes de começar.
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button onClick={() => navigate('/planner')}>
+                              Levar meu cuidado para o Planner
+                            </Button>
+                            <Button variant="outline" onClick={() => navigate('/mandala')}>
+                              Observar meu ciclo na Mandala
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <Card className="border-dashed border-border/80 bg-muted/10">
+                        <CardContent className="py-6 text-center space-y-1.5">
+                          <Compass className="w-6 h-6 text-muted-foreground mx-auto opacity-50" />
+                          <span className="font-medium text-xs text-foreground block">
+                            Acompanhamento individual · nenhum plano compartilhado ainda
+                          </span>
+                          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                            Seu desenvolvimento educativo pode seguir no espaço acima. Quando você e
+                            sua profissional combinarem um plano individual, ele também aparecerá
+                            aqui.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
-                ) : (
-                  <Card className="border-dashed border-border/80 bg-muted/10">
-                    <CardContent className="py-6 text-center space-y-1.5">
-                      <Compass className="w-6 h-6 text-muted-foreground mx-auto opacity-50" />
-                      <span className="font-medium text-xs text-foreground block">
-                        Acompanhamento individual · nenhum plano compartilhado ainda
-                      </span>
-                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                        Seu desenvolvimento educativo pode seguir no espaço acima. Quando você e sua
-                        profissional combinarem um plano individual, ele também aparecerá aqui.
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
+                </details>
                 {/* Como estou agora? (a partir de informações JÁ registradas, sem novos questionários) */}
                 <Card className="border-border/70 bg-gradient-to-br from-card to-muted/20">
                   <CardHeader className="pb-3 border-b border-border/40">
@@ -2350,9 +2361,7 @@ export const InteragenteHome: React.FC = () => {
               </TabsContent>
               <TabsContent value="planejar" className="mt-4">
                 {!careAvailable && (
-                  <p className="text-sm">
-                    Retome seu percurso na Evolução antes de construir metas e ações do cuidado.
-                  </p>
+                  <p className="text-sm">Seus passos anteriores continuam preservados.</p>
                 )}
                 {enrollment && careAvailable && (
                   <SelfDevelopmentJourney
