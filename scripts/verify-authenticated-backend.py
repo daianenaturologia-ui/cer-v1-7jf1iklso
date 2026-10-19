@@ -116,6 +116,28 @@ try:
         tokens={n:v['token'] for n,v in actors.items()}
         enrollments=record('enrollments',admin)['items']
         enroll={n:next(e for e in enrollments if e['person_id']==actors[n]['record']['person_id'])['id'] for n in ['a','b']}
+        # Progressive educational library: drafts, material metadata, snapshots and author isolation.
+        library_url='/api/collections/cer_development_resources/records'
+        draft_body={'author_user_id':actors['p']['record']['id'],'title':'FICTIONAL_FUTURE_AUDIO','status':'draft','instructions':[]}
+        draft=record('cer_development_resources',tokens['p'],'POST',draft_body)
+        check('Library incomplete draft survives reload',lambda:require(record('cer_development_resources',tokens['p'],id=draft['id'])['title']=='FICTIONAL_FUTURE_AUDIO'))
+        for actor in ['a','b','q']:
+            check('Library draft hidden from '+actor,lambda actor=actor:require(request(library_url+'/'+draft['id'],tokens[actor])[0]==404))
+        check('Library participant cannot author content',lambda:require(request(library_url,tokens['a'],'POST',{**draft_body,'author_user_id':actors['a']['record']['id']})[0] in (400,403)))
+        check('Library incomplete publication denied',lambda:require(request(library_url+'/'+draft['id'],tokens['p'],'PATCH',{'status':'published'})[0]==400))
+        material={'format':'audio','url':'https://example.org/fictional-audio.mp3','author':'Fictional Author','references':'Fictional source','conditions':'Fictional instructions'}
+        ready={'lesson':'Fictional educational lesson','instructions':['Read the fictional instructions.'],'material':material,'status':'published'}
+        check('Library executable material URL denied',lambda:require(request(library_url+'/'+draft['id'],tokens['p'],'PATCH',{**ready,'material':{**material,'url':'javascript:alert(1)'}})[0]==400))
+        check('Library author cannot be replaced',lambda:require(request(library_url+'/'+draft['id'],tokens['q'],'PATCH',ready)[0]==404))
+        published=record('cer_development_resources',tokens['p'],'PATCH',ready,draft['id'])
+        check('Library published audio visible to participant',lambda:require(record('cer_development_resources',tokens['a'],id=draft['id'])['material']==material))
+        snapshot={k:published[k] for k in ['id','title','lesson','instructions','material']}
+        development=record('cer_development_experiments',tokens['a'],'POST',{'enrollment_id':enroll['a'],'resource_snapshot':snapshot,'goal':'Fictional goal','action':'Fictional action','context':'Fictional context','status':'planned','access_class':'participant_private'})
+        check('Library published material cannot be replaced in place',lambda:require(request(library_url+'/'+draft['id'],tokens['p'],'PATCH',{'material':{**material,'url':'https://example.org/changed.mp3'},'status':'archived'})[0]==400))
+        record('cer_development_resources',tokens['p'],'PATCH',{'status':'archived'},draft['id'])
+        check('Library retired resource hidden from new participant lookup',lambda:require(request(library_url+'/'+draft['id'],tokens['a'])[0]==404))
+        check('Library snapshot keeps original material after retirement',lambda:require(record('cer_development_experiments',tokens['a'],id=development['id'])['resource_snapshot']['material']==material))
+        check('Library participant snapshot cannot be rewritten',lambda:require(request('/api/collections/cer_development_experiments/records/'+development['id'],tokens['a'],'PATCH',{'resource_snapshot':{**snapshot,'material':{**material,'url':'https://example.org/changed.mp3'}}})[0]==400))
         # Cycle journal: real reference REST rules and request hooks, fictional fixtures only.
         cycle_url='/api/collections/cer_cycle_entries/records'
         profile_url='/api/collections/cer_cycle_profiles/records'

@@ -1,3 +1,4 @@
+import { ResourceMaterial } from '@/components/ResourceMaterial'
 import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Sun, Leaf, Sparkles, Download } from 'lucide-react'
@@ -631,6 +632,7 @@ export function WeeklyAgenda({
                       Meu recurso · {step.resource_snapshot.title}
                     </summary>
                     <p className="mt-2">{step.resource_snapshot.lesson}</p>
+                    <ResourceMaterial material={step.resource_snapshot.material} />
                     <ol className="list-decimal pl-5 mt-2">
                       {step.resource_snapshot.instructions.map((s, i) => (
                         <li key={i}>{s}</li>

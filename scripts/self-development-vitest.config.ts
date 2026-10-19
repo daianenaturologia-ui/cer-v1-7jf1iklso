@@ -4,8 +4,11 @@ export default defineConfig({
   resolve: { alias: { '@': path.resolve(process.cwd(), 'src') } },
   test: {
     environment: 'jsdom',
+    setupFiles: ['src/test/setup.ts'],
     include: [
       'src/services/selfDevelopment.test.ts',
+      'src/services/libraryMaterial.test.ts',
+      'src/components/DevelopmentResourceEditor.test.tsx',
       'src/services/selfDevelopmentServer.test.ts',
       'src/components/SelfDevelopmentJourney.test.tsx',
       'src/components/SelfDevelopmentPlannerPage.test.tsx',

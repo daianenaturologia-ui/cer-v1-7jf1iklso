@@ -1,3 +1,5 @@
+import { ResourceMaterial } from '@/components/ResourceMaterial'
+import { MATERIAL_FORMATS, filterLibrary } from '@/services/libraryMaterial'
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -69,6 +71,9 @@ export function SelfDevelopmentJourney({
   const [revision, setRevision] = useState(0)
   const [showCatalog, setShowCatalog] = useState(libraryOnly)
   const [view, setView] = useState('plan')
+  const [libraryQuery, setLibraryQuery] = useState('')
+  const [libraryFormat, setLibraryFormat] = useState('all')
+  const [libraryTheme, setLibraryTheme] = useState('all')
   useEffect(() => {
     let active = true
     setRecords([])
@@ -321,36 +326,91 @@ export function SelfDevelopmentJourney({
             </p>
           )}
           {(!readOnly || onPrepareCare) && mode === 'plan' && showCatalog && !editing && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {resources.map((resource) => (
-                <article key={resource.id} className="rounded-lg border p-4 space-y-2">
-                  <span className="text-xs text-primary">
-                    {resource.theme} · {resource.duration}
-                  </span>
-                  <h3 className="font-semibold">{resource.title}</h3>
-                  <details className="text-sm">
-                    <summary className="cursor-pointer">Conhecer a proposta</summary>
-                    <p className="mt-2">{resource.lesson}</p>
-                    <ol className="list-decimal pl-5 mt-2 space-y-1">
-                      {resource.instructions.map((s, i) => (
-                        <li key={i}>{s}</li>
-                      ))}
-                    </ol>
-                    <p className="mt-2">Em um dia difícil: {resource.fallback}</p>
-                  </details>
-                  <Button
-                    size="sm"
-                    disabled={busy}
-                    onClick={() => open(carePlan ? libraryCareResource(resource) : resource)}
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="text-sm space-y-1">
+                  Buscar na Biblioteca
+                  <Input value={libraryQuery} onChange={(e) => setLibraryQuery(e.target.value)} />
+                </label>
+                <label className="text-sm space-y-1">
+                  Formato
+                  <select
+                    className="w-full rounded-md border bg-background p-2"
+                    value={libraryFormat}
+                    onChange={(e) => setLibraryFormat(e.target.value)}
                   >
-                    {readOnly
-                      ? 'Revisar para o plano'
-                      : carePlan
-                        ? 'Adicionar ao meu plano'
-                        : 'Quero experimentar'}
-                  </Button>
-                </article>
-              ))}
+                    <option value="all">Todos os formatos</option>
+                    {Object.entries(MATERIAL_FORMATS).map(([value, label]) => (
+                      <option value={value} key={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-sm space-y-1">
+                  Tema
+                  <select
+                    className="w-full rounded-md border bg-background p-2"
+                    value={libraryTheme}
+                    onChange={(e) => setLibraryTheme(e.target.value)}
+                  >
+                    <option value="all">Todos os temas</option>
+                    {[...new Set(resources.map((r) => r.theme).filter(Boolean))]
+                      .sort()
+                      .map((theme) => (
+                        <option key={theme}>{theme}</option>
+                      ))}
+                  </select>
+                </label>
+              </div>
+              {!resources.length && (
+                <p>
+                  Novos materiais serão disponibilizados aos poucos. Você pode continuar pelo seu
+                  plano de cuidado.
+                </p>
+              )}
+              {resources.length > 0 &&
+                !filterLibrary(resources, libraryQuery, libraryFormat, libraryTheme).length && (
+                  <p role="status">
+                    Nenhum recurso encontrado. Experimente outro tema, formato ou busca.
+                  </p>
+                )}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {filterLibrary(resources, libraryQuery, libraryFormat, libraryTheme).map(
+                  (resource) => (
+                    <article key={resource.id} className="rounded-lg border p-4 space-y-2">
+                      <span className="text-xs text-primary">
+                        {resource.theme} · {resource.duration}
+                      </span>
+                      <h3 className="font-semibold">{resource.title}</h3>
+                      <details className="text-sm">
+                        <summary className="cursor-pointer">Conhecer a proposta</summary>
+                        <p className="mt-2">{resource.lesson}</p>
+                        <ol className="list-decimal pl-5 mt-2 space-y-1">
+                          {resource.instructions.map((s, i) => (
+                            <li key={i}>{s}</li>
+                          ))}
+                        </ol>
+                        {resource.fallback && (
+                          <p className="mt-2">Em um dia difícil: {resource.fallback}</p>
+                        )}
+                        <ResourceMaterial material={resource.material} />
+                      </details>
+                      <Button
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => open(carePlan ? libraryCareResource(resource) : resource)}
+                      >
+                        {readOnly
+                          ? 'Revisar para o plano'
+                          : carePlan
+                            ? 'Adicionar ao meu plano'
+                            : 'Quero experimentar'}
+                      </Button>
+                    </article>
+                  ),
+                )}
+              </div>
             </div>
           )}
           {!readOnly && editing && (
@@ -386,6 +446,7 @@ export function SelfDevelopmentJourney({
                             <li key={i}>{step}</li>
                           ))}
                         </ol>
+                        <ResourceMaterial material={editing.resource_snapshot.material} />
                       </details>
                     )}
                   {carePlan && editing.resource_snapshot.care_plan && (
@@ -606,6 +667,7 @@ export function SelfDevelopmentJourney({
                       <li key={i}>{s}</li>
                     ))}
                   </ol>
+                  <ResourceMaterial material={record.resource_snapshot.material} />
                   {record.fallback && <p className="mt-2">Em um dia difícil: {record.fallback}</p>}
                   {record.signal && <p>Sinal que escolhi observar: {record.signal}</p>}
                 </details>

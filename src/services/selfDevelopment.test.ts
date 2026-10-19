@@ -112,7 +112,9 @@ it('falha ao salvar mantém registro anterior e não permite revisão vazia', as
   expect((await selfDevelopmentService.list(DEMO_ENROLLMENT_ID))[0].action).toBe(input.action)
 })
 it('acervo inicial funciona sem backend; publicação educativa é única e rascunho não aparece', async () => {
-  expect((await selfDevelopmentService.catalog()).resources).toHaveLength(8)
+  expect((await selfDevelopmentService.catalog()).resources).toHaveLength(
+    DEVELOPMENT_CATALOG.length,
+  )
   demoAdapter.setActivePersona('daiane')
   const { id, ...resource } = DEVELOPMENT_CATALOG[0]
   const draft = await selfDevelopmentService.saveResource({
@@ -120,7 +122,9 @@ it('acervo inicial funciona sem backend; publicação educativa é única e rasc
     title: 'Recurso autoral',
     status: 'draft',
   })
-  expect((await selfDevelopmentService.catalog()).resources).toHaveLength(8)
+  expect((await selfDevelopmentService.catalog()).resources).toHaveLength(
+    DEVELOPMENT_CATALOG.length,
+  )
   const published = await selfDevelopmentService.saveResource(
     { ...resource, title: 'Recurso autoral', status: 'published' },
     draft.id,
@@ -138,6 +142,61 @@ it('acervo inicial funciona sem backend; publicação educativa é única e rasc
   ).rejects.toThrow('versão')
   await selfDevelopmentService.archiveResource(published.id)
   demoAdapter.setActivePersona('mariana')
-  expect((await selfDevelopmentService.catalog()).resources).toHaveLength(8)
+  expect((await selfDevelopmentService.catalog()).resources).toHaveLength(
+    DEVELOPMENT_CATALOG.length,
+  )
   expect(backend).not.toHaveBeenCalled()
+})
+it('rascunho incompleto não entra no catálogo e metadados ficam preservados na tentativa', async () => {
+  demoAdapter.setActivePersona('daiane')
+  const draft = await selfDevelopmentService.saveResource({
+    title: 'Áudio futuro',
+    theme: 'Pausa',
+    duration: '',
+    lesson: '',
+    instructions: [],
+    fallback: '',
+    reflection: '',
+    status: 'draft',
+    material: { format: 'audio', url: '', author: 'Teste', references: '', conditions: '' },
+  })
+  await expect(
+    selfDevelopmentService.saveResource({ ...draft, status: 'published' }, draft.id),
+  ).rejects.toThrow()
+  const published = await selfDevelopmentService.saveResource(
+    {
+      ...draft,
+      lesson: 'Aprender a pausar',
+      instructions: ['Ouça se desejar'],
+      material: { ...draft.material!, url: 'https://example.org/ficcao.mp3' },
+      status: 'published',
+    },
+    draft.id,
+  )
+  demoAdapter.setActivePersona('mariana')
+  const resource = (await selfDevelopmentService.catalog()).resources.find(
+    (r) => r.id === published.id,
+  )!
+  const attempt = await selfDevelopmentService.save({ ...input, resource_snapshot: resource })
+  demoAdapter.setActivePersona('daiane')
+  await selfDevelopmentService.archiveResource(published.id)
+  demoAdapter.setActivePersona('mariana')
+  expect(
+    (await selfDevelopmentService.catalog()).resources.some((r) => r.id === published.id),
+  ).toBe(false)
+  expect(
+    (await selfDevelopmentService.list(DEMO_ENROLLMENT_ID))[0].resource_snapshot.material,
+  ).toEqual(resource.material)
+  await expect(
+    selfDevelopmentService.save(
+      {
+        ...attempt,
+        resource_snapshot: {
+          ...resource,
+          material: { ...resource.material!, url: 'https://example.org/outro.mp3' },
+        },
+      },
+      attempt.id,
+    ),
+  ).rejects.toThrow('preservados')
 })

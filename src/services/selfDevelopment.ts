@@ -1,3 +1,4 @@
+import { validateMaterial } from './libraryMaterial'
 import pb from '@/lib/pocketbase/client'
 import { demoAdapter, DEMO_ENROLLMENT_ID } from './demoAdapter'
 import { DEVELOPMENT_CATALOG, type DevelopmentResource } from './developmentCatalog'
@@ -69,6 +70,7 @@ export function validateDevelopment(value: DevelopmentInput) {
   validateResource(value.resource_snapshot)
 }
 export function validateResource(value: DevelopmentResource) {
+  validateMaterial(value?.material, true)
   if (
     !value ||
     typeof value.id !== 'string' ||
@@ -88,6 +90,23 @@ export function validateResource(value: DevelopmentResource) {
   for (const key of ['lesson', 'fallback', 'reflection', 'theme', 'duration'] as const)
     if (typeof value[key] !== 'string' || value[key].length > 5000)
       throw new Error('Confira os textos do recurso.')
+}
+export function validateEditorialResource(value: Omit<EditorialResource, 'id' | 'author_user_id'>) {
+  if (!['draft', 'published', 'archived'].includes(value.status))
+    throw new Error('Confira o estado do recurso.')
+  if (!value.title?.trim() || value.title.length > 160)
+    throw new Error('Informe o nome do recurso.')
+  validateMaterial(value.material, value.status === 'published')
+  for (const key of ['lesson', 'fallback', 'reflection', 'theme', 'duration'] as const)
+    if (typeof value[key] !== 'string' || value[key].length > 5000)
+      throw new Error('Confira os textos do recurso.')
+  if (
+    !Array.isArray(value.instructions) ||
+    value.instructions.length > 12 ||
+    value.instructions.some((s) => typeof s !== 'string' || !s.trim() || s.length > 1500)
+  )
+    throw new Error('Escreva até 12 passos curtos.')
+  if (value.status === 'published') validateResource({ ...value, id: 'resource' })
 }
 export function visibleDevelopment(
   records: DevelopmentExperiment[],
@@ -208,7 +227,7 @@ export const selfDevelopmentService = {
         resources: [
           ...DEVELOPMENT_CATALOG,
           ...published.map(
-            ({ id, title, theme, lesson, instructions, fallback, reflection, duration }) => ({
+            ({
               id,
               title,
               theme,
@@ -217,6 +236,17 @@ export const selfDevelopmentService = {
               fallback,
               reflection,
               duration,
+              material,
+            }) => ({
+              id,
+              title,
+              theme,
+              lesson,
+              instructions,
+              fallback,
+              reflection,
+              duration,
+              ...(material ? { material } : {}),
             }),
           ),
         ],
@@ -247,9 +277,7 @@ export const selfDevelopmentService = {
     value: Omit<EditorialResource, 'id' | 'author_user_id'>,
     id?: string,
   ): Promise<EditorialResource> {
-    validateResource({ ...value, id: id || 'new-resource' })
-    if (!['draft', 'published', 'archived'].includes(value.status))
-      throw new Error('Confira o estado do recurso.')
+    validateEditorialResource(value)
     if (demoAdapter.isEnabled() && demoAdapter.getActivePersona() !== 'daiane')
       throw new Error('Acesso profissional necessário.')
     const old = id ? (await this.editorialList()).find((r) => r.id === id) : undefined

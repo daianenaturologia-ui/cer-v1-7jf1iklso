@@ -7,6 +7,10 @@ export default defineConfig({
     setupFiles: ['src/test/setup.ts'],
     include: [
       'src/services/cycleJournal.test.ts',
+      'src/services/selfDevelopment.test.ts',
+      'src/services/selfDevelopmentServer.test.ts',
+      'src/services/libraryMaterial.test.ts',
+      'src/components/DevelopmentResourceEditor.test.tsx',
       'src/components/CycleMandala.test.tsx',
       'src/services/demoAnswerPersistence.test.ts',
       'src/services/participantJourney.test.ts',
