@@ -34,16 +34,14 @@ migrate(
           name: 'author_id',
           type: 'relation',
           required: true,
-          collectionId: app.findCollectionByNameOrId('users').id,
+          collectionId: '_pb_users_auth_',
           maxSelect: 1,
         },
         { name: 'revision', type: 'number', required: true, min: 1, onlyInt: true },
         { name: 'document', type: 'json', required: true, maxSize: 150000 },
         { name: 'private_notes', type: 'text', max: 20000 },
       ],
-      indexes: [
-        'CREATE UNIQUE INDEX idx_devplan_author ON cer_development_plan_drafts (enrollment_id, author_id)',
-      ],
+      indexes: [],
     })
     app.save(drafts)
     const versions = new Collection({
@@ -105,7 +103,6 @@ migrate(
         ],
         indexes: [
           'CREATE UNIQUE INDEX idx_devplan_command ON cer_development_plan_routines (command_key)',
-          'CREATE INDEX idx_devplan_routine_action ON cer_development_plan_routines (enrollment_id, action_id, effective_day)',
         ],
       }),
     )
