@@ -578,28 +578,57 @@ async function main() {
 
     // New canonical written document, exercised on authenticated fictional accounts.
     const writtenPlan = page.getByRole('region', { name: 'Construção do Plano de Desenvolvimento' })
-    await writtenPlan.getByLabel(/Seu momento atual/).fill('Síntese fictícia para construir o desenvolvimento em sessão.')
-    await writtenPlan.getByLabel(/O que merece atenção agora/).fill('Priorizar descanso e uma rotina possível.')
+    await writtenPlan
+      .getByLabel(/Seu momento atual/)
+      .fill('Síntese fictícia para construir o desenvolvimento em sessão.')
+    await writtenPlan
+      .getByLabel(/O que merece atenção agora/)
+      .fill('Priorizar descanso e uma rotina possível.')
     await writtenPlan.getByRole('button', { name: 'Acrescentar meta', exact: true }).click()
     await writtenPlan.getByLabel('Mudança que queremos alcançar').fill('Ter espaço para descanso')
-    await writtenPlan.getByLabel('Como perceberemos avanço').fill('Perceber pausas possíveis durante a semana')
+    await writtenPlan
+      .getByLabel('Como perceberemos avanço')
+      .fill('Perceber pausas possíveis durante a semana')
     await writtenPlan.getByRole('button', { name: 'Acrescentar ação', exact: true }).click()
     await writtenPlan.getByLabel('O que vamos experimentar').fill('Uma pausa possível')
-    await writtenPlan.getByLabel('Como isso pode acontecer na vida prática').fill('Escolher um momento curto entre atividades.')
-    await writtenPlan.getByText('Minhas anotações profissionais · privadas', { exact: true }).click()
-    await writtenPlan.getByLabel('Anotações que não entram no documento compartilhado').fill('PRIVATE_WRITTEN_PLAN_FIXTURE')
-    await writtenPlan.getByRole('button', { name: 'Compartilhar para construir nas sessões', exact: true }).click()
-    await writtenPlan.getByText('Versão compartilhada para construir nas sessões. As próximas edições continuam privadas até compartilhar novamente.', { exact: true }).waitFor()
-    await writtenPlan.getByLabel('Lemos juntas esta versão e combinamos as metas e ações para experimentar.').check()
-    await writtenPlan.getByRole('button', { name: 'Compartilhar plano combinado', exact: true }).click()
-    await writtenPlan.getByText('Plano combinado. Agora vocês podem organizar a rotina.', { exact: true }).waitFor()
+    await writtenPlan
+      .getByLabel('Como isso pode acontecer na vida prática')
+      .fill('Escolher um momento curto entre atividades.')
+    await writtenPlan
+      .getByText('Minhas anotações profissionais · privadas', { exact: true })
+      .click()
+    await writtenPlan
+      .getByLabel('Anotações que não entram no documento compartilhado')
+      .fill('PRIVATE_WRITTEN_PLAN_FIXTURE')
+    await writtenPlan
+      .getByRole('button', { name: 'Compartilhar para construir nas sessões', exact: true })
+      .click()
+    await writtenPlan
+      .getByText(
+        'Versão compartilhada para construir nas sessões. As próximas edições continuam privadas até compartilhar novamente.',
+        { exact: true },
+      )
+      .waitFor()
+    await writtenPlan
+      .getByLabel('Lemos juntas esta versão e combinamos as metas e ações para experimentar.')
+      .check()
+    await writtenPlan
+      .getByRole('button', { name: 'Compartilhar plano combinado', exact: true })
+      .click()
+    await writtenPlan
+      .getByText('Plano combinado. Agora vocês podem organizar a rotina.', { exact: true })
+      .waitFor()
 
     // Keep proving the previous shared-care lifecycle through its explicit history entry.
-    await page.getByText('Consultar trajetória e registros anteriores de planejamento', { exact: true }).click()
+    await page
+      .getByText('Consultar trajetória e registros anteriores de planejamento', { exact: true })
+      .click()
 
     // Clicar em "Criar Primeiro Plano de Desenvolvimento" ou "Novo Plano"
     const btnNovoPlano = page
-      .locator('button:has-text("Novo Plano"), button:has-text("Criar Primeiro Plano de Desenvolvimento")')
+      .locator(
+        'button:has-text("Novo Plano"), button:has-text("Criar Primeiro Plano de Desenvolvimento")',
+      )
       .first()
     await btnNovoPlano.click()
 
@@ -679,8 +708,12 @@ async function main() {
 
     await page.getByRole('button', { name: '4. Equilíbrio & Realização', exact: true }).click()
     await page.getByRole('tab', { name: 'Plano de Desenvolvimento', exact: true }).click()
-    await page.getByRole('article', { name: 'Leitura do Plano de Desenvolvimento' }).filter({ hasText: 'Síntese fictícia para construir o desenvolvimento em sessão.' }).waitFor()
-    if (await page.getByText('PRIVATE_WRITTEN_PLAN_FIXTURE', { exact: true }).count()) throw new Error('Professional private notes leaked into shared document')
+    await page
+      .getByRole('article', { name: 'Leitura do Plano de Desenvolvimento' })
+      .filter({ hasText: 'Síntese fictícia para construir o desenvolvimento em sessão.' })
+      .waitFor()
+    if (await page.getByText('PRIVATE_WRITTEN_PLAN_FIXTURE', { exact: true }).count())
+      throw new Error('Professional private notes leaked into shared document')
     await page.getByText('Práticas e planos anteriores', { exact: true }).click()
     await page.getByText('Nosso plano de ação', { exact: true }).waitFor()
 

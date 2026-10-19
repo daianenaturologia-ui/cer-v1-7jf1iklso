@@ -321,10 +321,9 @@ it('a Biblioteca CER abre os recursos diretamente e leva a escolha ao plano sem 
   await user.type(screen.getByLabelText('Meu cuidado na prática'), 'Observar meu ritmo pela manhã')
   await user.type(screen.getByLabelText('Quando isso cabe na minha vida?'), 'Depois do café')
   await user.click(screen.getByRole('button', { name: 'Salvar prática pessoal' }))
-  expect(await screen.findByRole('link', { name: 'Abrir Plano de Desenvolvimento' })).toHaveAttribute(
-    'href',
-    '/?etapa=equilibrio',
-  )
+  expect(
+    await screen.findByRole('link', { name: 'Abrir Plano de Desenvolvimento' }),
+  ).toHaveAttribute('href', '/?etapa=equilibrio')
   expect(await selfDevelopmentService.list(DEMO_ENROLLMENT_ID)).toHaveLength(1)
   expect(screen.getAllByRole('button', { name: 'Guardar prática pessoal' }).length).toBeGreaterThan(
     0,

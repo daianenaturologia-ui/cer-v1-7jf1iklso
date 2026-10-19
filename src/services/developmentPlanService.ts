@@ -36,15 +36,13 @@ export const developmentPlanService = {
       demoScope(enrollmentId, true)
       return clone(read().drafts.find((v) => v.enrollment_id === enrollmentId) || null)
     }
-    const values = await pb
-      .collection('cer_development_plan_drafts')
-      .getFullList<PlanDraft>({
-        filter: pb.filter('enrollment_id = {:id} && author_id = {:author}', {
-          id: enrollmentId,
-          author: pb.authStore.record?.id || '',
-        }),
-        requestKey: null,
-      })
+    const values = await pb.collection('cer_development_plan_drafts').getFullList<PlanDraft>({
+      filter: pb.filter('enrollment_id = {:id} && author_id = {:author}', {
+        id: enrollmentId,
+        author: pb.authStore.record?.id || '',
+      }),
+      requestKey: null,
+    })
     return values[0] || null
   },
   async save(
@@ -112,14 +110,12 @@ export const developmentPlanService = {
       return version
     }
     // Server supplies the document snapshot; private_notes are never transmitted here.
-    return pb
-      .collection('cer_development_plan_versions')
-      .create<PlanVersion>({
-        draft_id: draft.id,
-        enrollment_id: draft.enrollment_id,
-        revision: draft.revision,
-        stage,
-      })
+    return pb.collection('cer_development_plan_versions').create<PlanVersion>({
+      draft_id: draft.id,
+      enrollment_id: draft.enrollment_id,
+      revision: draft.revision,
+      stage,
+    })
   },
   async versions(enrollmentId: string): Promise<PlanVersion[]> {
     if (demoAdapter.isEnabled()) {
@@ -130,26 +126,22 @@ export const developmentPlanService = {
           .sort((a, b) => b.created.localeCompare(a.created) || b.revision - a.revision),
       )
     }
-    return pb
-      .collection('cer_development_plan_versions')
-      .getFullList<PlanVersion>({
-        filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
-        sort: '-created,-revision',
-        requestKey: null,
-      })
+    return pb.collection('cer_development_plan_versions').getFullList<PlanVersion>({
+      filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
+      sort: '-created,-revision',
+      requestKey: null,
+    })
   },
   async routines(enrollmentId: string): Promise<PlanRoutine[]> {
     if (demoAdapter.isEnabled()) {
       demoScope(enrollmentId)
       return clone(read().routines.filter((v) => v.enrollment_id === enrollmentId))
     }
-    return pb
-      .collection('cer_development_plan_routines')
-      .getFullList<PlanRoutine>({
-        filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
-        sort: '-created',
-        requestKey: null,
-      })
+    return pb.collection('cer_development_plan_routines').getFullList<PlanRoutine>({
+      filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
+      sort: '-created',
+      requestKey: null,
+    })
   },
   async schedule(
     version: PlanVersion,
