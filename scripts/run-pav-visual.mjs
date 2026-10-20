@@ -582,9 +582,9 @@ async function main() {
       .getByLabel(/Seu momento atual/)
       .fill('Síntese fictícia para construir o desenvolvimento em sessão.')
     await writtenPlan
-      .getByLabel(/O que merece atenção agora/)
+      .getByLabel(/Prioridades de equilíbrio e cuidado/)
       .fill('Priorizar descanso e uma rotina possível.')
-    await writtenPlan.getByRole('button', { name: 'Acrescentar meta', exact: true }).click()
+    await writtenPlan.getByRole('button', { name: 'Definir meta principal', exact: true }).click()
     await writtenPlan.getByLabel('Mudança que queremos alcançar').fill('Ter espaço para descanso')
     await writtenPlan
       .getByLabel('Como perceberemos avanço')
@@ -610,7 +610,7 @@ async function main() {
       )
       .waitFor()
     await writtenPlan
-      .getByLabel('Lemos juntas esta versão e combinamos as metas e ações para experimentar.')
+      .getByLabel(/Lemos juntas esta versão e combinamos os cuidados, a meta principal e as ações para/)
       .check()
     await writtenPlan
       .getByRole('button', { name: 'Compartilhar plano combinado', exact: true })
