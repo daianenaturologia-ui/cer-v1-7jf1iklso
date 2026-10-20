@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import type { CerMapRecord, CerMapItemRecord, ExperienceResponseRecord } from '@/types/cer'
 import { cerMapService } from '@/services/cerMapService'
-import { buildCerMapReadings } from '@/services/cerMapReadings'
-import { ParticipantMapDisplay } from '@/components/ParticipantMapDisplay'
-import { CerMapReadingsView } from './CerMapReadingsView'
+import { ParticipantIntegrativeMapView } from './ParticipantIntegrativeMapView'
 
 /** Both roles read the same published document. Drafts never replace it. */
 export function SharedProfessionalCerMap({
@@ -69,13 +67,13 @@ export function SharedProfessionalCerMap({
         </button>
       </p>
     )
-  if (state.map) return <ParticipantMapDisplay map={state.map} participantName={participantName} />
   return (
-    <CerMapReadingsView
-      snapshot={buildCerMapReadings(responses, enrollmentId, participantName, {
-        literalOnly: true,
-      })}
-      initial
+    <ParticipantIntegrativeMapView
+      enrollmentId={enrollmentId}
+      participantName={participantName}
+      responses={responses}
+      currentMap={state.map}
+      audience="professional"
     />
   )
 }

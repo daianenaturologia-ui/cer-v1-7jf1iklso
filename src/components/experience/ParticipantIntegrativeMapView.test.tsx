@@ -2,9 +2,9 @@
 import '@testing-library/jest-dom/vitest'
 import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, cleanup, act } from '@testing-library/react'
+import { render, screen, cleanup, act, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { BUILD_07C_REGULACAO_PROMPTS } from '@/services/build07cPrompts'
+import { BUILD_07C_MENTE_PROMPTS, BUILD_07C_REGULACAO_PROMPTS } from '@/services/build07cPrompts'
 import { ParticipantIntegrativeMapView } from './ParticipantIntegrativeMapView'
 import { buildCerMapReadings, CER_READING_DIMENSIONS } from '@/services/cerMapReadings'
 
@@ -182,4 +182,128 @@ it('atualiza os marcos no mapa ao salvar e isola histórias ao trocar a pessoa',
   )
   expect(screen.queryByText('Nascimento atualizado')).toBeNull()
   expect(screen.queryByText('História privada minha')).toBeNull()
+})
+
+function liveResponse(key: string, value: string[], overrides = {}) {
+  const prompt = [...BUILD_07C_MENTE_PROMPTS, ...BUILD_07C_REGULACAO_PROMPTS].find(
+    (p) => (p.schema_config as any).prompt_key === key,
+  )!
+  return {
+    id: key,
+    enrollment_id: 'enr',
+    experience_id: prompt.experience_id,
+    prompt_id: prompt.id,
+    access_class: 'participant_shared',
+    status: 'saved',
+    created: '2026-10-01',
+    updated: '2026-10-02',
+    structured_value: { value },
+    ...overrides,
+  } as any
+}
+it('mantém a síntese visível no mapa publicado e a atualiza sem reescrever a publicação', async () => {
+  vi.spyOn(lifeTimelineService, 'list').mockResolvedValue([])
+  vi.spyOn(lifeDirectionsService, 'list').mockResolvedValue([])
+  const document = snapshot()
+  document.integration = 'Texto aprovado na sessão'
+  const before = JSON.stringify(document)
+  const map = { status: 'published', reading_snapshot: document, items: [] } as any
+  const responses = [
+    liveResponse('emocoes_recorrentes', ['medo']),
+    liveResponse('resposta_tendencia', ['resolver_imediatamente']),
+  ]
+  const view = render(
+    <ParticipantIntegrativeMapView
+      enrollmentId="enr"
+      responses={responses}
+      participantName="Lia"
+      currentMap={map}
+    />,
+  )
+  const integrated = screen.getByRole('region', { name: 'Sua leitura integrada' })
+  expect(within(integrated).getByText(/busca de segurança se transforma em ação/)).toBeVisible()
+  await userEvent.click(within(integrated).getByText('Aprofundar minha leitura integrada'))
+  expect(within(integrated).getByText('Quando proteger vira urgência')).toBeVisible()
+  view.rerender(
+    <ParticipantIntegrativeMapView
+      enrollmentId="enr"
+      responses={[responses[0], liveResponse('resposta_tendencia', ['afastar_recolher'])]}
+      participantName="Lia"
+      currentMap={map}
+    />,
+  )
+  expect(
+    within(integrated).queryByText(/busca de segurança se transforma em ação/),
+  ).not.toBeInTheDocument()
+  expect(within(integrated).getByText(/recuperar segurança passa pelo recolhimento/)).toBeVisible()
+  expect(JSON.stringify(document)).toBe(before)
+})
+it('incorpora, corrige e retira conexões com a história ao receber mudanças salvas', async () => {
+  const record = {
+    id: 'life',
+    enrollment_id: 'enr',
+    title: 'Marco fictício',
+    time_kind: 'year',
+    time_value: '2020',
+    emotions: ['Medo'],
+    narrative: 'Relato',
+    access_class: 'participant_private',
+    updated: '2026-10-03',
+  } as any
+  const list = vi.spyOn(lifeTimelineService, 'list').mockResolvedValue([record])
+  vi.spyOn(lifeDirectionsService, 'list').mockResolvedValue([])
+  render(
+    <ParticipantIntegrativeMapView
+      enrollmentId="enr"
+      responses={[liveResponse('emocoes_recorrentes', ['medo'])]}
+      participantName="Lia"
+    />,
+  )
+  const integrated = screen.getByRole('region', { name: 'Sua leitura integrada' })
+  await userEvent.click(await within(integrated).findByText('Aprofundar minha leitura integrada'))
+  expect(await within(integrated).findByText('Sua história e seu momento atual')).toBeVisible()
+  list.mockResolvedValue([{ ...record, emotions: ['Alegria'] }])
+  act(() =>
+    window.dispatchEvent(
+      new CustomEvent('cer-life-records-changed', { detail: { enrollmentId: 'enr' } }),
+    ),
+  )
+  expect(await within(integrated).findByText('Sua história acrescenta contexto')).toBeVisible()
+  expect(within(integrated).queryByText('Sua história e seu momento atual')).not.toBeInTheDocument()
+  list.mockResolvedValue([])
+  act(() =>
+    window.dispatchEvent(
+      new CustomEvent('cer-life-records-changed', { detail: { enrollmentId: 'enr' } }),
+    ),
+  )
+  expect(
+    await within(integrated).findByText(/Sua Linha da Vida ainda não acrescentou marcos/),
+  ).toBeVisible()
+  expect(within(integrated).queryByText('Sua história acrescenta contexto')).not.toBeInTheDocument()
+})
+it('não inclui história particular na síntese nem na trilha profissional', async () => {
+  vi.spyOn(lifeTimelineService, 'list').mockResolvedValue([
+    {
+      id: 'private',
+      enrollment_id: 'enr',
+      title: 'TÍTULO PARTICULAR',
+      time_kind: 'unknown',
+      time_value: '',
+      emotions: ['Medo'],
+      narrative: 'PRIVADO',
+      access_class: 'participant_private',
+    } as any,
+  ])
+  vi.spyOn(lifeDirectionsService, 'list').mockResolvedValue([])
+  render(
+    <ParticipantIntegrativeMapView
+      audience="professional"
+      enrollmentId="enr"
+      responses={[liveResponse('emocoes_recorrentes', ['medo'])]}
+      participantName="Lia"
+    />,
+  )
+  expect(await screen.findByText(/Sua Linha da Vida ainda não acrescentou marcos/)).toBeVisible()
+  expect(screen.queryByText('TÍTULO PARTICULAR')).not.toBeInTheDocument()
+  expect(screen.queryByText('Sua história e seu momento atual')).not.toBeInTheDocument()
 })

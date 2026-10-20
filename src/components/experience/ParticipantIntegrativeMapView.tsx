@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { LifeMapTrail } from './LifeMapTrail'
+import { CerLiveIntegrationView } from './CerLiveIntegrationView'
+import { buildCerLiveIntegration } from '@/services/cerLiveIntegration'
 import { lifeTimelineService, type LifeEvent } from '@/services/lifeTimeline'
 import { lifeDirectionsService, type LifeDirection } from '@/services/lifeDirections'
 import type {
@@ -14,6 +16,7 @@ import { buildCerMapReadings, consciousnessCoverage } from '@/services/cerMapRea
 
 interface Props {
   responses: ExperienceResponseRecord[]
+  audience?: 'participant' | 'professional'
   progress?: EnrollmentExperienceRecord[]
   onClose?: () => void
   participantName: string
@@ -24,6 +27,7 @@ interface Props {
 export function ParticipantIntegrativeMapView({
   responses,
   progress = [],
+  audience = 'participant',
   currentMap,
   participantName,
   enrollmentId,
@@ -34,14 +38,16 @@ export function ParticipantIntegrativeMapView({
     events: LifeEvent[]
     directions: LifeDirection[]
     error: boolean
-  }>({ id: '', events: [], directions: [], error: false })
+    loading: boolean
+  }>({ id: '', events: [], directions: [], error: false, loading: false })
   useEffect(() => {
     let active = true
     let generation = 0
-    setLife({ id: '', events: [], directions: [], error: false })
+    setLife({ id: '', events: [], directions: [], error: false, loading: false })
     if (!enrollmentId) return
     const refresh = async () => {
       const current = ++generation
+      setLife((previous) => ({ ...previous, loading: true }))
       const [history, directions] = await Promise.allSettled([
         lifeTimelineService.list(enrollmentId),
         lifeDirectionsService.list(enrollmentId),
@@ -49,6 +55,7 @@ export function ParticipantIntegrativeMapView({
       if (!active || current !== generation) return
       setLife({
         id: enrollmentId,
+        loading: false,
         events:
           history.status === 'fulfilled'
             ? history.value.filter((e) => e.enrollment_id === enrollmentId)
@@ -72,17 +79,44 @@ export function ParticipantIntegrativeMapView({
     }
     void refresh()
     window.addEventListener('cer-life-records-changed', changed)
+    window.addEventListener('focus', refresh)
     window.addEventListener('storage', stored)
     return () => {
       active = false
       window.removeEventListener('cer-life-records-changed', changed)
+      window.removeEventListener('focus', refresh)
       window.removeEventListener('storage', stored)
     }
   }, [enrollmentId])
-  const ownLife = life.id === enrollmentId ? life : { events: [], directions: [], error: false }
+  const loadedLife =
+    life.id === enrollmentId
+      ? life
+      : { events: [], directions: [], error: false, loading: !!enrollmentId }
+  const ownLife = {
+    ...loadedLife,
+    events: loadedLife.events.filter(
+      (e) => audience === 'participant' || e.access_class === 'participant_shared',
+    ),
+    directions: loadedLife.directions.filter(
+      (e) => audience === 'participant' || e.access_class === 'participant_shared',
+    ),
+  }
   const initial = enrollmentId
     ? buildCerMapReadings(responses, enrollmentId, participantName, { literalOnly: true })
     : null
+  const liveIntegration = initial ? (
+    <CerLiveIntegrationView
+      reading={buildCerLiveIntegration({
+        snapshot: initial,
+        responses,
+        events: ownLife.events,
+        directions: ownLife.directions,
+        audience,
+      })}
+      loading={ownLife.loading}
+      error={ownLife.error}
+    />
+  ) : undefined
   const trail = (
     <>
       <LifeMapTrail
@@ -101,7 +135,11 @@ export function ParticipantIntegrativeMapView({
   if (currentMap?.status === 'published')
     return (
       <div className="space-y-5">
-        <ParticipantMapDisplay map={currentMap} participantName={participantName} />
+        <ParticipantMapDisplay
+          map={currentMap}
+          participantName={participantName}
+          liveIntegration={liveIntegration}
+        />
         {trail}
       </div>
     )
@@ -119,7 +157,7 @@ export function ParticipantIntegrativeMapView({
         <p className="text-xs font-semibold text-primary">
           Mapa inicial · a partir das suas respostas
         </p>
-        <CerMapReadingsView snapshot={initial} initial />
+        <CerMapReadingsView snapshot={initial} initial liveIntegration={liveIntegration} />
         {trail}
       </div>
     )
