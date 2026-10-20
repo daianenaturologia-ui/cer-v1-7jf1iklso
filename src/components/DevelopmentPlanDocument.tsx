@@ -1,3 +1,4 @@
+import { isCareChapter } from '@/services/integrativePlan'
 import { ResourceMaterial } from './ResourceMaterial'
 import type { PlanDocument } from '@/services/developmentPlanDocument'
 
@@ -12,24 +13,27 @@ export function DevelopmentPlanDocument({ document }: { document: PlanDocument }
         </p>
       </section>
       <section className="space-y-2">
-        <h3 className="font-serif text-lg">O que merece atenção agora</h3>
+        <h3 className="font-serif text-lg">Prioridades de equilíbrio e cuidado</h3>
         <p className="whitespace-pre-wrap">
           {document.priorities || 'As prioridades serão escolhidas em conjunto.'}
         </p>
       </section>
       <section className="space-y-4">
-        <h3 className="font-serif text-lg">O que queremos alcançar</h3>
+        <h3 className="font-serif text-lg">Cuidados e caminho para minha meta</h3>
         {!document.goals.length && (
-          <p className="text-muted-foreground">As metas e ações serão construídas nas sessões.</p>
+          <p className="text-muted-foreground">
+            Os cuidados e as ações para a meta principal serão combinados nas sessões.
+          </p>
         )}
         {document.goals.map((goal, index) => (
           <section key={goal.id} className="rounded-2xl border p-4 sm:p-5 space-y-4">
             <h4 className="font-semibold">
-              {index + 1}. {goal.title || 'Meta em construção'}
+              {isCareChapter(goal) ? 'Meu cuidado' : 'Minha meta'}.{' '}
+              {goal.title || 'Meta em construção'}
             </h4>
             <div>
               <p className="text-xs uppercase tracking-wide text-primary">
-                Como perceberemos avanço
+                {isCareChapter(goal) ? 'O que acompanhar no cuidado' : 'Como perceberemos avanço'}
               </p>
               <p className="whitespace-pre-wrap">
                 {goal.progress || 'Vamos reconhecer juntas os sinais que fazem sentido.'}

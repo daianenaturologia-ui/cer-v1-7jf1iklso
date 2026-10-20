@@ -7606,7 +7606,9 @@
           "required": true,
           "system": false,
           "selectValues": ["participant_private", "participant_shared"]
-        }
+        },
+        {"name": "thoughts", "type": "text", "required": false, "system": false},
+        {"name": "cycle_signs", "type": "select", "required": false, "system": false, "selectValues": ["TPM percebida", "Sinais de ovulação percebidos", "Não sei identificar"]}
       ],
       "indexes": [
         "CREATE UNIQUE INDEX `idx_cycle_entry_day` ON `cer_cycle_entries` (enrollment_id, day)"

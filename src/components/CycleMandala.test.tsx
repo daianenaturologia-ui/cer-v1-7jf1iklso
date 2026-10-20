@@ -25,16 +25,19 @@ beforeEach(() => {
   demoAdapter.resetToDefaultState()
   demoAdapter.enableDemo('mariana')
 })
-const show = (readOnly = false) =>
-  render(
+const show = async (readOnly = false) => {
+  const view = render(
     <MemoryRouter>
       <CycleMandala key={ID} enrollmentId={ID} readOnly={readOnly} />
     </MemoryRouter>,
   )
+  fireEvent.click(await screen.findByRole('button', { name: /selecionado$/ }))
+  return view
+}
 it('salva, reabre, mantém privacidade e só depois oferece o convite lunar', async () => {
   await cycleJournalService.saveProfile({ ...defaultCycleProfile(ID), lunar_reflections: true })
   const user = userEvent.setup()
-  show()
+  await show()
   await screen.findByText('Meu ciclo, meu ritmo')
   expect(
     screen.queryByText(
@@ -50,7 +53,7 @@ it('salva, reabre, mantém privacidade e só depois oferece o convite lunar', as
   await user.click(screen.getByRole('button', { name: 'Salvar e continuar depois' }))
   await screen.findByText('Registro salvo. Só você pode vê-lo.')
   cleanup()
-  show()
+  await show()
   await screen.findByText('Meu ciclo, meu ritmo')
   expect(screen.getByRole('button', { name: 'Baixa' })).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getByLabelText(/Um cuidado que escolho para mim/)).toHaveValue('Reservar uma pausa')
@@ -62,15 +65,14 @@ it('salva, reabre, mantém privacidade e só depois oferece o convite lunar', as
   )
   demoAdapter.enableDemo('daiane')
   cleanup()
-  show(true)
+  await show(true)
   await screen.findByText('Ritmo compartilhado')
   expect(screen.queryByText('Reservar uma pausa')).not.toBeInTheDocument()
 })
 it('registra o início da menstruação com fluxo explícito', async () => {
   const user = userEvent.setup()
-  show()
+  await show()
   await screen.findByText('Meu ciclo, meu ritmo')
-  await user.click(screen.getByRole('button', { name: 'Salvar preferências' }))
   await user.click(screen.getByRole('button', { name: 'Leve' }))
   await user.click(screen.getByLabelText('Este foi o primeiro dia da menstruação'))
   await user.click(screen.getByRole('button', { name: 'Salvar meu registro' }))
@@ -85,7 +87,7 @@ it('profissional vê o compartilhado, sem preferências privadas ou ações de e
     access_class: 'participant_shared',
   })
   demoAdapter.enableDemo('daiane')
-  show(true)
+  await show(true)
   await screen.findByText('Ritmo compartilhado')
   expect(screen.getByText('Compartilhado de propósito')).toBeVisible()
   expect(screen.queryByRole('button', { name: 'Salvar meu registro' })).not.toBeInTheDocument()
@@ -115,7 +117,7 @@ it('lembrete do Planner depende de escolha explícita e usa observação atual',
 })
 it('falha ao salvar preserva o preenchimento e permite tentar de novo', async () => {
   const user = userEvent.setup()
-  show()
+  await show()
   await screen.findByText('Meu ciclo, meu ritmo')
   const spy = vi
     .spyOn(cycleJournalService, 'save')
@@ -128,4 +130,40 @@ it('falha ao salvar preserva o preenchimento e permite tentar de novo', async ()
   await user.click(screen.getByRole('button', { name: 'Salvar meu registro' }))
   await screen.findByText('Registro salvo. Só você pode vê-lo.')
   spy.mockRestore()
+})
+
+it('pétala abre diretamente o dia para editar pensamentos, acontecimentos e sinais percebidos', async () => {
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <CycleMandala enrollmentId={ID} />
+    </MemoryRouter>,
+  )
+  const petal = await screen.findByRole('button', { name: /selecionado$/ })
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Dia do registro')).not.toBeInTheDocument()
+  await user.click(petal)
+  expect(await screen.findByRole('dialog')).toBeVisible()
+  fireEvent.change(screen.getByLabelText(/Que pensamentos estiveram presentes/), {
+    target: { value: 'Pensei em pedir ajuda' },
+  })
+  fireEvent.change(screen.getByLabelText(/Um acontecimento que pode ter influenciado/), {
+    target: { value: 'Um dia diferente' },
+  })
+  await user.click(screen.getByRole('button', { name: 'TPM percebida' }))
+  await user.click(screen.getByRole('button', { name: 'Salvar meu registro' }))
+  await screen.findByText('Registro salvo. Só você pode vê-lo.')
+  const record = (await cycleJournalService.list(ID))[0]
+  expect(record.thoughts).toBe('Pensei em pedir ajuda')
+  expect(record.context_note).toBe('Um dia diferente')
+  expect(record.cycle_signs).toEqual(['TPM percebida'])
+  cleanup()
+  await show()
+  expect(screen.getByLabelText(/Que pensamentos estiveram presentes/)).toHaveValue(
+    'Pensei em pedir ajuda',
+  )
+  expect(screen.getByRole('button', { name: 'TPM percebida' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
 })

@@ -6,7 +6,7 @@ import pb from '@/lib/pocketbase/client'
 import { demoAdapter } from '@/services/demoAdapter'
 import { validateLifeDirection, type LifeDirectionInput } from '@/services/lifeDirections'
 
-const STEPS = ['Meu momento', 'Minha direção', 'Meu começo']
+const STEPS = ['O que quero transformar', 'Minha meta principal', 'Como vou começar']
 
 export function clearMyNextStepDraft(enrollmentId: string, recordId?: string) {
   const owner = demoAdapter.isEnabled() ? 'demo-interagente' : pb.authStore.record?.id
@@ -26,6 +26,7 @@ export function MyNextStepWizard({
   recordId,
   busy,
   strategies,
+  error,
   onChange,
   onSave,
   onPause,
@@ -34,6 +35,7 @@ export function MyNextStepWizard({
   recordId?: string
   busy: boolean
   strategies: string[]
+  error?: string
   onChange: (value: LifeDirectionInput) => void
   onSave: () => void
   onPause: () => void
@@ -102,6 +104,13 @@ export function MyNextStepWizard({
       className="cer-reading-panel rounded-2xl border bg-card p-5 sm:p-7 space-y-5"
       onSubmit={(e) => {
         e.preventDefault()
+        if (step >= 1 && !value.title.trim()) {
+          setStep(1)
+          setMessage(
+            'Dê um nome à sua meta antes de continuar. Se ainda não souber, escolha a opção abaixo.',
+          )
+          return
+        }
         if (step < 2) {
           setStep(step + 1)
 
@@ -110,13 +119,13 @@ export function MyNextStepWizard({
         }
         onSave()
       }}
-      aria-label="Meu próximo passo"
+      aria-label="Minha meta principal"
     >
       <div className="flex items-center gap-3">
         <Sprout className="text-primary shrink-0" aria-hidden="true" />
         <div>
           <p className="text-xs text-muted-foreground">Um começo possível</p>
-          <h3 className="font-serif text-2xl">Meu próximo passo</h3>
+          <h3 className="font-serif text-2xl">Minha meta principal</h3>
         </div>
       </div>
       <ol className="grid grid-cols-3 gap-2" aria-label="Etapas da minha direção">
@@ -133,10 +142,10 @@ export function MyNextStepWizard({
       </ol>
       {step === 0 && (
         <div className="space-y-4">
-          <h4 className="font-serif text-xl">O que merece cuidado agora</h4>
+          <h4 className="font-serif text-xl">O que você quer transformar na sua vida?</h4>
           <p className="text-sm text-muted-foreground">
-            Você não precisa resolver tudo de uma vez. Vamos encontrar aquilo que merece atenção
-            primeiro.
+            Olhe para seu presente: o que você deseja viver de outra maneira? Escolha uma mudança
+            importante para começar, sem precisar resolver tudo agora.
           </p>
 
           <label className="block text-sm space-y-2">
@@ -158,10 +167,10 @@ export function MyNextStepWizard({
       )}
       {step === 1 && (
         <div className="space-y-4">
-          <h4 className="font-serif text-xl">A mudança que faria diferença</h4>
+          <h4 className="font-serif text-xl">Uma meta que tenha sentido para você</h4>
           <p className="text-sm text-muted-foreground">
-            Pode ser descansar melhor, ter uma conversa, estabelecer um limite ou voltar a fazer
-            algo importante. Vamos dar uma direção a esse cuidado.
+            Sua meta pode estar na saúde, nas relações, no trabalho ou em um propósito. Escreva uma
+            mudança concreta que deseja alcançar. Ela será o foco deste ciclo do CER.
           </p>
           <div className="rounded-xl bg-primary/5 p-4">
             <p className="text-xs text-primary font-semibold mb-2">Hoje está difícil…</p>
@@ -194,11 +203,31 @@ export function MyNextStepWizard({
       )}
       {step === 2 && (
         <div className="space-y-4">
-          <h4 className="font-serif text-xl">Minhas possibilidades e necessidades</h4>
+          <h4 className="font-serif text-xl">Um primeiro passo que respeite sua vida</h4>
           <p className="text-sm text-muted-foreground">
-            Seu cuidado precisa considerar seu tempo, sua energia e suas condições de vida. Escolher
-            menos também é válido.
+            Sua meta ganha caminho quando encontra uma ação possível. O plano de cuidado preparado
+            por Daiane ajudará a sustentar seu equilíbrio; nas sessões, vocês combinarão as ações e
+            os horários.
           </p>
+          <label className="block text-sm space-y-2">
+            <span>Qual ação concreta posso começar a praticar para chegar à minha meta?</span>
+            <Textarea
+              rows={3}
+              maxLength={5000}
+              value={value.first_step}
+              onChange={(e) => onChange({ ...value, first_step: e.target.value })}
+              placeholder="Uma ação pequena, possível e que dependa de mim…"
+            />
+          </label>
+          <label className="block text-sm space-y-2">
+            <span>Por que essa conquista importa para mim?</span>
+            <Textarea
+              rows={2}
+              maxLength={5000}
+              value={value.meaning}
+              onChange={(e) => onChange({ ...value, meaning: e.target.value })}
+            />
+          </label>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">Quais recursos e apoios tenho?</legend>
 
@@ -251,16 +280,16 @@ export function MyNextStepWizard({
           )}
           <div
             className="rounded-xl bg-primary/5 p-4 space-y-2"
-            aria-label="Minha direção para o futuro"
+            aria-label="Minha meta para este ciclo"
           >
-            <h4 className="font-serif text-lg">Minha direção para o futuro</h4>
+            <h4 className="font-serif text-lg">Minha meta para este ciclo</h4>
             <p className="text-sm whitespace-pre-wrap">
               <strong>Quero caminhar para: </strong>
-              {value.title || 'Compreender o que está pesando e encontrar uma direção.'}
+              {value.title || 'Sua meta ainda precisa de um nome.'}
             </p>
             <p className="text-sm whitespace-pre-wrap">
-              <strong>Meu começo: </strong>
-              {value.resources || 'Vamos escolher um começo juntas.'}
+              <strong>Minha primeira ação: </strong>
+              {value.first_step || 'Vamos definir uma primeira ação na conversa.'}
             </p>
             <p className="text-sm whitespace-pre-wrap">
               <strong>Meu plano precisa respeitar: </strong>
@@ -278,15 +307,20 @@ export function MyNextStepWizard({
                 })
               }
             />
-            Compartilhar esta direção com minha profissional.
+            Compartilhar esta meta com minha profissional.
           </label>
           <p className="text-xs text-muted-foreground">
-            Desmarcado: só você acessa. Esta direção poderá orientar o objetivo combinado; você pode
+            Desmarcado: só você acessa. Esta meta poderá orientar o plano combinado; você pode
             voltar e ajustá-la.
           </p>
         </div>
       )}
 
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error} Seu texto continua aqui; confira e tente salvar novamente.
+        </p>
+      )}
       {message && (
         <p role="status" className="text-sm">
           {message}
@@ -307,7 +341,7 @@ export function MyNextStepWizard({
           </Button>
         )}
         <Button type="submit" disabled={busy}>
-          {busy ? 'Salvando…' : step === 2 ? 'Salvar minha direção' : 'Continuar'}
+          {busy ? 'Salvando…' : step === 2 ? 'Salvar como meta principal' : 'Continuar'}
           {step < 2 && <ArrowRight className="w-4 h-4 ml-1" />}
         </Button>
         <Button type="button" variant="ghost" disabled={busy} onClick={onPause}>
@@ -316,8 +350,8 @@ export function MyNextStepWizard({
       </div>
       <p className="text-xs text-muted-foreground">
         {draftKey && draftAvailable
-          ? 'Rascunho guardado automaticamente neste navegador, só para você. Para guardar sua direção no CER, use “Salvar minha direção”.'
-          : 'O rascunho automático não está disponível neste navegador. Salve sua direção antes de sair.'}
+          ? 'Rascunho guardado automaticamente neste navegador, só para você. Para guardar sua meta no CER, use “Salvar como meta principal”.'
+          : 'O rascunho automático não está disponível neste navegador. Salve sua meta antes de sair.'}
       </p>
     </form>
   )

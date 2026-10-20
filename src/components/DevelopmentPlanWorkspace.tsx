@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { IntegrativeCareComposer } from './IntegrativeCareComposer'
+import { LifeGoalImport } from './LifeGoalImport'
+import {
+  isCareChapter,
+  goalFromLifeDirection,
+  addCareAction,
+  updateCareAction,
+} from '@/services/integrativePlan'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -23,10 +31,14 @@ export function DevelopmentPlanWorkspace({
   enrollmentId,
   professional = false,
   participantName = 'você',
+  resourceToAdd,
+  onResourceAdded,
 }: {
   enrollmentId: string
   professional?: boolean
   participantName?: string
+  resourceToAdd?: DevelopmentResource
+  onResourceAdded?: () => void
 }) {
   const [draft, setDraft] = useState<PlanDraft | null>(null),
     [document, setDocument] = useState<PlanDocument>(emptyPlanDocument),
@@ -49,6 +61,45 @@ export function DevelopmentPlanWorkspace({
     mounted = useRef(true),
     ready = useRef(false)
   const professionalRef = useRef(professional)
+  const addedResource = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    if (
+      !professional ||
+      loading ||
+      !ready.current ||
+      !resourceToAdd ||
+      addedResource.current === resourceToAdd.id
+    )
+      return
+    addedResource.current = resourceToAdd.id
+    const currentCare = content.current.document.goals.find(isCareChapter)
+    if (currentCare?.actions.some((a) => a.resource?.id === resourceToAdd.id)) {
+      setNotice(
+        'Este recurso já está no rascunho do cuidado. Você pode revisar sua orientação ali.',
+      )
+      onResourceAdded?.()
+      return
+    }
+    if ((currentCare?.actions.length || 0) >= 12) {
+      setError(
+        'O capítulo de cuidado já tem 12 orientações. Revise o que cabe neste ciclo antes de acrescentar outra.',
+      )
+      onResourceAdded?.()
+      return
+    }
+    setDocument((old) => {
+      const next = addCareAction(old, resourceToAdd.title)
+      const action = next.goals.find(isCareChapter)!.actions.at(-1)!
+      return updateCareAction(next, action.id, {
+        resource: resourceToAdd,
+        context: resourceToAdd.instructions.join('\n'),
+      })
+    })
+    onResourceAdded?.()
+    setNotice(
+      'Recurso acrescentado ao rascunho do cuidado. Revise a orientação e combine a prática antes de organizar no Planner.',
+    )
+  }, [resourceToAdd, professional, loading, onResourceAdded])
   content.current = { document, notes }
   useEffect(() => {
     mounted.current = true
@@ -252,8 +303,8 @@ export function DevelopmentPlanWorkspace({
         </h2>
         <p className="text-sm leading-relaxed">
           {professional
-            ? 'Prepare sua compreensão do caso, leiam juntas nas sessões e escolham metas e ações possíveis. Depois, organizem a rotina no Planner.'
-            : 'Este plano é construído com Daiane nas sessões. Primeiro vocês escolhem a direção, as metas e as ações; depois dão lugar a elas na rotina.'}
+            ? 'Prepare o plano de cuidado com base no Mapa CER e nas avaliações. Depois, conversem sobre a meta principal, ajustem os cuidados e combinem as ações que entrarão no Planner.'
+            : 'Daiane prepara os cuidados para sustentar seu equilíbrio e a meta que você escolheu. Nas sessões, vocês ajustam a proposta, combinam o que faz sentido e organizam a rotina no Planner.'}
         </p>
         <ol className="flex flex-wrap gap-2 text-xs">
           <li className="rounded-full border bg-background px-3 py-2">
@@ -330,9 +381,11 @@ export function DevelopmentPlanWorkspace({
                 />
               </label>
               <label className="block space-y-2">
-                <span className="font-serif text-lg">O que merece atenção agora</span>
+                <span className="font-serif text-lg">Prioridades de equilíbrio e cuidado</span>
                 <span className="block text-xs text-muted-foreground">
-                  Escolham poucas prioridades e expliquem por que começar por elas.
+                  Defina as necessidades de cuidado e tratamento que emergem do mapa, seus objetivos
+                  e o que acompanhar. Apresente uma proposta individualizada para conversar na
+                  sessão.
                 </span>
                 <Textarea
                   maxLength={10000}
@@ -340,175 +393,209 @@ export function DevelopmentPlanWorkspace({
                   onChange={(e) => setDocument({ ...document, priorities: e.target.value })}
                 />
               </label>
+              <IntegrativeCareComposer
+                document={document}
+                onChange={setDocument}
+                resources={resources}
+                onLoadResources={() => {
+                  if (!resources.length) void loadResources()
+                }}
+              />
               <section className="space-y-4">
-                <h3 className="font-serif text-xl">O que queremos alcançar</h3>
+                <h3 className="font-serif text-xl">2. Uma meta principal, ações combinadas</h3>
+                <LifeGoalImport
+                  key={enrollmentId}
+                  enrollmentId={enrollmentId}
+                  onChoose={(value) => {
+                    if (
+                      document.goals.some((g) => !isCareChapter(g)) &&
+                      !window.confirm(
+                        'Usar esta meta como foco do rascunho? As versões já compartilhadas e rotinas existentes ficam preservadas.',
+                      )
+                    )
+                      return
+                    setDocument({
+                      ...document,
+                      goals: [
+                        ...document.goals.filter(isCareChapter),
+                        goalFromLifeDirection(value),
+                      ],
+                    })
+                  }}
+                />
                 <p className="text-sm text-muted-foreground">
-                  Uma meta descreve a mudança desejada. As ações mostram como experimentá-la. Dias e
-                  horários serão escolhidos depois.
+                  Uma meta principal concentra o esforço deste ciclo. Os cuidados sustentam o
+                  equilíbrio; estas ações aproximam a pessoa da conquista. Combinem possibilidades
+                  reais e organizem os horários depois.
                 </p>
-                {document.goals.map((goal, index) => (
-                  <fieldset key={goal.id} className="border rounded-2xl p-4 sm:p-5 space-y-4">
-                    <legend className="font-semibold px-2">Meta {index + 1}</legend>
-                    <label className="block space-y-1 text-sm">
-                      Mudança que queremos alcançar
-                      <Input
-                        maxLength={5000}
-                        value={goal.title}
-                        onChange={(e) => updateGoal(goal.id, { title: e.target.value })}
-                        placeholder="Ex.: ter espaço para descanso durante a semana"
-                      />
-                    </label>
-                    <label className="block space-y-1 text-sm">
-                      Como perceberemos avanço
-                      <Textarea
-                        maxLength={5000}
-                        value={goal.progress}
-                        onChange={(e) => updateGoal(goal.id, { progress: e.target.value })}
-                        placeholder="Que sinais concretos vamos observar, sem cobrar perfeição?"
-                      />
-                    </label>
-                    {goal.actions.map((action, ai) => (
-                      <div key={action.id} className="border-l-2 pl-4 border-primary/30 space-y-3">
-                        <h4 className="text-sm font-semibold">Ação {ai + 1}</h4>
-                        <label className="block space-y-1 text-sm">
-                          O que vamos experimentar
-                          <Input
-                            maxLength={5000}
-                            value={action.title}
-                            onChange={(e) =>
-                              updateGoal(goal.id, {
-                                actions: goal.actions.map((a) =>
-                                  a.id === action.id ? { ...a, title: e.target.value } : a,
-                                ),
-                              })
-                            }
-                            placeholder="Ex.: preparar o encerramento do trabalho"
-                          />
-                        </label>
-                        <label className="block space-y-1 text-sm">
-                          Como isso pode acontecer na vida prática
-                          <Textarea
-                            maxLength={5000}
-                            value={action.context}
-                            onChange={(e) =>
-                              updateGoal(goal.id, {
-                                actions: goal.actions.map((a) =>
-                                  a.id === action.id ? { ...a, context: e.target.value } : a,
-                                ),
-                              })
-                            }
-                            placeholder="Descrevam o passo, o apoio necessário e as condições que precisam ser respeitadas."
-                          />
-                        </label>
-                        <label className="block space-y-1 text-sm">
-                          Se ficar difícil (opcional)
-                          <Textarea
-                            maxLength={5000}
-                            value={action.fallback}
-                            onChange={(e) =>
-                              updateGoal(goal.id, {
-                                actions: goal.actions.map((a) =>
-                                  a.id === action.id ? { ...a, fallback: e.target.value } : a,
-                                ),
-                              })
-                            }
-                          />
-                        </label>
-                        <details className="text-sm">
-                          <summary
-                            className="cursor-pointer text-primary"
-                            onClick={() => {
-                              if (!resources.length) void loadResources()
-                            }}
-                          >
-                            Vincular apoio da Biblioteca (opcional)
-                          </summary>
-                          <label className="block mt-2">
-                            Recurso para esta ação
-                            <select
-                              className="block w-full border rounded-lg p-2 bg-background"
-                              value={action.resource?.id || ''}
-                              onChange={(e) => {
-                                const resource = resources.find((r) => r.id === e.target.value)
+                {document.goals
+                  .filter((g) => !isCareChapter(g))
+                  .map((goal, index) => (
+                    <fieldset key={goal.id} className="border rounded-2xl p-4 sm:p-5 space-y-4">
+                      <legend className="font-semibold px-2">Meta {index + 1}</legend>
+                      <label className="block space-y-1 text-sm">
+                        Mudança que queremos alcançar
+                        <Input
+                          maxLength={5000}
+                          value={goal.title}
+                          onChange={(e) => updateGoal(goal.id, { title: e.target.value })}
+                          placeholder="Ex.: ter espaço para descanso durante a semana"
+                        />
+                      </label>
+                      <label className="block space-y-1 text-sm">
+                        Como perceberemos avanço
+                        <Textarea
+                          maxLength={5000}
+                          value={goal.progress}
+                          onChange={(e) => updateGoal(goal.id, { progress: e.target.value })}
+                          placeholder="Que sinais concretos vamos observar, sem cobrar perfeição?"
+                        />
+                      </label>
+                      {goal.actions.map((action, ai) => (
+                        <div
+                          key={action.id}
+                          className="border-l-2 pl-4 border-primary/30 space-y-3"
+                        >
+                          <h4 className="text-sm font-semibold">Ação {ai + 1}</h4>
+                          <label className="block space-y-1 text-sm">
+                            O que vamos experimentar
+                            <Input
+                              maxLength={5000}
+                              value={action.title}
+                              onChange={(e) =>
                                 updateGoal(goal.id, {
                                   actions: goal.actions.map((a) =>
-                                    a.id === action.id ? { ...a, resource } : a,
+                                    a.id === action.id ? { ...a, title: e.target.value } : a,
                                   ),
                                 })
+                              }
+                              placeholder="Ex.: preparar o encerramento do trabalho"
+                            />
+                          </label>
+                          <label className="block space-y-1 text-sm">
+                            Como isso pode acontecer na vida prática
+                            <Textarea
+                              maxLength={5000}
+                              value={action.context}
+                              onChange={(e) =>
+                                updateGoal(goal.id, {
+                                  actions: goal.actions.map((a) =>
+                                    a.id === action.id ? { ...a, context: e.target.value } : a,
+                                  ),
+                                })
+                              }
+                              placeholder="Descrevam o passo, o apoio necessário e as condições que precisam ser respeitadas."
+                            />
+                          </label>
+                          <label className="block space-y-1 text-sm">
+                            Se ficar difícil (opcional)
+                            <Textarea
+                              maxLength={5000}
+                              value={action.fallback}
+                              onChange={(e) =>
+                                updateGoal(goal.id, {
+                                  actions: goal.actions.map((a) =>
+                                    a.id === action.id ? { ...a, fallback: e.target.value } : a,
+                                  ),
+                                })
+                              }
+                            />
+                          </label>
+                          <details className="text-sm">
+                            <summary
+                              className="cursor-pointer text-primary"
+                              onClick={() => {
+                                if (!resources.length) void loadResources()
                               }}
                             >
-                              <option value="">Sem recurso vinculado</option>
-                              {action.resource &&
-                                !resources.some((r) => r.id === action.resource?.id) && (
-                                  <option value={action.resource.id}>
-                                    {action.resource.title}
+                              Vincular apoio da Biblioteca (opcional)
+                            </summary>
+                            <label className="block mt-2">
+                              Recurso para esta ação
+                              <select
+                                className="block w-full border rounded-lg p-2 bg-background"
+                                value={action.resource?.id || ''}
+                                onChange={(e) => {
+                                  const resource = resources.find((r) => r.id === e.target.value)
+                                  updateGoal(goal.id, {
+                                    actions: goal.actions.map((a) =>
+                                      a.id === action.id ? { ...a, resource } : a,
+                                    ),
+                                  })
+                                }}
+                              >
+                                <option value="">Sem recurso vinculado</option>
+                                {action.resource &&
+                                  !resources.some((r) => r.id === action.resource?.id) && (
+                                    <option value={action.resource.id}>
+                                      {action.resource.title}
+                                    </option>
+                                  )}
+                                {resources.map((r) => (
+                                  <option key={r.id} value={r.id}>
+                                    {r.title}
                                   </option>
-                                )}
-                              {resources.map((r) => (
-                                <option key={r.id} value={r.id}>
-                                  {r.title}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        </details>
+                                ))}
+                              </select>
+                            </label>
+                          </details>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  'Retirar esta ação do rascunho? As versões compartilhadas e rotinas existentes serão preservadas.',
+                                )
+                              )
+                                updateGoal(goal.id, {
+                                  actions: goal.actions.filter((a) => a.id !== action.id),
+                                })
+                            }}
+                          >
+                            Retirar ação do rascunho
+                          </Button>
+                        </div>
+                      ))}
+                      <div className="flex flex-wrap gap-2">
                         <Button
+                          variant="outline"
                           size="sm"
+                          disabled={goal.actions.length >= 12}
+                          onClick={() =>
+                            updateGoal(goal.id, { actions: [...goal.actions, newPlanAction()] })
+                          }
+                        >
+                          Acrescentar ação
+                        </Button>
+                        <Button
                           variant="ghost"
+                          size="sm"
                           onClick={() => {
                             if (
                               window.confirm(
-                                'Retirar esta ação do rascunho? As versões compartilhadas e rotinas existentes serão preservadas.',
+                                'Retirar esta meta do rascunho? As versões compartilhadas e rotinas existentes serão preservadas.',
                               )
                             )
-                              updateGoal(goal.id, {
-                                actions: goal.actions.filter((a) => a.id !== action.id),
+                              setDocument({
+                                ...document,
+                                goals: document.goals.filter((g) => g.id !== goal.id),
                               })
                           }}
                         >
-                          Retirar ação do rascunho
+                          Retirar meta do rascunho
                         </Button>
                       </div>
-                    ))}
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={goal.actions.length >= 12}
-                        onClick={() =>
-                          updateGoal(goal.id, { actions: [...goal.actions, newPlanAction()] })
-                        }
-                      >
-                        Acrescentar ação
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              'Retirar esta meta do rascunho? As versões compartilhadas e rotinas existentes serão preservadas.',
-                            )
-                          )
-                            setDocument({
-                              ...document,
-                              goals: document.goals.filter((g) => g.id !== goal.id),
-                            })
-                        }}
-                      >
-                        Retirar meta do rascunho
-                      </Button>
-                    </div>
-                  </fieldset>
-                ))}
+                    </fieldset>
+                  ))}
                 <Button
                   variant="outline"
-                  disabled={document.goals.length >= 12}
+                  disabled={document.goals.some((g) => !isCareChapter(g))}
                   onClick={() =>
                     setDocument({ ...document, goals: [...document.goals, newPlanGoal()] })
                   }
                 >
-                  Acrescentar meta
+                  Definir meta principal
                 </Button>
               </section>
               <label className="block space-y-2">
@@ -543,9 +630,9 @@ export function DevelopmentPlanWorkspace({
           <div className="rounded-2xl border p-5 space-y-4">
             <h3 className="font-serif text-lg">Compartilhar no ritmo das sessões</h3>
             <p className="text-sm">
-              Compartilhe uma versão em construção para a pessoa acompanhar. Quando metas e ações
-              estiverem combinadas, disponibilize a organização da rotina. Você pode retomar e
-              revisar o plano depois.
+              Compartilhe a proposta de cuidado para conversar na sessão. Quando os cuidados, a meta
+              principal e as ações estiverem combinados, disponibilize a organização da rotina. Você
+              pode retomar e revisar o plano depois.
             </p>
             <Button disabled={busy} variant="outline" onClick={() => void share('building')}>
               Compartilhar para construir nas sessões
@@ -557,7 +644,10 @@ export function DevelopmentPlanWorkspace({
                 checked={confirmed}
                 onChange={(e) => setConfirmed(e.target.checked)}
               />
-              <span>Lemos juntas esta versão e combinamos as metas e ações para experimentar.</span>
+              <span>
+                Lemos juntas esta versão e combinamos os cuidados, a meta principal e as ações para
+                experimentar.
+              </span>
             </label>
             <Button disabled={busy || !confirmed} onClick={() => void share('agreed')}>
               {busy ? 'Salvando…' : 'Compartilhar plano combinado'}
@@ -583,7 +673,8 @@ export function DevelopmentPlanWorkspace({
           <h3 className="font-serif text-lg">Vamos construir seu plano juntas</h3>
           <p className="text-sm">
             Daiane está preparando a proposta a partir do seu percurso. Vocês vão conversar sobre
-            prioridades, metas e ações nas sessões. Quando ela compartilhar, o plano aparecerá aqui.
+            cuidados, sua meta principal e as ações possíveis nas sessões. Quando ela compartilhar,
+            o plano aparecerá aqui.
           </p>
           <Link className="text-sm underline text-primary" to="/?etapa=evolucao">
             Voltar à minha trajetória

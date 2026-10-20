@@ -111,3 +111,15 @@ export const lifeDirectionsService = {
     return record
   },
 }
+
+/** A deliberate save/promotion chooses the focus; earlier possibilities remain intact. */
+export function principalLifeDirection(values: LifeDirection[]) {
+  return [...values]
+    .filter((v) => v.kind === 'future')
+    .sort(
+      (a, b) =>
+        (a.updated || a.created || '').localeCompare(b.updated || b.created || '') ||
+        a.id.localeCompare(b.id),
+    )
+    .at(-1)
+}

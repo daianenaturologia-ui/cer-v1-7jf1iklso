@@ -10,6 +10,7 @@ import { CareEpisodeExplorer } from './CareEpisodeExplorer'
 import {
   lifeDirectionsService,
   LIFE_HORIZONS,
+  principalLifeDirection,
   type LifeDirection,
   type LifeDirectionInput,
 } from '@/services/lifeDirections'
@@ -41,6 +42,7 @@ export function LifeDirections({
   const [retry, setRetry] = useState(0)
   const [strategies, setStrategies] = useState<string[]>([])
   const [resourceError, setResourceError] = useState('')
+  const principal = principalLifeDirection(records)
   useEffect(() => {
     let active = true
     setStrategies([])
@@ -111,6 +113,7 @@ export function LifeDirections({
             .at(-1)
         : undefined
     setEditingId(record?.id)
+    setError('')
     setSaved('')
 
     setEditing(
@@ -129,7 +132,7 @@ export function LifeDirections({
     )
   }
   async function save() {
-    if (!editing) return
+    if (!editing || busy) return
     setBusy(true)
     setError('')
     try {
@@ -142,7 +145,7 @@ export function LifeDirections({
 
       setSaved(
         planning
-          ? 'Direção salva. Ela será a base da conversa sobre seu objetivo e os passos possíveis.'
+          ? 'Meta principal salva. Suas outras metas continuam na lista. Compartilhe esta escolha para levá-la à conversa sobre o plano.'
           : 'Registro salvo. Seu mapa inicial acompanha suas direções e momentos de agora.',
       )
     } catch (e) {
@@ -175,7 +178,7 @@ export function LifeDirections({
         <p className="text-sm text-muted-foreground">
           {readOnly
             ? 'A direção expressa pela interagente é o ponto de partida. Considerem seu funcionamento, seus apoios e suas condições para combinar o objetivo e um primeiro passo possível.'
-            : 'Vamos aproximar seu mapa da sua vida: o que merece cuidado, a mudança que faria diferença e um começo que cabe no seu momento.'}
+            : 'Escolha uma meta principal e registre as ações que imagina praticar. Seus outros desejos continuam na lista; foco agora ajuda a transformar intenção em realização.'}
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
@@ -221,8 +224,8 @@ export function LifeDirections({
               {planning && perspective !== 'present' && !editing && (
                 <Button variant="outline" onClick={() => open('future')}>
                   {records.some((v) => v.kind === 'future')
-                    ? 'Escolher outra direção'
-                    : 'Escolher minha primeira direção'}
+                    ? 'Escolher outra meta'
+                    : 'Escolher minha meta principal'}
                 </Button>
               )}
               {!planning && perspective !== 'future' && (
@@ -246,14 +249,24 @@ export function LifeDirections({
                     {kind === 'present'
                       ? 'Presente · meus momentos de agora'
                       : planning
-                        ? 'Direções e primeiras metas'
+                        ? 'Minha meta principal e outras possibilidades'
                         : 'Futuro · desejos e possibilidades'}
                   </h3>
                   {records
                     .filter((v) => v.kind === kind)
+                    .sort((a, b) => Number(b.id === principal?.id) - Number(a.id === principal?.id))
                     .map((record) => (
                       <article key={record.id} className="border rounded-lg p-3 space-y-2">
                         <h4 className="font-medium">{record.title}</h4>
+                        {planning && record.kind === 'future' && (
+                          <p className="text-xs font-semibold text-primary">
+                            {record.id === principal?.id
+                              ? readOnly
+                                ? 'Meta compartilhada mais recente'
+                                : 'Meta principal deste ciclo'
+                              : 'Na minha lista · para outro momento'}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
                           {LIFE_HORIZONS[record.horizon]} ·{' '}
                           {record.created
@@ -332,7 +345,9 @@ export function LifeDirections({
                           )}
                         {!readOnly && allowEditing && unlocked && (
                           <Button size="sm" variant="outline" onClick={() => open(kind, record)}>
-                            Editar registro
+                            {planning && record.kind === 'future'
+                              ? 'Rever e escolher esta meta'
+                              : 'Editar registro'}
                           </Button>
                         )}
                       </article>
@@ -348,7 +363,7 @@ export function LifeDirections({
               ))}
         </>
       )}
-      {error && (
+      {error && !(editing && planning && editing.kind === 'future') && (
         <div role="alert" className="text-sm text-destructive">
           {error}
           {!editing && (
@@ -369,6 +384,7 @@ export function LifeDirections({
           value={editing}
           recordId={editingId}
           busy={busy}
+          error={error}
           strategies={strategies}
           onChange={setEditing}
           onSave={() => void save()}

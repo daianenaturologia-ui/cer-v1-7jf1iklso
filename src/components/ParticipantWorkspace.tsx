@@ -1,3 +1,5 @@
+import { CerPracticeLibrary } from './CerPracticeLibrary'
+import type { DevelopmentResource } from '@/services/developmentCatalog'
 import { DevelopmentPlanWorkspace } from './DevelopmentPlanWorkspace'
 import { professionalJourneyTab } from '@/services/professionalJourneyNavigation'
 import { ProfessionalJourneySummary } from './ProfessionalJourneySummary'
@@ -71,6 +73,9 @@ export const ParticipantWorkspace: React.FC = () => {
 
   const rawTab = searchParams.get('tab') as WorkspaceTab | null
   const requestedTool = searchParams.get('tool')
+  const [libraryResource, setLibraryResource] = useState<
+    { enrollmentId: string; resource: DevelopmentResource } | undefined
+  >()
   const careTool =
     requestedTool === 'biblioteca' ||
     requestedTool === 'mandala' ||
@@ -545,6 +550,12 @@ export const ParticipantWorkspace: React.FC = () => {
           {careTool === 'plano' && (
             <div className="space-y-5">
               <DevelopmentPlanWorkspace
+                resourceToAdd={
+                  libraryResource?.enrollmentId === enrollment.id
+                    ? libraryResource.resource
+                    : undefined
+                }
+                onResourceAdded={() => setLibraryResource(undefined)}
                 key={`document-${enrollment.id}`}
                 enrollmentId={enrollment.id}
                 professional
@@ -591,42 +602,58 @@ export const ParticipantWorkspace: React.FC = () => {
             </div>
           )}
 
-          {careTool === 'biblioteca' &&
-            (demoAdapter.isEnabled() ? (
-              <DemoPracticeWorkspace enrollmentId={enrollment.id} />
-            ) : (
-              <div className="space-y-5">
-                <div className="space-y-1">
-                  <h2 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    <span>Práticas, Recursos e Experimentos</span>
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    Atribua experimentos do acervo alinhados às prioridades combinadas com{' '}
-                    {participantName}.
-                  </p>
+          {careTool === 'biblioteca' && (
+            <div className="space-y-5">
+              <CerPracticeLibrary
+                onAddToPlan={(resource) => {
+                  setLibraryResource({ enrollmentId: enrollment.id, resource })
+                  openCareTool('plano')
+                }}
+              />
+              <details className="border rounded-xl p-4">
+                <summary className="cursor-pointer text-sm">
+                  Acompanhamentos e práticas do fluxo anterior
+                </summary>
+                <div className="mt-4">
+                  {demoAdapter.isEnabled() ? (
+                    <DemoPracticeWorkspace enrollmentId={enrollment.id} />
+                  ) : (
+                    <div className="space-y-5">
+                      <div className="space-y-1">
+                        <h2 className="text-base font-serif font-semibold text-foreground flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          <span>Práticas, Recursos e Experimentos</span>
+                        </h2>
+                        <p className="text-xs text-muted-foreground">
+                          Atribua experimentos do acervo alinhados às prioridades combinadas com{' '}
+                          {participantName}.
+                        </p>
+                      </div>
+
+                      <AssignmentEditor
+                        enrollmentId={enrollment.id}
+                        participantName={participantName}
+                        selectedPractice={selectedPractice}
+                        selectedVersion={selectedVersion}
+                        onAssignmentCreated={() => {
+                          setSelectedPractice(null)
+                          setSelectedVersion(null)
+                        }}
+                      />
+
+                      <PracticeSelector
+                        selectedPracticeId={selectedPractice?.id}
+                        onSelectPractice={(pr, ver) => {
+                          setSelectedPractice(pr)
+                          setSelectedVersion(ver)
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
-
-                <AssignmentEditor
-                  enrollmentId={enrollment.id}
-                  participantName={participantName}
-                  selectedPractice={selectedPractice}
-                  selectedVersion={selectedVersion}
-                  onAssignmentCreated={() => {
-                    setSelectedPractice(null)
-                    setSelectedVersion(null)
-                  }}
-                />
-
-                <PracticeSelector
-                  selectedPracticeId={selectedPractice?.id}
-                  onSelectPractice={(pr, ver) => {
-                    setSelectedPractice(pr)
-                    setSelectedVersion(ver)
-                  }}
-                />
-              </div>
-            ))}
+              </details>
+            </div>
+          )}
           {careTool === 'mandala' && (
             <div className="space-y-4">
               <CycleMandala key={enrollment.id} enrollmentId={enrollment.id} readOnly />

@@ -25,7 +25,7 @@ describe('Presente e futuro', () => {
     fireEvent.change(title, { target: { value: 'Um desejo' } })
     expect(screen.getByRole('checkbox')).not.toBeChecked()
     fireEvent.click(screen.getByRole('button', { name: 'Salvar registro' }))
-    await screen.findByText('Falha ao salvar')
+    await screen.findByText(/Falha ao salvar/)
     expect(title).toHaveValue('Um desejo')
     expect(lifeDirectionsService.save).toHaveBeenCalledWith(
       expect.objectContaining({ access_class: 'participant_private', horizon: 'open' }),
@@ -88,7 +88,7 @@ it('salva uma direção pelos três passos sem exigir clareza pronta', async () 
     id: 'new',
   }))
   render(<LifeDirections enrollmentId="mariana" planning />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Escolher minha primeira direção' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Escolher minha meta principal' }))
   fireEvent.change(
     screen.getByLabelText('Conte uma situação que mostre como isso aparece na sua vida hoje.'),
     { target: { value: 'Não consigo desligar do trabalho.' } },
@@ -100,8 +100,8 @@ it('salva uma direção pelos três passos sem exigir clareza pronta', async () 
     target: { value: 'Duas pausas por semana. Alimentação ainda não cabe.' },
   })
   expect(screen.getByRole('checkbox')).not.toBeChecked()
-  fireEvent.click(screen.getByRole('button', { name: 'Salvar minha direção' }))
-  await screen.findByText(/Direção salva/)
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar como meta principal' }))
+  await screen.findByText(/Meta principal salva/)
   expect(lifeDirectionsService.save).toHaveBeenCalledWith(
     expect.objectContaining({
       title: 'Ainda não sei o que desejo mudar',
@@ -130,11 +130,12 @@ it('reaproveita o presente e preserva suas condições sem modificar o original'
   } as any
   vi.mocked(lifeDirectionsService.list).mockResolvedValue([old])
   render(<LifeDirections enrollmentId="mariana" planning />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Escolher minha primeira direção' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Escolher minha meta principal' }))
   expect(
     screen.getByLabelText('Conte uma situação que mostre como isso aparece na sua vida hoje.'),
   ).toHaveValue('Cansaço')
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Ainda não tenho clareza da mudança' }))
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
   expect(screen.getByLabelText('O que precisamos respeitar')).toHaveValue('Pouco tempo')
   expect(old.kind).toBe('present')
@@ -148,7 +149,7 @@ it('inclui uma estratégia do jogo apenas por escolha e mantém textos se salvar
   } as any)
   vi.mocked(lifeDirectionsService.save).mockRejectedValue(new Error('Falha ao salvar'))
   render(<LifeDirections enrollmentId="mariana" planning />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Escolher minha primeira direção' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Escolher minha meta principal' }))
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
   fireEvent.change(
     screen.getByLabelText('O que gostaria de conseguir viver ou fazer de maneira diferente?'),
@@ -161,8 +162,8 @@ it('inclui uma estratégia do jogo apenas por escolha e mantém textos se salvar
     await screen.findByRole('button', { name: 'Pedir apoio antes de assumir mais uma tarefa.' }),
   )
   expect(input).toHaveValue('Pedir apoio antes de assumir mais uma tarefa.')
-  fireEvent.click(screen.getByRole('button', { name: 'Salvar minha direção' }))
-  await screen.findByText('Falha ao salvar')
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar como meta principal' }))
+  await screen.findByText(/Falha ao salvar/)
   expect(input).toHaveValue('Pedir apoio antes de assumir mais uma tarefa.')
 })
 it('profissional não carrega o exercício privado do jogo', async () => {

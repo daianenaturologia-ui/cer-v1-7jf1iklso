@@ -107,9 +107,16 @@ export function validatePlanDocument(doc: PlanDocument, stage?: PlanVersion['sta
     if (stage === 'agreed' && (!goal.title.trim() || !goal.progress.trim() || !goal.actions.length))
       throw new Error('Cada meta combinada precisa de um sinal de avanço e ao menos uma ação.')
   }
+  if (stage === 'agreed' && doc.goals.filter((g) => g.id !== 'cer-integrative-care').length > 1)
+    throw new Error(
+      'Escolham uma meta principal para este ciclo. As demais podem ficar na lista de possibilidades.',
+    )
   if (stage && !doc.moment.trim())
     throw new Error('Escreva a síntese do momento antes de compartilhar.')
-  if (stage === 'agreed' && (!doc.priorities.trim() || !doc.goals.length))
+  if (
+    stage === 'agreed' &&
+    (!doc.priorities.trim() || !doc.goals.some((g) => g.id !== 'cer-integrative-care'))
+  )
     throw new Error('Definam as prioridades e ao menos uma meta antes de combinar o plano.')
 }
 export function dayInZone(value: Date, timezone: string) {

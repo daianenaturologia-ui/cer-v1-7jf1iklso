@@ -118,6 +118,8 @@ try:
         enroll={n:next(e for e in enrollments if e['person_id']==actors[n]['record']['person_id'])['id'] for n in ['a','b']}
         # Written development plan: private preparation, immutable sharing and explicit routine commands.
         plan_doc={'title':'Fictional Development Plan','moment':'FICTIONAL_SHARED_SYNTHESIS','priorities':'Fictional priority','goals':[{'id':'goal-one','title':'Fictional goal','progress':'Fictional sign','actions':[{'id':'action-one','title':'Fictional action','context':'Fictional context','fallback':''}]}],'next_session':'Review together'}
+        care_goal={'id':'cer-integrative-care','title':'Fictional individual care','progress':'Fictional comfort observation','actions':[{'id':'care-action-one','title':'Fictional recovery practice','context':'Fictional professional guidance','fallback':'Fictional adaptation'}]}
+        plan_doc['goals'].append(care_goal)
         draft_url='/api/collections/cer_development_plan_drafts/records'
         version_url='/api/collections/cer_development_plan_versions/records'
         routine_url='/api/collections/cer_development_plan_routines/records'
@@ -145,6 +147,8 @@ try:
         routine_body={**routine_body,'version_id':agreed['id']}
         routine=record('cer_development_plan_routines',tokens['a'],'POST',{**routine_body,'snapshot':{'forged':'client'}})
         check('Plan routine snapshot derived from agreed action',lambda:require(routine['snapshot']['action']['title']=='Fictional action' and routine['snapshot']['goal']=='Fictional goal'))
+        care_routine=record('cer_development_plan_routines',tokens['a'],'POST',{**routine_body,'action_id':'care-action-one','command_key':'fictional-care-command'})
+        check('Plan care chapter can be explicitly scheduled from agreed snapshot',lambda:require(care_routine['snapshot']['goal']=='Fictional individual care' and care_routine['snapshot']['action']['context']=='Fictional professional guidance'))
         check('Plan duplicate routine command rejected',lambda:require(request(routine_url,tokens['a'],'POST',routine_body)[0]==400))
         check('Plan routine cannot use another enrollment',lambda:require(request(routine_url,tokens['b'],'POST',{**routine_body,'enrollment_id':enroll['b'],'command_key':'foreign-command'})[0]==400))
         check('Plan routine cannot invent an action',lambda:require(request(routine_url,tokens['a'],'POST',{**routine_body,'action_id':'foreign-action','command_key':'foreign-action-command'})[0]==400))
@@ -154,13 +158,16 @@ try:
         for actor in ['b','q']:
             check('Plan routine denied to '+actor,lambda actor=actor:require(request(routine_url+'/'+routine['id'],tokens[actor])[0]==404))
         check('Plan linked professional can view routine',lambda:require(record('cer_development_plan_routines',tokens['p'],id=routine['id'])['snapshot']['action']['id']=='action-one'))
-        incomplete={**changed,'goals':[]}
+        incomplete={**changed,'goals':[care_goal]}
         record('cer_development_plan_drafts',tokens['p'],'PATCH',{'document':incomplete,'revision':3},plan_draft['id'])
-        check('Plan incomplete agreement rejected by server',lambda:require(request(version_url,tokens['p'],'POST',{'draft_id':plan_draft['id'],'enrollment_id':enroll['a'],'revision':3,'stage':'agreed'})[0]==400))
+        check('Plan care alone cannot replace the main goal in an agreement',lambda:require(request(version_url,tokens['p'],'POST',{'draft_id':plan_draft['id'],'enrollment_id':enroll['a'],'revision':3,'stage':'agreed'})[0]==400))
         building=record('cer_development_plan_versions',tokens['p'],'POST',{'draft_id':plan_draft['id'],'enrollment_id':enroll['a'],'revision':3,'stage':'building'})
         check('Plan old agreement cannot schedule silently after revision',lambda:require(request(routine_url,tokens['a'],'POST',{**routine_body,'command_key':'old-agreement-command'})[0]==400))
         paused=record('cer_development_plan_routines',tokens['p'],'POST',{**routine_body,'enabled':False,'command_key':'pause-old-command'})
         check('Plan historical action may be explicitly paused',lambda:require(not paused['enabled'] and record('cer_development_plan_versions',tokens['a'],id=agreed['id'])['document']==changed))
+        multi={**plan_doc,'goals':[plan_doc['goals'][0],{**plan_doc['goals'][0],'id':'another-goal','actions':[{'id':'another-action','title':'Another fictional action','context':'Another context','fallback':''}]},care_goal]}
+        record('cer_development_plan_drafts',tokens['p'],'PATCH',{'document':multi,'revision':4},plan_draft['id'])
+        check('Plan multiple main goals cannot be agreed simultaneously',lambda:require(request(version_url,tokens['p'],'POST',{'draft_id':plan_draft['id'],'enrollment_id':enroll['a'],'revision':4,'stage':'agreed'})[0]==400))
         plan_link=next(v for v in record('professional_enrollment_access',admin)['items'] if v['enrollment_id']==enroll['a'] and v['professional_user_id']==actors['p']['record']['id'])
         record('professional_enrollment_access',admin,'PATCH',{'is_active':False},plan_link['id'])
         check('Plan revoked professional loses draft and shared access',lambda:require(request(draft_url+'/'+plan_draft['id'],tokens['p'])[0]==404 and request(version_url+'/'+agreed['id'],tokens['p'])[0]==404 and request(routine_url+'/'+routine['id'],tokens['p'])[0]==404))
@@ -198,9 +205,12 @@ try:
         cycle_url='/api/collections/cer_cycle_entries/records'
         profile_url='/api/collections/cer_cycle_profiles/records'
         profile=record('cer_cycle_profiles',tokens['a'],'POST',{'enrollment_id':enroll['a'],'context':'natural','cycle_length':30,'lunar_reflections':True,'planner_reminders':True})
-        cycle_body={'enrollment_id':enroll['a'],'day':'2026-01-01','energy':2,'emotions':['Tranquila'],'reflection':'FICTIONAL_CYCLE_PRIVATE','bleeding':'Leve','period_start':True,'access_class':'participant_private'}
+        cycle_body={'enrollment_id':enroll['a'],'day':'2026-01-01','energy':2,'emotions':['Tranquila'],'reflection':'FICTIONAL_CYCLE_PRIVATE','thoughts':'FICTIONAL_DAY_THOUGHT','cycle_signs':['TPM percebida'],'bleeding':'Leve','period_start':True,'access_class':'participant_private'}
         cycle=record('cer_cycle_entries',tokens['a'],'POST',cycle_body)
         check('Cycle owner can reload persistent private entry',lambda:require(record('cer_cycle_entries',tokens['a'],id=cycle['id'])['reflection']=='FICTIONAL_CYCLE_PRIVATE'))
+        check('Cycle thoughts and perceived signs persist',lambda:require(record('cer_cycle_entries',tokens['a'],id=cycle['id'])['thoughts']=='FICTIONAL_DAY_THOUGHT' and record('cer_cycle_entries',tokens['a'],id=cycle['id'])['cycle_signs']==['TPM percebida']))
+        check('Cycle unknown signs rejected',lambda:require(request(cycle_url+'/'+cycle['id'],tokens['a'],'PATCH',{'cycle_signs':['invented phase']})[0]==400))
+        check('Cycle unknown and perceived signs cannot coexist',lambda:require(request(cycle_url+'/'+cycle['id'],tokens['a'],'PATCH',{'cycle_signs':['Não sei identificar','TPM percebida']})[0]==400))
         for actor in ['b','p','q']:
             check('Cycle private entry denied to '+actor,lambda actor=actor:require(request(cycle_url+'/'+cycle['id'],tokens[actor])[0]==404 and record('cer_cycle_entries',tokens[actor])['items']==[]))
             check('Cycle preferences stay private from '+actor,lambda actor=actor:require(request(profile_url+'/'+profile['id'],tokens[actor])[0]==404))
