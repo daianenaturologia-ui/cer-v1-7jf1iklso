@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "edcb6f0fd56d75a939631523f8bdc5a0261c49d5",
-  "conclusion": "failure",
-  "timestamp_utc": "2026-10-20T19:53:07.449Z",
-  "run_id": "39486929375",
-  "run_number": "575",
-  "all_success": false,
-  "failure_reason": "Interrompido na etapa 6 (Interagente A: Retorno ao Próximo Passo): locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Minha rotina atual', exact: true }).getByLabel('O que faço nesse momento 2', { exact: true })\n",
+  "sha": "bad2604787c031c5779c94295592f87a2cdec45c",
+  "conclusion": "success",
+  "timestamp_utc": "2026-10-20T19:56:28.722Z",
+  "run_id": "39487557059",
+  "run_number": "576",
+  "all_success": true,
+  "failure_reason": null,
   "steps": [
     {
       "num": 1,
@@ -54,15 +54,15 @@
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "FAIL",
-      "note": "locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Minha rotina atual', exact: true }).getByLabel('O que faço nesse momento 2', { exact: true })\n"
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 7,
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
       "filename": "07-retorno-no-prontuario.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -70,7 +70,7 @@
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
       "filename": "08-interagente-b-sem-acesso.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     }
   ]
