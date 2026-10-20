@@ -100,16 +100,20 @@ it('Biblioteca abre materiais por área sem exigir plano ativo e só envia por e
   fireEvent.click(screen.getAllByRole('button', { name: 'Acrescentar ao plano de cuidado' })[0])
   expect(add).toHaveBeenCalledTimes(1)
 })
-it('práticas pessoais podem ser escolhidas e personalizadas sem editar o plano profissional', async () => {
+it('Biblioteca da interagente permite consultar conteúdos sem planejar ou criar práticas', async () => {
   render(
     <MemoryRouter>
       <PersonalPracticeLibrary enrollmentId={ID} />
     </MemoryRouter>,
   )
-  const choices = await screen.findAllByRole('button', { name: 'Quero experimentar esta prática' })
-  fireEvent.click(choices[0])
-  expect(await screen.findByRole('dialog')).toBeVisible()
-  expect(screen.queryByText('Minhas anotações profissionais · privadas')).toBeNull()
+  await screen.findByText('Da consciência à experiência')
+  await screen.findByText('Uma coisa de cada vez')
+  expect(
+    screen.queryByRole('button', { name: /Quero experimentar|Guardar prática|Adicionar cuidado/ }),
+  ).toBeNull()
+  expect(screen.queryByRole('dialog')).toBeNull()
+  fireEvent.click(screen.getAllByText('Conhecer a prática')[0])
+  expect(screen.queryByLabelText('Meu cuidado na prática')).toBeNull()
 })
 it('orientações individuais ficam em campos próprios sem prescrição preenchida automaticamente', () => {
   function Form() {

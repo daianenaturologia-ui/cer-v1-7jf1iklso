@@ -7842,6 +7842,66 @@
         "CREATE UNIQUE INDEX idx_devplan_command ON cer_development_plan_routines (command_key)",
         "CREATE INDEX idx_devplan_routine_action ON cer_development_plan_routines (enrollment_id, action_id, effective_day)"
       ]
+    },
+    {
+      "name": "cer_daily_routines",
+      "type": "base",
+      "system": false,
+      "fields": [
+        {
+          "name": "enrollment_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionName": "enrollments",
+          "maxSelect": 1
+        },
+        {
+          "name": "day_label",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "moments",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "access_class",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "participant_private",
+            "participant_shared"
+          ],
+          "maxSelect": 1
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_daily_routine_enrollment ON cer_daily_routines (enrollment_id)"
+      ]
     }
   ]
 }

@@ -171,8 +171,8 @@ export const AuditSecurityPanel: React.FC = () => {
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-primary" />
               <CardTitle className="text-base font-semibold">
-                Auditoria de Segurança, Engine, Conhecimento, Sessões, Presentation, AI Core & Mapa
-                CER (Builds 01–06)
+                Auditoria de Segurança, Engine, Conhecimento, Encontros, Presentation, AI Core &
+                Mapa CER (Builds 01–06)
               </CardTitle>
             </div>
             <CardDescription className="text-xs">

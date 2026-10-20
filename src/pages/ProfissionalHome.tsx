@@ -60,7 +60,7 @@ export const ProfissionalHome: React.FC = () => {
   const [submitting, setSubmitting] = useState(false)
 
   // Navegação Principal Profissional (Build 09C):
-  // Participantes · Sessões · Biblioteca · IA · Auditoria
+  // Participantes · Encontros · Biblioteca · IA · Auditoria
   const [activeMainTab, setActiveMainTab] = useState<
     'participantes' | 'sessoes' | 'biblioteca' | 'ai' | 'auditoria'
   >('participantes')
@@ -225,7 +225,7 @@ export const ProfissionalHome: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         <CerArtStrip variant="leaves" compact />
-        {/* Navegação Principal Profissional (Build 09C): Participantes · Sessões · Biblioteca · Auditoria */}
+        {/* Navegação Principal Profissional (Build 09C): Participantes · Encontros · Biblioteca · Auditoria */}
         <nav
           aria-label="Navegação profissional"
           className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2"
@@ -281,7 +281,7 @@ export const ProfissionalHome: React.FC = () => {
             className="text-xs gap-1.5"
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span>Sessões</span>
+            <span>Encontros</span>
           </Button>
 
           <Button
@@ -332,7 +332,7 @@ export const ProfissionalHome: React.FC = () => {
           <div className="space-y-4">
             <div className="space-y-1">
               <h2 className="text-lg font-serif font-semibold text-foreground">
-                Espaço de Presença & Preparação de Sessões
+                Espaço de Presença & Preparação de Encontros
               </h2>
               <p className="text-xs text-muted-foreground">
                 Acompanhe o que mudou, notas privadas, o Mapa atual e os temas trazidos pelos
@@ -342,7 +342,7 @@ export const ProfissionalHome: React.FC = () => {
 
             {enrollments.length === 0 ? (
               <p className="text-xs text-muted-foreground py-8 text-center">
-                Nenhum participante vinculado para preparar sessão.
+                Nenhum participante vinculado para preparar encontro.
               </p>
             ) : (
               enrollments.map((enr) => (

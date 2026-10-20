@@ -1,122 +1,16 @@
+import React from 'react'
 import { JourneyNavigation } from '@/components/JourneyNavigation'
-import React, { useEffect, useState } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
-import { enrollmentService } from '@/services/cer'
-import { cerPracticeAssignmentService } from '@/services/cerPracticeAssignmentService'
-import { ExperimentCard } from '@/components/ExperimentCard'
-import type {
-  EnrollmentRecord,
-  CerPracticeAssignmentRecord,
-  CapacityResponseValue,
-} from '@/types/cer'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Sparkles } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { useToast } from '@/hooks/use-toast'
-import { EmptyState } from '@/components/EmptyState'
-import { PersonalPracticeLibrary } from '@/components/PersonalPracticeLibrary'
+import { CerPracticeLibrary } from '@/components/CerPracticeLibrary'
 
-export const ExperimentosPage: React.FC = () => {
-  const { user } = useAuth()
-  const navigate = useNavigate()
-  const { toast } = useToast()
-  const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
-  const [assignments, setAssignments] = useState<CerPracticeAssignmentRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-
-  const loadData = async () => {
-    if (!user?.id) return
-    setLoading(true)
-    setEnrollment(null)
-    setAssignments([])
-    setError(false)
-    try {
-      const activeEnrollment = await enrollmentService.getActiveForUser(user.id)
-      setEnrollment(activeEnrollment)
-      if (activeEnrollment) {
-        const asgns = await cerPracticeAssignmentService.listByEnrollment(activeEnrollment.id)
-        setAssignments(asgns)
-      }
-    } catch (err) {
-      setError(true)
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadData()
-  }, [user?.id])
-
-  const handleConfirmExperiment = async (assignmentId: string, capacity: CapacityResponseValue) => {
-    try {
-      await cerPracticeAssignmentService.recordConfirmation(assignmentId, {
-        participant_response_type: 'confirmed',
-        capacity_response: capacity,
-      })
-      toast({
-        title: 'Resposta registrada com carinho',
-        description: 'Sua percepção sobre o experimento orienta os próximos passos.',
-      })
-      await loadData()
-    } catch {
-      toast({
-        title: 'Erro ao confirmar',
-        description: 'Tente novamente.',
-        variant: 'destructive',
-      })
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-background text-foreground py-8 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-4">
-          <h1 className="text-xl font-serif font-bold text-foreground flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <span>Biblioteca CER · Minhas práticas</span>
-          </h1>
-          <JourneyNavigation />
-        </header>
-
-        {enrollment && <PersonalPracticeLibrary key={enrollment.id} enrollmentId={enrollment.id} />}
-        <h2 className="font-serif text-lg">Práticas do acompanhamento individual</h2>
-        {loading ? (
-          <p className="text-xs text-muted-foreground text-center py-12">
-            Carregando experimentos...
-          </p>
-        ) : error ? (
-          <p role="alert">
-            Não foi possível carregar seus experimentos.{' '}
-            <Button variant="outline" onClick={loadData}>
-              Tentar novamente
-            </Button>
-          </p>
-        ) : assignments.length === 0 ? (
-          <EmptyState
-            variant="experiments"
-            title="Experimentos combinados"
-            description="As práticas individuais aparecem quando forem combinadas no acompanhamento. Você pode escolher recursos na Biblioteca CER acima."
-            actionLabel="Ver meu plano de cuidado"
-            onAction={() => navigate('/?etapa=equilibrio')}
-          />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {assignments.map((asgn) => (
-              <ExperimentCard
-                key={asgn.id}
-                assignment={asgn}
-                onConfirm={handleConfirmExperiment}
-                onResponseRecorded={loadData}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+export const ExperimentosPage: React.FC = () => (
+  <main className="min-h-screen bg-background text-foreground py-8 px-4 sm:px-6">
+    <div className="max-w-4xl mx-auto space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+        <h1 className="text-xl font-serif font-bold">Biblioteca CER · Acervo</h1>
+        <JourneyNavigation />
+      </header>
+      <CerPracticeLibrary />
     </div>
-  )
-}
+  </main>
+)
 export default ExperimentosPage

@@ -205,7 +205,7 @@ export const ProfessionalAyurvedaInterpretationView: React.FC<
         </CardContent>
       </Card>
 
-      {/* Recursos, Atenção e Perguntas para a Sessão */}
+      {/* Recursos, Atenção e Perguntas para o Encontro */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Recursos Percebidos */}
         <Card className="border-border/70 shadow-none">
@@ -251,12 +251,12 @@ export const ProfessionalAyurvedaInterpretationView: React.FC<
           </CardContent>
         </Card>
 
-        {/* Perguntas para a Sessão */}
+        {/* Perguntas para o Encontro */}
         <Card className="border-border/70 shadow-none">
           <CardHeader className="p-3.5 pb-2">
             <div className="flex items-center gap-2">
               <HelpCircle className="w-4 h-4 text-primary" />
-              <CardTitle className="text-xs font-semibold">Perguntas para a Sessão</CardTitle>
+              <CardTitle className="text-xs font-semibold">Perguntas para o Encontro</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-3.5 pt-0 space-y-1.5 text-xs">

@@ -368,7 +368,7 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
               <Info className="w-3.5 h-3.5 text-primary shrink-0" />
               <span>
                 {readingDepth === 'minimapa'
-                  ? 'Visualização sintética em tela única para consulta ágil em sessão.'
+                  ? 'Visualização sintética em tela única para consulta ágil em encontro.'
                   : 'Exibição completa com os oito blocos transversais e evidências textuais.'}
               </span>
             </div>
@@ -1225,11 +1225,12 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
                             </div>
                           </div>
 
-                          {/* Foco de Investigação na Sessão */}
+                          {/* Foco de Investigação no Encontro */}
                           <div className="p-2.5 rounded-lg border border-primary/20 bg-primary/5 text-primary text-[11px] flex items-start gap-2">
                             <HelpCircle className="w-4 h-4 shrink-0 mt-0.5" />
                             <div>
-                              <strong>Foco de Validação em Sessão:</strong> {hip.investigationFocus}
+                              <strong>Foco de Validação em Encontro:</strong>{' '}
+                              {hip.investigationFocus}
                             </div>
                           </div>
                         </CardContent>
@@ -1368,7 +1369,7 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
                   </CardTitle>
                 </div>
                 <Badge variant="secondary" className="text-[10px] font-mono">
-                  Orientação Dialógica em Sessão
+                  Orientação Dialógica em Encontro
                 </Badge>
               </div>
               <CardDescription className="text-xs">
@@ -1391,7 +1392,7 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
 
                     <div className="pt-2 border-t border-primary/10 space-y-1">
                       <span className="text-[10px] uppercase font-mono text-primary font-semibold block">
-                        Perguntas para a Sessão:
+                        Perguntas para o Encontro:
                       </span>
                       <ul className="space-y-1 text-foreground/90 italic text-[11px]">
                         {pri.deepeningQuestions.map((q, i) => (

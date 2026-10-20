@@ -305,6 +305,20 @@ try:
         check('Owner can exclude goal with partial update',lambda:require(record('cer_life_directions',tokens['a'],'PATCH',{'archived':True},direction['id'])['archived'] is True))
         check('Excluded goal stays recoverable and leaves active list',lambda:require(record('cer_life_directions',tokens['a'],id=direction['id'])['title']=='Fictional goal to archive' and direction['id'] not in [v['id'] for v in ok('/api/collections/cer_life_directions/records?filter=archived=false',tokens['a'])['items']]))
         check('Owner can restore excluded goal without losing content',lambda:require(record('cer_life_directions',tokens['a'],'PATCH',{'archived':False},direction['id'])['title']==direction_body['title']))
+        daily_body={'enrollment_id':enroll['a'],'day_label':'Fictional weekday','moments':[{'time':'07:00','activity':'Wake up'},{'time':'00:30','activity':'Sleep'}],'access_class':'participant_private'}
+        daily=record('cer_daily_routines',tokens['a'],'POST',daily_body)
+        daily_url='/api/collections/cer_daily_routines/records/'+daily['id']
+        check('Daily routine preserves narrated order across midnight',lambda:require(record('cer_daily_routines',tokens['a'],id=daily['id'])['moments']==daily_body['moments']))
+        check('Daily routine private from linked and inactive professionals and other participants',lambda:require(all(request(daily_url,tokens[u])[0]==404 for u in ['p','q','b'])))
+        check('Daily routine cannot be duplicated',lambda:require(request('/api/collections/cer_daily_routines/records',tokens['a'],'POST',daily_body)[0]==400))
+        check('Daily routine shared only by owner partial update',lambda:require(record('cer_daily_routines',tokens['a'],'PATCH',{'access_class':'participant_shared'},daily['id'])['access_class']=='participant_shared' and record('cer_daily_routines',tokens['p'],id=daily['id'])['moments']==daily_body['moments']))
+        check('Daily routine inactive and unrelated readers still denied after share',lambda:require(all(request(daily_url,tokens[u])[0]==404 for u in ['q','b'])))
+        check('Daily routine professional cannot change or create',lambda:require(request(daily_url,tokens['p'],'PATCH',{'day_label':'forged'})[0]==404 and request('/api/collections/cer_daily_routines/records',tokens['p'],'POST',daily_body)[0]==400))
+        check('Daily routine ownership cannot be transferred',lambda:require(request(daily_url,tokens['a'],'PATCH',{'enrollment_id':enroll['b']})[0]==404))
+        check('Daily routine rejects malformed times and empty activities',lambda:require(all(request(daily_url,tokens['a'],'PATCH',{'moments':m})[0]==400 for m in [[],[{'time':'25:00','activity':'sleep'}],[{'time':'','activity':' '}],{'unsafe':'shape'}])))
+        check('Daily routine remains editable and accepts approximate unknown times',lambda:require(record('cer_daily_routines',tokens['a'],'PATCH',{'moments':[{'time':'','activity':'Lunch when possible'}]},daily['id'])['moments'][0]['time']==''))
+        check('Daily routine revoked sharing takes effect immediately',lambda:require(record('cer_daily_routines',tokens['a'],'PATCH',{'access_class':'participant_private'},daily['id'])['access_class']=='participant_private' and request(daily_url,tokens['p'])[0]==404))
+        check('Daily routine physical deletion blocked',lambda:require(request(daily_url,tokens['a'],'DELETE')[0]==403))
         life_body={'enrollment_id':enroll['a'],'title':'Fictional life event','time_kind':'year','time_value':'2000','emotions':['Alegria'],'narrative':'FICTIONAL_LIFE_MARKER','access_class':'participant_private'}
         check('Life event blocked before six dimensions completed',lambda:require(request('/api/collections/cer_life_events/records',tokens['b'],'POST',{**life_body,'enrollment_id':enroll['b']})[0]==400))
         life=record('cer_life_events',tokens['a'],'POST',life_body)

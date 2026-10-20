@@ -212,7 +212,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
         practice_version_id: version.id,
         outcome: 'eligible',
         reviewed_by_user_id: authUser?.id || '',
-        professional_rationale: 'Checagem com dados complementares resolvidos em sessão',
+        professional_rationale: 'Checagem com dados complementares resolvidos em encontro',
         metadata: { dynamic_inputs_used: updatedInputs },
       })
       setSafetyCheck(reevaluated)
@@ -724,7 +724,7 @@ export const AssignmentEditor: React.FC<AssignmentEditorProps> = ({
                     {consentRecord.understanding_response === 'want_to_ask' && (
                       <p className="text-amber-800 dark:text-amber-300 text-xs">
                         A participante solicitou esclarecimentos antes de iniciar. O experimento
-                        fica suspenso até a conversa em sessão.
+                        fica suspenso até a conversa em encontro.
                       </p>
                     )}
                   </div>

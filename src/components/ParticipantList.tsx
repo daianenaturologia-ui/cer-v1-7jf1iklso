@@ -292,7 +292,7 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
                           <span>•</span>
                           <span className="flex items-center gap-1 text-primary">
                             <Calendar className="w-3 h-3" />
-                            Próxima sessão:{' '}
+                            Próximo encontro:{' '}
                             {new Date(item.nextSessionDate).toLocaleDateString('pt-BR')}
                           </span>
                         </>

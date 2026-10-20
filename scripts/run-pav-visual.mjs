@@ -601,11 +601,11 @@ async function main() {
       .getByLabel('Anotações que não entram no documento compartilhado')
       .fill('PRIVATE_WRITTEN_PLAN_FIXTURE')
     await writtenPlan
-      .getByRole('button', { name: 'Compartilhar para construir nas sessões', exact: true })
+      .getByRole('button', { name: 'Compartilhar para construir nos encontros', exact: true })
       .click()
     await writtenPlan
       .getByText(
-        'Versão compartilhada para construir nas sessões. As próximas edições continuam privadas até compartilhar novamente.',
+        'Versão compartilhada para construir nos encontros. As próximas edições continuam privadas até compartilhar novamente.',
         { exact: true },
       )
       .waitFor()
@@ -709,6 +709,35 @@ async function main() {
     await loginAs(seed.alice.email, seed.alice.password, '/')
 
     await page.getByRole('button', { name: '4. Equilíbrio & Realização', exact: true }).click()
+    // Current routine is a lived day, independent of future tasks and library choices.
+    const routineDay = page.getByRole('region', { name: 'Minha rotina atual', exact: true })
+    await routineDay.getByLabel('Horário 1', { exact: true }).fill('07:00')
+    await routineDay
+      .getByLabel('O que faço nesse momento 1', { exact: true })
+      .fill('Fictional day: wake and prepare breakfast')
+    await routineDay.getByRole('button', { name: 'Adicionar momento do dia', exact: true }).click()
+    await routineDay.getByLabel('Horário 2', { exact: true }).fill('23:00')
+    await routineDay
+      .getByLabel('O que faço nesse momento 2', { exact: true })
+      .fill('Fictional day: go to sleep')
+    await routineDay.getByRole('button', { name: 'Salvar minha rotina', exact: true }).click()
+    await routineDay
+      .getByText('Rotina salva. Por enquanto, só você pode acessá-la.', { exact: true })
+      .waitFor()
+    await page.reload({ waitUntil: 'networkidle' })
+    await page.getByRole('button', { name: '4. Equilíbrio & Realização', exact: true }).click()
+    if (
+      (await routineDay.getByLabel('O que faço nesse momento 2', { exact: true }).inputValue()) !==
+      'Fictional day: go to sleep'
+    )
+      throw new Error('Saved daily routine was not restored after reload')
+    await routineDay
+      .getByRole('checkbox', { name: 'Compartilhar minha rotina para os encontros.', exact: true })
+      .check()
+    await routineDay.getByRole('button', { name: 'Salvar minha rotina', exact: true }).click()
+    await routineDay
+      .getByText('Rotina salva e compartilhada para os encontros.', { exact: true })
+      .waitFor()
     await page.getByRole('tab', { name: 'Plano de Desenvolvimento', exact: true }).click()
     await page
       .getByRole('article', { name: 'Leitura do Plano de Desenvolvimento' })

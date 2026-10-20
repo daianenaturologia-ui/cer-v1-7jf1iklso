@@ -220,10 +220,11 @@ export const ProfessionalMindEmotionsView: React.FC<ProfessionalMindEmotionsView
                         </ul>
                       </div>
 
-                      {/* Perguntas para a Sessão */}
+                      {/* Perguntas para o Encontro */}
                       <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-1.5">
                         <span className="font-semibold text-primary block text-[11px] uppercase tracking-wider flex items-center gap-1">
-                          <HelpCircle className="w-3.5 h-3.5" /> Perguntas para aprofundar na sessão
+                          <HelpCircle className="w-3.5 h-3.5" /> Perguntas para aprofundar no
+                          encontro
                         </span>
                         <ul className="space-y-1.5 text-foreground/90 italic">
                           {lens.sessionQuestions.map((q, i) => (

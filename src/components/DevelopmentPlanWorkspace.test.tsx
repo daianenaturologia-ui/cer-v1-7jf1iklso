@@ -44,7 +44,7 @@ it('autosaves incomplete private preparation without publishing or copying notes
   expect(
     screen.getByRole('article', { name: 'Leitura do Plano de Desenvolvimento' }).textContent,
   ).not.toContain('exclusivamente')
-  fireEvent.click(screen.getByText('Compartilhar para construir nas sessões'))
+  fireEvent.click(screen.getByText('Compartilhar para construir nos encontros'))
   await waitFor(() => expect(share).toHaveBeenCalled())
   expect(share.mock.calls[0][1]).toBe('building')
 })

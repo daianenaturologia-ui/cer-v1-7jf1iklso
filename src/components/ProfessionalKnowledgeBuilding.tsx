@@ -69,7 +69,7 @@ export const ProfessionalKnowledgeBuilding: React.FC<ComponentProps> = ({
     null,
   )
 
-  // Estado para registro de resposta verbal em sessão (channel=session)
+  // Estado para registro de resposta verbal em encontro (channel=session)
   const [recordResponseDialogOpen, setRecordResponseDialogOpen] = useState(false)
   const [activePresForRecord, setActivePresForRecord] =
     useState<CerKnowledgePresentationRecord | null>(null)
@@ -212,7 +212,7 @@ export const ProfessionalKnowledgeBuilding: React.FC<ComponentProps> = ({
     }
   }
 
-  // Abrir diálogo para registrar resposta da participante dada em sessão
+  // Abrir diálogo para registrar resposta da participante dada em encontro
   const handleOpenRecordResponse = (pres: CerKnowledgePresentationRecord) => {
     setActivePresForRecord(pres)
     setRecordedRecogType('makes_sense')
@@ -220,7 +220,7 @@ export const ProfessionalKnowledgeBuilding: React.FC<ComponentProps> = ({
     setRecordResponseDialogOpen(true)
   }
 
-  // Gravar resposta dada em sessão pela participante
+  // Gravar resposta dada em encontro pela participante
   const handleSaveSessionResponse = async () => {
     if (!activePresForRecord) return
     setActionLoading(true)
@@ -235,7 +235,7 @@ export const ProfessionalKnowledgeBuilding: React.FC<ComponentProps> = ({
       })
       setFeedback({
         type: 'success',
-        message: 'Resposta da participante registrada com fidelidade à sessão.',
+        message: 'Resposta da participante registrada com fidelidade ao encontro.',
       })
       setRecordResponseDialogOpen(false)
       loadKnowledge()
@@ -362,7 +362,7 @@ export const ProfessionalKnowledgeBuilding: React.FC<ComponentProps> = ({
                                       : 'Retirada'}
                                 </Badge>
                                 <span className="text-[10px] text-muted-foreground font-mono">
-                                  via {p.channel === 'app' ? 'aplicativo' : 'sessão presencial'}
+                                  via {p.channel === 'app' ? 'aplicativo' : 'encontro presencial'}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1">
@@ -386,7 +386,7 @@ export const ProfessionalKnowledgeBuilding: React.FC<ComponentProps> = ({
                                     disabled={actionLoading}
                                     className="h-5 text-[10px] px-2"
                                   >
-                                    Registrar resposta na sessão
+                                    Registrar resposta no encontro
                                   </Button>
                                 )}
                                 {p.status !== 'withdrawn' && (
@@ -486,7 +486,7 @@ export const ProfessionalKnowledgeBuilding: React.FC<ComponentProps> = ({
                       onClick={() => setPresentationChannel('session')}
                       className="text-xs h-7 px-3"
                     >
-                      No encontro presencial/sessão
+                      No encontro presencial
                     </Button>
                     <Button
                       type="button"
@@ -544,13 +544,13 @@ export const ProfessionalKnowledgeBuilding: React.FC<ComponentProps> = ({
           </DialogContent>
         </Dialog>
 
-        {/* Modal para Profissional Registrar Resposta Verbal em Sessão (channel=session) */}
+        {/* Modal para Profissional Registrar Resposta Verbal em Encontro (channel=session) */}
         <Dialog open={recordResponseDialogOpen} onOpenChange={setRecordResponseDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="text-sm font-semibold flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-primary" />
-                Registrar resposta da participante na sessão
+                Registrar resposta da participante no encontro
               </DialogTitle>
               <DialogDescription className="text-xs">
                 Registre fielmente a resposta que a interagente verbalizou sobre a formulação

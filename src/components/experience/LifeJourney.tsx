@@ -141,7 +141,8 @@ export function LifeJourney({
             <>
               <p className="text-sm">
                 Liste seus desejos, escolha uma meta principal e imagine as ações que podem
-                aproximar você dela. Os cuidados e a rotina serão combinados com Daiane nas sessões.
+                aproximar você dela. Os cuidados e a rotina serão combinados com Daiane nos
+                encontros.
               </p>
               <LifeDirections
                 key={`future-${enrollmentId}`}
@@ -160,9 +161,9 @@ export function LifeJourney({
             <>
               <p className="text-sm">
                 Você já percorreu a história, o mapa, o presente e as direções futuras. Agora,
-                Daiane prepara um plano de cuidado para sustentar seu equilíbrio e sua meta. Nas
-                sessões, vocês ajustam a proposta, combinam as ações e distribuem o que faz sentido
-                na rotina do Planner.
+                Daiane prepara um plano de cuidado para sustentar seu equilíbrio e sua meta. Nos
+                encontros, vocês ajustam a proposta, combinam as ações e distribuem o que faz
+                sentido na rotina do Planner.
               </p>
               {objective && (
                 <details className="rounded-xl border p-4">

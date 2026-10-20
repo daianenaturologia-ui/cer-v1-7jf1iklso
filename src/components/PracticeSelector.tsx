@@ -251,7 +251,7 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
             </div>
             <p className="text-[11px] text-muted-foreground font-mono">
               Próximo passo: aguardar liberação de práticas curadas ou atribuir formulações
-              personalizadas na sessão.
+              personalizadas no encontro.
             </p>
           </div>
         ) : (
@@ -472,7 +472,7 @@ export const PracticeSelector: React.FC<PracticeSelectorProps> = ({
                                   ? 'Exige etapa formal de esclarecimento e aceite antes de qualquer atividade.'
                                   : sf.consent_required === 'conditional'
                                     ? 'Assentimento condicional no fluxo de início.'
-                                    : 'Adesão tácita combinada em sessão.'}
+                                    : 'Adesão tácita combinada em encontro.'}
                               </p>
                             </div>
 

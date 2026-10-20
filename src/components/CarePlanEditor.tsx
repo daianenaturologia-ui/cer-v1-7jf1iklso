@@ -861,7 +861,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                   )
                 }}
               >
-                <option value="">Direção conversada em sessão, sem vincular registro</option>
+                <option value="">Direção conversada em encontro, sem vincular registro</option>
                 {directionSources.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.title}
@@ -1264,7 +1264,7 @@ export const CarePlanEditor: React.FC<CarePlanEditorProps> = ({
                   onClick={() => setPresentationChannel('session')}
                   className="min-h-11 h-auto whitespace-normal text-xs py-2"
                 >
-                  Em sessão
+                  Em encontro
                 </Button>
                 <Button
                   size="sm"

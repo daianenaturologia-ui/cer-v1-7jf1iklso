@@ -75,7 +75,7 @@ export function CarePlanStartingPoint({
         <p>
           {directionId
             ? 'A direção vinculada não está disponível entre os registros compartilhados. Reveja o objetivo junto com a pessoa antes de retomar as ações.'
-            : 'Este plano nasceu de uma conversa em sessão. Registre, no contexto do plano, os recursos e os limites que vocês combinaram.'}
+            : 'Este plano nasceu de uma conversa em encontro. Registre, no contexto do plano, os recursos e os limites que vocês combinaram.'}
         </p>
       )}
       {state === 'ready' && source && (
