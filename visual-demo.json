@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "643d8dd9742c8074031148a537a31a6468e80b63",
-  "conclusion": "failure",
-  "timestamp_utc": "2026-10-20T12:50:47.235Z",
-  "run_id": "39425262172",
-  "run_number": "559",
-  "all_success": false,
-  "failure_reason": "Interrompido na etapa 5 (Profissional: Plano de Desenvolvimento Compartilhado): locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Construção do Plano de Desenvolvimento' }).getByLabel(/O que merece atenção agora/)\n",
+  "sha": "4008af9ce140dbaace3336068865802e558af056",
+  "conclusion": "success",
+  "timestamp_utc": "2026-10-20T12:53:30.121Z",
+  "run_id": "39425663499",
+  "run_number": "560",
+  "all_success": true,
+  "failure_reason": null,
   "steps": [
     {
       "num": 1,
@@ -46,15 +46,15 @@
       "id": "05-plano-compartilhado",
       "title": "Profissional: Plano de Desenvolvimento Compartilhado",
       "filename": "05-plano-compartilhado.png",
-      "status": "FAIL",
-      "note": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Construção do Plano de Desenvolvimento' }).getByLabel(/O que merece atenção agora/)\n"
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 6,
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -62,7 +62,7 @@
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
       "filename": "07-retorno-no-prontuario.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -70,7 +70,7 @@
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
       "filename": "08-interagente-b-sem-acesso.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     }
   ]
