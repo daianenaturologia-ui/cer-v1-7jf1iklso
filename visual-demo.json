@@ -1,69 +1,77 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "1837b13b2d8333cf05277f25aec7d5af21d42cb5",
-  "conclusion": "failure",
-  "timestamp_utc": "2026-10-20T18:56:11.371Z",
-  "run_id": "39479009110",
-  "run_number": "571",
-  "all_success": false,
-  "failure_reason": "Job falhou antes de concluir",
+  "sha": "80f692027ef80107b98ab9944ce0c78832f63dc8",
+  "conclusion": "success",
+  "timestamp_utc": "2026-10-20T18:59:17.205Z",
+  "run_id": "39479326788",
+  "run_number": "572",
+  "all_success": true,
+  "failure_reason": null,
   "steps": [
     {
       "num": 1,
       "id": "01-relato-rascunho",
       "title": "Interagente A: Relato Inicial em Rascunho",
-      "status": "NÃO EXECUTADO",
-      "note": "Job interrompido antes ou durante a etapa"
+      "filename": "01-relato-rascunho.png",
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 2,
       "id": "02-relato-enviado",
       "title": "Interagente A: Relato Enviado para Daiane",
-      "status": "NÃO EXECUTADO",
-      "note": "Job interrompido antes ou durante a etapa"
+      "filename": "02-relato-enviado.png",
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 3,
       "id": "03-prontuario-relato",
       "title": "Profissional: Prontuário com Relato Recebido",
-      "status": "NÃO EXECUTADO",
-      "note": "Job interrompido antes ou durante a etapa"
+      "filename": "03-prontuario-relato.png",
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 4,
       "id": "04-nota-privada",
       "title": "Profissional: Sessão Manual e Nota Privada",
-      "status": "NÃO EXECUTADO",
-      "note": "Job interrompido antes ou durante a etapa"
+      "filename": "04-nota-privada.png",
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 5,
       "id": "05-plano-compartilhado",
-      "title": "Profissional: Plano de Cuidado Compartilhado",
-      "status": "NÃO EXECUTADO",
-      "note": "Job interrompido antes ou durante a etapa"
+      "title": "Profissional: Plano de Desenvolvimento Compartilhado",
+      "filename": "05-plano-compartilhado.png",
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 6,
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
-      "status": "NÃO EXECUTADO",
-      "note": "Job interrompido antes ou durante a etapa"
+      "filename": "06-retorno-proximo-passo.png",
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 7,
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
-      "status": "NÃO EXECUTADO",
-      "note": "Job interrompido antes ou durante a etapa"
+      "filename": "07-retorno-no-prontuario.png",
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 8,
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
-      "status": "NÃO EXECUTADO",
-      "note": "Job interrompido antes ou durante a etapa"
+      "filename": "08-interagente-b-sem-acesso.png",
+      "status": "PASS",
+      "note": ""
     }
   ]
 }
