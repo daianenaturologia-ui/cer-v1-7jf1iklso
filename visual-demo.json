@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "80f692027ef80107b98ab9944ce0c78832f63dc8",
-  "conclusion": "success",
-  "timestamp_utc": "2026-10-20T18:59:17.205Z",
-  "run_id": "39479326788",
-  "run_number": "572",
-  "all_success": true,
-  "failure_reason": null,
+  "sha": "ced2e2c528a701f10b66c8b2e86d9058d780f5ae",
+  "conclusion": "failure",
+  "timestamp_utc": "2026-10-20T19:49:35.490Z",
+  "run_id": "39486526935",
+  "run_number": "573",
+  "all_success": false,
+  "failure_reason": "Interrompido na etapa 5 (Profissional: Plano de Desenvolvimento Compartilhado): locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Construção do Plano de Desenvolvimento' }).getByRole('button', { name: 'Compartilhar para construir nas sessões', exact: true })\n",
   "steps": [
     {
       "num": 1,
@@ -46,15 +46,15 @@
       "id": "05-plano-compartilhado",
       "title": "Profissional: Plano de Desenvolvimento Compartilhado",
       "filename": "05-plano-compartilhado.png",
-      "status": "PASS",
-      "note": ""
+      "status": "FAIL",
+      "note": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Construção do Plano de Desenvolvimento' }).getByRole('button', { name: 'Compartilhar para construir nas sessões', exact: true })\n"
     },
     {
       "num": 6,
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -62,7 +62,7 @@
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
       "filename": "07-retorno-no-prontuario.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -70,7 +70,7 @@
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
       "filename": "08-interagente-b-sem-acesso.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     }
   ]
