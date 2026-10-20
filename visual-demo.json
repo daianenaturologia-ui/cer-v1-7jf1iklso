@@ -1,28 +1,28 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "3d02253537e67d8bc708e72a653c498504cfb7f0",
+  "sha": "edcb6f0fd56d75a939631523f8bdc5a0261c49d5",
   "conclusion": "failure",
-  "timestamp_utc": "2026-10-20T19:50:54.639Z",
-  "run_id": "39486724701",
-  "run_number": "574",
+  "timestamp_utc": "2026-10-20T19:53:07.449Z",
+  "run_id": "39486929375",
+  "run_number": "575",
   "all_success": false,
-  "failure_reason": "Interrompido na etapa 1 (Interagente A: Relato Inicial em Rascunho): page.waitForSelector: Timeout 8000ms exceeded.\nCall log:\n  - waiting for locator('text=Rascunho salvo') to be visible\n",
+  "failure_reason": "Interrompido na etapa 6 (Interagente A: Retorno ao Próximo Passo): locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Minha rotina atual', exact: true }).getByLabel('O que faço nesse momento 2', { exact: true })\n",
   "steps": [
     {
       "num": 1,
       "id": "01-relato-rascunho",
       "title": "Interagente A: Relato Inicial em Rascunho",
       "filename": "01-relato-rascunho.png",
-      "status": "FAIL",
-      "note": "page.waitForSelector: Timeout 8000ms exceeded.\nCall log:\n  - waiting for locator('text=Rascunho salvo') to be visible\n"
+      "status": "PASS",
+      "note": ""
     },
     {
       "num": 2,
       "id": "02-relato-enviado",
       "title": "Interagente A: Relato Enviado para Daiane",
       "filename": "02-relato-enviado.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -30,7 +30,7 @@
       "id": "03-prontuario-relato",
       "title": "Profissional: Prontuário com Relato Recebido",
       "filename": "03-prontuario-relato.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -38,7 +38,7 @@
       "id": "04-nota-privada",
       "title": "Profissional: Sessão Manual e Nota Privada",
       "filename": "04-nota-privada.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -46,7 +46,7 @@
       "id": "05-plano-compartilhado",
       "title": "Profissional: Plano de Desenvolvimento Compartilhado",
       "filename": "05-plano-compartilhado.png",
-      "status": "NÃO EXECUTADO",
+      "status": "PASS",
       "note": ""
     },
     {
@@ -54,8 +54,8 @@
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "NÃO EXECUTADO",
-      "note": ""
+      "status": "FAIL",
+      "note": "locator.inputValue: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Minha rotina atual', exact: true }).getByLabel('O que faço nesse momento 2', { exact: true })\n"
     },
     {
       "num": 7,
