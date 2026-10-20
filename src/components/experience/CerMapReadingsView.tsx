@@ -248,7 +248,11 @@ const REGULATION_REACTIONS = [
   },
 ] as const
 
-export function CerMapReadingsView({ snapshot, initial = false, liveIntegration }: CerMapReadingsViewProps) {
+export function CerMapReadingsView({
+  snapshot,
+  initial = false,
+  liveIntegration,
+}: CerMapReadingsViewProps) {
   const auth = useOptionalAuth()
   const [activeDialog, setActiveDialog] = useState<DialogState | null>(null)
   const triggerRef = useRef<HTMLElement | SVGElement | null>(null)

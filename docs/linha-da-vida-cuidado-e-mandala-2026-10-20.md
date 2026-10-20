@@ -44,10 +44,10 @@ Validação local: 434 testes em 58 arquivos passaram. TypeScript, lint do códi
 
 ## Referências para o desenvolvimento editorial
 
-- Lya Luft. *Perdas e ganhos*. Record. Catálogo da editora: https://www.record.com.br/products/perdas-e-ganhos-1
-- SAMHSA. *Concept of Trauma and Guidance for a Trauma-Informed Approach* (2014): segurança, colaboração, escolha e autonomia. https://library.samhsa.gov/sites/default/files/sma14-4884.pdf
-- ACOG. *Fertility Awareness-Based Methods of Family Planning*: diferenças entre acompanhamento de calendário e métodos de percepção de fertilidade. https://www.acog.org/womens-health/faqs/fertility-awareness-based-methods-of-family-planning
-- ACOG. *Trying to Get Pregnant? Here’s When to Have Sex*: início de um ciclo e limitações de prever ovulação em ciclos irregulares. https://www.acog.org/womens-health/experts-and-stories/the-latest/trying-to-get-pregnant-heres-when-to-have-sex
+- Lya Luft. _Perdas e ganhos_. Record. Catálogo da editora: https://www.record.com.br/products/perdas-e-ganhos-1
+- SAMHSA. _Concept of Trauma and Guidance for a Trauma-Informed Approach_ (2014): segurança, colaboração, escolha e autonomia. https://library.samhsa.gov/sites/default/files/sma14-4884.pdf
+- ACOG. _Fertility Awareness-Based Methods of Family Planning_: diferenças entre acompanhamento de calendário e métodos de percepção de fertilidade. https://www.acog.org/womens-health/faqs/fertility-awareness-based-methods-of-family-planning
+- ACOG. _Trying to Get Pregnant? Here’s When to Have Sex_: início de um ciclo e limitações de prever ovulação em ciclos irregulares. https://www.acog.org/womens-health/experts-and-stories/the-latest/trying-to-get-pregnant-heres-when-to-have-sex
 
 Estas fontes apoiam a curadoria e os limites do produto; não validam clinicamente o algoritmo nem substituem a revisão profissional dos conteúdos e dos cuidados.
 

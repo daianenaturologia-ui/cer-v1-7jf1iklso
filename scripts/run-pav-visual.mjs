@@ -610,7 +610,9 @@ async function main() {
       )
       .waitFor()
     await writtenPlan
-      .getByLabel(/Lemos juntas esta versão e combinamos os cuidados, a meta principal e as ações para/)
+      .getByLabel(
+        /Lemos juntas esta versão e combinamos os cuidados, a meta principal e as ações para/,
+      )
       .check()
     await writtenPlan
       .getByRole('button', { name: 'Compartilhar plano combinado', exact: true })
