@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useId } from 'react'
 import {
   dailyRoutineService,
   type DailyRoutine,
@@ -31,6 +31,7 @@ export function DailyRoutineDay({
   )
 }
 function RoutineDay({ enrollmentId, readOnly }: { enrollmentId: string; readOnly: boolean }) {
+  const formId = useId()
   const draftKey = `cer-current-day-draft-v1:${enrollmentId}`
   const [value, setValue] = useState(() => blank(enrollmentId))
   const [record, setRecord] = useState<DailyRoutine | null>(null)
@@ -229,9 +230,12 @@ function RoutineDay({ enrollmentId, readOnly }: { enrollmentId: string; readOnly
                         }
                       />
                     </label>
-                    <label className="block text-sm space-y-2">
-                      O que faço nesse momento {index + 1}
+                    <div className="space-y-2">
+                      <label htmlFor={`${formId}-activity-${index}`} className="block text-sm">
+                        O que faço nesse momento {index + 1}
+                      </label>
                       <Textarea
+                        id={`${formId}-activity-${index}`}
                         maxLength={500}
                         value={moment.activity}
                         onChange={(e) =>
@@ -248,7 +252,7 @@ function RoutineDay({ enrollmentId, readOnly }: { enrollmentId: string; readOnly
                             : 'Conte o que costuma acontecer neste momento.'
                         }
                       />
-                    </label>
+                    </div>
                   </div>
                   <Button
                     type="button"

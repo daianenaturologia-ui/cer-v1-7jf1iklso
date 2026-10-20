@@ -35,6 +35,9 @@ it('continuar depois retoma o dia sem compartilhar nem enviar para o Planner', a
   view.unmount()
   render(<DailyRoutineDay enrollmentId={ID} />)
   expect(await screen.findByDisplayValue('Vou dormir')).toBeVisible()
+  expect(screen.getByLabelText('O que faço nesse momento 2', { exact: true })).toHaveValue(
+    'Vou dormir',
+  )
   expect(screen.getByRole('checkbox')).not.toBeChecked()
   expect(screen.queryByText('Vincular a um futuro da Linha da Vida (opcional)')).toBeNull()
 })
