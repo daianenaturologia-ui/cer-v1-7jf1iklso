@@ -322,7 +322,7 @@ export const ResponseDigest: React.FC<ResponseDigestProps> = ({
                 Síntese / Devolutiva Compartilhada
               </label>
               <Textarea
-                placeholder="Principais percepções dialogadas na sessão..."
+                placeholder="Principais percepções dialogadas no encontro..."
                 value={reviewSummary}
                 onChange={(e) => setReviewSummary(e.target.value)}
                 rows={3}

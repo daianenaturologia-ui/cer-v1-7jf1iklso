@@ -1,3 +1,4 @@
+import { DailyRoutineDay } from './DailyRoutineDay'
 import { CerPracticeLibrary } from './CerPracticeLibrary'
 import type { DevelopmentResource } from '@/services/developmentCatalog'
 import { DevelopmentPlanWorkspace } from './DevelopmentPlanWorkspace'
@@ -304,7 +305,7 @@ export const ParticipantWorkspace: React.FC = () => {
         </div>
       </div>
 
-      {/* Navegação pelas 4 Fases e Sessões — Arquitetura CER */}
+      {/* Navegação pelas 4 Fases e Encontros — Arquitetura CER */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-border/40">
         <Button
           size="sm"
@@ -321,7 +322,7 @@ export const ParticipantWorkspace: React.FC = () => {
           className="h-8 text-xs px-3 gap-1.5 shrink-0"
         >
           <User className="w-3.5 h-3.5" />
-          <span>Sessões & Atenção</span>
+          <span>Encontros & Atenção</span>
         </Button>
 
         <Button
@@ -367,7 +368,7 @@ export const ParticipantWorkspace: React.FC = () => {
       {currentTab === 'sessoes' && (
         <div className="space-y-5">
           <div className="rounded-xl border border-border/70 p-3 space-y-2">
-            <p className="text-xs font-semibold">Ferramentas para esta sessão</p>
+            <p className="text-xs font-semibold">Ferramentas para este encontro</p>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={() => openCareTool('biblioteca')}>
                 Biblioteca de práticas
@@ -460,7 +461,7 @@ export const ParticipantWorkspace: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Gestor e Preparador de Sessões — Notas privadas e recados */}
+          {/* Gestor e Preparador de Encontros — Notas privadas e recados */}
           <ProfessionalSessionManager
             key={enrollment.id}
             enrollmentId={enrollment.id}
@@ -549,6 +550,7 @@ export const ParticipantWorkspace: React.FC = () => {
           </div>
           {careTool === 'plano' && (
             <div className="space-y-5">
+              <DailyRoutineDay enrollmentId={enrollment.id} readOnly />
               <DevelopmentPlanWorkspace
                 resourceToAdd={
                   libraryResource?.enrollmentId === enrollment.id

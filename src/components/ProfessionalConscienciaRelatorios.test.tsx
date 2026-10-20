@@ -93,7 +93,7 @@ describe('Telas Profissionais da Dimensão Consciência', () => {
     // Seções obrigatórias
     expect(screen.getByText(/Recursos Percebidos/i)).toBeInTheDocument()
     expect(screen.getByText(/Pontos de Atenção/i)).toBeInTheDocument()
-    expect(screen.getByText(/Perguntas para a Sessão/i)).toBeInTheDocument()
+    expect(screen.getByText(/Perguntas para o Encontro/i)).toBeInTheDocument()
 
     // Regra: nunca mostrar IDs técnicos
     const text = container.textContent || ''
@@ -171,7 +171,7 @@ describe('Telas Profissionais da Dimensão Consciência', () => {
     expect(screen.getByText(/Evidências Observadas/i)).toBeInTheDocument()
     expect(screen.getByText(/Recursos Percebidos/i)).toBeInTheDocument()
     expect(screen.getByText(/Pontos de Atenção/i)).toBeInTheDocument()
-    expect(screen.getByText(/Perguntas para a Sessão/i)).toBeInTheDocument()
+    expect(screen.getByText(/Perguntas para o Encontro/i)).toBeInTheDocument()
   })
 
   it('4. todas as 6 áreas profissionais renderizam na navegação do ProfessionalConscienciaSection', async () => {

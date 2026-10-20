@@ -613,7 +613,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
               <span className="font-semibold text-foreground block mb-0.5">
                 Ferramentas Editoriais e Provenance
               </span>
-              Espaço reservado para anotações manuais de sessão e edição de mapa legado.
+              Espaço reservado para anotações manuais de encontro e edição de mapa legado.
             </div>
             {/* Conhecimento, Hipóteses e Provenance Clínica */}
             <ProfessionalKnowledgeBuilding

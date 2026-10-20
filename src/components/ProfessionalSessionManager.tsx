@@ -530,7 +530,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
               </p>
             </div>
 
-            {/* Bloco 0 (CER V1): Recados da Interagente para a Próxima Sessão (Aprovados) */}
+            {/* Bloco 0 (CER V1): Recados da Interagente para o Próximo Encontro (Aprovados) */}
             <div className="p-3.5 rounded-lg border border-primary/30 bg-primary/5 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
@@ -697,7 +697,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                             <span className="text-[9px] text-muted-foreground font-mono">
                               {rec.record_mode === 'participant_self'
                                 ? 'respondido no app'
-                                : 'em sessão'}
+                                : 'em encontro'}
                             </span>
                           </div>
                           {rec.comment && (
@@ -772,7 +772,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
           <div className="space-y-4">
             {activeSession ? (
               <div className="space-y-4">
-                {/* Cabeçalho da Sessão */}
+                {/* Cabeçalho do Encontro */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg border border-border/60 bg-muted/20">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -1058,7 +1058,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
                         placeholder={
                           observationTypeChoice === 'participant_report'
                             ? 'Palavras ou relatos trazidos pela própria interagente...'
-                            : 'Fato diretamente observado em sessão, sem inferência explicativa...'
+                            : 'Fato diretamente observado em encontro, sem inferência explicativa...'
                         }
                         disabled={savingObservation}
                         value={observationText}

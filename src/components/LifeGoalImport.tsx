@@ -34,7 +34,9 @@ export function LifeGoalImport({
           .sort((a, b) => (b.updated || '').localeCompare(a.updated || '')),
       )
     } catch {
-      setError('Não foi possível carregar as metas. Você pode escrever o que combinaram na sessão.')
+      setError(
+        'Não foi possível carregar as metas. Você pode escrever o que combinaram no encontro.',
+      )
     } finally {
       setLoading(false)
     }
@@ -72,7 +74,7 @@ export function LifeGoalImport({
           ) : (
             <p className="text-sm">
               Ainda não há metas futuras compartilhadas. A interagente pode compartilhar sua escolha
-              ou vocês podem registrá-la na sessão.
+              ou vocês podem registrá-la no encontro.
             </p>
           )}
           {error && (

@@ -22,7 +22,7 @@ export function DevelopmentPlanDocument({ document }: { document: PlanDocument }
         <h3 className="font-serif text-lg">Cuidados e caminho para minha meta</h3>
         {!document.goals.length && (
           <p className="text-muted-foreground">
-            Os cuidados e as ações para a meta principal serão combinados nas sessões.
+            Os cuidados e as ações para a meta principal serão combinados nos encontros.
           </p>
         )}
         {document.goals.map((goal, index) => (
@@ -71,7 +71,7 @@ export function DevelopmentPlanDocument({ document }: { document: PlanDocument }
       <section className="rounded-2xl bg-primary/5 p-5 space-y-2">
         <h3 className="font-serif text-lg">Nosso próximo encontro</h3>
         <p className="whitespace-pre-wrap">
-          {document.next_session || 'Vamos combinar o que observar e retomar na próxima sessão.'}
+          {document.next_session || 'Vamos combinar o que observar e retomar no próximo encontro.'}
         </p>
       </section>
     </article>

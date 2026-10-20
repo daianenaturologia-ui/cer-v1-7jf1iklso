@@ -1,6 +1,4 @@
 import { DevelopmentPlanWorkspace } from '@/components/DevelopmentPlanWorkspace'
-import { sharedPlanCareResource } from '@/services/carePlanFlow'
-import type { DevelopmentResource } from '@/services/developmentCatalog'
 import {
   readJourneyMoment,
   saveJourneyMoment,
@@ -12,6 +10,7 @@ import { JourneyNavigation } from '@/components/JourneyNavigation'
 import { CerMapUpdateNotice } from '@/components/CerMapUpdateNotice'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CerWelcome } from '@/components/CerWelcome'
+import { DailyRoutineDay } from '@/components/DailyRoutineDay'
 import { PersonalPracticeLibrary } from '@/components/PersonalPracticeLibrary'
 import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
 import { cerCycleInvitationService } from '@/services/cerCycleInvitationService'
@@ -696,8 +695,8 @@ export const InteragenteHome: React.FC = () => {
     presentedCarePlans.length > 0,
     latestPlanResponse?.saved ? latestPlanResponse.response_type : undefined,
   )
-  const [careTab, setCareTab] = useState('plano')
-  const [careResource, setCareResource] = useState<DevelopmentResource | null>(null)
+  const [careTab, setCareTab] = useState('rotina')
+
   const careAvailable =
     journeyMoment === 'care' || presentedCarePlans.length > 0 || assignments.length > 0
   useEffect(() => {
@@ -1704,10 +1703,9 @@ export const InteragenteHome: React.FC = () => {
                       suas relações funcionam, seus recursos e o que pede cuidado. Ele se transforma
                       com você e será construído aos poucos, a partir das suas respostas, dos nossos
                       encontros e da minha leitura profissional. Você já pode consultar um mapa
-                      inicial com suas respostas e os marcos da sua Linha da Vida. Ele se atualiza
-                      quando você acrescenta ou altera registros; histórias particulares ficam só na
-                      sua visão. A leitura profissional será aprofundada, revisada e conversada com
-                      você ao longo das sessões.
+                      inicial a partir das respostas às seis dimensões. A Linha da Vida permanece na
+                      Evolução, como apoio às nossas conversas. A leitura profissional será
+                      aprofundada, revisada e conversada com você ao longo dos encontros.
                     </p>
                     <p>
                       O objetivo não é colocar você dentro de uma definição. É ajudar você a
@@ -1986,9 +1984,9 @@ export const InteragenteHome: React.FC = () => {
           <div className="space-y-6">
             <div className="rounded-xl border p-4 space-y-2">
               <p className="text-sm">
-                Primeiro, você e Daiane constroem seu Plano de Desenvolvimento nas sessões. Depois
-                de combinarem as metas e ações, vocês organizam juntas a rotina no Planner. Não é
-                preciso escolher tudo sozinha.
+                Primeiro, conte como seu dia já acontece. Esse retrato ajuda a construir seu Plano
+                de Desenvolvimento nos encontros. Depois de combinarem as metas e ações, vocês
+                organizam juntas a rotina no Planner. Não é preciso escolher tudo sozinha.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -2003,7 +2001,7 @@ export const InteragenteHome: React.FC = () => {
                   onClick={() => {
                     setCareTab('plano')
                     requestAnimationFrame(() => {
-                      const target = document.getElementById('meu-plano-de-cuidado')
+                      const target = document.getElementById('meu-plano-de-desenvolvimento')
                       target?.focus({ preventScroll: true })
                       target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                     })
@@ -2018,12 +2016,22 @@ export const InteragenteHome: React.FC = () => {
             </div>
             <Tabs value={careTab} onValueChange={setCareTab}>
               <TabsList aria-label="Equilíbrio" className="h-auto flex-wrap">
+                <TabsTrigger value="rotina">Minha rotina atual</TabsTrigger>
                 <TabsTrigger value="plano">Plano de Desenvolvimento</TabsTrigger>
                 <TabsTrigger value="planejar">Histórico de passos</TabsTrigger>
+                <TabsTrigger value="combinados">Práticas combinadas</TabsTrigger>
                 <TabsTrigger value="praticas">Biblioteca CER · Práticas</TabsTrigger>
                 <TabsTrigger value="mandala">Mandala</TabsTrigger>
               </TabsList>
-              <TabsContent value="plano" className="space-y-4 mt-4">
+              <TabsContent value="rotina" className="mt-4">
+                {enrollment && <DailyRoutineDay enrollmentId={enrollment.id} />}
+              </TabsContent>
+              <TabsContent
+                value="plano"
+                id="meu-plano-de-desenvolvimento"
+                tabIndex={-1}
+                className="space-y-4 mt-4"
+              >
                 {enrollment && (
                   <DevelopmentPlanWorkspace
                     key={`document-${enrollment.id}`}
@@ -2039,8 +2047,7 @@ export const InteragenteHome: React.FC = () => {
                           key={`care-${enrollment.id}`}
                           enrollmentId={enrollment.id}
                           carePlan
-                          initialCareResource={careResource}
-                          onCareResourceOpened={() => setCareResource(null)}
+                          viewOnly
                         />
                       )}
                     </div>
@@ -2111,9 +2118,7 @@ export const InteragenteHome: React.FC = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() =>
-                                      setCareResource(sharedPlanCareResource(planPres))
-                                    }
+                                    onClick={() => navigate('/planner')}
                                   >
                                     Organizar um cuidado deste plano no Planner
                                   </Button>
@@ -2226,9 +2231,8 @@ export const InteragenteHome: React.FC = () => {
                             Acompanhamento individual · nenhum plano compartilhado ainda
                           </span>
                           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                            Seu desenvolvimento educativo pode seguir no espaço acima. Quando você e
-                            sua profissional combinarem um plano individual, ele também aparecerá
-                            aqui.
+                            Consulte os conteúdos na Biblioteca CER. Quando você e sua profissional
+                            combinarem um plano individual, ele também aparecerá aqui.
                           </p>
                         </CardContent>
                       </Card>
@@ -2368,11 +2372,14 @@ export const InteragenteHome: React.FC = () => {
                   <SelfDevelopmentJourney
                     key={`development-${enrollment.id}`}
                     enrollmentId={enrollment.id}
+                    viewOnly
                   />
                 )}
               </TabsContent>
               <TabsContent value="praticas" className="mt-4 space-y-4">
                 {enrollment && <PersonalPracticeLibrary enrollmentId={enrollment.id} />}
+              </TabsContent>
+              <TabsContent value="combinados" className="mt-4 space-y-4">
                 {/* Experimentos de Cuidado combinados */}
                 <div className="space-y-4 pt-2">
                   <div className="flex items-center justify-between">
@@ -2602,7 +2609,7 @@ export const InteragenteHome: React.FC = () => {
           </div>
         )}
 
-        {/* CER V1 — Caderno Privado & Recados para a Próxima Sessão (Gated em features.ts) */}
+        {/* CER V1 — Caderno Privado & Recados para o Próximo Encontro (Gated em features.ts) */}
         {cadernoEnabled && enrollment && (
           <div className="space-y-4">
             <CadernoSection

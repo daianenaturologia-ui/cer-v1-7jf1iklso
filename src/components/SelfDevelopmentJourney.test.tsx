@@ -329,3 +329,29 @@ it('a Biblioteca CER abre os recursos diretamente e leva a escolha ao plano sem 
     0,
   )
 })
+
+it('consulta do histórico preserva passos privados da titular sem permitir novo planejamento', async () => {
+  const catalog = await selfDevelopmentService.catalog()
+  await selfDevelopmentService.save({
+    enrollment_id: DEMO_ENROLLMENT_ID,
+    direction_id: '',
+    resource_snapshot: catalog.resources[0],
+    goal: 'Objetivo anterior',
+    action: 'Passo privado anterior',
+    context: 'Antes do almoço',
+    fallback: '',
+    signal: '',
+    scheduled_at: '',
+    reflection: '',
+    next_step: '',
+    status: 'planned',
+    access_class: 'participant_private',
+  })
+  render(
+    <MemoryRouter>
+      <SelfDevelopmentJourney enrollmentId={DEMO_ENROLLMENT_ID} viewOnly />
+    </MemoryRouter>,
+  )
+  expect(await screen.findByText('Passo privado anterior')).toBeVisible()
+  expect(screen.queryByRole('button', { name: /Escolher|experimentar|Editar|Guardar/ })).toBeNull()
+})

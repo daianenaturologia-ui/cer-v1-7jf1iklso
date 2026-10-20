@@ -97,8 +97,9 @@ export function CerPracticeLibrary({
         <h2 className="font-serif text-2xl">Biblioteca CER</h2>
         <p className="text-sm leading-relaxed">
           Encontre inspiração para cuidar de si e dar vida ao seu plano. Explore as áreas, conheça
-          as práticas e converse com Daiane sobre o que faz sentido para seu momento. Os recursos
-          escolhidos entram no plano; depois, os combinados ganham lugar no Planner.
+          as práticas e converse com Daiane sobre o que faz sentido para seu momento. Este é um
+          acervo para consultar os conteúdos que apoiam seu desenvolvimento. O plano de cuidado e a
+          rotina são construídos em seus próprios espaços, nos encontros.
         </p>
       </header>
       <div className="rounded-2xl border p-5 space-y-3 text-sm leading-relaxed">
@@ -121,13 +122,11 @@ export function CerPracticeLibrary({
             <p>
               Estas são ideias para apoiar sua jornada. Seus próprios hábitos, gestos e descobertas
               também contam: caminhar, cantar, cuidar de uma planta ou outro cuidado que faça
-              sentido para você. Você pode registrar práticas pessoais no seu repertório e conversar
-              sobre elas nas sessões.
+              sentido para você. Leve suas descobertas para os encontros.
             </p>
             <p>
-              Daiane acrescenta os recursos ao plano de cuidado; você também pode escolher o que
-              deseja experimentar. Juntas, vocês ajustam os combinados e dão a eles um lugar
-              possível na rotina.
+              Consulte os materiais quando precisar. Nos encontros, vocês combinam quais práticas
+              integrar ao plano de cuidado e, depois, à rotina no Planner.
             </p>
           </div>
         </details>

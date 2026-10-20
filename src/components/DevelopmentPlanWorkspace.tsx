@@ -244,7 +244,7 @@ export function DevelopmentPlanWorkspace({
       setNotice(
         stage === 'agreed'
           ? 'Plano combinado. Agora vocês podem organizar a rotina.'
-          : 'Versão compartilhada para construir nas sessões. As próximas edições continuam privadas até compartilhar novamente.',
+          : 'Versão compartilhada para construir nos encontros. As próximas edições continuam privadas até compartilhar novamente.',
       )
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível compartilhar.')
@@ -304,13 +304,15 @@ export function DevelopmentPlanWorkspace({
         <p className="text-sm leading-relaxed">
           {professional
             ? 'Prepare o plano de cuidado com base no Mapa CER e nas avaliações. Depois, conversem sobre a meta principal, ajustem os cuidados e combinem as ações que entrarão no Planner.'
-            : 'Daiane prepara os cuidados para sustentar seu equilíbrio e a meta que você escolheu. Nas sessões, vocês ajustam a proposta, combinam o que faz sentido e organizam a rotina no Planner.'}
+            : 'Daiane prepara os cuidados para sustentar seu equilíbrio e a meta que você escolheu. Nos encontros, vocês ajustam a proposta, combinam o que faz sentido e organizam a rotina no Planner.'}
         </p>
         <ol className="flex flex-wrap gap-2 text-xs">
           <li className="rounded-full border bg-background px-3 py-2">
             1. Preparação profissional
           </li>
-          <li className="rounded-full border bg-background px-3 py-2">2. Construção nas sessões</li>
+          <li className="rounded-full border bg-background px-3 py-2">
+            2. Construção nos encontros
+          </li>
           <li className="rounded-full border bg-background px-3 py-2">3. Rotina no Planner</li>
         </ol>
       </header>
@@ -348,8 +350,8 @@ export function DevelopmentPlanWorkspace({
           {reading ? (
             <div className="rounded-2xl border bg-card p-5 sm:p-8">
               <p className="text-xs mb-5 text-muted-foreground">
-                Leitura do rascunho para a sessão. A interagente vê somente a última versão que você
-                compartilhar.
+                Leitura do rascunho para o encontro. A interagente vê somente a última versão que
+                você compartilhar.
               </p>
               <DevelopmentPlanDocument document={document} />
             </div>
@@ -385,7 +387,7 @@ export function DevelopmentPlanWorkspace({
                 <span className="block text-xs text-muted-foreground">
                   Defina as necessidades de cuidado e tratamento que emergem do mapa, seus objetivos
                   e o que acompanhar. Apresente uma proposta individualizada para conversar na
-                  sessão.
+                  encontro.
                 </span>
                 <Textarea
                   maxLength={10000}
@@ -601,7 +603,7 @@ export function DevelopmentPlanWorkspace({
               <label className="block space-y-2">
                 <span className="font-serif text-lg">Nosso próximo encontro</span>
                 <span className="block text-xs text-muted-foreground">
-                  O que experimentar, observar e conversar na próxima sessão? Inclua a data se já
+                  O que experimentar, observar e conversar no próximo encontro? Inclua a data se já
                   estiver combinada.
                 </span>
                 <Textarea
@@ -628,14 +630,14 @@ export function DevelopmentPlanWorkspace({
             </label>
           </details>
           <div className="rounded-2xl border p-5 space-y-4">
-            <h3 className="font-serif text-lg">Compartilhar no ritmo das sessões</h3>
+            <h3 className="font-serif text-lg">Compartilhar no ritmo dos encontros</h3>
             <p className="text-sm">
-              Compartilhe a proposta de cuidado para conversar na sessão. Quando os cuidados, a meta
-              principal e as ações estiverem combinados, disponibilize a organização da rotina. Você
-              pode retomar e revisar o plano depois.
+              Compartilhe a proposta de cuidado para conversar no encontro. Quando os cuidados, a
+              meta principal e as ações estiverem combinados, disponibilize a organização da rotina.
+              Você pode retomar e revisar o plano depois.
             </p>
             <Button disabled={busy} variant="outline" onClick={() => void share('building')}>
-              Compartilhar para construir nas sessões
+              Compartilhar para construir nos encontros
             </Button>
             <label className="flex gap-2 text-sm items-start">
               <input
@@ -659,7 +661,7 @@ export function DevelopmentPlanWorkspace({
           <div className="flex flex-wrap gap-2 text-xs text-primary">
             <span>
               {latest.stage === 'building'
-                ? 'Em construção nas sessões'
+                ? 'Em construção nos encontros'
                 : 'Combinado para experimentar'}
             </span>
             <span>
@@ -673,8 +675,8 @@ export function DevelopmentPlanWorkspace({
           <h3 className="font-serif text-lg">Vamos construir seu plano juntas</h3>
           <p className="text-sm">
             Daiane está preparando a proposta a partir do seu percurso. Vocês vão conversar sobre
-            cuidados, sua meta principal e as ações possíveis nas sessões. Quando ela compartilhar,
-            o plano aparecerá aqui.
+            cuidados, sua meta principal e as ações possíveis nos encontros. Quando ela
+            compartilhar, o plano aparecerá aqui.
           </p>
           <Link className="text-sm underline text-primary" to="/?etapa=evolucao">
             Voltar à minha trajetória

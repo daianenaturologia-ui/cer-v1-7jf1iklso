@@ -206,8 +206,8 @@ export function MyNextStepWizard({
           <h4 className="font-serif text-xl">Um primeiro passo que respeite sua vida</h4>
           <p className="text-sm text-muted-foreground">
             Sua meta ganha caminho quando encontra uma ação possível. O plano de cuidado preparado
-            por Daiane ajudará a sustentar seu equilíbrio; nas sessões, vocês combinarão as ações e
-            os horários.
+            por Daiane ajudará a sustentar seu equilíbrio; nos encontros, vocês combinarão as ações
+            e os horários.
           </p>
           <label className="block text-sm space-y-2">
             <span>Qual ação concreta posso começar a praticar para chegar à minha meta?</span>

@@ -298,7 +298,7 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
           {/* Destaques do Interagente */}
           <div className="space-y-1.5 pt-2 border-t border-border/40">
             <span className="text-xs font-medium text-foreground block">
-              Registro profissional das percepções conversadas em sessão:
+              Registro profissional das percepções conversadas em encontro:
             </span>
             <Textarea
               value={participantHighlights}

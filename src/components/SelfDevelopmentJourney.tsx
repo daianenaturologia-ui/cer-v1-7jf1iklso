@@ -39,6 +39,7 @@ export function SelfDevelopmentJourney({
   enrollmentId,
   mode = 'plan',
   readOnly = false,
+  viewOnly = false,
   carePlan = false,
   libraryOnly = false,
   onPrepareCare,
@@ -48,12 +49,14 @@ export function SelfDevelopmentJourney({
   enrollmentId: string
   mode?: 'plan' | 'play'
   readOnly?: boolean
+  viewOnly?: boolean
   carePlan?: boolean
   libraryOnly?: boolean
   onPrepareCare?: (source: ReturnType<typeof carePrioritySource>) => void
   initialCareResource?: DevelopmentResource | null
   onCareResourceOpened?: () => void
 }) {
+  const canEdit = !readOnly && !viewOnly
   const canPrepareCare = !!onPrepareCare
   const [records, setRecords] = useState<DevelopmentExperiment[]>([])
   const [resources, setResources] = useState<DevelopmentResource[]>([])
@@ -104,7 +107,7 @@ export function SelfDevelopmentJourney({
       .finally(() => {
         if (active) setLoading(false)
       })
-    if (!readOnly || canPrepareCare)
+    if (canEdit || canPrepareCare)
       selfDevelopmentService.catalog().then((result) => {
         if (active) {
           setResources(result.resources)
@@ -114,9 +117,10 @@ export function SelfDevelopmentJourney({
     return () => {
       active = false
     }
-  }, [enrollmentId, readOnly, revision, carePlan, canPrepareCare])
+  }, [enrollmentId, readOnly, revision, carePlan, canPrepareCare, canEdit])
   const open = useCallback(
     async (resource: DevelopmentResource, previous?: DevelopmentExperiment) => {
+      if (viewOnly) return
       if (readOnly) {
         onPrepareCare?.(carePrioritySource(resource))
         setShowCatalog(false)
@@ -153,14 +157,14 @@ export function SelfDevelopmentJourney({
         )
       }
     },
-    [readOnly, onPrepareCare, enrollmentId],
+    [readOnly, viewOnly, onPrepareCare, enrollmentId],
   )
   useEffect(() => {
-    if (initialCareResource && !readOnly) {
+    if (initialCareResource && canEdit) {
       void open(initialCareResource)
       onCareResourceOpened?.()
     }
-  }, [initialCareResource, enrollmentId, readOnly, open, onCareResourceOpened])
+  }, [initialCareResource, enrollmentId, canEdit, open, onCareResourceOpened])
   async function save(
     value: DevelopmentInput,
     id?: string,
@@ -220,22 +224,26 @@ export function SelfDevelopmentJourney({
     >
       <CerIntro
         title={
-          libraryOnly
-            ? 'Biblioteca CER'
-            : carePlan
-              ? readOnly
-                ? 'Cuidados que a pessoa compartilhou'
-                : 'Minhas práticas pessoais'
-              : readOnly
-                ? 'Passos compartilhados'
-                : mode === 'play'
-                  ? 'Meus pequenos passos'
-                  : 'Um desejo, um pequeno passo'
+          viewOnly
+            ? 'Registros anteriores'
+            : libraryOnly
+              ? 'Biblioteca CER'
+              : carePlan
+                ? readOnly
+                  ? 'Cuidados que a pessoa compartilhou'
+                  : 'Minhas práticas pessoais'
+                : readOnly
+                  ? 'Passos compartilhados'
+                  : mode === 'play'
+                    ? 'Meus pequenos passos'
+                    : 'Um desejo, um pequeno passo'
         }
         variant={mode === 'play' ? 'path' : 'seed'}
       >
         <p className="text-sm text-muted-foreground">
-          {libraryOnly ? (
+          {viewOnly ? (
+            'Consulte o que você já registrou. Sua rotina atual tem um espaço próprio; os novos cuidados serão combinados nos encontros.'
+          ) : libraryOnly ? (
             'Um lugar para aprender, praticar e experimentar. Conheça os recursos para apoiar as ações combinadas com Daiane. Você também pode guardar uma prática pessoal.'
           ) : carePlan ? (
             readOnly ? (
@@ -258,7 +266,7 @@ export function SelfDevelopmentJourney({
       {mode === 'plan' && !libraryOnly && (
         <Tabs value={view} onValueChange={setView}>
           <TabsList aria-label="Meu desenvolvimento">
-            <TabsTrigger value="plan">Planejar</TabsTrigger>
+            <TabsTrigger value="plan">{viewOnly ? 'Registros' : 'Planejar'}</TabsTrigger>
             <TabsTrigger value="learn">
               Aprendizados{readyToReview ? ` · ${readyToReview}` : ''}
             </TabsTrigger>
@@ -290,13 +298,13 @@ export function SelfDevelopmentJourney({
         <p role="status">Carregando seus passos…</p>
       ) : (
         <>
-          {carePlan && !libraryOnly && !readOnly && mode === 'plan' && !editing && (
+          {carePlan && !libraryOnly && canEdit && mode === 'plan' && !editing && (
             <Button onClick={() => open(personalCareResource())}>
               Adicionar cuidado que já faço
             </Button>
           )}
           {!libraryOnly &&
-            (!readOnly || onPrepareCare) &&
+            (canEdit || onPrepareCare) &&
             mode === 'plan' &&
             view === 'plan' &&
             !editing && (
@@ -312,12 +320,12 @@ export function SelfDevelopmentJourney({
                       : 'Escolher meu primeiro recurso'}
               </Button>
             )}
-          {!readOnly && mode === 'play' && (
+          {canEdit && mode === 'play' && (
             <Link className="inline-block text-sm underline" to="/?etapa=evolucao">
               Planejar ou revisar na Evolução
             </Link>
           )}
-          {!readOnly && mode === 'play' && readyToReview > 0 && (
+          {canEdit && mode === 'play' && readyToReview > 0 && (
             <p className="text-sm">
               Você tem {readyToReview} tentativa(s) pronta(s) para revisar.{' '}
               <Link className="underline" to="/?etapa=evolucao">
@@ -325,7 +333,7 @@ export function SelfDevelopmentJourney({
               </Link>
             </p>
           )}
-          {(!readOnly || onPrepareCare) && mode === 'plan' && showCatalog && !editing && (
+          {(canEdit || onPrepareCare) && mode === 'plan' && showCatalog && !editing && (
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-3">
                 <label className="text-sm space-y-1">
@@ -413,7 +421,7 @@ export function SelfDevelopmentJourney({
               </div>
             </div>
           )}
-          {!readOnly && editing && (
+          {canEdit && editing && (
             <Dialog
               open
               onOpenChange={(open) => {
@@ -659,8 +667,12 @@ export function SelfDevelopmentJourney({
                 </div>
                 <details className="text-sm">
                   <summary className="cursor-pointer">Ver meu passo e recurso</summary>
-                  <p className="mt-2">Direção: {record.goal}</p>
-                  <p>Quando cabe: {record.context}</p>
+                  {!carePlan && (
+                    <>
+                      <p className="mt-2">Direção: {record.goal}</p>
+                      <p>Quando cabe: {record.context}</p>
+                    </>
+                  )}
                   <p className="mt-2">{record.resource_snapshot.lesson}</p>
                   <ol className="list-decimal pl-5 space-y-1 mt-2">
                     {record.resource_snapshot.instructions.map((s, i) => (
@@ -689,7 +701,7 @@ export function SelfDevelopmentJourney({
                     Revisar este cuidado para o plano
                   </Button>
                 )}
-                {!readOnly && (
+                {canEdit && (
                   <>
                     <div className="flex flex-wrap gap-2 items-start">
                       {mode === 'plan' && record.status === 'reviewed' && (

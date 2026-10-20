@@ -50,9 +50,9 @@ it('prepares, shares across sessions and explicitly schedules the agreed action 
   fireEvent.change(screen.getByLabelText('Como isso pode acontecer na vida prática'), {
     target: { value: 'Preparar as pendências antes de sair' },
   })
-  fireEvent.click(screen.getByText('Compartilhar para construir nas sessões'))
+  fireEvent.click(screen.getByText('Compartilhar para construir nos encontros'))
   await screen.findByText(
-    'Versão compartilhada para construir nas sessões. As próximas edições continuam privadas até compartilhar novamente.',
+    'Versão compartilhada para construir nos encontros. As próximas edições continuam privadas até compartilhar novamente.',
   )
   expect(screen.queryByText('Conferir minha semana')).toBeNull()
   fireEvent.click(

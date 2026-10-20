@@ -90,7 +90,7 @@ export interface AyurvedaInterpretationResult {
 }
 
 export const AYURVEDA_NON_DIAGNOSTIC_DISCLAIMER =
-  'Esta leitura constitui uma hipótese interpretativa de trabalho baseada no Método CER, elaborada para apoiar o raciocínio profissional e o planejamento do cuidado. Não representa diagnóstico nosológico, médico ou prescritivo definitivo. Todas as hipóteses devem ser validadas e aprofundadas em sessão com a interagente.'
+  'Esta leitura constitui uma hipótese interpretativa de trabalho baseada no Método CER, elaborada para apoiar o raciocínio profissional e o planejamento do cuidado. Não representa diagnóstico nosológico, médico ou prescritivo definitivo. Todas as hipóteses devem ser validadas e aprofundadas em encontro com a interagente.'
 
 const EXCLUDED_OPTION_IDS = new Set(['dont_know', 'refusal', 'unknown'])
 
@@ -685,7 +685,7 @@ export function buildAyurvedaInterpretation(
     // Sinalizar ambiguidade que requer aprofundamento. Sem primary/secondary artificial.
     prakritiConfidence = 'Em observação'
     prakritiSummary =
-      'Convergência equilibrada de respostas entre Vata, Pitta e Kapha, sem predominância separável com os dados atuais. Ambiguidade que requer aprofundamento e contextualização em sessão, sem inferência de constituição tridosha confirmada.'
+      'Convergência equilibrada de respostas entre Vata, Pitta e Kapha, sem predominância separável com os dados atuais. Ambiguidade que requer aprofundamento e contextualização em encontro, sem inferência de constituição tridosha confirmada.'
   } else if (topDoshas.length === 2) {
     // Empate no topo entre 2 doshas (ex.: Vata 2 / Pitta 2)
     // Preservar as convergências por dosha e descrever a dupla sem hierarquia artificial.
@@ -755,13 +755,13 @@ export function buildAyurvedaInterpretation(
 
     if (hasDontKnowOrRefusal) {
       vikritiSummary =
-        'Momento atual não caracterizado no Capítulo 3 (opção por não identificar ou não responder). Isto não equivale a equilíbrio ou ausência de desvios; convite a explorar o momento presente em sessão.'
+        'Momento atual não caracterizado no Capítulo 3 (opção por não identificar ou não responder). Isto não equivale a equilíbrio ou ausência de desvios; convite a explorar o momento presente em encontro.'
     } else if (hasNoCurrentChanges) {
       vikritiSummary =
         'Participante relatou não perceber mudanças importantes em relação ao padrão habitual no momento atual. Isto reflete ausência relatada de alterações, sem afirmar ausência de doença ou desequilíbrio clínico.'
     } else if (hasActualChanges.length > 0) {
       vikritiSummary =
-        'Mudanças relatadas no Capítulo 3 precisam de detalhamento e contextualização clínica em sessão antes de qualquer inferência de dosha ou desequilíbrio ativo.'
+        'Mudanças relatadas no Capítulo 3 precisam de detalhamento e contextualização clínica em encontro antes de qualquer inferência de dosha ou desequilíbrio ativo.'
     } else {
       vikritiSummary =
         'Leitura de Vikriti em observação: faltam dados atuais estruturados para caracterização de desequilíbrio ativo.'
@@ -885,7 +885,7 @@ export function buildAyurvedaInterpretation(
   if (matchingDysfunctionalTypes.length > 1) {
     agniType = 'Indefinido / Em observação'
     const typeNames = matchingDysfunctionalTypes.map((t) => t.name).join(' e ')
-    agniDesc = `Sinais habituais mistos de digestão e apetite combinando características tradicionais de ${typeNames}. A coexistência dessas manifestações no padrão habitual requer observação longitudinal e exploração detalhada em sessão.`
+    agniDesc = `Sinais habituais mistos de digestão e apetite combinando características tradicionais de ${typeNames}. A coexistência dessas manifestações no padrão habitual requer observação longitudinal e exploração detalhada em encontro.`
     agniEvidences = Array.from(new Set(matchingDysfunctionalTypes.flatMap((t) => t.evidences)))
     agniConf = 'Em observação'
   } else if (matchingDysfunctionalTypes.length === 1) {
@@ -1022,7 +1022,7 @@ export function buildAyurvedaInterpretation(
   if (c1Completed) {
     if (isStructureVariable) {
       attentionPoints.push(
-        'Estrutura corporal habitual relatada com variações ao longo do tempo — não sustenta hipótese de estrutura constitucional estável; a ser explorada em sessão.',
+        'Estrutura corporal habitual relatada com variações ao longo do tempo — não sustenta hipótese de estrutura constitucional estável; a ser explorada em encontro.',
       )
     } else if (isStructureUnconfirmed) {
       attentionPoints.push(
@@ -1069,11 +1069,11 @@ export function buildAyurvedaInterpretation(
   const p12Vals = getActiveValues(AYV_C2_PROMPTS.P12_HISTORICAL_CONFIDENCE)
   if (hasAnyMatch(p12Vals, ['many_years'])) {
     attentionPoints.push(
-      'Referência histórica relatada como habitual de muitos anos; convite para explorar em sessão se esse funcionamento de longo prazo sempre foi confortável ou se foi se normalizando ao longo do tempo.',
+      'Referência histórica relatada como habitual de muitos anos; convite para explorar em encontro se esse funcionamento de longo prazo sempre foi confortável ou se foi se normalizando ao longo do tempo.',
     )
   } else if (hasAnyMatch(p12Vals, ['mostly_habitual_recent_changes'])) {
     attentionPoints.push(
-      'Relato de funcionamento habitual com mudanças recentes; convite para explorar em sessão a linha do tempo dessas alterações sem assumi-las previamente como desequilíbrio.',
+      'Relato de funcionamento habitual com mudanças recentes; convite para explorar em encontro a linha do tempo dessas alterações sem assumi-las previamente como desequilíbrio.',
     )
     sessionQuestions.push(
       'Quais foram as primeiras coisas que você notou mudando em relação ao seu funcionamento de costume?',
@@ -1087,7 +1087,7 @@ export function buildAyurvedaInterpretation(
     )
   } else if (hasAnyMatch(p12Vals, ['mixture_past_present', 'hard_to_remember'])) {
     attentionPoints.push(
-      'Dificuldade ou mistura na delimitação temporal do padrão habitual; recomenda-se construir a linha do tempo em diálogo durante a sessão.',
+      'Dificuldade ou mistura na delimitação temporal do padrão habitual; recomenda-se construir a linha do tempo em diálogo durante o encontro.',
     )
     sessionQuestions.push(
       'Ao pensar na sua história de vida, você consegue identificar períodos em que seu corpo funcionava de forma diferente de hoje?',
@@ -1115,7 +1115,7 @@ export function buildAyurvedaInterpretation(
     if (!hasSpecialExit && domains.length > 0) {
       const domainLabels = domains.map((d) => chapter3Label(AYV_C3_DOMAIN_OPTIONS, d))
       attentionPoints.push(
-        `Áreas com alterações relatadas no momento atual: ${domainLabels.join(', ')} (ponto para diálogo em sessão, sem inferência dosha automática).`,
+        `Áreas com alterações relatadas no momento atual: ${domainLabels.join(', ')} (ponto para diálogo em encontro, sem inferência dosha automática).`,
       )
 
       // Direções relatadas
@@ -1165,7 +1165,7 @@ export function buildAyurvedaInterpretation(
           .filter(Boolean)
           .join(', ')
         if (medNames) {
-          attentionPoints.push(`Substâncias registradas para diálogo em sessão: ${medNames}.`)
+          attentionPoints.push(`Substâncias registradas para diálogo em encontro: ${medNames}.`)
         }
       }
 
@@ -1179,7 +1179,7 @@ export function buildAyurvedaInterpretation(
     attentionPoints.push('Manter acompanhamento dos ritmos sazonais e variações diárias')
   }
 
-  // 11. Perguntas para aprofundamento na sessão
+  // 11. Perguntas para aprofundamento no encontro
   if (agniType === 'Vishama Agni') {
     sessionQuestions.push(
       'Como a rotina de trabalho ou horários oscilantes interferem na sua fome no dia a dia?',

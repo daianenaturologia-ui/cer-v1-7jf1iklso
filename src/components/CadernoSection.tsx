@@ -234,7 +234,7 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
     }
   }
 
-  // Aprovar e Enviar Recado para a Próxima Sessão
+  // Aprovar e Enviar Recado para o Próximo Encontro
   const handleApproveAndSendMessage = async () => {
     if (!messageText.trim()) return
     try {
@@ -247,7 +247,7 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
       })
       setShareDialogOpen(false)
       toast({
-        title: 'Recado enviado para a próxima sessão',
+        title: 'Recado enviado para o próximo encontro',
         description: 'Sua terapeuta poderá ler este recado na preparação do próximo encontro.',
       })
       await loadAllData()
@@ -412,7 +412,7 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
         </Card>
       )}
 
-      {/* Grid: Anotações do Caderno (Esquerda) e Recados para a Próxima Sessão (Direita) */}
+      {/* Grid: Anotações do Caderno (Esquerda) e Recados para o Próximo Encontro (Direita) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* COLUNA 1: ANOTAÇÕES PRIVADAS DO CADERNO */}
         <div className="space-y-3">
@@ -579,8 +579,8 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
           </div>
 
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Mensagens intencionais que você decide enviar para a sua terapeuta ler antes da sessão.
-            Rascunhos não são visíveis para ela.
+            Mensagens intencionais que você decide enviar para a sua terapeuta ler antes do
+            encontro. Rascunhos não são visíveis para ela.
           </p>
 
           {loading ? (
@@ -589,7 +589,7 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
             <div className="p-6 rounded-lg border border-dashed border-border/60 text-center space-y-2">
               <p className="text-xs text-muted-foreground">Nenhum recado preparado ainda.</p>
               <p className="text-[11px] text-muted-foreground">
-                Deseja avisar algo antes da próxima sessão? Você pode escrever um recado curto e
+                Deseja avisar algo antes do próximo encontro? Você pode escrever um recado curto e
                 conferir antes de enviar.
               </p>
               <Button
@@ -728,7 +728,7 @@ export const CadernoSection: React.FC<CadernoSectionProps> = ({
           <DialogHeader>
             <DialogTitle className="text-base font-semibold font-serif flex items-center gap-2">
               <Share2 className="w-4 h-4 text-primary" />
-              Recado para a Próxima Sessão
+              Recado para o Próximo Encontro
             </DialogTitle>
             <DialogDescription className="text-xs leading-relaxed">
               Escreva o que você deseja avisar ou levar para o seu próximo encontro. Este campo é

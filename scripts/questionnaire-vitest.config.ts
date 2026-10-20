@@ -7,6 +7,8 @@ export default defineConfig({
     setupFiles: ['src/test/setup.ts'],
     include: [
       'src/services/cerEvolutionBrief.test.ts',
+      'src/services/dailyRoutine.test.ts',
+      'src/components/DailyRoutineDay.test.tsx',
       'src/services/lifeDirections.test.ts',
       'src/components/experience/EvolutionMapConversation.test.tsx',
       'src/services/cerPersonalReadings.test.ts',
