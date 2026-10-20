@@ -2026,18 +2026,15 @@ export const InteragenteHome: React.FC = () => {
               <TabsContent value="rotina" className="mt-4">
                 {enrollment && <DailyRoutineDay enrollmentId={enrollment.id} />}
               </TabsContent>
-              <TabsContent
-                value="plano"
-                id="meu-plano-de-desenvolvimento"
-                tabIndex={-1}
-                className="space-y-4 mt-4"
-              >
-                {enrollment && (
-                  <DevelopmentPlanWorkspace
-                    key={`document-${enrollment.id}`}
-                    enrollmentId={enrollment.id}
-                  />
-                )}
+              <TabsContent value="plano" className="space-y-4 mt-4">
+                <div id="meu-plano-de-desenvolvimento" tabIndex={-1}>
+                  {enrollment && (
+                    <DevelopmentPlanWorkspace
+                      key={`document-${enrollment.id}`}
+                      enrollmentId={enrollment.id}
+                    />
+                  )}
+                </div>
                 <details className="rounded-xl border p-4">
                   <summary className="cursor-pointer text-sm">Práticas e planos anteriores</summary>
                   <div className="mt-4 space-y-4">
