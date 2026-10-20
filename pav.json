@@ -1,11 +1,11 @@
 {
   "job": "primeiro-atendimento-verification",
   "job_name": "Primeiro Atendimento Verification (PAV-01..06)",
-  "sha": "ced2e2c528a701f10b66c8b2e86d9058d780f5ae",
+  "sha": "3d02253537e67d8bc708e72a653c498504cfb7f0",
   "conclusion": "success",
-  "timestamp_utc": "2026-10-20T19:48:25.683Z",
-  "run_id": "39486526935",
-  "run_number": "573",
+  "timestamp_utc": "2026-10-20T19:50:12.647Z",
+  "run_id": "39486724701",
+  "run_number": "574",
   "summary": {
     "total": 6,
     "pass": 6,
@@ -24,7 +24,7 @@
       "id": "PAV-02",
       "status": "PASS",
       "description": "Interagente A envia relato (approved/shared_care) — profissional vinculada lê com autoria correta",
-      "details": "Relato acessível no prontuário com participant_user_id=48po938mq1k5y06 e exibição validada (\"Enviado por Alice\")"
+      "details": "Relato acessível no prontuário com participant_user_id=lh596x4932p0x7z e exibição validada (\"Enviado por Alice\")"
     },
     {
       "id": "PAV-03",
