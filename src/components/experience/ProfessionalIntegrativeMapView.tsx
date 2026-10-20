@@ -288,15 +288,6 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
     .replace(/"?$/, '')
   const senAtencao = senInterp.attentionPoints[0]
 
-  // Verificação de dados reais de História de Vida
-  const hasLifeHistoryEvents = safeResponses.some(
-    (r) =>
-      r.experience_id?.includes('historia') ||
-      r.experience_id?.includes('timeline') ||
-      (r as any).prompt_key?.includes('historia') ||
-      (r as any).prompt_key?.includes('marco'),
-  )
-
   // Função para navegar do Minimapa para a seção correspondente da Leitura Aprofundada
   const navigateToDeepSection = (anchorId: string) => {
     setReadingDepth('aprofundada')
@@ -403,10 +394,6 @@ export const ProfessionalIntegrativeMapView: React.FC<ProfessionalIntegrativeMap
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-muted-foreground">História de vida:</span>
-                  <Badge variant="outline" className="text-[10px]">
-                    {hasLifeHistoryEvents ? 'Há marcos disponíveis' : 'Ainda não integrada'}
-                  </Badge>
                   <Button
                     variant="ghost"
                     size="sm"

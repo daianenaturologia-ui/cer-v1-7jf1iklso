@@ -75,3 +75,22 @@ describe('Linha da Vida: novas etapas e persistência', () => {
     expect(await lifeTimelineService.list('mariana')).toEqual([saved])
   })
 })
+
+it('exclui a meta de forma recuperável sem perder outras metas ou misturar pessoas', async () => {
+  const first = await lifeDirectionsService.save(input)
+  const second = await lifeDirectionsService.save({ ...input, title: 'Outra meta' })
+  await lifeDirectionsService.archive('mariana', first.id)
+  expect((await lifeDirectionsService.list('mariana')).map((v) => v.id)).toEqual([second.id])
+  expect(
+    (await lifeDirectionsService.list('mariana', true)).find((v) => v.id === first.id)?.archived,
+  ).toBe(true)
+  await expect(lifeDirectionsService.archive('outra', second.id)).rejects.toThrow(
+    'Meta não encontrada',
+  )
+  await lifeDirectionsService.archive('mariana', first.id, false)
+  expect((await lifeDirectionsService.list('mariana')).map((v) => v.id)).toContain(first.id)
+  const present = await lifeDirectionsService.save({ ...input, kind: 'present', horizon: 'now' })
+  await expect(lifeDirectionsService.archive('mariana', present.id)).rejects.toThrow(
+    'Meta não encontrada',
+  )
+})

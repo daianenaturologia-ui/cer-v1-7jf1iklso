@@ -529,7 +529,6 @@ export function adaptLegacyMapItemsToReadings(
     meus_padroes: 'mente',
     meus_recursos: 'mente',
     minhas_relacoes: 'relacoes',
-    minha_historia: 'relacoes',
     o_que_tem_sentido_para_mim: 'sentido',
     o_que_reconheci_sobre_mim: 'sentido',
   }
@@ -543,7 +542,6 @@ export function adaptLegacyMapItemsToReadings(
     meus_padroes: 'Meus Padrões',
     meus_recursos: 'Meus Recursos',
     minhas_relacoes: 'Minhas Relações',
-    minha_historia: 'Minha História',
     o_que_tem_sentido_para_mim: 'O que tem sentido para mim',
     o_que_reconheci_sobre_mim: 'O que reconheci sobre mim',
   }
@@ -585,5 +583,23 @@ export function adaptLegacyMapItemsToReadings(
     references: structuredClone(CER_MAP_REFERENCES),
     reviewedBy: 'Versão anterior do mapa',
     reviewedAt: new Date().toISOString(),
+  }
+}
+
+/** Projection for the current map/editor. Existing publications and life records are untouched. */
+export function withoutLifeHistory(snapshot: CerMapReadingSnapshot): CerMapReadingSnapshot {
+  const {
+    lifeEvents: _events,
+    lifeDirections: _directions,
+    lifeConnections: _connections,
+    ...rest
+  } = snapshot
+  const elements = Object.fromEntries(
+    Object.entries(snapshot.elementReadings || {}).filter(([key]) => key !== 'historia'),
+  )
+  return {
+    ...rest,
+    history: '',
+    ...(snapshot.elementReadings ? { elementReadings: elements } : {}),
   }
 }

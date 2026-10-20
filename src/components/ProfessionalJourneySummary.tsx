@@ -133,19 +133,19 @@ export function ProfessionalJourneySummary({
         <p>
           {done === 6
             ? state.history.length
-              ? 'Integre os marcos compartilhados ao Mapa CER: sentimentos, modos de proteção, apoios e hipóteses que a pessoa reconhece ou questiona. Depois conversem sobre o presente, as metas e as prioridades de cuidado.'
-              : 'Convide a pessoa a olhar seu passado na Linha da Vida e compartilhar os marcos que deseja conversar. Retomem o Mapa CER antes de definir metas e cuidado.'
+              ? 'Conversem sobre os marcos compartilhados na Linha da Vida. Consulte separadamente as leituras das seis dimensões para preparar o cuidado e combinar as próximas ações.'
+              : 'Convide a pessoa a olhar seu passado na Linha da Vida e compartilhar os marcos que deseja conversar. Conversem sobre o presente e as metas para preparar o cuidado.'
             : 'Acompanhe o preenchimento das dimensões e acolha as dúvidas. O mapa inicial pode ser revisto ao longo da jornada.'}
         </p>
       </div>
       <div className="rounded-xl border p-4 space-y-3">
         <h3 className="font-semibold">Da história ao cuidado</h3>
         <p className="text-sm">
-          No Mapa CER, relacione cada hipótese a um marco compartilhado e a uma resposta atual.
-          Registre o que a pessoa reconhece, os recursos e a necessidade prioritária.
+          No Mapa CER, consulte as interpretações das seis dimensões e os recursos que a pessoa
+          reconhece. A Linha da Vida permanece disponível em sua própria área para as conversas.
         </p>
         <Button size="sm" variant="outline" onClick={() => onOpen('consciencia')}>
-          Integrar história e funcionamento no mapa
+          Rever as seis dimensões no mapa
         </Button>
         <h4 className="text-sm font-semibold">Como a pessoa descreve o presente</h4>
         {present ? (

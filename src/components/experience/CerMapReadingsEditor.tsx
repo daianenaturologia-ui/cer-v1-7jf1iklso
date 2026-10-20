@@ -1,10 +1,11 @@
-import { lifeDirectionsService, sharedLifeDirections } from '@/services/lifeDirections'
-import { LifeConnectionsEditor } from './LifeConnectionsEditor'
-import { lifeTimelineService, sharedLifeEvents, lifeTimeLabel } from '@/services/lifeTimeline'
 import React, { useState } from 'react'
 import type { CerMapReadingSnapshot } from '@/types/cerMapReadings'
 import type { ExperienceResponseRecord } from '@/types/cer'
-import { buildCerMapReadings, unreviewedMapReadings } from '@/services/cerMapReadings'
+import {
+  buildCerMapReadings,
+  unreviewedMapReadings,
+  withoutLifeHistory,
+} from '@/services/cerMapReadings'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { CerMapReadingsView } from './CerMapReadingsView'
@@ -24,13 +25,13 @@ export function CerMapReadingsEditor({
   onSave: (snapshot: CerMapReadingSnapshot, reviewed: boolean) => Promise<void>
   onDirty: (dirty: boolean) => void
 }) {
-  const [snapshot, setSnapshot] = useState(initial || null)
+  const [snapshot, setSnapshot] = useState(initial ? withoutLifeHistory(initial) : null)
   const [reviewed, setReviewed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [preview, setPreview] = useState(false)
   const [error, setError] = useState('')
   function change(next: CerMapReadingSnapshot) {
-    setSnapshot(unreviewedMapReadings(next))
+    setSnapshot(unreviewedMapReadings(withoutLifeHistory(next)))
     setReviewed(false)
     onDirty(true)
   }
@@ -38,14 +39,6 @@ export function CerMapReadingsEditor({
     setBusy(true)
     setError('')
     try {
-      const lifeEvents = sharedLifeEvents(
-        await lifeTimelineService.list(enrollmentId),
-        enrollmentId,
-      )
-      const lifeDirections = sharedLifeDirections(
-        await lifeDirectionsService.list(enrollmentId),
-        enrollmentId,
-      )
       const updated = buildCerMapReadings(responses, enrollmentId, participantName)
       change(
         refresh && snapshot
@@ -56,13 +49,6 @@ export function CerMapReadingsEditor({
               elementReadings: updated.elementReadings,
               references: updated.references,
               integration: snapshot.integration || updated.integration,
-              lifeEvents,
-              lifeDirections,
-              lifeConnections: (snapshot.lifeConnections || []).filter(
-                (connection) =>
-                  lifeEvents.some((event) => event.id === connection.eventId) &&
-                  updated.sourceResponseIds.includes(connection.responseId),
-              ),
               dimensions: updated.dimensions.map((d) => ({
                 ...d,
                 summary:
@@ -73,11 +59,11 @@ export function CerMapReadingsEditor({
                   d.interpretation,
               })),
             }
-          : { ...updated, lifeEvents, lifeDirections },
+          : updated,
       )
     } catch {
       setError(
-        'Não foi possível carregar as histórias e direções compartilhadas. O rascunho anterior foi preservado. Tente novamente.',
+        'Não foi possível atualizar as respostas das dimensões. O rascunho anterior foi preservado. Tente novamente.',
       )
     } finally {
       setBusy(false)
@@ -112,7 +98,7 @@ export function CerMapReadingsEditor({
       ) : (
         <>
           <Button variant="outline" disabled={busy} onClick={() => void prepare(true)}>
-            Atualizar respostas e histórias do rascunho
+            Atualizar respostas das dimensões
           </Button>
           <label className="block text-sm space-y-2">
             <span>Apresentação do mapa</span>
@@ -170,7 +156,7 @@ export function CerMapReadingsEditor({
             </details>
           ))}
           <label className="block text-sm space-y-1">
-            <span>Leitura integrada · o que ajuda a construir o próximo caminho</span>
+            <span>Integração das seis dimensões</span>
             <p className="text-xs text-muted-foreground">
               Relacione ritmos e concentração, interesses e desgastes, respostas à sobrecarga,
               vínculos e condições da rotina, recursos e habilidades a desenvolver. Use as respostas
@@ -181,37 +167,6 @@ export function CerMapReadingsEditor({
               placeholder="Como esta pessoa funciona hoje? O que a sustenta? O que pede atenção? Que condições e habilidades podem favorecer a vida que deseja?"
               value={snapshot.integration}
               onChange={(e) => change({ ...snapshot, integration: e.target.value })}
-            />
-          </label>
-          <section className="border rounded-lg p-3 space-y-3">
-            <h4 className="font-medium">Histórias compartilhadas que sustentam esta versão</h4>
-            <p className="text-sm text-muted-foreground">
-              Relatos da pessoa, sem interpretação automática. Atualizar preserva as relações cujas
-              fontes continuam compartilhadas e exige nova revisão. Relações com fontes retiradas
-              deixam este rascunho; confira também os textos livres antes de salvá-lo.
-            </p>
-            {snapshot.lifeEvents?.map((event) => (
-              <details key={event.id}>
-                <summary>
-                  {event.title} · {lifeTimeLabel(event)}
-                </summary>
-                <p className="text-sm">{event.emotions.join(' · ')}</p>
-                <p className="text-sm whitespace-pre-wrap">{event.narrative}</p>
-              </details>
-            ))}
-            {!snapshot.lifeEvents?.length && (
-              <p className="text-sm">Nenhuma história compartilhada nesta versão.</p>
-            )}
-          </section>
-          <LifeConnectionsEditor snapshot={snapshot} onChange={change} />
-          <label className="block text-sm space-y-1">
-            <span>
-              História de vida · relações exploradas em conversa, recursos e perguntas em aberto
-            </span>
-            <Textarea
-              placeholder="Cite o acontecimento e a resposta atual que sustentam cada hipótese. Explique o que a pessoa reconhece, outras explicações possíveis e o que ainda precisa ser investigado. Evite afirmar uma causa única."
-              value={snapshot.history}
-              onChange={(e) => change({ ...snapshot, history: e.target.value })}
             />
           </label>
           <Button variant="outline" onClick={() => setPreview(!preview)}>

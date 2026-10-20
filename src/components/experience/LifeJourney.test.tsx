@@ -2,6 +2,9 @@ import React from 'react'
 import { it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { LifeJourney } from './LifeJourney'
+vi.mock('./EvolutionMapConversation', () => ({
+  EvolutionMapConversation: () => <div>Resumo breve e a mesma Linha da Vida</div>,
+}))
 vi.mock('./LifeTimeline', () => ({
   LifeTimeline: () => <div>Minha história desde o nascimento</div>,
 }))
@@ -20,9 +23,7 @@ it('conduz o passado de volta ao mapa antes de abrir presente e futuro', () => {
   )
   expect(screen.getByText('Minha história desde o nascimento')).toBeInTheDocument()
   expect(screen.queryByText('Registros present')).toBeNull()
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Concluir o passado por agora e voltar ao Mapa CER' }),
-  )
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar para História no Mapa CER' }))
   expect(change).toHaveBeenCalledWith('map')
   view.rerender(
     <LifeJourney
@@ -33,8 +34,8 @@ it('conduz o passado de volta ao mapa antes de abrir presente e futuro', () => {
       onOpenMap={openMap}
     />,
   )
-  fireEvent.click(screen.getByRole('button', { name: 'Integrar minha história ao Mapa CER' }))
-  expect(openMap).toHaveBeenCalledOnce()
+  expect(screen.getByText('Resumo breve e a mesma Linha da Vida')).toBeInTheDocument()
+  expect(openMap).not.toHaveBeenCalled()
   expect(screen.queryByText('Registros present')).toBeNull()
 })
 it('separa presente e futuro e guarda ações para depois da conversa de cuidado', () => {
@@ -84,8 +85,19 @@ it('os cinco atalhos abrem seus destinos e respeitam o bloqueio inicial', () => 
     fireEvent.click(screen.getByRole('button', { name }))
     expect(change).toHaveBeenLastCalledWith(target)
   }
-  expect(map).toHaveBeenCalledOnce()
+  expect(map).not.toHaveBeenCalled()
   expect(care).toHaveBeenCalledOnce()
   view.rerender(<LifeJourney enrollmentId="enr" unlocked={false} onMomentChange={change} />)
   expect(screen.getByRole('button', { name: '3. Meu presente' })).toBeDisabled()
+})
+
+it('exibe o texto solicitado sem a metáfora da infância', () => {
+  render(<LifeJourney enrollmentId="enr" unlocked />)
+  expect(
+    screen.getByText(
+      'A sua história ajudou a modelar a sua forma de pensar, sentir e se comportar. Reconhecer essa história permite perceber o que ainda te sustenta e o que hoje você pode mudar.',
+    ),
+  ).toBeVisible()
+  expect(screen.queryByText(/A infância como terreno da vida/)).toBeNull()
+  expect(screen.queryByText(/Lya Luft/)).toBeNull()
 })

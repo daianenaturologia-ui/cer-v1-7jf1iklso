@@ -1,0 +1,23 @@
+# Mapa CER e Linha da Vida separados — 20/10/2026
+
+A pedido da Daiane, retiramos a síntese viva do topo do mapa, a trilha de histórias e o diálogo de vínculos históricos. O mapa não busca acontecimentos ou direções da Linha da Vida, em nenhuma das duas áreas. A integração das seis dimensões e o exercício de recursos continuam em “Meu funcionamento em conjunto”. As interpretações individuais e a publicação revisada permanecem disponíveis.
+
+O editor profissional prepara somente respostas das dimensões. Ao abrir/atualizar um rascunho, a projeção retira history, lifeEvents, lifeDirections, lifeConnections e o elemento historia. Não há reescrita de publicações existentes nem exclusão de relatos. O adaptador legado deixa de apresentar minha_historia como se fosse conteúdo da dimensão Relações. Os convites de integração histórica na jornada e no resumo profissional foram substituídos por revisão das seis dimensões.
+
+Vata, Pitta e Kapha abrem apenas seu conceito e referencial tradicional, sem a leitura personalizada nem as conexões repetidas. A frase que inferia Agni irregular/lento em presença de sinais de Ama foi substituída por uma formulação que considera o ritmo digestivo efetivamente relatado. Leituras seguem condicionadas às respostas estruturadas; não há classificação de narrativas livres ou promessa de precisão clínica.
+
+Minha história recebe literalmente o texto pedido, e a seção sobre a infância como terreno da vida é retirada. O campo opcional “O que mais você acredita que sentiu?” aceita até 2.000 caracteres, com ou sem seleção da lista. Exibe o relato ao consultar o marco, preserva na edição e acompanha a privacidade do acontecimento.
+
+Instalação de backend: somente a migration aditiva 0087_life_event_emotion_note.js, após conferir ordinal livre. Acrescenta emotion_note texto opcional max2000 em cer_life_events; não muda regras, índices ou relatos existentes. O rollback recusa remoção quando há texto registrado. Não reinstalar migrations históricas nem criar fixtures no backend vivo. Preservar client.ts canônico, as duas referências de vite-env.d.ts e instalar somente na prévia.
+
+Validação: regressões de leitura individual (dados ausentes, respostas conflitantes, privacidade, origem dos registros), remoção de vínculos em mapas novos/publicados/legados, preservação do documento original, sentimentos livres e edição. Ciclo REST autenticado em PocketBase 0.26.1 e 0.36.0 descartáveis inclui persistência do novo campo e rejeição de texto excessivo sem perda do registro. Conferência final da prévia ocorre após integração e instalação.
+
+## Complemento autorizado: conversa na Evolução e exclusão de metas
+
+“História no Mapa CER” na Evolução agora reúne somente um resumo curto: constituição/momento dos doshas, Agni, Ama, até três padrões de proteção com maior frequência/intensidade registrada, até duas reações destacadas, e uma frase de Relações, Sexualidade e Conexão. Em empate de proteção, a interface avisa; reações de sobrevivência são as escolhas da pergunta (até duas), pois não há escala de intensidade entre elas. Não inventa dois padrões se há um só, nem preenche ausência de dados com um perfil padrão. A linha desenhada usa o mesmo LifeTimeline e os mesmos registros já preenchidos, diretamente abaixo do resumo. A profissional vê apenas marcos compartilhados. O resumo não incorpora narrativas ou faz inferência de causa histórica. O presente e os textos futuros permanecem como estavam.
+
+A lista futura oferece Excluir meta, confirmação e Metas excluídas para restaurar. Trata-se de exclusão recuperável; os registros de origem, planos e rotinas previamente combinados não são apagados. Restaurar volta a meta como escolha principal e informa isso na tela. Atualizações de outra pessoa após troca de matrícula não contaminam a lista atual.
+
+A migration 0088_life_goal_archive.js adiciona archived bool opcional em cer_life_directions e substitui apenas o guard de imutabilidade de enrollment_id por presença/igualdade, mantendo o escopo do titular. O :changed legado impedia atualização parcial; a nova forma foi validada nas duas versões do servidor. Não amplia o acesso profissional nem permite transferir a meta. Rollback preserva o campo enquanto houver metas excluídas. Somente 0087 e 0088 devem ser instaladas, sem reaplicar migrações históricas, e somente na prévia.
+
+Validação atualizada: 463 testes passaram; 161 cenários REST autenticados em cada PocketBase 0.26.1 e 0.36.0 descartável passaram, incluindo exclusão, restauração, lista ativa, recusa de transferência de meta e recusa de alteração por outra interagente ou pela profissional.

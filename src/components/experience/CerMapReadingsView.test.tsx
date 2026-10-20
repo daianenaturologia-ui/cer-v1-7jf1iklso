@@ -122,9 +122,7 @@ describe('Mapa CER: percurso de leitura e teclado', () => {
 
   it('centro permite escolher a síntese integrada e mantém os objetivos no mapa', async () => {
     render(<CerMapReadingsView snapshot={createDemoCerMapReading()} />)
-    await userEvent.click(
-      screen.getByRole('button', { name: /Centro integrador: Pessoa e Objetivos/ }),
-    )
+    await userEvent.click(screen.getByRole('button', { name: /Centro integrador: seis dimensões/ }))
     const dialog = await screen.findByRole('dialog')
     expect(
       within(dialog).getByRole('heading', { name: 'Meu funcionamento em conjunto' }),
@@ -132,19 +130,6 @@ describe('Mapa CER: percurso de leitura e teclado', () => {
     await userEvent.click(within(dialog).getByText('Sua síntese integrada', { exact: true }))
     expect(dialog.querySelector('details')).toHaveAttribute('open')
     expect(dialog).not.toHaveTextContent(/qa-(me|c1|reg)-/)
-  })
-
-  it('história sem marcos não inventa acontecimentos familiares', async () => {
-    const snapshot = buildCerMapReadings([], 'enr', 'Joana')
-    render(<CerMapReadingsView snapshot={snapshot} />)
-    const trigger = screen.getByRole('button', {
-      name: 'Abrir histórico e conexões da Linha da Vida',
-    })
-    await userEvent.click(trigger)
-    const dialog = await screen.findByRole('dialog')
-    expect(dialog).toHaveTextContent('Sua história e seu funcionamento hoje')
-    expect(dialog).not.toHaveTextContent(/pais rígidos|infância traumática|Mariana/)
-    await closeAndRestore(trigger)
   })
 
   it('Corpo oferece explicação e detalhes sob escolha, sem valores técnicos crus', async () => {
@@ -203,54 +188,31 @@ describe('Mapa CER: percurso de leitura e teclado', () => {
   })
 })
 
-it('mostra as relações revisadas mesmo quando há uma leitura estruturada da história', async () => {
-  const snapshot = buildCerMapReadings([], 'enr', 'Lia')
-  snapshot.elementReadings = {
-    historia: {
-      summary: 'Leitura da história',
-      observations: [],
-      interpretation: '',
-      resources: [],
-      costs: [],
-      connections: [],
-      questions: [],
-    },
-  }
-  snapshot.lifeEvents = [
-    {
-      id: 'event',
-      enrollment_id: 'enr',
-      title: 'Mudança de escola',
-      emotions: ['Medo'],
-      narrative: 'Relato fictício',
-      time_kind: 'age',
-      time_value: '8',
-      access_class: 'participant_shared',
-    },
-  ]
-  snapshot.dimensions[1].detailedRows = [
-    { label: 'Resposta', text: 'Observo antes de me aproximar', sourceResponseId: 'r' },
-  ]
-  snapshot.lifeConnections = [
-    {
-      eventId: 'event',
-      responseId: 'r',
-      text: 'Relação a explorar',
-      question: 'Faz sentido?',
-      feeling: 'Medo',
-      protection: 'Observar',
-      recognition: 'Ainda não sabe',
-      resources: 'Professora',
-      priority: 'Pedir apoio',
-    },
-  ]
+it('oculta vínculos e relatos históricos de uma publicação antiga e preserva as seis dimensões', async () => {
+  const snapshot = createDemoCerMapReading()
+  snapshot.history = 'RELATO HISTÓRICO'
+  const before = JSON.stringify(snapshot)
   render(<CerMapReadingsView snapshot={snapshot} />)
-  await userEvent.click(
-    screen.getByRole('button', { name: 'Abrir histórico e conexões da Linha da Vida' }),
-  )
-  const dialog = await screen.findByRole('dialog')
-  expect(dialog).toHaveTextContent('Hipótese para conversar')
-  expect(dialog).toHaveTextContent('Resposta atual: Observo antes de me aproximar')
-  expect(dialog).toHaveTextContent('O que reconhece ou questiona: Ainda não sabe')
-  expect(dialog).toHaveTextContent('Prioridade de cuidado: Pedir apoio')
+  expect(screen.queryByRole('button', { name: /histórico e conexões da Linha da Vida/ })).toBeNull()
+  expect(screen.queryByText('Minha história em movimento')).toBeNull()
+  await userEvent.click(screen.getByRole('button', { name: /Centro integrador: seis dimensões/ }))
+  expect(screen.getByRole('heading', { name: 'Meu funcionamento em conjunto' })).toBeVisible()
+  expect(screen.queryByText('O que você deseja construir')).toBeNull()
+  expect(screen.queryByText('RELATO HISTÓRICO')).toBeNull()
+  expect(JSON.stringify(snapshot)).toBe(before)
 })
+
+it.each(['Vata', 'Pitta', 'Kapha'])(
+  'dosha %s apresenta somente seu conceito sem conexões pessoais repetidas',
+  async (dosha) => {
+    const snapshot = createDemoCerMapReading()
+    snapshot.elementReadings![dosha.toLowerCase()].connections = ['CONEXÃO REPETIDA']
+    render(<CerMapReadingsView snapshot={snapshot} />)
+    await userEvent.click(screen.getByRole('button', { name: `Abrir detalhes do Dosha ${dosha}` }))
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toHaveTextContent(`Dosha ${dosha}`)
+    expect(dialog).toHaveTextContent('Referencial tradicional')
+    expect(dialog).not.toHaveTextContent('Como se conecta ao conjunto')
+    expect(dialog).not.toHaveTextContent('CONEXÃO REPETIDA')
+  },
+)

@@ -147,7 +147,7 @@ export function applyFunctionalReading(
     )
   if (body?.ayurvedaReading?.amaPresence === 'Sinalizada' && body.ayurvedaReading.currentDigestive)
     physical.push(
-      'Os sinais de Ama, na leitura tradicional, acrescentam uma necessidade de favorecer o processamento e a recuperação. Junto de Agni irregular ou lento, isso aponta para cuidar da capacidade de assimilar e recuperar conforto antes de ampliar exigências. Aproximar-se de sua base envolve recuperar estabilidade e disponibilidade, para que sua iniciativa possa encontrar sustentação no cotidiano.',
+      'Os sinais de Ama, na leitura tradicional, acrescentam uma necessidade de favorecer o processamento e a recuperação. Essa percepção precisa ser considerada junto do ritmo digestivo que você relatou, para favorecer conforto e recuperação antes de ampliar exigências. Aproximar-se de sua base envolve recuperar estabilidade e disponibilidade, para que sua iniciativa possa encontrar sustentação no cotidiano.',
     )
   const connected = [...mental.slice(0, 3), ...reg.slice(0, 2), ...physical]
   const fallback = snapshot.dimensions.flatMap((d) => d.personalSections || []).map((s) => s.text)

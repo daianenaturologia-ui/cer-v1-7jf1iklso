@@ -8,6 +8,7 @@ export interface LifeEvent {
   time_kind: 'date' | 'year' | 'age' | 'unknown'
   time_value: string
   emotions: string[]
+  emotion_note?: string
   narrative: string
   access_class: 'participant_private' | 'participant_shared'
   updated?: string
@@ -28,6 +29,11 @@ export function validateLifeEvent(event: LifeEventInput, today = new Date()) {
   if (!event.title.trim() || event.title.length > 160)
     throw new Error('Dê um nome ao acontecimento (até 160 caracteres).')
   if (event.narrative.length > 20000) throw new Error('O relato pode ter até 20.000 caracteres.')
+  if (
+    event.emotion_note !== undefined &&
+    (typeof event.emotion_note !== 'string' || event.emotion_note.length > 2000)
+  )
+    throw new Error('Descreva o que sentiu em até 2.000 caracteres.')
   if (!['date', 'year', 'age', 'unknown'].includes(event.time_kind))
     throw new Error('Escolha como informar quando aconteceu.')
   if (!['participant_private', 'participant_shared'].includes(event.access_class))

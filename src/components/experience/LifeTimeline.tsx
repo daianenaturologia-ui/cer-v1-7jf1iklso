@@ -104,9 +104,7 @@ export function LifeTimeline({
       setEditing(null)
 
       setSelectedId(event.id)
-      setSaved(
-        'Acontecimento salvo. Sua história foi registrada; a interpretação do Mapa CER será atualizada em uma nova versão.',
-      )
+      setSaved('Acontecimento salvo na sua Linha da Vida.')
     } catch (e) {
       setError(
         e instanceof Error
@@ -248,6 +246,9 @@ export function LifeTimeline({
                 <p className="text-sm text-muted-foreground">
                   {event.emotions.join(' · ') || 'Emoção não informada'}
                 </p>
+                {event.emotion_note && (
+                  <p className="text-sm whitespace-pre-wrap">{event.emotion_note}</p>
+                )}
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">{event.narrative}</p>
                 {!readOnly && (
                   <Button variant="outline" size="sm" onClick={() => open(event)}>
@@ -357,6 +358,16 @@ export function LifeTimeline({
                 </label>
               ))}
             </div>
+            <label className="block text-sm space-y-1">
+              O que mais você acredita que sentiu?
+              <Textarea
+                value={editing.emotion_note || ''}
+                maxLength={2000}
+                rows={3}
+                placeholder="Escreva com suas palavras. Você pode usar este campo mesmo sem escolher uma emoção da lista."
+                onChange={(e) => setEditing({ ...editing, emotion_note: e.target.value })}
+              />
+            </label>
           </fieldset>
           {editing.emotions.length > 1 && (
             <label className="block text-sm space-y-1">
@@ -411,9 +422,8 @@ export function LifeTimeline({
             Compartilhar esta história com minha profissional.
           </label>
           <p className="text-xs text-muted-foreground">
-            Seu mapa inicial acompanha esta história. Desmarcado: ela aparece apenas para você.
-            Compartilhar permite que sua profissional a considere na leitura conjunta. Mapas
-            profissionais já publicados preservam sua versão.
+            Desmarcado: este relato e o que você escreveu sobre seus sentimentos ficam só para você.
+            Compartilhar permite conversar sobre este marco com sua profissional na Linha da Vida.
           </p>
           <div className="flex gap-2">
             <Button type="submit" disabled={busy}>

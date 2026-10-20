@@ -10,7 +10,7 @@ import { CareCycleManager } from '@/components/CareCycleManager'
 import { LifeDirections } from '@/components/experience/LifeDirections'
 import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
 import { DevelopmentLearningView } from '@/components/DevelopmentLearningView'
-import { LifeTimeline } from '@/components/experience/LifeTimeline'
+import { EvolutionMapConversation } from '@/components/experience/EvolutionMapConversation'
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
@@ -674,7 +674,12 @@ export const ParticipantWorkspace: React.FC = () => {
             <TabsTrigger value="cuidados">Cuidado em movimento</TabsTrigger>
           </TabsList>
           <TabsContent value="caminho" className="space-y-4 mt-4">
-            <LifeTimeline enrollmentId={enrollment.id} readOnly />
+            <EvolutionMapConversation
+              key={enrollment.id}
+              enrollmentId={enrollment.id}
+              participantName={participantName}
+              readOnly
+            />
             <LifeDirections enrollmentId={enrollment.id} readOnly />
           </TabsContent>
           <TabsContent value="cuidados" className="space-y-4 mt-4">

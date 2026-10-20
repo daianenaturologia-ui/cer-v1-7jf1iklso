@@ -25,7 +25,7 @@ describe('CER: funcionamento e conexões', () => {
     const s = createDemoCerMapReading()
     expect(s.integration).toContain('base Vata–Pitta')
     expect(s.integration).toContain('momento Vata–Kapha')
-    expect(s.integration).toContain('Agni irregular ou lento')
+    expect(s.integration).toContain('ritmo digestivo que você relatou')
     expect(s.integration).toContain('sinais de Ama')
     expect(s.integration).toContain('necessidades e riscos cedo')
     expect(s.integration).toContain('ansiedade')
@@ -96,4 +96,14 @@ describe('CER: funcionamento e conexões', () => {
     applyFunctionalReading(s, [])
     expect(JSON.stringify(s)).toBe(before)
   })
+})
+
+it('não deduz um tipo de Agni a partir dos sinais de Ama', () => {
+  const snapshot = createDemoCerMapReading()
+  const body = snapshot.dimensions.find((d) => d.id === 'corpo')!
+  body.ayurvedaReading!.agniType = 'Sama'
+  body.ayurvedaReading!.agniSummary = 'Ritmo digestivo equilibrado relatado.'
+  const next = applyFunctionalReading(snapshot, [])
+  expect(next.elementReadings!.agni.interpretation).toBe('Ritmo digestivo equilibrado relatado.')
+  expect(next.integration).not.toContain('Agni irregular ou lento')
 })
