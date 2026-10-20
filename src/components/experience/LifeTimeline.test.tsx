@@ -28,7 +28,7 @@ it('preserva a história quando o salvamento falha e permite tentar novamente', 
   expect(screen.getByLabelText('Conte a história como você se lembra')).toHaveValue('Recebi apoio.')
   expect(save.mock.calls[0][0].access_class).toBe('participant_private')
   await user.click(screen.getByRole('button', { name: 'Salvar acontecimento' }))
-  expect(await screen.findByText(/Acontecimento salvo\./)).toBeInTheDocument()
+  expect(await screen.findByText(/Acontecimento salvo na sua Linha da Vida/)).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Minha conquista' })).toBeInTheDocument()
 })
 it('não oferece gravação ao profissional e impede início antes da conclusão', async () => {
@@ -103,5 +103,36 @@ it('permite escolher a emoção mais marcante sem perder as demais', async () =>
   expect(save.mock.calls[0][0].emotions).toEqual(['Gratidão', 'Alegria'])
   expect(screen.getByRole('button', { name: 'Abrir marco: Uma conquista' })).toHaveTextContent(
     'Gratidão · Alegria',
+  )
+})
+
+it('salva e reabre sentimentos escritos livremente, sem exigir opções da lista', async () => {
+  let records: any[] = []
+  vi.spyOn(lifeTimelineService, 'list').mockImplementation(async () => records)
+  const save = vi.spyOn(lifeTimelineService, 'save').mockImplementation(async (value) => {
+    const record = { ...value, id: 'custom-emotion' }
+    records = [record]
+    return record
+  })
+  const view = render(<LifeTimeline enrollmentId="enr" />)
+  await userEvent.click(await screen.findByRole('button', { name: /Clique na linha/ }))
+  await userEvent.type(screen.getByLabelText('Nome do acontecimento'), 'Uma mudança')
+  await userEvent.type(
+    screen.getByLabelText('O que mais você acredita que sentiu?'),
+    'Saudade, esperança e um sentimento misturado.',
+  )
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar acontecimento' }))
+  expect(await screen.findByText('Saudade, esperança e um sentimento misturado.')).toBeVisible()
+  expect(save.mock.calls[0][0]).toMatchObject({
+    emotions: [],
+    emotion_note: 'Saudade, esperança e um sentimento misturado.',
+    access_class: 'participant_private',
+  })
+  view.unmount()
+  render(<LifeTimeline enrollmentId="enr" />)
+  await userEvent.click(await screen.findByRole('button', { name: 'Abrir marco: Uma mudança' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Editar acontecimento' }))
+  expect(screen.getByLabelText('O que mais você acredita que sentiu?')).toHaveValue(
+    'Saudade, esperança e um sentimento misturado.',
   )
 })

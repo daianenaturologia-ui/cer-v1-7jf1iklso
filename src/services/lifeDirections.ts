@@ -15,6 +15,7 @@ export interface LifeDirection {
   access_class: 'participant_private' | 'participant_shared'
   created?: string
   updated?: string
+  archived?: boolean
 }
 export type LifeDirectionInput = Omit<LifeDirection, 'id' | 'created' | 'updated'>
 export const LIFE_HORIZONS = {
@@ -53,12 +54,15 @@ export function validateLifeDirection(value: LifeDirectionInput) {
 }
 export function sharedLifeDirections(values: LifeDirection[], enrollmentId: string) {
   return values
-    .filter((v) => v.enrollment_id === enrollmentId && v.access_class === 'participant_shared')
+    .filter(
+      (v) =>
+        v.enrollment_id === enrollmentId && v.access_class === 'participant_shared' && !v.archived,
+    )
     .map((v) => ({ ...v }))
 }
 const demoKey = (id: string) => `cer-demo-life-directions-v1:${id}`
 export const lifeDirectionsService = {
-  async list(enrollmentId: string): Promise<LifeDirection[]> {
+  async list(enrollmentId: string, includeArchived = false): Promise<LifeDirection[]> {
     if (demoAdapter.isEnabled()) {
       const values = JSON.parse(localStorage.getItem(demoKey(enrollmentId)) || '[]')
       if (!Array.isArray(values)) throw new Error('Não foi possível ler os registros salvos.')
@@ -67,10 +71,13 @@ export const lifeDirectionsService = {
         if (value.enrollment_id !== enrollmentId || typeof value.id !== 'string')
           throw new Error('Registro inválido.')
       }
-      return values
+      return values.filter((value) => includeArchived || !value.archived)
     }
     return pb.collection('cer_life_directions').getFullList<LifeDirection>({
-      filter: pb.filter('enrollment_id = {:id}', { id: enrollmentId }),
+      filter: pb.filter(
+        includeArchived ? 'enrollment_id = {:id}' : 'enrollment_id = {:id} && archived = false',
+        { id: enrollmentId },
+      ),
       sort: 'created',
       requestKey: null,
     })
@@ -79,7 +86,7 @@ export const lifeDirectionsService = {
     validateLifeDirection(value)
     const data = { ...value, title: value.title.trim() }
     if (demoAdapter.isEnabled()) {
-      const values = await this.list(value.enrollment_id)
+      const values = await this.list(value.enrollment_id, true)
       const previous = id ? values.find((v) => v.id === id) : undefined
       if (id && !previous) throw new Error('Registro não encontrado. Recarregue e tente novamente.')
       const now = new Date().toISOString()
@@ -110,12 +117,25 @@ export const lifeDirectionsService = {
     )
     return record
   },
+  async archive(enrollmentId: string, id: string, archived = true): Promise<LifeDirection> {
+    const record = demoAdapter.isEnabled()
+      ? (await this.list(enrollmentId, true)).find((value) => value.id === id)
+      : await pb.collection('cer_life_directions').getOne<LifeDirection>(id)
+    if (!record || record.enrollment_id !== enrollmentId || record.kind !== 'future')
+      throw new Error('Meta não encontrada. Recarregue e tente novamente.')
+    if (demoAdapter.isEnabled()) return this.save({ ...record, archived }, id)
+    const result = await pb
+      .collection('cer_life_directions')
+      .update<LifeDirection>(id, { archived })
+    window.dispatchEvent(new CustomEvent('cer-life-records-changed', { detail: { enrollmentId } }))
+    return result
+  },
 }
 
 /** A deliberate save/promotion chooses the focus; earlier possibilities remain intact. */
 export function principalLifeDirection(values: LifeDirection[]) {
   return [...values]
-    .filter((v) => v.kind === 'future')
+    .filter((v) => v.kind === 'future' && !v.archived)
     .sort(
       (a, b) =>
         (a.updated || a.created || '').localeCompare(b.updated || b.created || '') ||

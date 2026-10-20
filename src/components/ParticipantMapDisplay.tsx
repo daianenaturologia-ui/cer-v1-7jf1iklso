@@ -19,16 +19,14 @@ import type { CerMapRecord, CerMapItemRecord } from '@/types/cer'
 interface ParticipantMapDisplayProps {
   map: CerMapRecord & { items: CerMapItemRecord[] }
   participantName?: string
-  liveIntegration?: React.ReactNode
 }
 
 export const ParticipantMapDisplay: React.FC<ParticipantMapDisplayProps> = ({
   map,
   participantName = 'você',
-  liveIntegration,
 }) => {
   if (isCerMapReadingSnapshot(map.reading_snapshot)) {
-    return <CerMapReadingsView snapshot={map.reading_snapshot} liveIntegration={liveIntegration} />
+    return <CerMapReadingsView snapshot={map.reading_snapshot} />
   }
 
   // Adaptador puro para mapas legados:
@@ -49,7 +47,7 @@ export const ParticipantMapDisplay: React.FC<ParticipantMapDisplayProps> = ({
         </span>
         <span className="text-[11px]">Conteúdo do mapa publicado anteriormente</span>
       </div>
-      <CerMapReadingsView snapshot={adaptedSnapshot} liveIntegration={liveIntegration} />
+      <CerMapReadingsView snapshot={adaptedSnapshot} />
     </div>
   )
 }

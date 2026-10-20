@@ -3,6 +3,8 @@ import { LIFE_JOURNEY_COPY } from '@/services/lifeJourneyCopy'
 import { LifeIntegrationGame } from './LifeIntegrationGame'
 import { Button } from '@/components/ui/button'
 import { LifeTimeline } from './LifeTimeline'
+import { EvolutionMapConversation } from './EvolutionMapConversation'
+import type { ExperienceResponseRecord } from '@/types/cer'
 import { LifeDirections } from './LifeDirections'
 import { CerArtStrip } from '@/components/CerArtwork'
 import { JOURNEY_MOMENTS, type JourneyMoment } from '@/services/participantJourney'
@@ -20,10 +22,13 @@ export function LifeJourney({
   objective,
   moment = 'past',
   onMomentChange,
-  onOpenMap,
+  responses,
+  participantName,
   onOpenCare,
 }: {
   enrollmentId: string
+  responses?: ExperienceResponseRecord[]
+  participantName?: string
   unlocked: boolean
   objective?: { title: string; summary: string }
   moment?: JourneyMoment
@@ -47,8 +52,7 @@ export function LifeJourney({
         <p className="text-xs tracking-widest uppercase text-primary">3. Evolução</p>
         <h2 className="font-serif text-2xl mt-2">Uma história que continua</h2>
         <p className="text-sm text-muted-foreground mt-2">
-          Conheça sua história, aproxime-a do seu funcionamento e, depois, olhe para a vida que
-          deseja construir.
+          Conheça sua história, reconheça seu presente e olhe para a vida que deseja construir.
         </p>
         <ol className="mt-4 grid gap-2 sm:grid-cols-5" aria-label="Percurso da Evolução">
           {JOURNEY_MOMENTS.map((item, i) => (
@@ -60,7 +64,6 @@ export function LifeJourney({
                 disabled={!unlocked}
                 onClick={() => {
                   onMomentChange?.(item)
-                  if (item === 'map') onOpenMap?.()
                   if (item === 'care') onOpenCare?.()
                 }}
               >
@@ -78,14 +81,6 @@ export function LifeJourney({
         <div className="rounded-2xl border bg-primary/5 p-5 space-y-3">
           <h3 className="font-serif text-xl">{reflection.title}</h3>
           <p className="text-sm leading-relaxed">{reflection.text}</p>
-          {moment === 'past' && (
-            <details className="text-sm">
-              <summary className="cursor-pointer text-primary">
-                A infância como terreno da vida · inspiração em Lya Luft
-              </summary>
-              <p className="mt-3 leading-relaxed">{LIFE_JOURNEY_COPY.past.inspiration}</p>
-            </details>
-          )}
           {moment === 'future' && (
             <p className="text-sm leading-relaxed">{LIFE_JOURNEY_COPY.future.focus}</p>
           )}
@@ -114,23 +109,16 @@ export function LifeJourney({
                 depois.
               </p>
               <Button onClick={() => onMomentChange?.('map')}>
-                Concluir o passado por agora e voltar ao Mapa CER
+                Continuar para História no Mapa CER
               </Button>
             </>
           )}
           {moment === 'map' && (
-            <>
-              <p className="text-sm">
-                Vamos aproximar os acontecimentos e sentimentos da sua história dos padrões que você
-                reconheceu na Consciência. Essas conexões serão compreendidas e revistas com Daiane,
-                sem concluir automaticamente que um acontecimento causou um padrão.
-              </p>
-              <Button onClick={onOpenMap}>Integrar minha história ao Mapa CER</Button>
-              <p className="text-xs text-muted-foreground">
-                Abra o mapa antes de seguir para o presente. Sua história permanece disponível para
-                revisão.
-              </p>
-            </>
+            <EvolutionMapConversation
+              enrollmentId={enrollmentId}
+              responses={responses}
+              participantName={participantName}
+            />
           )}
           {moment === 'present' && (
             <>

@@ -14,8 +14,6 @@ import type {
   CerMapReference,
   CerMapElementReading,
 } from '@/types/cerMapReadings'
-import { LIFE_HORIZONS } from '@/services/lifeDirections'
-import { lifeTimeLabel } from '@/services/lifeTimeline'
 import { CerArtStrip } from '@/components/CerArtwork'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -45,7 +43,6 @@ import { cn } from '@/lib/utils'
 export interface CerMapReadingsViewProps {
   snapshot: CerMapReadingSnapshot
   initial?: boolean
-  liveIntegration?: React.ReactNode
 }
 
 interface DialogState {
@@ -248,11 +245,7 @@ const REGULATION_REACTIONS = [
   },
 ] as const
 
-export function CerMapReadingsView({
-  snapshot,
-  initial = false,
-  liveIntegration,
-}: CerMapReadingsViewProps) {
+export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadingsViewProps) {
   const auth = useOptionalAuth()
   const [activeDialog, setActiveDialog] = useState<DialogState | null>(null)
   const triggerRef = useRef<HTMLElement | SVGElement | null>(null)
@@ -489,14 +482,14 @@ export function CerMapReadingsView({
                 sobrevivência ajudam a compreender respostas, sem comprovar trauma, estado do
                 sistema nervoso ou causa histórica. As fontes fundamentam os conceitos utilizados;
                 não constituem validação clínica ou psicométrica deste questionário. A leitura ganha
-                precisão quando é conversada com você e integrada à sua história, saúde e cotidiano.
+                precisão quando é conversada com você e considera sua saúde e seu cotidiano.
               </p>
             </div>
             <div className="grid gap-3 pt-2">
               <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
                 <h4 className="font-serif font-semibold text-foreground text-sm">1. Consciência</h4>
                 <p className="text-xs text-muted-foreground leading-normal">
-                  Questionários cuidadosos, Linha da Vida, identificação de forças essenciais e
+                  Questionários das seis dimensões, identificação de forças essenciais e
                   necessidades reais da sua rotina.
                 </p>
               </div>
@@ -522,27 +515,6 @@ export function CerMapReadingsView({
                 </p>
               </div>
             </div>
-            {!!snapshot.lifeDirections?.length && (
-              <div className="mt-4 pt-3 border-t">
-                <h4 className="font-serif font-semibold text-xs uppercase tracking-wider text-primary mb-2">
-                  Objetivos e Horizontes Compartilhados
-                </h4>
-                <div className="space-y-2">
-                  {snapshot.lifeDirections.map((dir) => (
-                    <div key={dir.id} className="text-xs border rounded p-2.5 bg-card">
-                      <span className="font-medium text-foreground block">
-                        {dir.title} ({LIFE_HORIZONS[dir.horizon]})
-                      </span>
-                      {dir.first_step && (
-                        <span className="text-muted-foreground block mt-1">
-                          Pequeno passo: {dir.first_step}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ),
       },
@@ -554,9 +526,6 @@ export function CerMapReadingsView({
     doshaName: 'Vata' | 'Pitta' | 'Kapha',
     e?: React.MouseEvent<HTMLElement | SVGElement>,
   ) => {
-    const elementKey = doshaName.toLowerCase()
-    const elementReading = snapshot.elementReadings?.[elementKey]
-
     const concepts = {
       Vata: {
         principle: 'Movimento e variabilidade',
@@ -586,24 +555,11 @@ export function CerMapReadingsView({
         tag: 'Corpo & Fisiologia',
         content: (
           <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-            {elementReading ? (
-              renderElementReadingSections(elementReading, false)
-            ) : (
-              <>
-                <p>{info.desc}</p>
-                <div className="rounded-lg bg-muted/30 p-3 space-y-1 text-xs">
-                  <span className="font-semibold text-foreground block">
-                    Referencial tradicional
-                  </span>
-                  <p className="text-muted-foreground">{info.ayurvedaContext}</p>
-                  <p className="text-muted-foreground mt-1">
-                    A psique também é influenciada por história, educação, cultura, saúde, sono e
-                    vínculos. Para aprofundar, converse com a Daiane sobre a avaliação ayurvédica
-                    específica.
-                  </p>
-                </div>
-              </>
-            )}
+            <p>{info.desc}</p>
+            <div className="rounded-lg bg-muted/30 p-3 space-y-1 text-xs">
+              <span className="font-semibold text-foreground block">Referencial tradicional</span>
+              <p className="text-muted-foreground">{info.ayurvedaContext}</p>
+            </div>
           </div>
         ),
       },
@@ -1033,16 +989,6 @@ export function CerMapReadingsView({
                   </p>
                 </details>
               )}
-              {!!snapshot.lifeDirections?.length && (
-                <div className="space-y-2">
-                  <h3 className="font-serif">O que você deseja construir</h3>
-                  {snapshot.lifeDirections.map((d) => (
-                    <p key={d.id} className="text-sm">
-                      {d.title}
-                    </p>
-                  ))}
-                </div>
-              )}
               <IntegratedResourceGame
                 key={snapshot.enrollmentId}
                 snapshot={snapshot}
@@ -1121,41 +1067,6 @@ export function CerMapReadingsView({
 
     // Fallback estrito para snapshots legados sem elementReadings
     switch (nodeKey) {
-      case 'centro':
-        openDialog(
-          {
-            title: 'Meu funcionamento em conjunto',
-            subtitle: 'Integração das dimensões do seu ser',
-            tag: 'Método CER',
-            content: (
-              <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-                <p>
-                  {snapshot.integration ||
-                    'As conexões serão aprofundadas com sua história. Corpo, mente, regulação, relações, sexualidade e sentido formam uma teia interligada, onde nenhuma dimensão atua isoladamente.'}
-                </p>
-                {snapshot.lifeDirections?.length ? (
-                  <div className="border-t pt-3 space-y-2">
-                    <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                      Seus objetivos no centro do mapa
-                    </h4>
-                    {snapshot.lifeDirections.map((dir) => (
-                      <div key={dir.id} className="text-xs border rounded p-2.5">
-                        <span className="font-medium block">{dir.title}</span>
-                        {dir.meaning && (
-                          <span className="text-muted-foreground block text-[11px] mt-0.5">
-                            Sentido: {dir.meaning}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ),
-          },
-          e?.currentTarget,
-        )
-        break
       case 'corpo':
         openDimensionDialog('corpo', e)
         break
@@ -1173,96 +1084,6 @@ export function CerMapReadingsView({
       default:
         break
     }
-  }
-
-  const openHistoryDialog = (e?: React.MouseEvent<HTMLElement>) => {
-    const elementReading = snapshot.elementReadings?.['historia']
-
-    openDialog(
-      {
-        title: 'Sua história e seu funcionamento hoje',
-        subtitle: 'Conexões exploradas com sua profissional',
-        tag: 'Linha da Vida',
-        content: (
-          <div className="cer-prose space-y-4 text-sm leading-relaxed text-foreground/90">
-            {elementReading ? (
-              renderElementReadingSections(elementReading)
-            ) : (
-              <>
-                <p>
-                  {snapshot.history ||
-                    'A relação entre sua história e seu funcionamento ainda será aprofundada em conversa e na Linha da Vida. As respostas das dimensões não permitem afirmar como um padrão se formou.'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Tendências pessoais, experiências e contexto atual podem participar desse retrato.
-                  Prakriti e Vikriti acrescentam a perspectiva ayurvédica à compreensão do corpo; a
-                  Linha da Vida acrescenta os acontecimentos e aprendizados do seu percurso.
-                </p>
-              </>
-            )}
-            {!!snapshot.lifeConnections?.length && (
-              <div className="border-t pt-3 space-y-2">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Relações exploradas em conversa
-                </h4>
-                {snapshot.lifeConnections.map((conn, idx) => (
-                  <div key={idx} className="border rounded p-2.5 text-xs space-y-1">
-                    <p className="font-semibold">Hipótese para conversar</p>
-                    <p>
-                      História:{' '}
-                      {snapshot.lifeEvents?.find((event) => event.id === conn.eventId)?.title}
-                    </p>
-                    <p>
-                      Resposta atual:{' '}
-                      {snapshot.dimensions
-                        .flatMap((dimension) => dimension.detailedRows)
-                        .find((row) => row.sourceResponseId === conn.responseId)?.text ||
-                        'Consultar a resposta de origem'}
-                    </p>
-                    <p className="font-medium text-foreground">{conn.text}</p>
-                    {(
-                      [
-                        ['feeling', 'Como se sentia'],
-                        ['protection', 'Proteção e repetição atual'],
-                        ['recognition', 'O que reconhece ou questiona'],
-                        ['resources', 'Apoios e recursos'],
-                        ['priority', 'Prioridade de cuidado'],
-                      ] as const
-                    ).map(([field, label]) =>
-                      conn[field] ? (
-                        <p key={field} className="whitespace-pre-wrap">
-                          <strong>{label}: </strong>
-                          {conn[field]}
-                        </p>
-                      ) : null,
-                    )}
-                    {conn.question && (
-                      <p className="text-primary italic">Para investigar: {conn.question}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {!!snapshot.lifeEvents?.length && (
-              <div className="border-t pt-3 space-y-2">
-                <h4 className="font-semibold text-xs uppercase tracking-wider text-foreground">
-                  Acontecimentos da sua história compartilhados
-                </h4>
-                {snapshot.lifeEvents.map((evt) => (
-                  <div key={evt.id} className="border rounded p-2 text-xs">
-                    <span className="font-medium block">
-                      {evt.title} ({lifeTimeLabel(evt)})
-                    </span>
-                    <span className="text-muted-foreground text-[11px] block">{evt.narrative}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ),
-      },
-      e?.currentTarget,
-    )
   }
 
   return (
@@ -1304,8 +1125,6 @@ export function CerMapReadingsView({
         </div>
         <CerArtStrip variant="path" compact />
       </header>
-
-      {liveIntegration}
 
       {/* 2. CORPO PELA LENTE DO AYURVEDA */}
       <section
@@ -1920,16 +1739,6 @@ export function CerMapReadingsView({
               Dimensões interligadas ao seu centro. Toque nos nós para investigar as partes.
             </p>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={(e) => openHistoryDialog(e)}
-            className="text-xs text-primary min-h-[44px] self-start sm:self-auto"
-            aria-label="Abrir histórico e conexões da Linha da Vida"
-          >
-            Sua história e conexões <ArrowRight className="w-3.5 h-3.5 ml-1" />
-          </Button>
         </div>
 
         {/* Nós em disposição circular/responsiva com setas tracejadas conectando os nós ao centro */}
@@ -1939,15 +1748,13 @@ export function CerMapReadingsView({
             type="button"
             onClick={(e) => openIntegratedNodeDialog('centro', e)}
             className="w-full sm:max-w-xs min-h-[56px] p-4 rounded-2xl border-2 border-primary/50 bg-primary/10 hover:bg-primary/20 text-center transition-all focus:outline-none focus:ring-2 focus:ring-primary shadow-sm mb-4 relative z-10"
-            aria-label="Centro integrador: Pessoa e Objetivos. Toque para abrir leitura integrada."
+            aria-label="Centro integrador: seis dimensões. Toque para abrir a visão integrada."
           >
             <span className="font-serif font-bold text-sm sm:text-base text-foreground block">
               {snapshot.participantName || 'Seu Centro Integrador'}
             </span>
             <span className="text-[11px] text-muted-foreground mt-0.5 block">
-              {snapshot.lifeDirections?.[0]?.title
-                ? `Objetivo: ${snapshot.lifeDirections[0].title}`
-                : 'Toque para abrir a visão integrada'}
+              Integração das seis dimensões
             </span>
           </button>
 

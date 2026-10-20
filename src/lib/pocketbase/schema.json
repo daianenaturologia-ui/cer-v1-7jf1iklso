@@ -6807,7 +6807,8 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
-        }
+        },
+        { "name": "emotion_note", "type": "text", "required": false, "system": false }
       ],
       "indexes": ["CREATE INDEX idx_life_enrollment ON cer_life_events (enrollment_id)"]
     },
@@ -6818,7 +6819,7 @@
         "list": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (access_class = 'participant_shared' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
         "view": "@request.auth.id != '' && (enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id || (access_class = 'participant_shared' && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= @request.auth.id && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active ?= true))",
         "create": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id",
-        "update": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && @request.body.enrollment_id:changed = false",
+        "update": "@request.auth.id != '' && enrollment_id.person_id.users_via_person_id.id ?= @request.auth.id && (@request.body.enrollment_id:isset = false || @request.body.enrollment_id = enrollment_id)",
         "delete": null
       },
       "fields": [
@@ -6899,7 +6900,8 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
-        }
+        },
+        { "name": "archived", "type": "bool", "required": false, "system": false }
       ],
       "indexes": [
         "CREATE INDEX idx_life_directions_enrollment ON cer_life_directions (enrollment_id)"

@@ -6,7 +6,7 @@ import { resourceExerciseService } from '@/services/cerResourceExercise'
 import { lifeDirectionsService } from '@/services/lifeDirections'
 vi.mock('@/services/lifeDirections', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/lifeDirections')>()),
-  lifeDirectionsService: { list: vi.fn(), save: vi.fn() },
+  lifeDirectionsService: { list: vi.fn(), save: vi.fn(), archive: vi.fn() },
 }))
 vi.mock('@/services/cerResourceExercise', () => ({
   resourceExerciseService: { load: vi.fn().mockResolvedValue(null) },
@@ -170,4 +170,73 @@ it('profissional não carrega o exercício privado do jogo', async () => {
   render(<LifeDirections enrollmentId="mariana" planning readOnly />)
   await screen.findAllByText('Ainda não há registros compartilhados deste momento.')
   expect(resourceExerciseService.load).not.toHaveBeenCalled()
+})
+
+it('confirma a exclusão, preserva a meta em falha e permite excluir e restaurar', async () => {
+  const goal = {
+    id: 'goal',
+    enrollment_id: 'mariana',
+    kind: 'future',
+    horizon: 'open',
+    title: 'Minha meta de teste',
+    narrative: 'Conteúdo preservado',
+    meaning: '',
+    resources: '',
+    limits: '',
+    first_step: '',
+    access_class: 'participant_private',
+  } as any
+  vi.mocked(lifeDirectionsService.list).mockResolvedValue([goal])
+  vi.mocked(lifeDirectionsService.archive)
+    .mockRejectedValueOnce(new Error('Falha de rede'))
+    .mockResolvedValueOnce({ ...goal, archived: true })
+    .mockResolvedValueOnce({ ...goal, archived: false })
+  render(
+    <LifeDirections enrollmentId="mariana" perspective="future" planning enableActions={false} />,
+  )
+  fireEvent.click(await screen.findByRole('button', { name: 'Excluir meta' }))
+  expect(lifeDirectionsService.archive).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Manter meta' }))
+  expect(screen.queryByRole('alertdialog')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Excluir meta' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar exclusão' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Não foi possível confirmar a exclusão',
+  )
+  expect(screen.getByRole('heading', { name: 'Minha meta de teste' })).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar exclusão' }))
+  await waitFor(() =>
+    expect(screen.queryByRole('heading', { name: 'Minha meta de teste' })).toBeNull(),
+  )
+  expect(lifeDirectionsService.archive).toHaveBeenLastCalledWith('mariana', 'goal', true)
+  fireEvent.click(screen.getByText('Metas excluídas', { exact: true }))
+  fireEvent.click(screen.getByRole('button', { name: 'Restaurar meta: Minha meta de teste' }))
+  expect(await screen.findByRole('heading', { name: 'Minha meta de teste' })).toBeVisible()
+  expect(lifeDirectionsService.archive).toHaveBeenLastCalledWith('mariana', 'goal', false)
+})
+
+it('não oferece exclusão de metas na visão profissional nem no presente', async () => {
+  const present = {
+    id: 'present',
+    enrollment_id: 'mariana',
+    kind: 'present',
+    horizon: 'now',
+    title: 'Meu presente',
+    narrative: '',
+    meaning: '',
+    resources: '',
+    limits: '',
+    first_step: '',
+    access_class: 'participant_shared',
+  } as any
+  vi.mocked(lifeDirectionsService.list).mockResolvedValue([
+    present,
+    { ...present, id: 'future', kind: 'future', horizon: 'open', title: 'Futuro' },
+  ])
+  const view = render(<LifeDirections enrollmentId="mariana" readOnly />)
+  await screen.findByText('Futuro')
+  expect(screen.queryByRole('button', { name: 'Excluir meta' })).toBeNull()
+  view.rerender(<LifeDirections enrollmentId="mariana" perspective="present" />)
+  await screen.findByRole('heading', { name: 'Meu presente' })
+  expect(screen.queryByRole('button', { name: 'Excluir meta' })).toBeNull()
 })

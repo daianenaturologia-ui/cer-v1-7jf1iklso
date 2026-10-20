@@ -297,9 +297,19 @@ try:
         check('Completed session note is immutable',lambda:require(request('/api/collections/cer_session_notes/records/'+note['id'],tokens['p'],'PATCH',{'text':'changed'})[0]==400))
         audit=ok('/api/collections/audit_events/records?perPage=500',admin)['items']
         check('Audit events produced without private content',lambda:require({'JOURNAL_ENTRY_CREATED','SESSION_NOTE_CREATED','SESSION_COMPLETED','NEXT_SESSION_MESSAGE_WITHDRAWN'}.issubset({e['action'] for e in audit}) and not any(marker in json.dumps(audit) for marker in ['FICTIONAL_PRIVATE_MARKER','FICTIONAL_UPDATED_MARKER','FICTIONAL_SESSION_MARKER'])))
+        direction_body={'enrollment_id':enroll['a'],'kind':'future','horizon':'open','title':'Fictional goal to archive','narrative':'','meaning':'','resources':'','limits':'','first_step':'','access_class':'participant_shared'}
+        direction=record('cer_life_directions',tokens['a'],'POST',direction_body)
+        direction_url='/api/collections/cer_life_directions/records/'+direction['id']
+        check('Other participant and professional cannot exclude a goal',lambda:require(request(direction_url,tokens['b'],'PATCH',{'archived':True})[0]==404 and request(direction_url,tokens['p'],'PATCH',{'archived':True})[0]==404))
+        check('Goal exclusion cannot transfer ownership',lambda:require(request(direction_url,tokens['a'],'PATCH',{'enrollment_id':enroll['b'],'archived':True})[0]==404))
+        check('Owner can exclude goal with partial update',lambda:require(record('cer_life_directions',tokens['a'],'PATCH',{'archived':True},direction['id'])['archived'] is True))
+        check('Excluded goal stays recoverable and leaves active list',lambda:require(record('cer_life_directions',tokens['a'],id=direction['id'])['title']=='Fictional goal to archive' and direction['id'] not in [v['id'] for v in ok('/api/collections/cer_life_directions/records?filter=archived=false',tokens['a'])['items']]))
+        check('Owner can restore excluded goal without losing content',lambda:require(record('cer_life_directions',tokens['a'],'PATCH',{'archived':False},direction['id'])['title']==direction_body['title']))
         life_body={'enrollment_id':enroll['a'],'title':'Fictional life event','time_kind':'year','time_value':'2000','emotions':['Alegria'],'narrative':'FICTIONAL_LIFE_MARKER','access_class':'participant_private'}
         check('Life event blocked before six dimensions completed',lambda:require(request('/api/collections/cer_life_events/records',tokens['b'],'POST',{**life_body,'enrollment_id':enroll['b']})[0]==400))
         life=record('cer_life_events',tokens['a'],'POST',life_body)
+        check('Life event accepts a freely written feeling and preserves it',lambda:require(record('cer_life_events',tokens['a'],'PATCH',{'emotion_note':'Saudade e esperança, sem caber na lista.'},life['id'])['emotion_note']=='Saudade e esperança, sem caber na lista.'))
+        check('Life event rejects oversized feeling without losing the saved note',lambda:require(request('/api/collections/cer_life_events/records/'+life['id'],tokens['a'],'PATCH',{'emotion_note':'x'*2001})[0]==400 and record('cer_life_events',tokens['a'],id=life['id'])['emotion_note']=='Saudade e esperança, sem caber na lista.'))
         life_endpoint='/api/collections/cer_life_events/records/'+life['id']
         check('Owner can read own private life event',lambda:require(request(life_endpoint,tokens['a'])[0]==200))
         check('Other patient and linked professional cannot read private life event',lambda:require(request(life_endpoint,tokens['b'])[0]==404 and request(life_endpoint,tokens['p'])[0]==404))

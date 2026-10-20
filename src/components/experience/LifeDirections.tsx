@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -33,6 +33,10 @@ export function LifeDirections({
   allowEditing?: boolean
 }) {
   const [records, setRecords] = useState<LifeDirection[]>([])
+  const [archivedRecords, setArchivedRecords] = useState<LifeDirection[]>([])
+  const [deleting, setDeleting] = useState<LifeDirection | null>(null)
+  const enrollmentRef = useRef(enrollmentId)
+  enrollmentRef.current = enrollmentId
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [editing, setEditing] = useState<LifeDirectionInput | null>(null)
@@ -71,22 +75,33 @@ export function LifeDirections({
   useEffect(() => {
     let active = true
     setRecords([])
+    setArchivedRecords([])
+    setDeleting(null)
+    setBusy(false)
     setEditing(null)
     setLoading(true)
     setError('')
     setSaved('')
 
     lifeDirectionsService
-      .list(enrollmentId)
+      .list(enrollmentId, !readOnly)
       .then((values) => {
-        if (active)
+        if (active) {
+          setArchivedRecords(
+            values.filter(
+              (v) =>
+                v.enrollment_id === enrollmentId && v.kind === 'future' && v.archived && !readOnly,
+            ),
+          )
           setRecords(
             values.filter(
               (v) =>
                 v.enrollment_id === enrollmentId &&
+                !v.archived &&
                 (!readOnly || v.access_class === 'participant_shared'),
             ),
           )
+        }
       })
       .catch(() => {
         if (active) setError('Não foi possível carregar presente e futuro. Tente novamente.')
@@ -156,6 +171,41 @@ export function LifeDirections({
       )
     } finally {
       setBusy(false)
+    }
+  }
+  async function changeArchive(record: LifeDirection, archived: boolean) {
+    if (busy || readOnly || !allowEditing || record.enrollment_id !== enrollmentId) return
+    setBusy(true)
+    setError('')
+    try {
+      const changed = await lifeDirectionsService.archive(enrollmentId, record.id, archived)
+      if (enrollmentRef.current !== enrollmentId) return
+      if (archived) {
+        clearMyNextStepDraft(enrollmentId, record.id)
+        setRecords((values) => values.filter((value) => value.id !== record.id))
+        setArchivedRecords((values) => [
+          ...values.filter((value) => value.id !== record.id),
+          changed,
+        ])
+      } else {
+        setArchivedRecords((values) => values.filter((value) => value.id !== record.id))
+        setRecords((values) => [...values, changed])
+      }
+      setDeleting(null)
+      setSaved(
+        archived
+          ? 'Meta excluída da lista. Você pode restaurá-la em Metas excluídas. Planos e rotinas já combinados ficam preservados.'
+          : 'Meta restaurada como escolha principal. Você pode rever e escolher outra meta quando quiser.',
+      )
+    } catch {
+      if (enrollmentRef.current === enrollmentId)
+        setError(
+          archived
+            ? 'Não foi possível confirmar a exclusão. Atualize a lista ou tente novamente.'
+            : 'Não foi possível restaurar a meta. Tente novamente.',
+        )
+    } finally {
+      if (enrollmentRef.current === enrollmentId) setBusy(false)
     }
   }
   return (
@@ -350,6 +400,19 @@ export function LifeDirections({
                               : 'Editar registro'}
                           </Button>
                         )}
+                        {record.kind === 'future' && !readOnly && allowEditing && unlocked && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={busy}
+                            onClick={() => {
+                              setDeleting(record)
+                              setError('')
+                            }}
+                          >
+                            Excluir meta
+                          </Button>
+                        )}
                       </article>
                     ))}
                   {!records.some((v) => v.kind === kind) && (
@@ -362,6 +425,45 @@ export function LifeDirections({
                 </div>
               ))}
         </>
+      )}
+      {deleting && (
+        <div
+          role="alertdialog"
+          aria-modal="false"
+          aria-label={`Excluir meta: ${deleting.title}`}
+          className="rounded-xl border p-4 space-y-3"
+        >
+          <p>
+            Excluir a meta “{deleting.title}” da sua lista? Você poderá restaurá-la depois. Planos e
+            rotinas já combinados ficam preservados.
+          </p>
+          <div className="flex gap-2">
+            <Button disabled={busy} onClick={() => void changeArchive(deleting, true)}>
+              Confirmar exclusão
+            </Button>
+            <Button disabled={busy} variant="outline" onClick={() => setDeleting(null)}>
+              Manter meta
+            </Button>
+          </div>
+        </div>
+      )}
+      {!readOnly && allowEditing && perspective !== 'present' && archivedRecords.length > 0 && (
+        <details className="rounded-xl border p-4 space-y-3">
+          <summary className="cursor-pointer">Metas excluídas</summary>
+          {archivedRecords.map((record) => (
+            <div key={record.id} className="flex flex-wrap items-center justify-between gap-3 pt-3">
+              <span>{record.title}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => void changeArchive(record, false)}
+              >
+                Restaurar meta: {record.title}
+              </Button>
+            </div>
+          ))}
+        </details>
       )}
       {error && !(editing && planning && editing.kind === 'future') && (
         <div role="alert" className="text-sm text-destructive">

@@ -132,9 +132,7 @@ it('separa o presente da direção futura e oferece a integração antes do plan
   render(<ProfessionalJourneySummary enrollmentId="enrollment" name="Lia" onOpen={open} />)
   expect(await screen.findByText('Quero descansar')).toBeVisible()
   expect(screen.getByText('Meu presente · Assumo muitas tarefas')).toBeVisible()
-  await userEvent.click(
-    screen.getByRole('button', { name: 'Integrar história e funcionamento no mapa' }),
-  )
+  await userEvent.click(screen.getByRole('button', { name: 'Rever as seis dimensões no mapa' }))
   expect(open).toHaveBeenCalledWith('consciencia')
   await userEvent.click(screen.getByRole('button', { name: 'Revisar nosso plano' }))
   expect(open).toHaveBeenCalledWith('equilibrio', 'plano')

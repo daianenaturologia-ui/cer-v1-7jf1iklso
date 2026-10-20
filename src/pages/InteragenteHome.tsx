@@ -2461,6 +2461,8 @@ export const InteragenteHome: React.FC = () => {
                     }}
                     onOpenCare={() => setActivePhase('equilibrio')}
                     enrollmentId={enrollment.id}
+                    responses={participantResponses}
+                    participantName={person?.preferred_name || person?.full_name || 'Você'}
                     unlocked={consciousnessCoverage(
                       participantResponses,
                       availableExperiences,
