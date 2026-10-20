@@ -82,12 +82,7 @@ export const ExperimentosPage: React.FC = () => {
           <JourneyNavigation />
         </header>
 
-        {enrollment && (
-          <PersonalPracticeLibrary
-            key={enrollment.id}
-            enrollmentId={enrollment.id}
-          />
-        )}
+        {enrollment && <PersonalPracticeLibrary key={enrollment.id} enrollmentId={enrollment.id} />}
         <h2 className="font-serif text-lg">Práticas do acompanhamento individual</h2>
         {loading ? (
           <p className="text-xs text-muted-foreground text-center py-12">
