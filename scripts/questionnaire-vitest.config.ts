@@ -6,6 +6,11 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/services/cycleHistory.test.ts',
+      'src/services/integrativePlan.test.ts',
+      'src/components/CerJourneyRevision.test.tsx',
+      'src/services/cerLiveIntegration.test.ts',
+      'src/components/experience/SharedProfessionalCerMap.test.tsx',
       'src/services/developmentPlanDocument.test.ts',
       'src/components/DevelopmentPlanWorkspace.test.tsx',
       'src/components/DevelopmentPlanWorkflow.test.tsx',

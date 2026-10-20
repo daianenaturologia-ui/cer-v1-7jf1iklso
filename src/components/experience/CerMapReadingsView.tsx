@@ -45,6 +45,7 @@ import { cn } from '@/lib/utils'
 export interface CerMapReadingsViewProps {
   snapshot: CerMapReadingSnapshot
   initial?: boolean
+  liveIntegration?: React.ReactNode
 }
 
 interface DialogState {
@@ -247,7 +248,7 @@ const REGULATION_REACTIONS = [
   },
 ] as const
 
-export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadingsViewProps) {
+export function CerMapReadingsView({ snapshot, initial = false, liveIntegration }: CerMapReadingsViewProps) {
   const auth = useOptionalAuth()
   const [activeDialog, setActiveDialog] = useState<DialogState | null>(null)
   const triggerRef = useRef<HTMLElement | SVGElement | null>(null)
@@ -1299,6 +1300,8 @@ export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadings
         </div>
         <CerArtStrip variant="path" compact />
       </header>
+
+      {liveIntegration}
 
       {/* 2. CORPO PELA LENTE DO AYURVEDA */}
       <section

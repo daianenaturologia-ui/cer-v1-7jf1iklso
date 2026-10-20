@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CycleHistorySummary } from './CycleHistorySummary'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from '@/components/ui/button'
 import {
   cycleJournalService,
   CYCLE_CONTEXTS,
+  CYCLE_SIGNS,
   EMOTIONS,
   SYMPTOMS,
   APPETITES,
@@ -191,6 +194,7 @@ export function CycleMandala({
 }) {
   const [profile, setProfile] = useState<CycleProfile>(defaultCycleProfile(enrollmentId))
   const [entries, setEntries] = useState<CycleEntry[]>([])
+  const [dayOpen, setDayOpen] = useState(false)
   const [selected, setSelected] = useState(localDay())
   const [draft, setDraft] = useState<CycleEntry>(emptyCycleEntry(enrollmentId))
   const [loading, setLoading] = useState(true)
@@ -215,6 +219,7 @@ export function CycleMandala({
     setDraft(emptyCycleEntry(enrollmentId))
     setProfile(defaultCycleProfile(enrollmentId))
     setSelected(localDay())
+    setDayOpen(false)
     setDirty(false)
     setMessage('')
     setReflectionOpen(false)
@@ -258,6 +263,7 @@ export function CycleMandala({
       setMode('month')
     }
     setSelected(day)
+    setDayOpen(true)
     setDraft(entries.find((v) => v.day === day) || emptyCycleEntry(enrollmentId, day))
     setDirty(false)
     setMessage('')
@@ -272,7 +278,7 @@ export function CycleMandala({
     setMessage('')
     setCareAdded(false)
   }
-  async function save() {
+  async function save(close = false) {
     setBusy(true)
     setError('')
     try {
@@ -280,6 +286,7 @@ export function CycleMandala({
       setEntries((v) => [...v.filter((e) => e.day !== saved.day), saved])
       setDraft(saved)
       setDirty(false)
+      if (close) setDayOpen(false)
       setMessage(
         saved.access_class === 'participant_shared'
           ? 'Registro salvo e compartilhado com sua profissional.'
@@ -389,12 +396,12 @@ export function CycleMandala({
           </Button>
         )}
       </header>
-      {error && (
+      {error && !dayOpen && (
         <p role="alert" className="cycle-feedback">
           {error}
         </p>
       )}
-      {message && (
+      {message && !dayOpen && (
         <p role="status" className="cycle-feedback">
           {message}
         </p>
@@ -460,6 +467,12 @@ export function CycleMandala({
           </Button>
         </div>
       )}
+      {!readOnly && <CycleHistorySummary entries={entries} profile={profile} />}
+      {!readOnly && (
+        <Button variant="outline" onClick={() => choose(localDay())}>
+          Registrar meu dia de hoje
+        </Button>
+      )}
       <div className="cycle-layout">
         <div className="cycle-card cycle-visual">
           <div className="cycle-choices">
@@ -494,7 +507,7 @@ export function CycleMandala({
             <span>● Emoções: uma cor para cada emoção percebida</span>
             <span>● Corpo: verde para “Sem desconforto” / terracota com sintomas</span>
             <span>• Ponto vinho: fluxo menstrual</span>
-            <span>Cinza: sem registro. Toque em um dia para ver os detalhes.</span>
+            <span>Cinza: sem registro. Toque na pétala para abrir o registro daquele dia.</span>
           </p>
           <details>
             <summary>Cores das emoções</summary>
@@ -513,264 +526,346 @@ export function CycleMandala({
               : 'Visão por mês; seu ciclo pode atravessar meses.'}
           </p>
         </div>
-        <div className="cycle-card">
-          <label className="cycle-field">
-            {readOnly ? 'Consultar dia' : 'Meu registro do dia'}
-            <input
-              aria-label="Dia do registro"
-              type="date"
-              value={selected}
-              max={localDay()}
-              disabled={busy}
-              onChange={(e) => {
-                if (e.target.value && e.target.value <= localDay()) choose(e.target.value)
-              }}
-            />
-          </label>
-          {!readOnly && (
-            <p className="cycle-position">
-              {position.day ? `Dia ${position.day} desde o início registrado · ` : ''}
-              {position.label}
-              {position.estimated && (
-                <small>
-                  Estimativa de calendário; não confirma ovulação e não serve como contracepção.
-                </small>
-              )}
-            </p>
-          )}
-          {readOnly ? (
-            <div className="space-y-3">
-              {draft.id ? (
-                <>
-                  <p>Energia: {energyLabels[draft.energy]}</p>
-                  <p>Emoções: {draft.emotions.join(', ') || 'Sem registro'}</p>
-                  <p>
-                    Corpo: {draft.symptoms.join(', ') || 'Sem sintomas marcados'}
-                    {draft.intensity ? ` · intensidade ${draft.intensity}/3` : ''}
-                  </p>
-                  <p>Apetite: {draft.appetite || 'Sem registro'}</p>
-                  <p>Impacto: {draft.impact || 'Sem registro'}</p>
-                  <p>
-                    Fluxo: {draft.bleeding || 'Sem registro'}
-                    {draft.period_start ? ' · início da menstruação' : ''}
-                  </p>
-                  {[
-                    ['Sono', draft.sleep],
-                    ['Contexto', draft.context_note],
-                    ['Reflexão', draft.reflection],
-                    ['Necessidade', draft.need],
-                    ['Cuidado', draft.care],
-                    ['Resposta ao cuidado', draft.care_response],
-                  ]
-                    .filter(([, value]) => value)
-                    .map(([label, value]) => (
-                      <p className="whitespace-pre-wrap" key={label}>
-                        <strong>{label}:</strong> {value}
-                      </p>
-                    ))}
-                </>
-              ) : (
-                <p>Nenhum registro compartilhado neste dia.</p>
-              )}
-            </div>
-          ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                void save()
-              }}
-            >
-              <fieldset disabled={busy} className="cycle-form">
-                <Choice
-                  label="Como está sua energia?"
-                  values={energyLabels.slice(1)}
-                  value={energyLabels[draft.energy]}
-                  onChange={(v) =>
-                    patch(
-                      'energy',
-                      draft.energy === energyLabels.indexOf(v) ? 0 : energyLabels.indexOf(v),
-                    )
-                  }
-                />
-                <Choice
-                  label="Quais emoções percebe? Até duas"
-                  values={EMOTIONS}
-                  value={draft.emotions}
-                  multiple
-                  onChange={(v) =>
-                    patch(
-                      'emotions',
-                      draft.emotions.includes(v)
-                        ? draft.emotions.filter((s) => s !== v)
-                        : draft.emotions.length < 2
-                          ? [...draft.emotions, v]
-                          : draft.emotions,
-                    )
-                  }
-                />
-                <Choice
-                  label="Algum desconforto no corpo?"
-                  values={SYMPTOMS}
-                  value={draft.symptoms}
-                  multiple
-                  onChange={(v) => {
-                    patch(
-                      'symptoms',
-                      draft.symptoms.includes(v)
-                        ? draft.symptoms.filter((s) => s !== v)
-                        : v === 'Sem desconforto'
-                          ? [v]
-                          : [...draft.symptoms.filter((s) => s !== 'Sem desconforto'), v],
-                    )
-                    if (v === 'Sem desconforto') patch('intensity', 0)
-                  }}
-                />
-                {!!draft.symptoms.length && !draft.symptoms.includes('Sem desconforto') && (
+        <Dialog
+          open={dayOpen}
+          onOpenChange={(open) => {
+            if (!open && busy) return
+            if (
+              !open &&
+              dirty &&
+              !window.confirm('Há alterações ainda não salvas. Deseja fechar este registro?')
+            )
+              return
+            setDayOpen(open)
+          }}
+        >
+          <DialogContent className="cycle-mandala sm:max-w-2xl max-h-[90dvh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {readOnly ? 'Registro compartilhado' : 'Meu registro'} · {dateLabel(selected)}
+              </DialogTitle>
+              <DialogDescription>
+                {readOnly
+                  ? 'Você consulta o que a interagente compartilhou; a escrita do diário é feita por ela.'
+                  : 'Perceba seu corpo, suas emoções e o que aconteceu neste dia. Você pode preencher só o que fizer sentido.'}
+              </DialogDescription>
+            </DialogHeader>
+            {!readOnly && (
+              <p className="cycle-position">
+                {position.day ? `Dia ${position.day} desde o início registrado · ` : ''}
+                {position.label}
+                {position.estimated && (
+                  <small>
+                    Estimativa de calendário; não confirma ovulação e não serve como contracepção.
+                  </small>
+                )}
+              </p>
+            )}
+            {readOnly ? (
+              <div className="space-y-3">
+                {draft.id ? (
+                  <>
+                    <p>Energia: {energyLabels[draft.energy]}</p>
+                    <p>Emoções: {draft.emotions.join(', ') || 'Sem registro'}</p>
+                    <p>
+                      Corpo: {draft.symptoms.join(', ') || 'Sem sintomas marcados'}
+                      {draft.intensity ? ` · intensidade ${draft.intensity}/3` : ''}
+                    </p>
+                    <p>Apetite: {draft.appetite || 'Sem registro'}</p>
+                    <p>Impacto: {draft.impact || 'Sem registro'}</p>
+                    <p>
+                      Fluxo: {draft.bleeding || 'Sem registro'}
+                      {draft.period_start ? ' · início da menstruação' : ''}
+                    </p>
+                    {[
+                      ['Sono', draft.sleep],
+                      ['Sinais do ciclo percebidos', (draft.cycle_signs || []).join(', ')],
+                      ['Pensamentos', draft.thoughts || ''],
+                      ['Acontecimento importante', draft.context_note],
+                      ['Reflexão', draft.reflection],
+                      ['Necessidade', draft.need],
+                      ['Cuidado', draft.care],
+                      ['Resposta ao cuidado', draft.care_response],
+                    ]
+                      .filter(([, value]) => value)
+                      .map(([label, value]) => (
+                        <p className="whitespace-pre-wrap" key={label}>
+                          <strong>{label}:</strong> {value}
+                        </p>
+                      ))}
+                  </>
+                ) : (
+                  <p>Nenhum registro compartilhado neste dia.</p>
+                )}
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  void save()
+                }}
+              >
+                <fieldset disabled={busy} className="cycle-form">
                   <Choice
-                    label="Intensidade do desconforto"
-                    values={['Leve', 'Moderado', 'Forte']}
-                    value={['', 'Leve', 'Moderado', 'Forte'][draft.intensity]}
+                    label="Como está sua energia?"
+                    values={energyLabels.slice(1)}
+                    value={energyLabels[draft.energy]}
                     onChange={(v) =>
-                      patch('intensity', ['', 'Leve', 'Moderado', 'Forte'].indexOf(v))
+                      patch(
+                        'energy',
+                        draft.energy === energyLabels.indexOf(v) ? 0 : energyLabels.indexOf(v),
+                      )
                     }
                   />
-                )}
-                <Choice
-                  label="Como está seu apetite?"
-                  values={APPETITES}
-                  value={draft.appetite}
-                  onChange={(v) => patch('appetite', draft.appetite === v ? '' : v)}
-                />
-                <Choice
-                  label="Isso interferiu no seu dia?"
-                  values={IMPACTS}
-                  value={draft.impact}
-                  onChange={(v) => patch('impact', draft.impact === v ? '' : v)}
-                />
-                <Choice
-                  label="Sangramento"
-                  values={['Sem sangramento', 'Escape', 'Leve', 'Moderado', 'Intenso']}
-                  value={draft.bleeding}
-                  onChange={(v) => {
-                    patch('bleeding', v)
-                    if (!['Leve', 'Moderado', 'Intenso'].includes(v)) patch('period_start', false)
-                  }}
-                />
-                {['Leve', 'Moderado', 'Intenso'].includes(draft.bleeding) && (
+                  <Choice
+                    label="Quais emoções percebe? Até duas"
+                    values={EMOTIONS}
+                    value={draft.emotions}
+                    multiple
+                    onChange={(v) =>
+                      patch(
+                        'emotions',
+                        draft.emotions.includes(v)
+                          ? draft.emotions.filter((s) => s !== v)
+                          : draft.emotions.length < 2
+                            ? [...draft.emotions, v]
+                            : draft.emotions,
+                      )
+                    }
+                  />
+                  <Choice
+                    label="Sinais do ciclo que percebo hoje"
+                    values={CYCLE_SIGNS}
+                    value={draft.cycle_signs || []}
+                    multiple
+                    onChange={(value) => {
+                      const signs = draft.cycle_signs || []
+                      patch(
+                        'cycle_signs',
+                        signs.includes(value)
+                          ? signs.filter((v) => v !== value)
+                          : value === 'Não sei identificar'
+                            ? [value]
+                            : [...signs.filter((v) => v !== 'Não sei identificar'), value],
+                      )
+                    }}
+                  />
+                  <p className="text-xs">
+                    São percepções suas. Marcar sinais de ovulação não confirma que ela aconteceu.
+                  </p>
+                  <label className="cycle-field">
+                    Que pensamentos estiveram presentes? <small>Opcional</small>
+                    <textarea
+                      rows={2}
+                      maxLength={5000}
+                      value={draft.thoughts || ''}
+                      onChange={(e) => patch('thoughts', e.target.value)}
+                    />
+                  </label>
+                  <label className="cycle-field">
+                    Um acontecimento que pode ter influenciado meu dia <small>Opcional</small>
+                    <textarea
+                      rows={2}
+                      maxLength={5000}
+                      value={draft.context_note}
+                      onChange={(e) => patch('context_note', e.target.value)}
+                    />
+                  </label>
+                  <Choice
+                    label="Algum desconforto no corpo?"
+                    values={SYMPTOMS}
+                    value={draft.symptoms}
+                    multiple
+                    onChange={(v) => {
+                      patch(
+                        'symptoms',
+                        draft.symptoms.includes(v)
+                          ? draft.symptoms.filter((s) => s !== v)
+                          : v === 'Sem desconforto'
+                            ? [v]
+                            : [...draft.symptoms.filter((s) => s !== 'Sem desconforto'), v],
+                      )
+                      if (v === 'Sem desconforto') patch('intensity', 0)
+                    }}
+                  />
+                  {!!draft.symptoms.length && !draft.symptoms.includes('Sem desconforto') && (
+                    <Choice
+                      label="Intensidade do desconforto"
+                      values={['Leve', 'Moderado', 'Forte']}
+                      value={['', 'Leve', 'Moderado', 'Forte'][draft.intensity]}
+                      onChange={(v) =>
+                        patch('intensity', ['', 'Leve', 'Moderado', 'Forte'].indexOf(v))
+                      }
+                    />
+                  )}
+                  <Choice
+                    label="Como está seu apetite?"
+                    values={APPETITES}
+                    value={draft.appetite}
+                    onChange={(v) => patch('appetite', draft.appetite === v ? '' : v)}
+                  />
+                  <Choice
+                    label="Isso interferiu no seu dia?"
+                    values={IMPACTS}
+                    value={draft.impact}
+                    onChange={(v) => patch('impact', draft.impact === v ? '' : v)}
+                  />
+                  <Choice
+                    label="Sangramento"
+                    values={['Sem sangramento', 'Escape', 'Leve', 'Moderado', 'Intenso']}
+                    value={draft.bleeding}
+                    onChange={(v) => {
+                      patch('bleeding', v)
+                      if (!['Leve', 'Moderado', 'Intenso'].includes(v)) patch('period_start', false)
+                    }}
+                  />
+                  {['Leve', 'Moderado', 'Intenso'].includes(draft.bleeding) && (
+                    <label className="cycle-check">
+                      <input
+                        type="checkbox"
+                        checked={draft.period_start}
+                        onChange={(e) => patch('period_start', e.target.checked)}
+                      />
+                      Este foi o primeiro dia da menstruação
+                    </label>
+                  )}
+                  <label className="cycle-field">
+                    Do que preciso hoje? <small>Opcional</small>
+                    <input
+                      maxLength={5000}
+                      value={draft.need}
+                      onChange={(e) => patch('need', e.target.value)}
+                      placeholder="Um intervalo, companhia, movimento…"
+                    />
+                  </label>
+                  <details>
+                    <summary>Quero aprofundar</summary>
+                    {(
+                      [
+                        ['sleep', 'Como foi meu sono?'],
+                        ['reflection', 'O que senti, aprendi ou me trouxe conexão?'],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <label className="cycle-field" key={key}>
+                        {label}
+                        <textarea
+                          maxLength={5000}
+                          rows={2}
+                          value={draft[key]}
+                          onChange={(e) => patch(key, e.target.value)}
+                        />
+                      </label>
+                    ))}
+                  </details>
+                  <label className="cycle-field">
+                    Um cuidado que escolho para mim <small>Opcional</small>
+                    <textarea
+                      maxLength={5000}
+                      rows={2}
+                      value={draft.care}
+                      onChange={(e) => patch('care', e.target.value)}
+                      placeholder="Uma ação possível para o meu momento"
+                    />
+                  </label>
+                  {draft.care && (
+                    <Choice
+                      label="Se já experimentei, como foi?"
+                      values={['Ajudou', 'Ajudou um pouco', 'Não percebi diferença', 'Me fez pior']}
+                      value={draft.care_response}
+                      onChange={(v) => patch('care_response', v)}
+                    />
+                  )}
                   <label className="cycle-check">
                     <input
                       type="checkbox"
-                      checked={draft.period_start}
-                      onChange={(e) => patch('period_start', e.target.checked)}
-                    />
-                    Este foi o primeiro dia da menstruação
-                  </label>
-                )}
-                <label className="cycle-field">
-                  Do que preciso hoje? <small>Opcional</small>
-                  <input
-                    maxLength={5000}
-                    value={draft.need}
-                    onChange={(e) => patch('need', e.target.value)}
-                    placeholder="Um intervalo, companhia, movimento…"
-                  />
-                </label>
-                <details>
-                  <summary>Quero aprofundar</summary>
-                  {(
-                    [
-                      ['sleep', 'Como foi meu sono?'],
-                      ['context_note', 'O que aconteceu no meu dia?'],
-                      ['reflection', 'O que senti, aprendi ou me trouxe conexão?'],
-                    ] as const
-                  ).map(([key, label]) => (
-                    <label className="cycle-field" key={key}>
-                      {label}
-                      <textarea
-                        maxLength={5000}
-                        rows={2}
-                        value={draft[key]}
-                        onChange={(e) => patch(key, e.target.value)}
-                      />
-                    </label>
-                  ))}
-                </details>
-                <label className="cycle-field">
-                  Um cuidado que escolho para mim <small>Opcional</small>
-                  <textarea
-                    maxLength={5000}
-                    rows={2}
-                    value={draft.care}
-                    onChange={(e) => patch('care', e.target.value)}
-                    placeholder="Uma ação possível para o meu momento"
-                  />
-                </label>
-                {draft.care && (
-                  <Choice
-                    label="Se já experimentei, como foi?"
-                    values={['Ajudou', 'Ajudou um pouco', 'Não percebi diferença', 'Me fez pior']}
-                    value={draft.care_response}
-                    onChange={(v) => patch('care_response', v)}
-                  />
-                )}
-                <label className="cycle-check">
-                  <input
-                    type="checkbox"
-                    checked={draft.access_class === 'participant_shared'}
-                    onChange={(e) =>
-                      patch(
-                        'access_class',
-                        e.target.checked ? 'participant_shared' : 'participant_private',
-                      )
-                    }
-                  />
-                  Compartilhar este dia com minha profissional
-                </label>
-                <small>
-                  Inclui todos os campos deste dia. Desmarque e salve para retirar o
-                  compartilhamento.
-                </small>
-                <div className="flex gap-2 flex-wrap">
-                  <Button type="submit">{busy ? 'Salvando…' : 'Salvar meu registro'}</Button>
-                  <Button type="submit" variant="outline">
-                    Salvar e continuar depois
-                  </Button>
-                </div>
-                <p className="text-xs">
-                  Você pode pular campos. Alterações ficam salvas ao tocar em Salvar.
-                </p>
-                {draft.id && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={async () => {
-                      if (
-                        !window.confirm(
-                          'Excluir este registro diário? Esta ação não pode ser desfeita.',
+                      checked={draft.access_class === 'participant_shared'}
+                      onChange={(e) =>
+                        patch(
+                          'access_class',
+                          e.target.checked ? 'participant_shared' : 'participant_private',
                         )
-                      )
-                        return
-                      setBusy(true)
-                      try {
-                        await cycleJournalService.remove(draft)
-                        setEntries((v) => v.filter((e) => e.id !== draft.id))
-                        setDraft(emptyCycleEntry(enrollmentId, selected))
-                        setDirty(false)
-                        setMessage('Registro excluído.')
-                      } catch {
-                        setError('Não foi possível excluir. Tente novamente.')
-                      } finally {
-                        setBusy(false)
                       }
-                    }}
-                  >
-                    Excluir este dia
-                  </Button>
-                )}
-              </fieldset>
-            </form>
-          )}
-        </div>
+                    />
+                    Compartilhar este dia com minha profissional
+                  </label>
+                  <small>
+                    Inclui todos os campos deste dia. Desmarque e salve para retirar o
+                    compartilhamento.
+                  </small>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button type="submit">{busy ? 'Salvando…' : 'Salvar meu registro'}</Button>
+                    <Button type="button" variant="outline" onClick={() => void save(true)}>
+                      Salvar e continuar depois
+                    </Button>
+                  </div>
+                  <p className="text-xs">
+                    Você pode pular campos. Alterações ficam salvas ao tocar em Salvar.
+                  </p>
+                  {draft.id && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={async () => {
+                        if (
+                          !window.confirm(
+                            'Excluir este registro diário? Esta ação não pode ser desfeita.',
+                          )
+                        )
+                          return
+                        setBusy(true)
+                        try {
+                          await cycleJournalService.remove(draft)
+                          setEntries((v) => v.filter((e) => e.id !== draft.id))
+                          setDraft(emptyCycleEntry(enrollmentId, selected))
+                          setDirty(false)
+                          setMessage('Registro excluído.')
+                        } catch {
+                          setError('Não foi possível excluir. Tente novamente.')
+                        } finally {
+                          setBusy(false)
+                        }
+                      }}
+                    >
+                      Excluir este dia
+                    </Button>
+                  )}
+                </fieldset>
+              </form>
+            )}
+            {!readOnly && draft.care.trim() && (
+              <div className="cycle-invitation">
+                <p className="whitespace-pre-wrap">{draft.care}</p>
+                <label className="cycle-field">
+                  Quando quero experimentar? <small>Opcional</small>
+                  <input
+                    type="datetime-local"
+                    value={schedule}
+                    onChange={(e) => setSchedule(e.target.value)}
+                  />
+                </label>
+                <Button disabled={busy || dirty || careAdded} onClick={addCare}>
+                  {careAdded
+                    ? 'Adicionado ao meu plano'
+                    : schedule
+                      ? 'Adicionar ao plano e ao Planner'
+                      : 'Adicionar ao meu plano'}
+                </Button>
+                {dirty && <small>Salve o registro antes de levar este cuidado ao plano.</small>}
+                <small>O cuidado entra privado; você escolhe o compartilhamento no plano.</small>
+              </div>
+            )}
+            {error && (
+              <p role="alert" className="cycle-feedback">
+                {error}
+              </p>
+            )}
+            {message && (
+              <p role="status" className="cycle-feedback">
+                {message}
+              </p>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
       {!readOnly && (
         <div className="cycle-card">
@@ -856,28 +951,6 @@ export function CycleMandala({
               <Link to="/planner">Abrir meu Planner</Link>
             </Button>
           </div>
-          {draft.care.trim() && (
-            <div className="cycle-invitation">
-              <p className="whitespace-pre-wrap">{draft.care}</p>
-              <label className="cycle-field">
-                Quando quero experimentar? <small>Opcional</small>
-                <input
-                  type="datetime-local"
-                  value={schedule}
-                  onChange={(e) => setSchedule(e.target.value)}
-                />
-              </label>
-              <Button disabled={busy || dirty || careAdded} onClick={addCare}>
-                {careAdded
-                  ? 'Adicionado ao meu plano'
-                  : schedule
-                    ? 'Adicionar ao plano e ao Planner'
-                    : 'Adicionar ao meu plano'}
-              </Button>
-              {dirty && <small>Salve o registro antes de levar este cuidado ao plano.</small>}
-              <small>O cuidado entra privado; você escolhe o compartilhamento no plano.</small>
-            </div>
-          )}
         </div>
       )}
       <div className="cycle-card">

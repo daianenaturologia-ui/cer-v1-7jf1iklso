@@ -1,3 +1,4 @@
+import { PrintablePlannerWeek } from './PrintablePlannerWeek'
 import { developmentPlanService } from '@/services/developmentPlanService'
 import { routineEvents, type PlanRoutine } from '@/services/developmentPlanDocument'
 import { ResourceMaterial } from '@/components/ResourceMaterial'
@@ -247,6 +248,7 @@ export function WeeklyAgenda({
   }
   return (
     <section aria-label={readOnly ? 'Agenda compartilhada' : 'Minha agenda'} className="space-y-4">
+      <PrintablePlannerWeek days={days} events={events} />
       <div className="flex flex-wrap items-baseline justify-between gap-1">
         <h2 className="font-serif text-lg">Uma semana que cabe na sua vida</h2>
         <p className="text-xs text-muted-foreground">
@@ -318,6 +320,13 @@ export function WeeklyAgenda({
               onClick={() => setExpanded((value) => !value)}
             >
               {expanded ? 'Ver semana compacta' : 'Ampliar agenda'}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={loading || !!error || !!routineError}
+              onClick={() => window.print()}
+            >
+              Imprimir minha semana
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">

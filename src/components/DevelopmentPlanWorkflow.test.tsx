@@ -33,10 +33,10 @@ it('prepares, shares across sessions and explicitly schedules the agreed action 
   fireEvent.change(await screen.findByLabelText(/Seu momento atual/), {
     target: { value: 'Momento fictício' },
   })
-  fireEvent.change(screen.getByLabelText(/O que merece atenção agora/), {
+  fireEvent.change(screen.getByLabelText(/Prioridades de equilíbrio e cuidado/), {
     target: { value: 'Prioridade fictícia' },
   })
-  fireEvent.click(screen.getByText('Acrescentar meta'))
+  fireEvent.click(screen.getByText('Definir meta principal'))
   fireEvent.change(screen.getByLabelText('Mudança que queremos alcançar'), {
     target: { value: 'Ter espaço para descanso' },
   })
@@ -57,7 +57,7 @@ it('prepares, shares across sessions and explicitly schedules the agreed action 
   expect(screen.queryByText('Conferir minha semana')).toBeNull()
   fireEvent.click(
     screen.getByLabelText(
-      'Lemos juntas esta versão e combinamos as metas e ações para experimentar.',
+      'Lemos juntas esta versão e combinamos os cuidados, a meta principal e as ações para experimentar.',
     ),
   )
   fireEvent.click(screen.getByText('Compartilhar plano combinado'))

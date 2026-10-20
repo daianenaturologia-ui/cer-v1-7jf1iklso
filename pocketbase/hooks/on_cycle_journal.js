@@ -1,6 +1,16 @@
 // Validate dates and cross-field consistency even for direct API callers.
 const validateCycleDay = (e) => {
   const r = e.record
+  const signs = Array.from(r.get('cycle_signs') || [])
+  if (
+    !Array.isArray(signs) ||
+    signs.length > 2 ||
+    signs.some(
+      (v) => !['TPM percebida', 'Sinais de ovulação percebidos', 'Não sei identificar'].includes(v),
+    ) ||
+    (signs.includes('Não sei identificar') && signs.length > 1)
+  )
+    throw new BadRequestError('Confira os sinais percebidos do ciclo.')
   const day = r.getString('day')
   const parsed = new Date(day + 'T12:00:00Z')
   if (

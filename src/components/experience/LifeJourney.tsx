@@ -1,4 +1,6 @@
 import React from 'react'
+import { LIFE_JOURNEY_COPY } from '@/services/lifeJourneyCopy'
+import { LifeIntegrationGame } from './LifeIntegrationGame'
 import { Button } from '@/components/ui/button'
 import { LifeTimeline } from './LifeTimeline'
 import { LifeDirections } from './LifeDirections'
@@ -30,6 +32,14 @@ export function LifeJourney({
   onOpenCare?: () => void
 }) {
   const index = JOURNEY_MOMENTS.indexOf(moment)
+  const reflection =
+    moment === 'past'
+      ? LIFE_JOURNEY_COPY.past
+      : moment === 'present'
+        ? LIFE_JOURNEY_COPY.present
+        : moment === 'future'
+          ? LIFE_JOURNEY_COPY.future
+          : undefined
   return (
     <section className="space-y-5" aria-label="Minha trajetória">
       <div className="cer-reading-panel border bg-card px-5 py-6 sm:px-8">
@@ -64,6 +74,26 @@ export function LifeJourney({
           registros.
         </p>
       </div>
+      {reflection && unlocked && (
+        <div className="rounded-2xl border bg-primary/5 p-5 space-y-3">
+          <h3 className="font-serif text-xl">{reflection.title}</h3>
+          <p className="text-sm leading-relaxed">{reflection.text}</p>
+          {moment === 'past' && (
+            <details className="text-sm">
+              <summary className="cursor-pointer text-primary">
+                A infância como terreno da vida · inspiração em Lya Luft
+              </summary>
+              <p className="mt-3 leading-relaxed">{LIFE_JOURNEY_COPY.past.inspiration}</p>
+            </details>
+          )}
+          {moment === 'future' && (
+            <p className="text-sm leading-relaxed">{LIFE_JOURNEY_COPY.future.focus}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Para aprofundar: e-book Linha da Vida · em preparação para a Biblioteca CER.
+          </p>
+        </div>
+      )}
       {!unlocked ? (
         <p className="rounded-xl border p-4 text-sm">
           Conclua as seis dimensões da Consciência antes de iniciar este percurso.
@@ -122,8 +152,8 @@ export function LifeJourney({
           {moment === 'future' && (
             <>
               <p className="text-sm">
-                O que gostaria que fosse diferente? Comece por uma direção possível. Ainda não saber
-                também é válido; não é necessário escolher exercícios ou agendar ações agora.
+                Liste seus desejos, escolha uma meta principal e imagine as ações que podem
+                aproximar você dela. Os cuidados e a rotina serão combinados com Daiane nas sessões.
               </p>
               <LifeDirections
                 key={`future-${enrollmentId}`}
@@ -142,9 +172,9 @@ export function LifeJourney({
             <>
               <p className="text-sm">
                 Você já percorreu a história, o mapa, o presente e as direções futuras. Agora,
-                registre os cuidados que já fazem parte da sua vida e converse com Daiane sobre o
-                que precisa agora. Vocês constroem o plano juntos, e você escolhe o que levar ao
-                Planner.
+                Daiane prepara um plano de cuidado para sustentar seu equilíbrio e sua meta. Nas
+                sessões, vocês ajustam a proposta, combinam as ações e distribuem o que faz sentido
+                na rotina do Planner.
               </p>
               {objective && (
                 <details className="rounded-xl border p-4">
@@ -153,6 +183,7 @@ export function LifeJourney({
                   <p>{objective.summary}</p>
                 </details>
               )}
+              <LifeIntegrationGame enrollmentId={enrollmentId} />
               <Button onClick={onOpenCare}>Ir para Equilíbrio & Realização</Button>
             </>
           )}

@@ -21,6 +21,8 @@ export interface CycleProfile {
 }
 export interface CycleEntry {
   id?: string
+  thoughts?: string
+  cycle_signs?: string[]
   enrollment_id: string
   day: string
   energy: number
@@ -39,6 +41,7 @@ export interface CycleEntry {
   care_response: string
   access_class: 'participant_private' | 'participant_shared'
 }
+export const CYCLE_SIGNS = ['TPM percebida', 'Sinais de ovulação percebidos', 'Não sei identificar']
 export const EMOTIONS = [
   'Tranquila',
   'Alegre',
@@ -115,6 +118,17 @@ export function defaultCycleProfile(enrollment_id: string): CycleProfile {
   }
 }
 export function validateCycleEntry(e: CycleEntry) {
+  if (e.thoughts !== undefined && (typeof e.thoughts !== 'string' || e.thoughts.length > 5000))
+    throw new Error('O campo de pensamentos pode ter até 5.000 caracteres.')
+  if (
+    e.cycle_signs !== undefined &&
+    (!Array.isArray(e.cycle_signs) ||
+      e.cycle_signs.length > 2 ||
+      new Set(e.cycle_signs).size !== e.cycle_signs.length ||
+      e.cycle_signs.some((v) => !CYCLE_SIGNS.includes(v)) ||
+      (e.cycle_signs.includes('Não sei identificar') && e.cycle_signs.length > 1))
+  )
+    throw new Error('Confira os sinais do ciclo percebidos.')
   if (!e.enrollment_id || !validDay(e.day) || e.day > localDay())
     throw new Error('Escolha uma data válida, até hoje.')
   if (

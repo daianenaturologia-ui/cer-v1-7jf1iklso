@@ -109,9 +109,14 @@ onRecordCreateRequest((e) => {
       )
         throw new BadRequestError('Complete metas, sinais de avanço e ações.')
     }
+    if (stage === 'agreed' && doc.goals.filter((g) => g.id !== 'cer-integrative-care').length > 1)
+      throw new BadRequestError('Escolham uma meta principal para este ciclo.')
     if (stage && !doc.moment.trim())
       throw new BadRequestError('Escreva a síntese antes de compartilhar.')
-    if (stage === 'agreed' && (!doc.priorities.trim() || !doc.goals.length))
+    if (
+      stage === 'agreed' &&
+      (!doc.priorities.trim() || !doc.goals.some((g) => g.id !== 'cer-integrative-care'))
+    )
       throw new BadRequestError('Definam prioridades e metas antes de combinar.')
   }
 
@@ -232,9 +237,14 @@ onRecordUpdateRequest((e) => {
       )
         throw new BadRequestError('Complete metas, sinais de avanço e ações.')
     }
+    if (stage === 'agreed' && doc.goals.filter((g) => g.id !== 'cer-integrative-care').length > 1)
+      throw new BadRequestError('Escolham uma meta principal para este ciclo.')
     if (stage && !doc.moment.trim())
       throw new BadRequestError('Escreva a síntese antes de compartilhar.')
-    if (stage === 'agreed' && (!doc.priorities.trim() || !doc.goals.length))
+    if (
+      stage === 'agreed' &&
+      (!doc.priorities.trim() || !doc.goals.some((g) => g.id !== 'cer-integrative-care'))
+    )
       throw new BadRequestError('Definam prioridades e metas antes de combinar.')
   }
 
@@ -357,9 +367,14 @@ onRecordCreateRequest((e) => {
       )
         throw new BadRequestError('Complete metas, sinais de avanço e ações.')
     }
+    if (stage === 'agreed' && doc.goals.filter((g) => g.id !== 'cer-integrative-care').length > 1)
+      throw new BadRequestError('Escolham uma meta principal para este ciclo.')
     if (stage && !doc.moment.trim())
       throw new BadRequestError('Escreva a síntese antes de compartilhar.')
-    if (stage === 'agreed' && (!doc.priorities.trim() || !doc.goals.length))
+    if (
+      stage === 'agreed' &&
+      (!doc.priorities.trim() || !doc.goals.some((g) => g.id !== 'cer-integrative-care'))
+    )
       throw new BadRequestError('Definam prioridades e metas antes de combinar.')
   }
 
@@ -485,9 +500,14 @@ onRecordCreateRequest((e) => {
       )
         throw new BadRequestError('Complete metas, sinais de avanço e ações.')
     }
+    if (stage === 'agreed' && doc.goals.filter((g) => g.id !== 'cer-integrative-care').length > 1)
+      throw new BadRequestError('Escolham uma meta principal para este ciclo.')
     if (stage && !doc.moment.trim())
       throw new BadRequestError('Escreva a síntese antes de compartilhar.')
-    if (stage === 'agreed' && (!doc.priorities.trim() || !doc.goals.length))
+    if (
+      stage === 'agreed' &&
+      (!doc.priorities.trim() || !doc.goals.some((g) => g.id !== 'cer-integrative-care'))
+    )
       throw new BadRequestError('Definam prioridades e metas antes de combinar.')
   }
 

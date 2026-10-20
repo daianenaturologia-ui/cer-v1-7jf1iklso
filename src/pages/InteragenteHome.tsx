@@ -12,6 +12,7 @@ import { JourneyNavigation } from '@/components/JourneyNavigation'
 import { CerMapUpdateNotice } from '@/components/CerMapUpdateNotice'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CerWelcome } from '@/components/CerWelcome'
+import { PersonalPracticeLibrary } from '@/components/PersonalPracticeLibrary'
 import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
 import { cerCycleInvitationService } from '@/services/cerCycleInvitationService'
 import { LifeDirections } from '@/components/experience/LifeDirections'
@@ -2371,14 +2372,7 @@ export const InteragenteHome: React.FC = () => {
                 )}
               </TabsContent>
               <TabsContent value="praticas" className="mt-4 space-y-4">
-                {enrollment && (
-                  <SelfDevelopmentJourney
-                    key={`library-${enrollment.id}`}
-                    enrollmentId={enrollment.id}
-                    carePlan
-                    libraryOnly
-                  />
-                )}
+                {enrollment && <PersonalPracticeLibrary enrollmentId={enrollment.id} />}
                 {/* Experimentos de Cuidado combinados */}
                 <div className="space-y-4 pt-2">
                   <div className="flex items-center justify-between">
