@@ -15,7 +15,7 @@ import { Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
 import { EmptyState } from '@/components/EmptyState'
-import { SelfDevelopmentJourney } from '@/components/SelfDevelopmentJourney'
+import { PersonalPracticeLibrary } from '@/components/PersonalPracticeLibrary'
 
 export const ExperimentosPage: React.FC = () => {
   const { user } = useAuth()
@@ -83,11 +83,9 @@ export const ExperimentosPage: React.FC = () => {
         </header>
 
         {enrollment && (
-          <SelfDevelopmentJourney
+          <PersonalPracticeLibrary
             key={enrollment.id}
             enrollmentId={enrollment.id}
-            carePlan
-            libraryOnly
           />
         )}
         <h2 className="font-serif text-lg">Práticas do acompanhamento individual</h2>
