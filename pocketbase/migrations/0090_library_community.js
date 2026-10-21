@@ -9,7 +9,7 @@ migrate(
       name: 'author_id',
       type: 'relation',
       required: true,
-      collectionId: "_pb_users_auth_",
+      collectionId: '_pb_users_auth_',
       maxSelect: 1,
     })
     const create = (name, fields, indexes = []) => {
