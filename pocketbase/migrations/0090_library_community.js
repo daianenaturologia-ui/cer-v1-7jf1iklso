@@ -9,7 +9,7 @@ migrate(
       name: 'author_id',
       type: 'relation',
       required: true,
-      collectionId: app.findCollectionByNameOrId('users').id,
+      collectionId: "_pb_users_auth_",
       maxSelect: 1,
     })
     const create = (name, fields, indexes = []) => {
