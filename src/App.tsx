@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import HomeDispatcher from './pages/HomeDispatcher'
 import Login from './pages/Login'
+import ResetPassword from './pages/ResetPassword'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 import { CerVisualTheme } from './components/CerArtwork'
@@ -28,6 +29,7 @@ const App = () => {
           <CerVisualTheme>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route element={<Layout />}>
                 <Route
                   path="/"
