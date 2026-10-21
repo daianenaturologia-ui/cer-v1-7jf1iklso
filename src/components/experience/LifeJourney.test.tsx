@@ -101,3 +101,11 @@ it('exibe o texto solicitado sem a metáfora da infância', () => {
   expect(screen.queryByText(/A infância como terreno da vida/)).toBeNull()
   expect(screen.queryByText(/Lya Luft/)).toBeNull()
 })
+
+it('cartas ficam no presente após a história, antes das metas, e saem da etapa de cuidado', () => {
+  const view = render(<LifeJourney enrollmentId="enr" unlocked moment="present" />)
+  expect(screen.getByRole('region', { name: 'Cartas do próximo capítulo' })).toBeInTheDocument()
+  expect(screen.getByLabelText('Crie a sua carta')).toBeInTheDocument()
+  view.rerender(<LifeJourney enrollmentId="enr" unlocked moment="care" />)
+  expect(screen.queryByRole('region', { name: 'Cartas do próximo capítulo' })).toBeNull()
+})

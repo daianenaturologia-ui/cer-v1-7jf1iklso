@@ -13,7 +13,7 @@ export function DevelopmentPlanDocument({ document }: { document: PlanDocument }
         </p>
       </section>
       <section className="space-y-2">
-        <h3 className="font-serif text-lg">Prioridades de equilíbrio e cuidado</h3>
+        <h3 className="font-serif text-lg">Objetivos terapêuticos e prioridades de cuidado</h3>
         <p className="whitespace-pre-wrap">
           {document.priorities || 'As prioridades serão escolhidas em conjunto.'}
         </p>

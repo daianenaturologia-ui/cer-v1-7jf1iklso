@@ -582,7 +582,7 @@ async function main() {
       .getByLabel(/Seu momento atual/)
       .fill('Síntese fictícia para construir o desenvolvimento em sessão.')
     await writtenPlan
-      .getByLabel(/Prioridades de equilíbrio e cuidado/)
+      .getByLabel(/Objetivos terapêuticos e prioridades de cuidado/)
       .fill('Priorizar descanso e uma rotina possível.')
     await writtenPlan.getByRole('button', { name: 'Definir meta principal', exact: true }).click()
     await writtenPlan.getByLabel('Mudança que queremos alcançar').fill('Ter espaço para descanso')
