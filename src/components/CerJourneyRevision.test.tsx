@@ -1,3 +1,5 @@
+import { LifeLetterImport } from './LifeLetterImport'
+import { addLetterToPriorities, LIFE_LETTER_TITLE } from '@/services/lifeLetter'
 import React, { useState } from 'react'
 import { beforeEach, afterEach, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, within, cleanup } from '@testing-library/react'
@@ -35,7 +37,7 @@ it('jogo permite passar, voltar e salvar uma reflexão privada apenas por escolh
   render(<LifeIntegrationGame enrollmentId={ID} />)
   expect(save).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: /Dar lugar a uma perda/ }))
-  fireEvent.change(screen.getByLabelText(/Um vínculo ou situação/), {
+  fireEvent.change(screen.getByLabelText('Crie a sua carta'), {
     target: { value: 'Uma despedida' },
   })
   fireEvent.click(screen.getByText('Levar minhas escolhas adiante'))
@@ -43,8 +45,8 @@ it('jogo permite passar, voltar e salvar uma reflexão privada apenas por escolh
   fireEvent.click(screen.getByRole('button', { name: /Realizar com mais leveza/ }))
   fireEvent.click(screen.getByText('Levar minhas escolhas adiante'))
   expect(screen.getByRole('checkbox')).not.toBeChecked()
-  fireEvent.click(screen.getByText('Guardar esta reflexão no meu presente'))
-  await screen.findByText(/Reflexão salva/)
+  fireEvent.click(screen.getByText('Guardar minha carta no presente'))
+  await screen.findByText(/Carta salva/)
   const values = await lifeDirectionsService.list(ID)
   expect(values[0].access_class).toBe('participant_private')
   expect(values[0].narrative).toContain('Uma despedida')
@@ -198,4 +200,79 @@ it('painel de impressão inclui horários e títulos da semana e não inclui cam
   expect(text).toContain('Minha prática')
   expect(text).toContain('09:00')
   expect(text).not.toMatch(/SEGREDO|Outra semana/)
+})
+
+it('uma carta escrita com palavras próprias pode ser salva sem escolher cartas prontas e depois compartilhada', async () => {
+  render(<LifeIntegrationGame enrollmentId={ID} />)
+  fireEvent.change(screen.getByLabelText('Crie a sua carta'), {
+    target: { value: 'Quero cuidar da saudade e encontrar novos apoios.' },
+  })
+  fireEvent.click(screen.getByText('Levar minhas escolhas adiante'))
+  for (let i = 0; i < 2; i++) fireEvent.click(screen.getByText('Passar por enquanto'))
+  fireEvent.click(screen.getByText('Guardar minha carta no presente'))
+  await screen.findByText(/Carta salva no seu presente/)
+  let values = await lifeDirectionsService.list(ID)
+  expect(values).toHaveLength(1)
+  expect(values[0].access_class).toBe('participant_private')
+  expect(values[0].narrative).toContain('Quero cuidar da saudade')
+  fireEvent.click(screen.getByRole('checkbox'))
+  fireEvent.click(screen.getByText('Guardar minha carta no presente'))
+  await screen.findByText(/Carta salva no seu presente/)
+  values = await lifeDirectionsService.list(ID)
+  expect(values).toHaveLength(1)
+  expect(values[0].access_class).toBe('participant_shared')
+})
+it('o plano oferece só cartas compartilhadas da pessoa, sem importar automaticamente relatos privados', async () => {
+  const choose = vi.fn()
+  vi.spyOn(lifeDirectionsService, 'list').mockResolvedValue([
+    {
+      id: 'shared',
+      enrollment_id: ID,
+      kind: 'present',
+      title: LIFE_LETTER_TITLE,
+      narrative: 'Minha história compartilhada',
+      access_class: 'participant_shared',
+    },
+    {
+      id: 'private',
+      enrollment_id: ID,
+      kind: 'present',
+      title: LIFE_LETTER_TITLE,
+      narrative: 'História privada',
+      access_class: 'participant_private',
+    },
+    {
+      id: 'other',
+      enrollment_id: 'outra',
+      kind: 'present',
+      title: LIFE_LETTER_TITLE,
+      narrative: 'Outra pessoa',
+      access_class: 'participant_shared',
+    },
+    {
+      id: 'ordinary',
+      enrollment_id: ID,
+      kind: 'present',
+      title: 'Meu dia',
+      narrative: 'Relato comum',
+      access_class: 'participant_shared',
+    },
+  ] as any)
+  render(<LifeLetterImport enrollmentId={ID} onChoose={choose} />)
+  expect(choose).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByText('Trazer carta do meu presente'))
+  await screen.findByText('Minha história compartilhada')
+  expect(screen.queryByText('História privada')).toBeNull()
+  expect(screen.queryByText('Outra pessoa')).toBeNull()
+  expect(screen.queryByText('Relato comum')).toBeNull()
+  fireEvent.click(screen.getByText('Usar esta carta nos objetivos terapêuticos'))
+  expect(choose).toHaveBeenCalledTimes(1)
+})
+it('a carta entra nas prioridades sem apagar cuidados existentes, duplicar texto ou exceder o limite', () => {
+  const letter = { title: LIFE_LETTER_TITLE, narrative: 'Cuidar de uma despedida' } as any
+  const next = addLetterToPriorities('Cuidar do sono', letter)
+  expect(next).toContain('Cuidar do sono')
+  expect(next).toContain('Cuidar de uma despedida')
+  expect(addLetterToPriorities(next, letter)).toBe(next)
+  expect(() => addLetterToPriorities('x'.repeat(9999), letter)).toThrow()
 })

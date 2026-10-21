@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Leaf, HeartHandshake, Compass, Check } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { LIFE_LETTER_TITLE, LIFE_LETTER_HEADER } from '@/services/lifeLetter'
 import { lifeDirectionsService } from '@/services/lifeDirections'
 
 const rounds = [
@@ -83,6 +84,7 @@ const rounds = [
 ]
 export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) {
   const [step, setStep] = useState(0)
+  const [savedId, setSavedId] = useState<string>()
   const [context, setContext] = useState('')
   const [selected, setSelected] = useState<string[][]>([[], [], []])
   const [shared, setShared] = useState(false),
@@ -90,6 +92,7 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
     [notice, setNotice] = useState('')
   useEffect(() => {
     setStep(0)
+    setSavedId(undefined)
     setContext('')
     setSelected([[], [], []])
     setShared(false)
@@ -98,6 +101,8 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
   const round = rounds[step],
     Icon = round?.icon || Compass
   const summary =
+    LIFE_LETTER_HEADER +
+    '\n' +
     rounds
       .map(
         (r, i) =>
@@ -109,24 +114,30 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
           }.`,
       )
       .join('\n') +
-    (context.trim() ? `\nVínculo ou situação que desejo compreender: ${context.trim()}` : '')
+    (context.trim() ? `\nMinha carta: ${context.trim()}` : '')
   async function save() {
     setBusy(true)
     setNotice('')
     try {
-      await lifeDirectionsService.save({
-        enrollment_id: enrollmentId,
-        kind: 'present',
-        horizon: 'now',
-        title: 'O que escolho levar da minha história',
-        narrative: summary,
-        meaning: '',
-        resources: '',
-        limits: '',
-        first_step: '',
-        access_class: shared ? 'participant_shared' : 'participant_private',
-      })
-      setNotice('Reflexão salva no seu presente. Você pode retomá-la antes de escolher sua meta.')
+      const saved = await lifeDirectionsService.save(
+        {
+          enrollment_id: enrollmentId,
+          kind: 'present',
+          horizon: 'now',
+          title: LIFE_LETTER_TITLE,
+          narrative: summary,
+          meaning: '',
+          resources: '',
+          limits: '',
+          first_step: '',
+          access_class: shared ? 'participant_shared' : 'participant_private',
+        },
+        savedId,
+      )
+      setSavedId(saved.id)
+      setNotice(
+        'Carta salva no seu presente. Se a compartilhar, ela poderá orientar os objetivos terapêuticos do seu plano, junto da sua meta.',
+      )
     } catch (e) {
       setNotice(
         e instanceof Error
@@ -147,9 +158,15 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
       </p>
       <h3 className="font-serif text-xl">Cartas do próximo capítulo</h3>
       <p className="text-sm">
-        Reconhecer o passado, cuidar do presente, abrir o futuro. Escolha as cartas que fazem
-        sentido; você também pode passar. Nada aqui obriga a perdoar, confrontar alguém ou encerrar
-        um luto.
+        As cartas representam o que ainda queremos resolver com o passado e escolhemos cuidar e
+        curar no presente, para abrir espaço a um futuro melhor. Escolha as que fazem sentido ou
+        crie a sua. Você pode passar; não há obrigação de perdoar, retomar contato ou apressar um
+        luto.
+      </p>
+      <p className="text-sm">
+        A meta expressa um sonho ou desejo para o futuro. A carta expressa uma resolução com o
+        passado que você deseja trabalhar agora. Ambas orientam os objetivos terapêuticos do seu
+        Plano de Desenvolvimento e os cuidados e ações combinados nos encontros.
       </p>
       {step < 3 ? (
         <>
@@ -170,6 +187,7 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
                   aria-pressed={chosen}
                   className={`text-left rounded-2xl border p-4 min-h-28 space-y-2 focus-visible:ring-2 focus-visible:ring-primary ${chosen ? 'border-primary bg-primary/10' : 'bg-card hover:border-primary/50'}`}
                   onClick={() => {
+                    setNotice('')
                     setSelected((old) =>
                       old.map((values, i) =>
                         i !== step
@@ -193,16 +211,22 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
             })}
           </div>
           {step === 0 && (
-            <label className="block text-sm space-y-2">
-              Um vínculo ou situação que quero compreender melhor (opcional)
+            <div className="space-y-2">
+              <label htmlFor="my-life-letter" className="block text-sm">
+                Crie a sua carta
+              </label>
               <Textarea
+                id="my-life-letter"
                 rows={2}
-                maxLength={500}
+                maxLength={2000}
                 value={context}
-                onChange={(e) => setContext(e.target.value)}
-                placeholder="Pode ser um nome, uma fase ou uma situação. Conte só o que desejar."
+                onChange={(e) => {
+                  setContext(e.target.value)
+                  setNotice('')
+                }}
+                placeholder="O que da sua história você escolhe cuidar agora? Escreva com suas palavras, no seu ritmo."
               />
-            </label>
+            </div>
           )}
           <div className="flex gap-2 flex-wrap">
             {step > 0 && (
@@ -211,7 +235,9 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
               </Button>
             )}
             <Button onClick={() => setStep(step + 1)}>
-              {selected[step].length ? 'Levar minhas escolhas adiante' : 'Passar por enquanto'}
+              {selected[step].length || (step === 0 && context.trim())
+                ? 'Levar minhas escolhas adiante'
+                : 'Passar por enquanto'}
             </Button>
           </div>
         </>
@@ -220,8 +246,15 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
           <h4 className="font-medium">O que escolho levar comigo</h4>
           <p className="text-sm whitespace-pre-wrap">{summary}</p>
           <label className="flex gap-2 text-sm">
-            <input type="checkbox" checked={shared} onChange={(e) => setShared(e.target.checked)} />
-            Compartilhar esta reflexão com minha profissional
+            <input
+              type="checkbox"
+              checked={shared}
+              onChange={(e) => {
+                setShared(e.target.checked)
+                setNotice('')
+              }}
+            />
+            Compartilhar esta carta para os encontros
           </label>
           <p className="text-xs text-muted-foreground">
             Suas escolhas só viram registro ao salvar. Desmarcado: só você acessa. Você pode voltar
@@ -233,11 +266,13 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
             </Button>
             <Button
               disabled={
-                busy || !!notice.startsWith('Reflexão salva') || !selected.some((v) => v.length)
+                busy ||
+                notice.startsWith('Carta salva') ||
+                (!selected.some((v) => v.length) && !context.trim())
               }
               onClick={() => void save()}
             >
-              {busy ? 'Salvando…' : 'Guardar esta reflexão no meu presente'}
+              {busy ? 'Salvando…' : 'Guardar minha carta no presente'}
             </Button>
           </div>
         </>

@@ -1,3 +1,5 @@
+import { lifeDirectionsService } from '@/services/lifeDirections'
+import { LIFE_LETTER_TITLE } from '@/services/lifeLetter'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
@@ -58,4 +60,33 @@ it('keeps participant waiting state simple without exposing preparation fields',
   expect(screen.queryByText('Acrescentar meta')).toBeNull()
   expect(screen.queryByText('Minhas anotações profissionais · privadas')).toBeNull()
   expect(screen.queryByText('Confirmar rotina no Planner')).toBeNull()
+})
+
+it('carta escolhida integra objetivos terapêuticos do rascunho sem criar outra meta ou publicar o plano', async () => {
+  vi.spyOn(lifeDirectionsService, 'list').mockResolvedValue([
+    {
+      id: 'carta',
+      enrollment_id: 'e',
+      kind: 'present',
+      title: LIFE_LETTER_TITLE,
+      narrative: 'Quero acolher uma despedida',
+      access_class: 'participant_shared',
+    },
+  ] as any)
+  render(
+    <MemoryRouter>
+      <DevelopmentPlanWorkspace enrollmentId="e" professional />
+    </MemoryRouter>,
+  )
+  await screen.findByLabelText(/Seu momento atual/)
+  fireEvent.click(screen.getByText('Trazer carta do meu presente'))
+  await screen.findByText('Quero acolher uma despedida')
+  fireEvent.click(screen.getByText('Usar esta carta nos objetivos terapêuticos'))
+  expect(
+    (screen.getByLabelText(/Objetivos terapêuticos e prioridades/) as HTMLTextAreaElement).value,
+  ).toContain('Quero acolher uma despedida')
+  await waitFor(() => expect(save).toHaveBeenCalled(), { timeout: 2500 })
+  expect(save.mock.calls.at(-1)[1].goals).toHaveLength(0)
+  expect(share).not.toHaveBeenCalled()
+  vi.restoreAllMocks()
 })

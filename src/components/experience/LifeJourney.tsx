@@ -132,6 +132,7 @@ export function LifeJourney({
                 unlocked={unlocked}
                 perspective="present"
               />
+              <LifeIntegrationGame key={enrollmentId} enrollmentId={enrollmentId} />
               <Button onClick={() => onMomentChange?.('future')}>
                 Continuar para minhas direções futuras
               </Button>
@@ -140,6 +141,8 @@ export function LifeJourney({
           {moment === 'future' && (
             <>
               <p className="text-sm">
+                Sua meta expressa um sonho ou desejo para o futuro. Sua carta registra o que você
+                escolheu cuidar sobre o passado. Ambas orientam os objetivos terapêuticos no plano.
                 Liste seus desejos, escolha uma meta principal e imagine as ações que podem
                 aproximar você dela. Os cuidados e a rotina serão combinados com Daiane nos
                 encontros.
@@ -160,10 +163,11 @@ export function LifeJourney({
           {moment === 'care' && (
             <>
               <p className="text-sm">
-                Você já percorreu a história, o mapa, o presente e as direções futuras. Agora,
-                Daiane prepara um plano de cuidado para sustentar seu equilíbrio e sua meta. Nos
-                encontros, vocês ajustam a proposta, combinam as ações e distribuem o que faz
-                sentido na rotina do Planner.
+                Você já percorreu a história, o mapa, o presente e as direções futuras. Agora, Sua
+                carta e sua meta ajudam a definir os objetivos terapêuticos. Daiane prepara um plano
+                de cuidado para sustentar seu equilíbrio e o que deseja transformar. Nos encontros,
+                vocês ajustam a proposta, combinam as ações e distribuem o que faz sentido na rotina
+                do Planner.
               </p>
               {objective && (
                 <details className="rounded-xl border p-4">
@@ -172,7 +176,6 @@ export function LifeJourney({
                   <p>{objective.summary}</p>
                 </details>
               )}
-              <LifeIntegrationGame enrollmentId={enrollmentId} />
               <Button onClick={onOpenCare}>Ir para Equilíbrio & Realização</Button>
             </>
           )}

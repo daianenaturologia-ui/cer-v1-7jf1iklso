@@ -1,3 +1,5 @@
+import { LifeLetterImport } from './LifeLetterImport'
+import { addLetterToPriorities } from '@/services/lifeLetter'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { IntegrativeCareComposer } from './IntegrativeCareComposer'
@@ -383,10 +385,12 @@ export function DevelopmentPlanWorkspace({
                 />
               </label>
               <label className="block space-y-2">
-                <span className="font-serif text-lg">Prioridades de equilíbrio e cuidado</span>
+                <span className="font-serif text-lg">
+                  Objetivos terapêuticos e prioridades de cuidado
+                </span>
                 <span className="block text-xs text-muted-foreground">
                   Defina as necessidades de cuidado e tratamento que emergem do mapa, seus objetivos
-                  e o que acompanhar. Apresente uma proposta individualizada para conversar na
+                  e o que acompanhar. Apresente uma proposta individualizada para conversar no
                   encontro.
                 </span>
                 <Textarea
@@ -395,6 +399,25 @@ export function DevelopmentPlanWorkspace({
                   onChange={(e) => setDocument({ ...document, priorities: e.target.value })}
                 />
               </label>
+              <LifeLetterImport
+                key={enrollmentId}
+                enrollmentId={enrollmentId}
+                onChoose={(letter) => {
+                  try {
+                    setDocument({
+                      ...document,
+                      priorities: addLetterToPriorities(document.priorities, letter),
+                    })
+                    setNotice(
+                      'Carta acrescentada aos objetivos terapêuticos do rascunho. Revejam e ajustem juntas antes de compartilhar o plano.',
+                    )
+                  } catch (e) {
+                    setError(
+                      e instanceof Error ? e.message : 'Não foi possível acrescentar a carta.',
+                    )
+                  }
+                }}
+              />
               <IntegrativeCareComposer
                 document={document}
                 onChange={setDocument}
