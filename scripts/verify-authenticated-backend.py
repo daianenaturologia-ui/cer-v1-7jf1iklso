@@ -28,6 +28,7 @@ try:
         u.set('email',name+'@example.invalid');u.setPassword(PASSWORD);u.set('person_id',people[name].id);u.set('status','active');app.save(u);users[name]=u;
         save('user_roles',{user_id:u.id,role:['p','q'].includes(name)?'profissional':'interagente',is_active:true});
       }
+      save('cer_library_curators',{author_id:users.p.id});
       const adminPerson=save('persons',{full_name:'Disposable Role Administrator',email:'role-admin@example.invalid'});
       const roleAdmin=new Record(app.findCollectionByNameOrId('users'));
       roleAdmin.set('email','role-admin@example.invalid');roleAdmin.setPassword('FixtureRoleAdmin123!');
@@ -67,6 +68,11 @@ try:
       if(person.getString('email')==='rollback@example.invalid')throw new BadRequestError('Reference rollback probe');
       e.next();
     },'journey_states');''')
+    (hooks/'998_reference_library_rollback.pb.js').write_text('''onRecordUpdate((e)=>{
+      const payload=JSON.parse(e.record.getString('payload'));
+      if(payload.title==='ROLLBACK_LIBRARY_PROBE'&&e.record.getString('status')==='approved')throw new BadRequestError('Reference library rollback');
+      e.next();
+    },'cer_library_submissions');''')
     with socket.socket() as sock:
         sock.bind(('127.0.0.1',0)); port=sock.getsockname()[1]
     base='http://127.0.0.1:'+str(port)
@@ -116,6 +122,68 @@ try:
         tokens={n:v['token'] for n,v in actors.items()}
         enrollments=record('enrollments',admin)['items']
         enroll={n:next(e for e in enrollments if e['person_id']==actors[n]['record']['person_id'])['id'] for n in ['a','b']}
+        # Opt-in library: only reviewed versions are exposed; no clinical/account identifiers in DTOs.
+        lib='/backend/v1/cer/library'
+        def library(actor, action, **body):
+            return ok(lib,tokens[actor],'POST',{'action':action,**body})
+        def denied_library(actor, action, code, **body):
+            return require(request(lib,tokens.get(actor,''),'POST',{'action':action,**body})[0]==code)
+        practice={'title':'Fictional pause','theme':'Presence','duration':'One minute','instructions':'Look at a fictional tree. Pause when needed.','experience':'FICTIONAL_EXPERIENCE','display_name':'Fictional alias'}
+        check('Library unauthenticated request rejected',lambda:denied_library('guest','feed',401))
+        check('Library only assigned active professional is curator',lambda:require(library('p','access')['curator'] and not library('q','access')['curator'] and not library('a','access')['curator']))
+        draft=library('a','save',payload=practice,submit=False,consent=False)
+        check('Library draft absent from feed and curator queue',lambda:require(library('b','feed')['items']==[] and library('p','queue')['items']==[]))
+        check('Library own draft not returned to another person',lambda:require(library('b','mine')['items']==[] and library('a','mine')['items'][0]['id']==draft['id']))
+        for col in ['cer_library_submissions','cer_library_posts','cer_library_comments','cer_library_curators','cer_library_reviews']:
+            check('Library raw API locked '+col,lambda col=col:require(request('/api/collections/'+col+'/records',tokens['a'])[0]==403 and request('/api/collections/'+col+'/records',tokens['p'],'POST',{'author_id':actors['p']['record']['id']})[0]==403))
+        check('Library submission requires explicit consent',lambda:denied_library('a','save',400,id=draft['id'],revision=draft['revision'],payload=practice,submit=True,consent=False))
+        check('Library another user cannot edit draft',lambda:denied_library('b','save',403,id=draft['id'],revision=draft['revision'],payload=practice,submit=False))
+        pending=library('a','save',id=draft['id'],revision=draft['revision'],payload=practice,submit=True,consent=True)
+        check('Library pending practice not visible to community',lambda:require(library('b','feed')['items']==[] and library('p','queue')['items'][0]['status']=='pending'))
+        check('Library noncurator professional cannot review',lambda:denied_library('q','review',403,id=pending['id'],revision=pending['revision'],decision='approve',note=''))
+        check('Library author cannot approve or view queue',lambda:require(request(lib,tokens['a'],'POST',{'action':'review','id':pending['id'],'revision':pending['revision'],'decision':'approve','note':''})[0]==403 and request(lib,tokens['a'],'POST',{'action':'queue'})[0]==403))
+        check('Library stale reviewer cannot approve changed version',lambda:denied_library('p','review',400,id=pending['id'],revision=draft['revision'],decision='approve',note=''))
+        check('Library rejection requires meaningful feedback',lambda:denied_library('p','review',400,id=pending['id'],revision=pending['revision'],decision='request_changes',note=' '))
+        changes=library('p','review',id=pending['id'],revision=pending['revision'],decision='request_changes',note='Fictional revision requested')
+        check('Library feedback returned privately to author',lambda:require(library('a','mine')['items'][0]['review_note']=='Fictional revision requested' and library('b','feed')['items']==[]))
+        pending=library('a','save',id=changes['id'],revision=changes['revision'],payload=practice,submit=True,consent=True)
+        approved=library('p','review',id=pending['id'],revision=pending['revision'],decision='approve',note='Fictional approval')
+        public=library('b','feed')['items'][0]
+        check('Library publishes exactly approved payload without private account fields',lambda:require(public['payload']==practice and set(public)=={'id','payload','created'} and actors['a']['record']['id'] not in json.dumps(public)))
+        check('Library repeat approval cannot duplicate publication',lambda:denied_library('p','review',400,id=approved['id'],revision=approved['revision'],decision='approve',note=''))
+        key='community:'+public['id']
+        check('Library comment requires explicit public consent',lambda:denied_library('b','comment',400,target_key=key,display_name='Fictional reader',body='FICTIONAL_COMMENT',consent=False))
+        comment=library('b','comment',target_key=key,display_name='Fictional reader',body='FICTIONAL_COMMENT',consent=True)
+        shared_comments=library('a','comments',target_key=key)['items']
+        check('Library readers see comments without author account identifiers',lambda:require(shared_comments[0]['body']=='FICTIONAL_COMMENT' and not shared_comments[0]['mine'] and set(shared_comments[0])=={'id','display_name','body','created','mine'} and actors['b']['record']['id'] not in json.dumps(shared_comments)))
+        check('Library other reader cannot remove comment',lambda:denied_library('a','remove_comment',403,id=comment['id']))
+        check('Library curator comment moderation requires a reason',lambda:denied_library('p','remove_comment',400,id=comment['id']))
+        library('p','remove_comment',id=comment['id'],note='Fictional moderation')
+        check('Library moderated comments no longer visible',lambda:require(library('b','comments',target_key=key)['items']==[]))
+        own_comment=library('a','comment',target_key='catalog:cer-ritmo-v1',display_name='Alias',body='FICTIONAL_CATALOG_COMMENT',consent=True)
+        library('a','remove_comment',id=own_comment['id'])
+        check('Library author can withdraw comment from catalog',lambda:require(library('b','comments',target_key='catalog:cer-ritmo-v1')['items']==[]))
+        check('Library comments cannot target unknown/private resource',lambda:denied_library('a','comment',404,target_key='catalog:nonexistent0000',display_name='Alias',body='fiction',consent=True))
+        edited=library('a','save',id=approved['id'],revision=approved['revision'],payload={**practice,'instructions':'UNREVIEWED_CHANGE'},submit=False)
+        check('Library editing approved content withdraws it until new approval',lambda:require(library('b','feed')['items']==[] and edited['status']=='draft'))
+        check('Library comments of removed practice cannot be read',lambda:denied_library('b','comments',404,target_key=key))
+        check('Library comments of removed practice cannot be added',lambda:denied_library('b','comment',404,target_key=key,display_name='Alias',body='fiction',consent=True))
+        pending=library('a','save',id=edited['id'],revision=edited['revision'],payload=practice,submit=True,consent=True)
+        approved2=library('p','review',id=pending['id'],revision=pending['revision'],decision='approve',note='Fictional second approval')
+        new_public=library('b','feed')['items'][0]
+        check('Library new approved version has own comment thread',lambda:require(new_public['id']!=public['id'] and library('b','comments',target_key='community:'+new_public['id'])['items']==[]))
+        library('a','withdraw',id=approved2['id'],revision=approved2['revision'])
+        check('Library withdrawal immediately removes public practice',lambda:require(library('b','feed')['items']==[]))
+        history=library('p','history',id=pending['id'])['items']
+        check('Library audit preserves approvals and owner withdrawal',lambda:require(any(h['decision']=='approve' for h in history) and any(h['decision']=='withdrawn' for h in history)))
+        check('Library audit is unavailable to another participant',lambda:denied_library('b','history',403,id=pending['id']))
+        check('Library rejects invented fields and malformed payloads',lambda:require(request(lib,tokens['a'],'POST',{'action':'save','payload':{**practice,'clinical_record':'FORGED'},'submit':True,'consent':True})[0]==400 and request(lib,tokens['a'],'POST',{'action':'save','payload':{**practice,'instructions':'x'*6001},'submit':True,'consent':True})[0]==400))
+        # Atomic publication: failed submission save must also roll back the newly inserted public post.
+        rollback_draft=library('a','save',payload={**practice,'title':'ROLLBACK_LIBRARY_PROBE'},submit=True,consent=True)
+        check('Library failed approval rolls back its entire transaction',lambda:require(request(lib,tokens['p'],'POST',{'action':'review','id':rollback_draft['id'],'revision':rollback_draft['revision'],'decision':'approve','note':''})[0]==400 and library('b','feed')['items']==[] and library('a','mine')['items'][0]['status']=='pending'))
+        record('users',admin,'PATCH',{'status':'suspended'},actors['b']['record']['id'])
+        check('Library reloads account status for previously issued token',lambda:denied_library('b','feed',403))
+        record('users',admin,'PATCH',{'status':'active'},actors['b']['record']['id'])
         # Written development plan: private preparation, immutable sharing and explicit routine commands.
         plan_doc={'title':'Fictional Development Plan','moment':'FICTIONAL_SHARED_SYNTHESIS','priorities':'Fictional priority','goals':[{'id':'goal-one','title':'Fictional goal','progress':'Fictional sign','actions':[{'id':'action-one','title':'Fictional action','context':'Fictional context','fallback':''}]}],'next_session':'Review together'}
         care_goal={'id':'cer-integrative-care','title':'Fictional individual care','progress':'Fictional comfort observation','actions':[{'id':'care-action-one','title':'Fictional recovery practice','context':'Fictional professional guidance','fallback':'Fictional adaptation'}]}
