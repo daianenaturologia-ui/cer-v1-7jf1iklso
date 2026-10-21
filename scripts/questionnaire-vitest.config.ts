@@ -6,6 +6,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/services/libraryCommunity.test.ts',
+      'src/components/LibraryCommunity.test.tsx',
       'src/services/cerEvolutionBrief.test.ts',
       'src/services/dailyRoutine.test.ts',
       'src/components/DailyRoutineDay.test.tsx',

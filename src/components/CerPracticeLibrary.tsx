@@ -4,6 +4,8 @@ import { selfDevelopmentService } from '@/services/selfDevelopment'
 import type { DevelopmentResource } from '@/services/developmentCatalog'
 import { filterLibrary } from '@/services/libraryMaterial'
 import { ResourceMaterial } from './ResourceMaterial'
+import { LibraryCommunity } from './LibraryCommunity'
+import { LibraryComments } from './LibraryComments'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 const areas = [
@@ -58,6 +60,7 @@ export function CerPracticeLibrary({
   onAddToPlan?: (r: DevelopmentResource) => void
   addLabel?: string
 }) {
+  const [curator, setCurator] = useState(false)
   const [resources, setResources] = useState<DevelopmentResource[]>([]),
     [area, setArea] = useState('all'),
     [query, setQuery] = useState(''),
@@ -96,10 +99,11 @@ export function CerPracticeLibrary({
         </p>
         <h2 className="font-serif text-2xl">Biblioteca CER</h2>
         <p className="text-sm leading-relaxed">
-          Encontre inspiração para cuidar de si e dar vida ao seu plano. Explore as áreas, conheça
-          as práticas e converse com Daiane sobre o que faz sentido para seu momento. Este é um
-          acervo para consultar os conteúdos que apoiam seu desenvolvimento. O plano de cuidado e a
-          rotina são construídos em seus próprios espaços, nos encontros.
+          A Biblioteca CER está em construção e recebe novos materiais aos poucos. Encontre
+          inspiração para cuidar de si e dar vida ao seu plano. Explore as áreas, conheça as
+          práticas e converse com Daiane sobre o que faz sentido para seu momento. Este é um acervo
+          para consultar os conteúdos que apoiam seu desenvolvimento. O plano de cuidado e a rotina
+          são construídos em seus próprios espaços, nos encontros.
         </p>
       </header>
       <div className="rounded-2xl border p-5 space-y-3 text-sm leading-relaxed">
@@ -131,6 +135,7 @@ export function CerPracticeLibrary({
           </div>
         </details>
       </div>
+      <LibraryCommunity onAccess={setCurator} onAddToPlan={onAddToPlan} />
       <div
         role="tablist"
         aria-label="Áreas da Biblioteca CER"
@@ -227,6 +232,7 @@ export function CerPracticeLibrary({
                   <ResourceMaterial material={r.material} />
                   {r.fallback && <p className="mt-3">Para adaptar: {r.fallback}</p>}
                 </details>
+                <LibraryComments targetKey={`catalog:${r.id}`} curator={curator} />
                 {onAddToPlan && (
                   <Button variant="outline" onClick={() => onAddToPlan(r)}>
                     {addLabel}
