@@ -68,11 +68,7 @@ export function buildAyurvedaBodyReading(
       sticky && 'Fezes pegajosas ou sensação de eliminação incompleta.',
     ].filter(Boolean) as string[]
     amaPresence =
-      heavy && sticky
-        ? 'Sinalizada'
-        : amaEvidence.length
-          ? 'Possível / Limítrofe'
-          : 'Não evidenciada'
+      heavy && sticky ? 'Sinalizada' : amaEvidence.length ? 'Em observação' : 'Não evidenciada'
     amaSummary =
       heavy && sticky
         ? 'Seus relatos atuais sinalizam Ama na leitura tradicional: peso após as refeições e alteração da eliminação aparecem em duas áreas diferentes. O corpo parece levar mais tempo para concluir o processamento com conforto: a refeição deixa peso, e a eliminação pode ser acompanhada da sensação de que algo ficou incompleto. Esse conjunto se soma à leitura de Agni e ajuda a compreender a experiência de lentidão que você relatou.'

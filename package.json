@@ -1,8 +1,8 @@
 {
   "name": "skip-react-template",
-  "description": "CER V1 — Encontros: preservação de rascunhos e datas no histórico (PR35)",
+  "description": "CER V1 — Continuidade entre dimensões, plano, práticas e revisão de ciclos",
   "private": true,
-  "version": "0.0.416",
+  "version": "0.0.417",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {

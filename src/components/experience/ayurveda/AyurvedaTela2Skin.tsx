@@ -73,8 +73,8 @@ export const AyurvedaTela2Skin: React.FC<AyurvedaTela2SkinProps> = ({
       <div className="p-3 rounded-lg bg-muted/30 border border-border/50 flex items-start gap-2.5 text-xs text-muted-foreground">
         <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
         <span>
-          Cartões clínicos textuais estruturados. A cor de pele do seu avatar é puramente estética e
-          não compõe nem pré-seleciona sua resposta clínica.
+          Escolha a descrição que mais se aproxima da sua experiência. A cor de pele do seu avatar é
+          puramente estética e não compõe nem pré-seleciona sua resposta clínica.
         </span>
       </div>
 

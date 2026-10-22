@@ -114,7 +114,7 @@ function extractDisplayValue(resp?: ExperienceResponseRecord): {
     if (sVal.free_text) return { text: sVal.free_text, isUnsure: false, isRefusal: false }
   }
 
-  return { text: resp.free_text || 'Resposta registrada', isUnsure: false, isRefusal: false }
+  return { text: resp.free_text?.trim() || 'Não respondida', isUnsure: false, isRefusal: false }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

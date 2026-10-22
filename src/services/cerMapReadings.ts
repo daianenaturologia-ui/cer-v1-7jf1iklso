@@ -442,6 +442,12 @@ export function isCerMapReadingSnapshot(value: unknown): value is CerMapReadingS
       (d) =>
         d &&
         strings([d.id, d.title, d.explanation, d.summary, d.interpretation]) &&
+        (d.declaredPatternKeys === undefined ||
+          (Array.isArray(d.declaredPatternKeys) &&
+            d.declaredPatternKeys.length <= 3 &&
+            d.declaredPatternKeys.every(
+              (key) => typeof key === 'string' && !!CER_PROTECTION_PATTERNS[key],
+            ))) &&
         rows(d.summaryRows) &&
         rows(d.detailedRows) &&
         (d.personalSections === undefined ||

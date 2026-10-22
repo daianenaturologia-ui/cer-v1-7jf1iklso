@@ -35,7 +35,7 @@ import {
   Shield,
   ExternalLink,
 } from 'lucide-react'
-import { CER_PROTECTION_PATTERNS } from '@/services/cerProtectionPatterns'
+import { CER_PROTECTION_PATTERNS, patternLabel } from '@/services/cerProtectionPatterns'
 import { getCerProtectionPatternContent } from '@/services/cerProtectionPatternContent'
 import { buildProtectionPatternReading } from '@/services/cerProtectionPatternReading'
 import { cn } from '@/lib/utils'
@@ -43,6 +43,7 @@ import { cn } from '@/lib/utils'
 export interface CerMapReadingsViewProps {
   snapshot: CerMapReadingSnapshot
   initial?: boolean
+  treatmentVariant?: 'feminino' | 'masculino' | 'neutro' | 'outro'
 }
 
 interface DialogState {
@@ -57,7 +58,7 @@ interface DialogState {
  * 10 padrões canônicos mapeados para a nova nomenclatura narrativa,
  * preservando IDs canônicos.
  */
-const BEHAVIOR_PATTERNS = [
+const BASE_BEHAVIOR_PATTERNS = [
   {
     canonicalKey: 'insistente',
     narrativeLabel: 'Insistente',
@@ -70,17 +71,17 @@ const BEHAVIOR_PATTERNS = [
   },
   {
     canonicalKey: 'hiper_realizador',
-    narrativeLabel: 'Realizador incansável',
+    narrativeLabel: 'Hiper-realizador',
     shortConcept: 'Buscar valor por meio da produtividade e das conquistas',
   },
   {
     canonicalKey: 'vitima',
-    narrativeLabel: 'Desencorajado',
+    narrativeLabel: 'Vítima',
     shortConcept: 'Perder o senso de escolha ou potência diante das dificuldades',
   },
   {
     canonicalKey: 'hiper_racional',
-    narrativeLabel: 'Analítico',
+    narrativeLabel: 'Hiper-racional',
     shortConcept: 'Compreender e resolver tudo principalmente pela razão',
   },
   {
@@ -100,7 +101,7 @@ const BEHAVIOR_PATTERNS = [
   },
   {
     canonicalKey: 'evitativo',
-    narrativeLabel: 'Esquivo',
+    narrativeLabel: 'Evitativo',
     shortConcept: 'Evitar desconfortos, conflitos, decisões ou emoções difíceis',
   },
   {
@@ -245,7 +246,15 @@ const REGULATION_REACTIONS = [
   },
 ] as const
 
-export function CerMapReadingsView({ snapshot, initial = false }: CerMapReadingsViewProps) {
+export function CerMapReadingsView({
+  snapshot,
+  initial = false,
+  treatmentVariant = 'neutro',
+}: CerMapReadingsViewProps) {
+  const BEHAVIOR_PATTERNS = BASE_BEHAVIOR_PATTERNS.map((p) => ({
+    ...p,
+    narrativeLabel: patternLabel(p.canonicalKey, treatmentVariant),
+  }))
   const auth = useOptionalAuth()
   const [activeDialog, setActiveDialog] = useState<DialogState | null>(null)
   const triggerRef = useRef<HTMLElement | SVGElement | null>(null)

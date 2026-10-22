@@ -18,15 +18,19 @@ import type { CerMapRecord, CerMapItemRecord } from '@/types/cer'
 
 interface ParticipantMapDisplayProps {
   map: CerMapRecord & { items: CerMapItemRecord[] }
+  treatmentVariant?: 'feminino' | 'masculino' | 'neutro' | 'outro'
   participantName?: string
 }
 
 export const ParticipantMapDisplay: React.FC<ParticipantMapDisplayProps> = ({
   map,
   participantName = 'você',
+  treatmentVariant = 'neutro',
 }) => {
   if (isCerMapReadingSnapshot(map.reading_snapshot)) {
-    return <CerMapReadingsView snapshot={map.reading_snapshot} />
+    return (
+      <CerMapReadingsView treatmentVariant={treatmentVariant} snapshot={map.reading_snapshot} />
+    )
   }
 
   // Adaptador puro para mapas legados:
@@ -47,7 +51,7 @@ export const ParticipantMapDisplay: React.FC<ParticipantMapDisplayProps> = ({
         </span>
         <span className="text-[11px]">Conteúdo do mapa publicado anteriormente</span>
       </div>
-      <CerMapReadingsView snapshot={adaptedSnapshot} />
+      <CerMapReadingsView treatmentVariant={treatmentVariant} snapshot={adaptedSnapshot} />
     </div>
   )
 }

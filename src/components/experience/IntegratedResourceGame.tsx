@@ -43,6 +43,7 @@ export function IntegratedResourceGame({
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [selected, setSelected] = useState('')
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const [newKind, setNewKind] = useState<'strength' | 'difficulty'>('strength')
   const [newLabel, setNewLabel] = useState('')
@@ -87,6 +88,22 @@ export function IntegratedResourceGame({
   const sourceChanged = exercise.sourceFingerprint !== fingerprint
   const items = visibleResourceItems(pool, exercise)
   const itemById = new Map(items.map((i) => [i.id, i]))
+  const suggested = (kind: 'strength' | 'difficulty') => {
+    const group = items.filter((i) => i.kind === kind)
+    if (showAllSuggestions) return group
+    const ranked = [...group].sort(
+      (a, b) =>
+        Number(!!pool.find((p) => p.id === b.id)?.origins.some((o) => o.basis === 'response')) -
+        Number(!!pool.find((p) => p.id === a.id)?.origins.some((o) => o.basis === 'response')),
+    )
+    const first = new Set(ranked.slice(0, 3).map((i) => i.id))
+    return group.filter(
+      (i) =>
+        first.has(i.id) ||
+        i.id.startsWith('personal:') ||
+        exercise.connections.some((c) => c.strengthId === i.id || c.difficultyId === i.id),
+    )
+  }
   const mutate = (next: ResourceExercise) => {
     setExercise(next)
     setDirty(true)
@@ -384,32 +401,37 @@ export function IntegratedResourceGame({
           sugestões que saíram desta versão ficam fora da lista atual.
         </p>
       )}
+      <p className="text-sm">
+        Comece por até três forças e três dificuldades que reconhece agora. Você pode consultar
+        outras sugestões e acrescentar o que faz sentido para você.
+      </p>
+      {items.length > 6 && (
+        <Button variant="outline" onClick={() => setShowAllSuggestions((v) => !v)}>
+          {showAllSuggestions ? 'Voltar às sugestões iniciais' : 'Ver todas as sugestões do mapa'}
+        </Button>
+      )}
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-emerald-800 dark:text-emerald-300">
             Minhas forças e potencialidades
           </h4>
-          {items
-            .filter((i) => i.kind === 'strength')
-            .map((i) =>
-              describe(
-                i,
-                pool.find((p) => p.id === i.id),
-              ),
-            )}
+          {suggested('strength').map((i) =>
+            describe(
+              i,
+              pool.find((p) => p.id === i.id),
+            ),
+          )}
         </div>
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-amber-900 dark:text-amber-300">
             O que está difícil para mim
           </h4>
-          {items
-            .filter((i) => i.kind === 'difficulty')
-            .map((i) =>
-              describe(
-                i,
-                pool.find((p) => p.id === i.id),
-              ),
-            )}
+          {suggested('difficulty').map((i) =>
+            describe(
+              i,
+              pool.find((p) => p.id === i.id),
+            ),
+          )}
         </div>
       </div>
       {!readOnly && (

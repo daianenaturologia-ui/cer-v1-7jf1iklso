@@ -244,6 +244,12 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
 
     const loadEngineData = async () => {
       setLoading(true)
+      setEngineStage('opening')
+      setIsReviewOnly(false)
+      setIsCorrectionMode(false)
+      setCurrentStepIndex(0)
+      setShowPatternsChart(false)
+      setShowMindEmotionsReport(false)
       setLoadError(null)
 
       // Timeout de guarda (8s) para que o loading nunca fique indefinido

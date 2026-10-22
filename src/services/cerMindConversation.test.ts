@@ -19,7 +19,7 @@ it('seleciona só três padrões pela intensidade ordinal e sinaliza empate no l
   const text = mindConversation('Mariana', d, ['medo', 'ansiedade_apreensao'], {}, true)
   expect(text).toContain('Mariana, vamos olhar com carinho')
   expect(text).toContain('você destacou medo e ansiedade')
-  expect(text).toContain('Prestativo, Hipervigilante e Analítico')
+  expect(text).toContain('Prestativo, Hipervigilante e Hiper-racional')
   expect(text).toContain('mesma intensidade')
   expect(text).toContain('seu lado analítico'.replace('seu', 'Seu'))
   expect(text).not.toMatch(/Insistente|Crítico|Você registrou:|exemplo fictício/)
@@ -67,7 +67,7 @@ it('a demonstração menciona somente emoções reais e três padrões; gráfico
   const mind = s.dimensions.find((d) => d.id === 'mente')!
   expect(mind.interpretation).toContain('você destacou ansiedade e alegria e entusiasmo')
   expect(mind.interpretation).not.toContain('você destacou medo')
-  expect(mind.interpretation).toContain('Prestativo, Hipervigilante e Analítico')
+  expect(mind.interpretation).toContain('Prestativo, Hipervigilante e Hiper-racional')
   expect(mind.interpretation).not.toContain('Insistente')
   expect(s.elementReadings!.insistente.sections).toHaveLength(5)
 })

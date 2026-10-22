@@ -7,17 +7,12 @@ const concise = (text: string) => {
   if (sentence.length <= 240) return sentence
   return sentence.slice(0, 237).replace(/\s+\S*$/, '') + '…'
 }
-const names: Record<string, string> = {
-  hiper_racional: 'Analítico',
-  hiper_realizador: 'Realizador incansável',
-  vitima: 'Desencorajado',
-  evitativo: 'Esquivo',
-}
+const names: Record<string, string> = {}
 export function cerEvolutionBrief(snapshot: CerMapReadingSnapshot) {
   const dimension = (id: string) => snapshot.dimensions.find((d) => d.id === id)
   const body = dimension('corpo')
   const mind = dimension('mente')
-  const protection = strongestMindPatterns(mind)
+  const protection = strongestMindPatterns(mind, mind?.declaredPatternKeys)
   const reaction =
     dimension('regulacao')
       ?.detailedRows.find(

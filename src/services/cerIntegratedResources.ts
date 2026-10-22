@@ -104,8 +104,7 @@ export function integratedResources(snapshot: CerMapReadingSnapshot): CerResourc
   const mind = snapshot.dimensions.find((d) => d.id === 'mente')
   if (!mind?.insights?.length)
     for (const row of mind?.detailedRows || []) {
-      if (!/algumas situações|frequência|frequencia|sob pressão|muita força/i.test(row.text))
-        continue
+      if (!/frequência|frequencia|sob pressão|muita força/i.test(row.text)) continue
       const pattern = Object.values(CER_PROTECTION_PATTERNS).find(
         (p) => p.canonicalKey === row.label || p.movementDescription === row.label,
       )

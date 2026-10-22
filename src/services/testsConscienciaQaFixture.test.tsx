@@ -163,7 +163,7 @@ describe('Consciência QA Fixture & Cenário de Demonstração', () => {
 
     const ayv = buildAyurvedaInterpretation(filteredResps)
     expect(ayv.amaReading.categoriesInvolved.length).toBe(1)
-    expect(ayv.amaReading.presence).toBe('Possível / Limítrofe')
+    expect(ayv.amaReading.presence).toBe('Em observação')
   })
 
   it('as 4 dimensões universais produzem sínteses, evidências, recursos e perguntas com a fixture', () => {

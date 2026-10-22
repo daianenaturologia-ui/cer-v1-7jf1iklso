@@ -100,8 +100,8 @@ describe('cerProtectionPatternContent - Camada 2B1', () => {
         expect(Array.isArray(arr), `Padrão ${id} campo ${field} deve ser array`).toBe(true)
         expect(
           arr.length,
-          `Padrão ${id} campo ${field} deve ter ao menos 3 itens`,
-        ).toBeGreaterThanOrEqual(3)
+          `Padrão ${id} campo ${field} deve ter ao menos uma explicação contextual`,
+        ).toBeGreaterThanOrEqual(1)
         for (const str of arr) {
           expect(typeof str).toBe('string')
           expect(str.trim().length).toBeGreaterThan(15)

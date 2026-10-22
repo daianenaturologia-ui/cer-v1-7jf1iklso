@@ -45,7 +45,6 @@ import { cerCarePlanService } from '@/services/cerCarePlanService'
 import type { CerOperationalAcceptanceRecord } from '@/types/cer'
 import { PracticeSelector } from '@/components/PracticeSelector'
 import { AssignmentEditor } from '@/components/AssignmentEditor'
-import { ResponseDigest } from '@/components/ResponseDigest'
 import { ProfessionalMapEditor } from '@/components/ProfessionalMapEditor'
 import { ProfessionalExperienceManager } from '@/components/experience/ProfessionalExperienceManager'
 import { ProfessionalKnowledgeBuilding } from '@/components/ProfessionalKnowledgeBuilding'
@@ -225,29 +224,9 @@ export const ParticipantWorkspace: React.FC = () => {
               {enrollment.status === 'active' ? 'Ativo' : enrollment.status}
             </Badge>
 
-            {journeyState && (
-              <Badge variant="secondary" className="text-[10px] capitalize">
-                {
-                  (
-                    {
-                      onboarding: 'Acolhimento',
-                      consciousness: 'Consciência',
-                      equilibrium_realization: 'Equilíbrio & Realização',
-                    } as const
-                  )[journeyState.current_stage]
-                }{' '}
-                ·{' '}
-                {
-                  (
-                    {
-                      nao_iniciado: 'Não iniciada',
-                      em_andamento: 'Em andamento',
-                      integrado: 'Integrada',
-                    } as const
-                  )[journeyState.stage_status]
-                }
-              </Badge>
-            )}
+            <Badge variant="secondary" className="text-[10px]">
+              Acompanhamento individual
+            </Badge>
 
             <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">
               Prontuário de Daiane
@@ -691,7 +670,6 @@ export const ParticipantWorkspace: React.FC = () => {
           <TabsContent value="revisao" className="space-y-4 mt-4">
             <SelfDevelopmentJourney enrollmentId={enrollment.id} readOnly />
             <CareCycleManager key={`cycles-${enrollment.id}`} enrollmentId={enrollment.id} />
-            <ResponseDigest enrollmentId={enrollment.id} participantName={participantName} />
           </TabsContent>
         </Tabs>
       )}

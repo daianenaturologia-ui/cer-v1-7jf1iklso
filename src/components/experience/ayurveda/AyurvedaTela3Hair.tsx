@@ -69,8 +69,8 @@ export const AyurvedaTela3Hair: React.FC<AyurvedaTela3HairProps> = ({
       <div className="p-3 rounded-lg bg-muted/30 border border-border/50 flex items-start gap-2.5 text-xs text-muted-foreground">
         <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
         <span>
-          Cartões clínicos textuais estruturados. A cor do cabelo no seu avatar é apenas estética e
-          não define suas características naturais.
+          Escolha a descrição que mais se aproxima da sua experiência. A cor do cabelo no seu avatar
+          é apenas estética e não define suas características naturais.
         </span>
       </div>
 

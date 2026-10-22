@@ -545,7 +545,7 @@ onRecordCreateRequest((e) => {
   if (!action) throw new BadRequestError('Esta ação não pertence ao plano.')
   const schedule = read(e.record, 'schedule')
   if (
-    !keys(schedule, ['days', 'time', 'duration', 'timezone']) ||
+    !keys(schedule, ['days', 'time', 'duration', 'timezone', 'until']) ||
     !Array.isArray(schedule.days) ||
     !schedule.days.length ||
     schedule.days.length > 7 ||
@@ -569,6 +569,17 @@ onRecordCreateRequest((e) => {
     ].includes(schedule.timezone)
   )
     throw new BadRequestError('Escolha um fuso disponível.')
+  if (schedule.until) {
+    const until = new Date(schedule.until + 'T12:00:00Z')
+    if (
+      typeof schedule.until !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(schedule.until) ||
+      !Number.isFinite(until.getTime()) ||
+      until.toISOString().slice(0, 10) !== schedule.until ||
+      schedule.until < e.record.getString('effective_day')
+    )
+      throw new BadRequestError('Confira a data final da rotina.')
+  }
   const day = e.record.getString('effective_day'),
     date = new Date(day + 'T12:00:00Z')
   if (

@@ -8,7 +8,7 @@ it('reúne o retrato existente sem inferir conexões com os marcos', () => {
   const before = JSON.stringify(snapshot)
   const brief = cerEvolutionBrief(snapshot)
   expect(brief.protection).toHaveLength(3)
-  expect(brief.protection).toEqual(['Prestativo', 'Hipervigilante', 'Analítico'])
+  expect(brief.protection).toEqual(['Prestativo', 'Hipervigilante', 'Hiper-racional'])
   expect(brief.survival).toContain('Luta')
   expect(brief.dosha).toBe('Vata–Pitta')
   for (const field of ['relationships', 'sexuality', 'connection'] as const) {

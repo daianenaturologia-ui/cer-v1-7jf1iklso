@@ -3,6 +3,9 @@ import { expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ProfessionalJourneySummary } from './ProfessionalJourneySummary'
+vi.mock('@/services/developmentPlanService', () => ({
+  developmentPlanService: { versions: vi.fn(async () => []) },
+}))
 vi.mock('@/services/cerCarePlanService', () => ({
   cerCarePlanService: { listAcceptancesByEnrollment: vi.fn(async () => []) },
 }))

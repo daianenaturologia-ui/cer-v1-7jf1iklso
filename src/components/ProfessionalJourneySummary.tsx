@@ -1,3 +1,5 @@
+import { isLifeLetter } from '@/services/lifeLetter'
+import { developmentPlanService } from '@/services/developmentPlanService'
 import { cerCarePlanService } from '@/services/cerCarePlanService'
 import { careReturnLabel } from '@/services/careReturnLabels'
 import { goalRoadmapService } from '@/services/goalRoadmap'
@@ -37,8 +39,9 @@ export function ProfessionalJourneySummary({
       lifeDirectionsService.list(enrollmentId),
       selfDevelopmentService.list(enrollmentId),
       cerCarePlanService.listAcceptancesByEnrollment(enrollmentId),
+      developmentPlanService.versions(enrollmentId),
     ])
-      .then(async ([responses, progress, history, directions, steps, returns]) => {
+      .then(async ([responses, progress, history, directions, steps, returns, plans]) => {
         const visibleDirections = sharedLifeDirections(directions, enrollmentId)
         const roadmaps = await Promise.all(
           visibleDirections
@@ -48,6 +51,7 @@ export function ProfessionalJourneySummary({
         if (!current) return
         const shared = professionalQuestionnaireResponses(responses.flat(), enrollmentId)
         setState({
+          plan: plans[0],
           coverage: consciousnessCoverage(shared, progress),
           history: sharedLifeEvents(history, enrollmentId),
           directions: visibleDirections,
@@ -83,7 +87,10 @@ export function ProfessionalJourneySummary({
     ['completed', 'reviewed'].includes(s.status),
   ).length
   const direction = state.directions.filter((value: any) => value.kind === 'future').at(-1)
-  const present = state.directions.filter((value: any) => value.kind === 'present').at(-1)
+  const present = state.directions
+    .filter((value: any) => value.kind === 'present' && !isLifeLetter(value))
+    .at(-1)
+  const letter = state.directions.filter(isLifeLetter).at(-1)
   return (
     <section aria-label={`Acompanhamento de ${name}`} className="space-y-5">
       <div className="flex justify-between items-start gap-3">
@@ -131,11 +138,15 @@ export function ProfessionalJourneySummary({
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm space-y-1">
         <h3 className="font-semibold">Próximo passo do acompanhamento</h3>
         <p>
-          {done === 6
-            ? state.history.length
-              ? 'Conversem sobre os marcos compartilhados na Linha da Vida. Consulte separadamente as leituras das seis dimensões para preparar o cuidado e combinar as próximas ações.'
-              : 'Convide a pessoa a olhar seu passado na Linha da Vida e compartilhar os marcos que deseja conversar. Conversem sobre o presente e as metas para preparar o cuidado.'
-            : 'Acompanhe o preenchimento das dimensões e acolha as dúvidas. O mapa inicial pode ser revisto ao longo da jornada.'}
+          {state.plan?.stage === 'agreed'
+            ? 'O plano já foi combinado. Acompanhe os relatos das ações, convide para a revisão do ciclo e ajustem o que deixou de caber na rotina.'
+            : state.plan
+              ? 'O plano está em construção. Conversem sobre a meta, os apoios e os limites antes de compartilhar uma versão combinada.'
+              : done === 6
+                ? state.history.length
+                  ? 'Conversem sobre os marcos compartilhados na Linha da Vida. Consulte separadamente as leituras das seis dimensões para preparar o cuidado e combinar as próximas ações.'
+                  : 'Convide a pessoa a olhar seu passado na Linha da Vida e compartilhar os marcos que deseja conversar. Conversem sobre o presente e as metas para preparar o cuidado.'
+                : 'Acompanhe o preenchimento das dimensões e acolha as dúvidas. O mapa inicial pode ser revisto ao longo da jornada.'}
         </p>
       </div>
       <div className="rounded-xl border p-4 space-y-3">
@@ -155,6 +166,20 @@ export function ProfessionalJourneySummary({
         ) : (
           <p className="text-sm text-muted-foreground">
             Ainda não há um relato do presente compartilhado.
+          </p>
+        )}
+        {letter && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold">Carta para o próximo capítulo</h4>
+            <p className="text-sm whitespace-pre-wrap">{letter.narrative}</p>
+          </div>
+        )}
+        {state.plan && (
+          <p className="text-sm">
+            Plano de Desenvolvimento ·{' '}
+            {state.plan.stage === 'agreed' ? 'Combinado' : 'Em construção'} · Revisão{' '}
+            {state.plan.revision}. Revise as experiências e os apoios necessários no próximo
+            encontro.
           </p>
         )}
         <p className="text-sm text-muted-foreground">

@@ -44,6 +44,7 @@ export interface RoutineSchedule {
   time: string
   duration: number
   timezone: string
+  until?: string
 }
 export interface PlanRoutine {
   id: string
@@ -138,6 +139,8 @@ export function validDay(day: string) {
   )
 }
 export function validateRoutine(schedule: RoutineSchedule, day: string) {
+  if (schedule?.until && (!validDay(schedule.until) || schedule.until < day))
+    throw new Error('A data final precisa ser igual ou posterior ao início.')
   if (!validDay(day)) throw new Error('Escolha a data de início.')
   if (
     !schedule ||
@@ -210,6 +213,7 @@ export function routineEvents(routines: PlanRoutine[], week: Date): AgendaEvent[
         )[0]
       if (
         !current?.enabled ||
+        (!!current.schedule.until && key > current.schedule.until) ||
         !current.schedule.days.includes(new Date(key + 'T12:00:00Z').getUTCDay())
       )
         continue

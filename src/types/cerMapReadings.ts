@@ -44,6 +44,7 @@ export interface CerMapReadingDimension {
   ayurvedaConstitution?: ('Vata' | 'Pitta' | 'Kapha')[]
   personalSections?: CerPersonalSection[]
   insights?: CerResourceInsight[]
+  declaredPatternKeys?: string[]
 }
 
 export interface CerPersonalSection {

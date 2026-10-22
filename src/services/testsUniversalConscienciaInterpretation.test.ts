@@ -92,7 +92,7 @@ describe('Motor Interpretativo de Ayurveda (Corpo & Fisiologia)', () => {
     ]
 
     const resSingle = buildAyurvedaInterpretation(singleAmaResponses)
-    expect(resSingle.amaReading.presence).toBe('Possível / Limítrofe')
+    expect(resSingle.amaReading.presence).toBe('Em observação')
     expect(resSingle.amaReading.categoriesInvolved).toHaveLength(1)
     expect(resSingle.amaReading.rationale).toContain(
       'um achado isolado não sustenta sinalização de Ama',

@@ -837,7 +837,7 @@ export function buildProfessionalIntegrativeMap(
     )
   }
 
-  if (ayvInterp.hasCompletedRevision && ayvInterp.amaReading.presence === 'Possível / Limítrofe') {
+  if (ayvInterp.hasCompletedRevision && ayvInterp.amaReading.presence === 'Em observação') {
     partialObservations.push(
       'Sinais de Ama (sobrecarga digestiva) identificados em apenas 1 categoria, demandando validação clínica qualitativa em sessão.',
     )

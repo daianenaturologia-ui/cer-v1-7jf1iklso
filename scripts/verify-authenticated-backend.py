@@ -208,15 +208,28 @@ try:
         day=time.strftime('%Y-%m-%d',time.gmtime())
         routine_body={'enrollment_id':enroll['a'],'version_id':presented['id'],'action_id':'action-one','effective_day':day,'enabled':True,'schedule':schedule,'command_key':'fictional-command-one'}
         check('Plan building version cannot create routines',lambda:require(request(routine_url,tokens['a'],'POST',routine_body)[0]==400))
+        bridge='/backend/v1/cer/care-plan-for-cycle'
+        check('Cycle bridge denies anonymous request',lambda:require(request(bridge,method='POST',body={'enrollment_id':enroll['a']})[0]==401))
+        for actor in ['a','b','q']:
+            check('Cycle bridge denies unauthorized '+actor,lambda actor=actor:require(request(bridge,tokens[actor],'POST',{'enrollment_id':enroll['a']})[0]==403))
+        check('Cycle bridge does not activate building document',lambda:require(request(bridge,tokens['p'],'POST',{'enrollment_id':enroll['a']})[0]==400))
         changed={**plan_doc,'moment':'FICTIONAL_REVISED_SYNTHESIS'}
         record('cer_development_plan_drafts',tokens['p'],'PATCH',{'document':changed,'revision':2},plan_draft['id'])
         check('Plan private revision does not change visible shared version',lambda:require(record('cer_development_plan_versions',tokens['a'],id=presented['id'])['document']['moment']=='FICTIONAL_SHARED_SYNTHESIS'))
         agreed=record('cer_development_plan_versions',tokens['p'],'POST',{'draft_id':plan_draft['id'],'enrollment_id':enroll['a'],'revision':2,'stage':'agreed'})
+        operational=ok(bridge,tokens['p'],'POST',{'enrollment_id':enroll['a']})
+        check('Cycle bridge uses agreed document without private notes',lambda:require(record('cer_care_plans',tokens['p'],id=operational['id'])['development_version_id']==agreed['id'] and 'FICTIONAL_PRIVATE_PROFESSIONAL' not in json.dumps(record('cer_care_plans',tokens['p'],id=operational['id']))))
+        check('Cycle bridge retry reuses one active anchor',lambda:require(ok(bridge,tokens['p'],'POST',{'enrollment_id':enroll['a']})['id']==operational['id'] and len(record('cer_care_plans',tokens['p'])['items'])==1))
+        care_cycle=record('cer_care_cycles',tokens['p'],'POST',{'enrollment_id':enroll['a'],'plan_id':operational['id'],'cycle_number':1,'created_by_user_id':actors['p']['record']['id'],'status':'planned','review_event_type':'participant_checkin'})
+        check('Cycle can start directly from agreed document anchor',lambda:require(record('cer_care_cycles',tokens['p'],'PATCH',{'status':'active'},care_cycle['id'])['status']=='active'))
         routine_body={**routine_body,'version_id':agreed['id']}
         routine=record('cer_development_plan_routines',tokens['a'],'POST',{**routine_body,'snapshot':{'forged':'client'}})
         check('Plan routine snapshot derived from agreed action',lambda:require(routine['snapshot']['action']['title']=='Fictional action' and routine['snapshot']['goal']=='Fictional goal'))
         care_routine=record('cer_development_plan_routines',tokens['a'],'POST',{**routine_body,'action_id':'care-action-one','command_key':'fictional-care-command'})
         check('Plan care chapter can be explicitly scheduled from agreed snapshot',lambda:require(care_routine['snapshot']['goal']=='Fictional individual care' and care_routine['snapshot']['action']['context']=='Fictional professional guidance'))
+        bounded=record('cer_development_plan_routines',tokens['a'],'POST',{**routine_body,'schedule':{**schedule,'until':'2099-12-31'},'command_key':'bounded-routine-command'})
+        check('Routine preserves explicit ending date',lambda:require(bounded['schedule']['until']=='2099-12-31'))
+        check('Routine rejects ending before start',lambda:require(request(routine_url,tokens['a'],'POST',{**routine_body,'schedule':{**schedule,'until':'2020-01-01'},'command_key':'bad-end-command'})[0]==400))
         check('Plan duplicate routine command rejected',lambda:require(request(routine_url,tokens['a'],'POST',routine_body)[0]==400))
         check('Plan routine cannot use another enrollment',lambda:require(request(routine_url,tokens['b'],'POST',{**routine_body,'enrollment_id':enroll['b'],'command_key':'foreign-command'})[0]==400))
         check('Plan routine cannot invent an action',lambda:require(request(routine_url,tokens['a'],'POST',{**routine_body,'action_id':'foreign-action','command_key':'foreign-action-command'})[0]==400))
