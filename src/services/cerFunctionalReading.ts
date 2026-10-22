@@ -154,18 +154,16 @@ export function applyFunctionalReading(
     : fallback.length
       ? `${snapshot.participantName}, seu funcionamento pode ser compreendido pelas conexões abaixo.\n\n${[...new Set(fallback)].slice(0, 4).join('\n\n')}`
       : ''
+  const declaredPatternKeys = choices('movimentos_interferencia_atual')
+    .map((key) => CER_PROTECTION_PATTERNS[key]?.canonicalKey)
+    .filter((key): key is string => !!key)
   const personalMind = mindConversation(
     snapshot.participantName,
     mind,
     choices('emocoes_recorrentes'),
     emotionReadings,
     fight,
-    choices('movimentos_interferencia_atual').map(
-      (key) => CER_PROTECTION_PATTERNS[key]?.canonicalKey || key,
-    ),
-  )
-  const declaredPatternKeys = choices('movimentos_interferencia_atual').map(
-    (key) => CER_PROTECTION_PATTERNS[key]?.canonicalKey || key,
+    declaredPatternKeys,
   )
   const dimensions = snapshot.dimensions.map((original) => {
     const d = original.id === 'mente' ? { ...original, declaredPatternKeys } : original

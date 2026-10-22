@@ -1,3 +1,5 @@
+import { buildCerMapReadings, isCerMapReadingSnapshot } from './cerMapReadings'
+import { BUILD_07C_MENTE_PROMPTS } from './build07cPrompts'
 import { afterEach, beforeEach, expect, it } from 'vitest'
 import { demoAdapter, DEMO_ENROLLMENT_ID as enrollment } from './demoAdapter'
 import { developmentPlanService } from './developmentPlanService'
@@ -102,3 +104,31 @@ it('encerra a recorrência na data escolhida e mantém as ocorrências anteriore
   expect(routineEvents([routine], new Date('2026-10-19T00:00:00Z'))).toHaveLength(5)
   expect(routineEvents([routine], new Date('2026-10-26T00:00:00Z'))).toHaveLength(0)
 })
+
+it.each(['nenhum_dificuldade_importante', 'ainda_nao_sei'])(
+  'mantém o mapa válido quando a pessoa escolhe %s',
+  (choice) => {
+    const prompt = BUILD_07C_MENTE_PROMPTS.find(
+      (p) => (p.schema_config as any).prompt_key === 'movimentos_interferencia_atual',
+    )!
+    const snapshot = buildCerMapReadings(
+      [
+        {
+          id: 'r',
+          enrollment_id: enrollment,
+          experience_id: prompt.experience_id,
+          prompt_id: prompt.id,
+          access_class: 'participant_shared',
+          status: 'saved',
+          structured_value: { value: [choice] },
+          created: '2026-10-22',
+          updated: '2026-10-22',
+        } as any,
+      ],
+      enrollment,
+      'Lia',
+    )
+    expect(snapshot.dimensions.find((d) => d.id === 'mente')?.declaredPatternKeys).toEqual([])
+    expect(isCerMapReadingSnapshot(snapshot)).toBe(true)
+  },
+)
