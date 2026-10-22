@@ -965,6 +965,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
           return [...prev, completionResp]
         })
 
+        setStage('hub')
         onCompleted?.()
       })
       await saver.flush()
@@ -1138,6 +1139,12 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
             {AYV_TEXTS.REVISION_RETURN_CMD}
           </Button>
         </div>
+      )}
+      {stage === 'hub' && isCompleted && (
+        <p role="status" className="rounded-xl bg-primary/10 p-3 text-sm">
+          Capítulo 1 concluído. Suas respostas foram guardadas. Escolha o próximo capítulo abaixo ou
+          consulte o que já respondeu.
+        </p>
       )}
       {/* 1. Hub dos 4 Capítulos */}
       {stage === 'hub' && (

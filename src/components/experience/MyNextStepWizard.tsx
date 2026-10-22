@@ -104,10 +104,10 @@ export function MyNextStepWizard({
       className="cer-reading-panel rounded-2xl border bg-card p-5 sm:p-7 space-y-5"
       onSubmit={(e) => {
         e.preventDefault()
-        if (step >= 1 && !value.title.trim()) {
+        if (step >= 1 && (!value.title.trim() || value.title.length > 160)) {
           setStep(1)
           setMessage(
-            'Dê um nome à sua meta antes de continuar. Se ainda não souber, escolha a opção abaixo.',
+            'Dê um nome à sua meta com até 160 caracteres antes de continuar. Você pode detalhá-la no relato.',
           )
           return
         }
@@ -186,7 +186,13 @@ export function MyNextStepWizard({
               value={value.title}
               onChange={(e) => onChange({ ...value, title: e.target.value })}
               placeholder="Uma diferença que eu gostaria de perceber na minha vida…"
+              aria-label="O que gostaria de conseguir viver ou fazer de maneira diferente?"
+              aria-describedby="goal-title-count"
             />
+            <span id="goal-title-count" className="text-xs text-muted-foreground">
+              {value.title.length}/160 caracteres. Os detalhes podem ficar no relato da primeira
+              etapa.
+            </span>
           </label>
           <Button
             type="button"

@@ -15,7 +15,7 @@ export function formatPromptResponse(
   prompt: CerPromptRecord | undefined,
   response: ExperienceResponseRecord | null | undefined,
 ): string {
-  if (!response) return 'Não registrado'
+  if (!response) return 'Não respondida'
   const source = response.structured_value as any
   if (source?.is_legitimate_skip)
     return source.skip_reason === 'prefiro_nao_responder'
@@ -62,6 +62,6 @@ export function formatPromptResponse(
   return (
     [choice, text && normalize(text) !== normalize(choice) ? text : '']
       .filter(Boolean)
-      .join(' — ') || 'Resposta registrada'
+      .join(' — ') || 'Não respondida'
   )
 }

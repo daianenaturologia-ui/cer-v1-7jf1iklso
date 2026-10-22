@@ -168,28 +168,30 @@ export const ProfessionalDimensionReportView: React.FC<ProfessionalDimensionRepo
           </CardContent>
         </Card>
 
-        {/* Perguntas para o Encontro */}
-        <Card className="border-border/70 shadow-none">
-          <CardHeader className="p-3.5 pb-2">
-            <div className="flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-primary" />
-              <CardTitle className="text-xs font-semibold">Perguntas para o Encontro</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-3.5 pt-0 space-y-1.5 text-xs">
-            {interpretation.sessionQuestions.length === 0 ? (
-              <p className="text-muted-foreground italic">Perguntas em formulação.</p>
-            ) : (
-              <ul className="space-y-1.5 text-foreground/90 italic">
-                {interpretation.sessionQuestions.map((q, i) => (
-                  <li key={i} className="p-2 rounded-lg bg-primary/5 border border-primary/20">
-                    &ldquo;{q}&rdquo;
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        {/* Perguntas formuladas a partir dos registros disponíveis */}
+        {interpretation.sessionQuestions.length > 0 && (
+          <Card className="border-border/70 shadow-none">
+            <CardHeader className="p-3.5 pb-2">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-primary" />
+                <CardTitle className="text-xs font-semibold">Perguntas para o Encontro</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-3.5 pt-0 space-y-1.5 text-xs">
+              {interpretation.sessionQuestions.length === 0 ? (
+                <p className="text-muted-foreground italic">Perguntas em formulação.</p>
+              ) : (
+                <ul className="space-y-1.5 text-foreground/90 italic">
+                  {interpretation.sessionQuestions.map((q, i) => (
+                    <li key={i} className="p-2 rounded-lg bg-primary/5 border border-primary/20">
+                      &ldquo;{q}&rdquo;
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Visão Factual Opcional (sem JSON bruto) */}

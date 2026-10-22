@@ -2,7 +2,10 @@ import type { CerMapElementReading } from '@/types/cerMapReadings'
 import { patternResources } from './cerPersonalReadings'
 
 /** Original CER explanations: a present function, never an inferred childhood biography. */
-const explanations: Record<string, [string, string, string, string, string]> = {
+export const protectionPatternExplanations: Record<
+  string,
+  [string, string, string, string, string]
+> = {
   insistente: [
     'A busca de fazer bem pode organizar sua vida em torno de critérios muito exigentes. Você percebe detalhes, prepara etapas e procura evitar descuidos. Quando essa capacidade passa a exigir ausência de qualquer falha, terminar deixa de ser suficiente: surge a necessidade de conferir mais uma vez. Uma tarefa pequena pode ocupar tempo e energia de uma tarefa grande, e o descanso fica esperando uma conclusão que sempre se afasta.',
     'A regra interna pode se aproximar de “preciso garantir que tudo esteja certo antes de relaxar”. Um erro passa a parecer maior que o trabalho bem feito, e uma sugestão pode ser recebida como cobrança. Isso favorece tensão, irritação ou frustração quando alguém trabalha de outra forma. A qualidade continua importante; o desgaste aparece quando há pouco espaço para aprender, improvisar e corrigir ao longo do caminho.',
@@ -88,7 +91,7 @@ export function buildProtectionPatternReading(
   active: boolean,
   existing?: CerMapElementReading,
 ): CerMapElementReading | undefined {
-  const paragraphs = explanations[key]
+  const paragraphs = protectionPatternExplanations[key]
   const profile = patternResources[key]
   if (!paragraphs || !profile) return existing
   return {

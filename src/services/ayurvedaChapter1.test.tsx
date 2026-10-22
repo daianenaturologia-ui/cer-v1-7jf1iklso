@@ -80,8 +80,10 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
         isChapter1Completed={false}
       />,
     )
-    expect(screen.getByText(/Personalização estética não definida/i)).toBeInTheDocument()
-    expect(screen.getByText(/Nenhuma escolha clínica fictícia foi criada/i)).toBeInTheDocument()
+    expect(screen.getByText(/Você pode personalizar seu avatar depois/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Suas respostas serão registradas conforme suas escolhas/i),
+    ).toBeInTheDocument()
   })
 
   // (3) Estrutura clínica não é pré-selecionada pela figura intermediária do avatar
@@ -371,7 +373,9 @@ describe('LOTE A — FUNDAÇÃO AYURVEDA + CAPÍTULO 1', () => {
   // (21) Falha de asset apresenta fallback acessível sem imagem inventada
   it('regra 21: cartões clínicos exibem texto estruturado acessível mesmo sem assets de imagem', () => {
     render(<AyurvedaTela2Skin skinChoices={[]} onSave={vi.fn()} />)
-    expect(screen.getByText(/Cartões clínicos textuais estruturados/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Escolha a descrição que mais se aproxima da sua experiência/i),
+    ).toBeInTheDocument()
   })
 
   // (22) Metadados éticos de encerramento

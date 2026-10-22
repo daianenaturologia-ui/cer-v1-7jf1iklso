@@ -235,11 +235,11 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
         <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 flex items-start justify-between gap-3 text-xs">
           <div className="space-y-0.5">
             <span className="font-medium text-foreground block">
-              Personalização estética não definida
+              Você pode personalizar seu avatar depois
             </span>
             <p className="text-muted-foreground leading-relaxed">
-              Você pode responder ao Capítulo 1 normalmente. Nenhuma escolha clínica fictícia foi
-              criada.
+              Você pode responder ao Capítulo 1 normalmente. Suas respostas serão registradas
+              conforme suas escolhas.
             </p>
           </div>
           {onOpenCustomization && (

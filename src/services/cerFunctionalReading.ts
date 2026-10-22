@@ -42,9 +42,7 @@ export function applyFunctionalReading(
       const patterns = Object.values(CER_PROTECTION_PATTERNS).filter((p) => p.canonicalKey === key)
       return (
         patterns.some((p) => [p.id, p.movementDescription, p.baseName].includes(row.label)) &&
-        /algumas situações|frequência|frequencia|sob pressão|muita força/.test(
-          row.text.toLowerCase(),
-        )
+        /frequência|frequencia|sob pressão|muita força/.test(row.text.toLowerCase())
       )
     }) || false
   const helpful = active('prestativo')
@@ -56,7 +54,7 @@ export function applyFunctionalReading(
   const mental: string[] = []
   if (helpful && vigilant)
     mental.push(
-      'Seu cuidado com as pessoas se combina a uma atenção constante ao que pode dar errado. Você tende a perceber necessidades e riscos cedo e a se mobilizar para evitar que alguém fique desamparado. Essa combinação favorece dedicação e preparo, mas também pode fazer com que você assuma responsabilidades antes de avaliar quanto tem disponível. O descanso fica mais difícil quando estar disponível para todos parece uma condição para que tudo fique bem.',
+      'Seu cuidado com as pessoas se combina a uma atenção ao que pode dar errado nas situações em que você reconhece esse movimento. Você tende a perceber necessidades e riscos cedo e a se mobilizar para evitar que alguém fique desamparado. Essa combinação favorece dedicação e preparo, mas também pode fazer com que você assuma responsabilidades antes de avaliar quanto tem disponível. O descanso fica mais difícil quando estar disponível para todos parece uma condição para que tudo fique bem.',
     )
   else if (helpful)
     mental.push(
@@ -166,7 +164,11 @@ export function applyFunctionalReading(
       (key) => CER_PROTECTION_PATTERNS[key]?.canonicalKey || key,
     ),
   )
-  const dimensions = snapshot.dimensions.map((d) => {
+  const declaredPatternKeys = choices('movimentos_interferencia_atual').map(
+    (key) => CER_PROTECTION_PATTERNS[key]?.canonicalKey || key,
+  )
+  const dimensions = snapshot.dimensions.map((original) => {
+    const d = original.id === 'mente' ? { ...original, declaredPatternKeys } : original
     if (d.id === 'corpo') return d
     let text =
       d.id === 'mente' && mental.length

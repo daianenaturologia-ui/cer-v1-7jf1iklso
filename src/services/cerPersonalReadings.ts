@@ -667,10 +667,9 @@ export function buildPersonalDimensionReading(
         const canonical = CER_PROTECTION_PATTERNS[key]?.canonicalKey
         const profile = patternResources[canonical]
         if (!profile) continue
-        const active =
-          /algumas situações|frequência|frequencia|com frequência|sob pressão|muita força/i.test(
-            frequency,
-          )
+        const active = /frequência|frequencia|com frequência|sob pressão|muita força/i.test(
+          frequency,
+        )
         elements[canonical] = {
           summary: '',
           observations: [],

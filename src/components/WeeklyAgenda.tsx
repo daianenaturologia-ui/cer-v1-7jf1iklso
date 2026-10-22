@@ -1,3 +1,4 @@
+import { RoutineReflection } from './RoutineReflection'
 import { PrintablePlannerWeek } from './PrintablePlannerWeek'
 import { developmentPlanService } from '@/services/developmentPlanService'
 import { routineEvents, type PlanRoutine } from '@/services/developmentPlanDocument'
@@ -112,7 +113,12 @@ export function WeeklyAgenda({
   }, [enrollmentId, readOnly, revision])
   const events = useMemo<AgendaEvent[]>(
     () => [
-      ...routineEvents(routines, week),
+      ...routineEvents(routines, week).map((event) => ({
+        ...event,
+        completed: steps.some(
+          (s) => s.resource_snapshot.id === event.id && s.status === 'reviewed',
+        ),
+      })),
       ...notes
         .filter((n) => n.status !== 'archived')
         .map((n) => ({
@@ -124,7 +130,12 @@ export function WeeklyAgenda({
           completed: n.status === 'completed',
         })),
       ...steps
-        .filter((s) => s.scheduled_at && s.status !== 'paused')
+        .filter(
+          (s) =>
+            s.scheduled_at &&
+            s.status !== 'paused' &&
+            !s.resource_snapshot.id.startsWith('routine:'),
+        )
         .map((s) => ({
           id: `step:${s.id}`,
           title: s.action,
@@ -678,6 +689,16 @@ export function WeeklyAgenda({
                     Horário combinado no fuso {routine.schedule.timezone}. A agenda exibe os
                     horários deste dispositivo.
                   </p>
+                  {!readOnly && selected.start && (
+                    <RoutineReflection
+                      key={selected.id}
+                      enrollmentId={enrollmentId}
+                      routine={routine}
+                      occurrence={selected.id}
+                      start={selected.start}
+                      onSaved={() => setRevision((v) => v + 1)}
+                    />
+                  )}
                   <Link className="underline text-primary" to="/?etapa=equilibrio">
                     Rever o plano e organizar a rotina
                   </Link>

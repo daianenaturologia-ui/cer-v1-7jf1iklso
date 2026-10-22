@@ -99,6 +99,33 @@ class CerCarePlanService {
     }
   }
 
+  /** Resolve the agreed document to one operational anchor only when creating a cycle. */
+  async ensureForCycle(enrollmentId: string): Promise<{ id: string; enrollment_id: string }> {
+    const { demoAdapter } = await import('./demoAdapter')
+    if (demoAdapter.isEnabled()) {
+      if (demoAdapter.getActivePersona() !== 'daiane')
+        throw new Error('Esta ação requer a profissional responsável.')
+      const active = demoAdapter.listPlans(enrollmentId).find((p) => p.status === 'active')
+      if (active) return active
+      const { developmentPlanService } = await import('./developmentPlanService')
+      const version = (await developmentPlanService.versions(enrollmentId))[0]
+      if (version?.stage !== 'agreed')
+        throw new Error(
+          'Compartilhe uma versão combinada do Plano de Desenvolvimento antes de criar o ciclo.',
+        )
+      const plan = demoAdapter.createDraftPlan({
+        enrollment_id: enrollmentId,
+        direction_mode: 'contextualized',
+        direction_statement: `${version.document.title}\n${version.document.priorities}`,
+      })
+      return demoAdapter.activatePlan(plan.id)
+    }
+    return pb.send('/backend/v1/cer/care-plan-for-cycle', {
+      method: 'POST',
+      body: { enrollment_id: enrollmentId },
+    })
+  }
+
   async getPlanById(planId: string): Promise<CerCarePlanRecord> {
     return await pb.collection('cer_care_plans').getOne<CerCarePlanRecord>(planId)
   }

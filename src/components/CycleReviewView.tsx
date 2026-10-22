@@ -1,4 +1,9 @@
 import { ParticipantCycleReflection } from './ParticipantCycleReflection'
+import {
+  selfDevelopmentService,
+  visibleDevelopment,
+  type DevelopmentExperiment,
+} from '@/services/selfDevelopment'
 import { demoAdapter } from '@/services/demoAdapter'
 import React, { useState, useEffect, useRef } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
@@ -42,6 +47,7 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
   onUpdated,
 }) => {
   const requestVersion = useRef(0)
+  const [planExperiences, setPlanExperiences] = useState<DevelopmentExperiment[]>([])
   const [review, setReview] = useState<CerCycleReviewRecord | null>(null)
   const [responses, setResponses] = useState<CerPracticeResponseRecord[]>([])
   const [digest, setDigest] = useState<DescriptiveCycleDigest | null>(null)
@@ -66,12 +72,18 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
     setParticipantHighlights('')
     setLoading(true)
     try {
-      const [existingReview, respList] = await Promise.all([
+      const [existingReview, respList, experiences] = await Promise.all([
         cerCycleReviewService.getByCycleId(cycleId),
         cerPracticeResponseService.listByEnrollment(enrollmentId),
+        selfDevelopmentService.list(enrollmentId),
       ])
 
       if (version !== requestVersion.current) return
+      setPlanExperiences(
+        visibleDevelopment(experiences, enrollmentId, true).filter((r) =>
+          r.resource_snapshot.id.startsWith('routine:'),
+        ),
+      )
       const cycleResponses = respList.filter((r) => r.care_cycle_id === cycleId)
       setResponses(cycleResponses)
       setDigest(cerCycleReviewService.generateDescriptiveDigest(cycleResponses))
@@ -99,7 +111,7 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
   }, [cycleId, enrollmentId, isProfessional])
 
   const handleSaveReview = async (completed: boolean = false) => {
-    if (!isProfessional) return
+    if (!isProfessional || submitting || review?.status === 'completed') return
     setSubmitting(true)
     try {
       if (!review) {
@@ -157,11 +169,11 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
     {
       id: 'adapt',
       title: 'Adaptar práticas/experimentos',
-      desc: 'Ajustar doses, variantes ou contexto sem romper o foco.',
+      desc: 'Ajustar duração, frequência ou contexto sem romper o foco.',
     },
     {
       id: 'carry_forward',
-      title: 'Transportar práticas (Carry-Forward)',
+      title: 'Levar práticas para o próximo ciclo',
       desc: 'Levar experimentos bem-sucedidos para o próximo ciclo.',
     },
     {
@@ -258,94 +270,126 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
         </CardContent>
       </Card>
 
-      {/* Decisão Clínica Explícita (Humana) */}
-      <Card className="border-border/70">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-primary" />
-            <span>Decisão Explícita sobre o Ciclo</span>
-          </CardTitle>
-          <CardDescription className="text-xs">
-            A decisão humana orienta os próximos passos. A revisão não altera o ciclo
-            automaticamente — pause, retome ou encerre pela ação correspondente na gestão do ciclo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {decisionOptions.map((opt) => {
-              const isSelected = selectedDecision === opt.id
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setSelectedDecision(opt.id)}
-                  className={`p-3 rounded-xl border text-left transition-all text-xs space-y-1 ${
-                    isSelected
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary/40'
-                      : 'border-border/70 hover:border-border hover:bg-muted/20 bg-card'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-foreground">{opt.title}</span>
-                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-primary" />}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">{opt.desc}</p>
-                </button>
-              )
-            })}
-          </div>
+      {review?.status === 'completed' && (
+        <p role="status" className="rounded-lg bg-muted p-3">
+          Revisão concluída. A decisão e os relatos abaixo estão preservados no histórico.
+        </p>
+      )}
+      <fieldset disabled={review?.status === 'completed' || submitting}>
+        {planExperiences.length > 0 && (
+          <section
+            className="space-y-3 rounded-xl border p-4"
+            aria-label="Experiências compartilhadas do plano"
+          >
+            <h3 className="font-medium">Experiências compartilhadas do Plano de Desenvolvimento</h3>
+            <p className="text-xs text-muted-foreground">
+              Confira as datas antes de incluir um relato na síntese deste ciclo. Esta lista
+              preserva a origem de cada experiência e inclui apenas o que a pessoa escolheu
+              compartilhar.
+            </p>
+            {planExperiences.map((r) => (
+              <article key={r.id} className="border-t pt-2 text-sm space-y-1">
+                <h4>{r.action}</h4>
+                <p>
+                  {r.scheduled_at
+                    ? new Date(r.scheduled_at).toLocaleDateString('pt-BR')
+                    : 'Sem data'}
+                </p>
+                <p className="whitespace-pre-wrap">{r.reflection}</p>
+              </article>
+            ))}
+          </section>
+        )}
+        {/* Decisão Clínica Explícita (Humana) */}
+        <Card className="border-border/70">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              <span>Decisão Explícita sobre o Ciclo</span>
+            </CardTitle>
+            <CardDescription className="text-xs">
+              A decisão humana orienta os próximos passos. A revisão não altera o ciclo
+              automaticamente — pause, retome ou encerre pela ação correspondente na gestão do
+              ciclo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {decisionOptions.map((opt) => {
+                const isSelected = selectedDecision === opt.id
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setSelectedDecision(opt.id)}
+                    className={`p-3 rounded-xl border text-left transition-all text-xs space-y-1 ${
+                      isSelected
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/40'
+                        : 'border-border/70 hover:border-border hover:bg-muted/20 bg-card'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-foreground">{opt.title}</span>
+                      {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-primary" />}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">{opt.desc}</p>
+                  </button>
+                )
+              })}
+            </div>
 
-          {/* Destaques do Interagente */}
-          <div className="space-y-1.5 pt-2 border-t border-border/40">
-            <span className="text-xs font-medium text-foreground block">
-              Registro profissional das percepções conversadas em encontro:
-            </span>
-            <Textarea
-              value={participantHighlights}
-              onChange={(e) => setParticipantHighlights(e.target.value)}
-              placeholder="O que o interagente compartilhou sobre facilidades, descobertas e limites..."
-              rows={3}
-              className="text-xs"
-            />
-          </div>
+            {/* Destaques do Interagente */}
+            <div className="space-y-1.5 pt-2 border-t border-border/40">
+              <span className="text-xs font-medium text-foreground block">
+                Registro profissional das percepções conversadas em encontro:
+              </span>
+              <Textarea
+                value={participantHighlights}
+                onChange={(e) => setParticipantHighlights(e.target.value)}
+                placeholder="O que o interagente compartilhou sobre facilidades, descobertas e limites..."
+                rows={3}
+                className="text-xs"
+              />
+            </div>
 
-          {/* Síntese Profissional (Humana e Revisada) */}
-          <div className="space-y-1.5 pt-2 border-t border-border/40">
-            <span className="text-xs font-medium text-foreground block">
-              Síntese Profissional do Ciclo (Persistida apenas quando validada por humano):
-            </span>
-            <Textarea
-              value={professionalSummary}
-              onChange={(e) => setProfessionalSummary(e.target.value)}
-              placeholder="Síntese clínica sobre evolução, recursos integrados e recomendações para o próximo ciclo..."
-              rows={4}
-              className="text-xs"
-            />
-          </div>
+            {/* Síntese Profissional (Humana e Revisada) */}
+            <div className="space-y-1.5 pt-2 border-t border-border/40">
+              <span className="text-xs font-medium text-foreground block">
+                Síntese Profissional do Ciclo (Persistida apenas quando validada por humano):
+              </span>
+              <Textarea
+                value={professionalSummary}
+                onChange={(e) => setProfessionalSummary(e.target.value)}
+                placeholder="Síntese clínica sobre evolução, recursos integrados e recomendações para o próximo ciclo..."
+                rows={4}
+                className="text-xs"
+              />
+            </div>
 
-          {/* Ações */}
-          <div className="flex justify-end gap-2 pt-2 border-t border-border/40">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={submitting}
-              onClick={() => handleSaveReview(false)}
-              className="text-xs h-8"
-            >
-              Salvar como Rascunho
-            </Button>
-            <Button
-              size="sm"
-              disabled={!selectedDecision || submitting}
-              onClick={() => handleSaveReview(true)}
-              className="text-xs h-8 gap-1.5"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Concluir Revisão de Ciclo</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            {/* Ações */}
+            <div className="flex justify-end gap-2 pt-2 border-t border-border/40">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={submitting}
+                onClick={() => handleSaveReview(false)}
+                className="text-xs h-8"
+              >
+                Salvar como Rascunho
+              </Button>
+              <Button
+                size="sm"
+                disabled={!selectedDecision || submitting}
+                onClick={() => handleSaveReview(true)}
+                className="text-xs h-8 gap-1.5"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Concluir Revisão de Ciclo</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </fieldset>
     </div>
   )
 }

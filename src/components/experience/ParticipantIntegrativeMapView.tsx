@@ -14,6 +14,7 @@ interface Props {
   audience?: 'participant' | 'professional'
   progress?: EnrollmentExperienceRecord[]
   onClose?: () => void
+  treatmentVariant?: 'feminino' | 'masculino' | 'neutro' | 'outro'
   participantName: string
   enrollmentId?: string
   currentMap?: (CerMapRecord & { items: CerMapItemRecord[] }) | null
@@ -24,6 +25,7 @@ export function ParticipantIntegrativeMapView({
   progress = [],
   currentMap,
   participantName,
+  treatmentVariant = 'neutro',
   enrollmentId,
   onClose,
 }: Props) {
@@ -33,7 +35,11 @@ export function ParticipantIntegrativeMapView({
   if (currentMap?.status === 'published')
     return (
       <div className="space-y-5">
-        <ParticipantMapDisplay map={currentMap} participantName={participantName} />
+        <ParticipantMapDisplay
+          treatmentVariant={treatmentVariant}
+          map={currentMap}
+          participantName={participantName}
+        />
       </div>
     )
   if (initial && initial.sourceResponseIds.length) {
@@ -47,7 +53,7 @@ export function ParticipantIntegrativeMapView({
         <p className="text-xs font-semibold text-primary">
           Mapa inicial · a partir das suas respostas
         </p>
-        <CerMapReadingsView snapshot={initial} initial />
+        <CerMapReadingsView treatmentVariant={treatmentVariant} snapshot={initial} initial />
       </div>
     )
   }

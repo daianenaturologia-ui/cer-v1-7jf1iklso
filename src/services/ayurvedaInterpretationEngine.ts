@@ -53,7 +53,7 @@ export interface AgniReading {
 }
 
 export interface AmaReading {
-  presence: 'Sinalizada' | 'Possível / Limítrofe' | 'Não evidenciada'
+  presence: 'Sinalizada' | 'Em observação' | 'Não evidenciada'
   categoriesInvolved: string[]
   evidences: string[]
   rationale: string
@@ -987,7 +987,7 @@ export function buildAyurvedaInterpretation(
     amaPresence = 'Sinalizada'
     amaRationale = `Sinais habituais convergentes associados ao conceito tradicional de Ama (acúmulo de resíduos digestivos não assimilados) identificados em ${amaCategoriesList.length} categorias distintas: ${amaCategoriesList.join(' e ')}.`
   } else if (amaCategoriesList.length === 1) {
-    amaPresence = 'Possível / Limítrofe'
+    amaPresence = 'Em observação'
     amaRationale = `Evidência isolada no padrão habitual em "${amaCategoriesList[0]}". Pelo critério tradicional de convergência do Método CER, um achado isolado não sustenta sinalização de Ama, permanecendo como ponto de observação.`
   } else if (!hasAmaInputs) {
     amaPresence = 'Não evidenciada'

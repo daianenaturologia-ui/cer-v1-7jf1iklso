@@ -79,10 +79,7 @@ export function CareCycleManager({ enrollmentId }: { enrollmentId: string }) {
     }
   }
   async function create() {
-    const plan = demoAdapter.isEnabled()
-      ? demoAdapter.listPlans(enrollmentId).find((p) => p.status === 'active')
-      : await cerCarePlanService.getCurrentPlan(enrollmentId)
-    if (!plan) throw new Error('Ative o plano de cuidado antes de criar um ciclo.')
+    const plan = await cerCarePlanService.ensureForCycle(enrollmentId)
     await cerCareCycleService.create({
       plan_id: plan.id,
       focus_summary: focus.trim(),

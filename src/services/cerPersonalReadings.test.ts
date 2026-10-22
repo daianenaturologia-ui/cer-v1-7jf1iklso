@@ -160,6 +160,7 @@ describe('Interpretação compartilhada com evidências', () => {
               cartao_1_fazer_certo: 'Repete-se com frequência',
               cartao_2_agradar_cuidar: 'Quase nunca acontece comigo',
               cartao_3_realizar: 'Ainda não sei dizer',
+              cartao_6_antecipar_riscos: 'Aparece em algumas situações',
             },
           },
         }),

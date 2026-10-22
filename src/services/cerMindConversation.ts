@@ -17,10 +17,10 @@ const priority = [
 const names: Record<string, string> = {
   prestativo: 'Prestativo',
   hipervigilante: 'Hipervigilante',
-  hiper_racional: 'Analítico',
+  hiper_racional: 'Hiper-racional',
   insistente: 'Insistente',
   hiper_realizador: 'Hiper-realizador',
-  vitima: 'Desamparado',
+  vitima: 'Vítima',
   inquieto: 'Inquieto',
   comandante: 'Comandante',
   evitativo: 'Evitativo',
@@ -68,8 +68,9 @@ export function strongestMindPatterns(dimension?: CerMapReadingDimension, declar
         Math.max(ranks.get(pattern.canonicalKey) || 0, intensity(row.text)),
       )
   }
+  for (const key of declared) if (CER_PROTECTION_PATTERNS[key] && !ranks.has(key)) ranks.set(key, 0)
   const ranked = [...ranks]
-    .filter(([, rank]) => rank > 0)
+    .filter(([key, rank]) => rank > 0 || declared.includes(key))
     .sort(
       (a, b) =>
         Number(declared.includes(b[0])) - Number(declared.includes(a[0])) ||

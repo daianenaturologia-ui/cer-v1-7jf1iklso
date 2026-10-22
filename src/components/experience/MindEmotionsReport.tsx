@@ -1713,10 +1713,10 @@ export const MindEmotionsReport: React.FC<MindEmotionsReportProps> = ({
                           </ul>
                         </div>
 
-                        {/* 4. As mentiras que esse padrão conta */}
+                        {/* 4. Ideias para conferir na sua experiência */}
                         <div className="space-y-2">
                           <h4 className="font-semibold text-foreground text-xs uppercase tracking-wider">
-                            As mentiras que esse padrão conta
+                            Ideias para conferir na sua experiência
                           </h4>
                           <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                             {content.patternLies.map((item, idx) => (

@@ -1,3 +1,5 @@
+import pb from '@/lib/pocketbase/client'
+import { demoAdapter } from '@/services/demoAdapter'
 import React, { useEffect, useState } from 'react'
 import {
   cerCycleInvitationService,
@@ -18,6 +20,16 @@ export function ParticipantCycleReflection({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [draftStatus, setDraftStatus] = useState('')
+  const readDraft = () => {
+    try {
+      return draftKey ? localStorage.getItem(draftKey) || '' : ''
+    } catch {
+      return ''
+    }
+  }
+  const owner = demoAdapter.isEnabled() ? 'demo-mariana' : pb.authStore.record?.id
+  const draftKey = owner ? `cer-cycle-reflection:${owner}:${enrollmentId}:${cycleId}` : null
   useEffect(() => {
     let active = true
     setLoading(true)
@@ -30,7 +42,7 @@ export function ParticipantCycleReflection({
         if (!active) return
         const item = list.find((i) => i.care_cycle_id === cycleId) || null
         setInvitation(item)
-        setReflection(item?.participant_reflection || '')
+        setReflection(item?.participant_reflection || readDraft() || '')
       })
       .catch(() => {
         if (active) setError('Não foi possível carregar o convite. Tente novamente mais tarde.')
@@ -48,6 +60,12 @@ export function ParticipantCycleReflection({
     setError('')
     try {
       setInvitation(await cerCycleInvitationService.respond(invitation.id, reflection))
+      try {
+        if (draftKey) localStorage.removeItem(draftKey)
+      } catch {
+        /* Sharing has already succeeded. */
+      }
+      setDraftStatus('')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível compartilhar sua percepção.')
     } finally {
@@ -96,6 +114,27 @@ export function ParticipantCycleReflection({
         disabled={!!invitation.completed_at || saving}
       />
       {error && <p role="alert">{error}</p>}
+      {draftStatus && <p role="status">{draftStatus}</p>}
+      {!invitation.completed_at && draftKey && (
+        <Button
+          variant="outline"
+          disabled={saving}
+          onClick={() => {
+            try {
+              localStorage.setItem(draftKey, reflection)
+              setDraftStatus(
+                'Rascunho guardado neste navegador, só para você. Ainda não foi compartilhado.',
+              )
+            } catch {
+              setError(
+                'Não foi possível guardar o rascunho neste navegador. Seu texto continua aqui.',
+              )
+            }
+          }}
+        >
+          Guardar rascunho só para mim
+        </Button>
+      )}
       {invitation.completed_at ? (
         <p role="status">Sua percepção foi compartilhada com a profissional.</p>
       ) : (

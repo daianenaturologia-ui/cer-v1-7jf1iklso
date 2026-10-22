@@ -97,6 +97,7 @@ import { cerPracticeAssignmentService } from '@/services/cerPracticeAssignmentSe
 import { cerPlannerService } from '@/services/cerPlannerService'
 import { cerJournalService } from '@/services/cerJournalService'
 import { cerCarePlanService } from '@/services/cerCarePlanService'
+import { DemoExperimentCard } from '@/components/DemoExperimentCard'
 import { demoAdapter } from '@/services/demoAdapter'
 import type {
   CerCarePlanPresentationRecord,
@@ -119,6 +120,7 @@ export const InteragenteHome: React.FC = () => {
   const { user, person, logout } = useAuth()
   const [enrollment, setEnrollment] = useState<EnrollmentRecord | null>(null)
   const [loading, setLoading] = useState(true)
+  const [careLoadError, setCareLoadError] = useState('')
   const [dataLoadError, setDataLoadError] = useState(false)
   const [engineEnabled, setEngineEnabled] = useState(true)
   const [availableExperiences, setAvailableExperiences] = useState<EnrollmentExperienceRecord[]>([])
@@ -219,6 +221,8 @@ export const InteragenteHome: React.FC = () => {
   const { toast } = useToast()
 
   const loadData = async () => {
+    setLoading(true)
+    setCareLoadError('')
     setDataLoadError(false)
     if (!person?.id) {
       setLoading(false)
@@ -346,6 +350,41 @@ export const InteragenteHome: React.FC = () => {
           /* intentionally ignored */
         }
       }
+      if (activeEnr?.id) {
+        // Build 08D: Carregar assignments e planner items
+        try {
+          const asgns = await cerPracticeAssignmentService.listByEnrollment(activeEnr.id)
+          setAssignments(asgns)
+        } catch {
+          setAssignments([])
+          setCareLoadError(
+            'Não foi possível atualizar suas práticas e revisões. Tente carregar novamente.',
+          )
+        }
+
+        if (user?.id) {
+          try {
+            const pItems = await cerPlannerService.listForParticipant(activeEnr.id, user.id)
+            setPlannerItems(pItems)
+          } catch {
+            setCareLoadError(
+              'Não foi possível atualizar os horários combinados. Tente carregar novamente.',
+            )
+          }
+        }
+
+        // Item 22: Verificar convite ativo de Cycle Review (participant_review_invited_at)
+        try {
+          const invitations = await cerCycleInvitationService.list(activeEnr.id)
+          const invitation = invitations.find((i) => !i.completed_at)
+          setActiveReviewInvite(invitation ? { cycleId: invitation.care_cycle_id } : null)
+        } catch {
+          setActiveReviewInvite(null)
+          setCareLoadError(
+            'Não foi possível atualizar suas práticas e revisões. Tente carregar novamente.',
+          )
+        }
+      }
       if (activeEnr?.id && effectiveEngineEnabled) {
         const [exps, kiList, myRecogs, presList, mapData, resps] = await Promise.all([
           enrollmentExperienceService.listByEnrollment(activeEnr.id),
@@ -392,32 +431,6 @@ export const InteragenteHome: React.FC = () => {
         }
         setSelectedRecognitions(recogMap)
         setSelectedPresRecognitions(presRecogMap)
-
-        // Build 08D: Carregar assignments e planner items
-        try {
-          const asgns = await cerPracticeAssignmentService.listByEnrollment(activeEnr.id)
-          setAssignments(asgns)
-        } catch {
-          /* intentionally ignored */
-        }
-
-        if (user?.id) {
-          try {
-            const pItems = await cerPlannerService.listForParticipant(activeEnr.id, user.id)
-            setPlannerItems(pItems)
-          } catch {
-            /* intentionally ignored */
-          }
-        }
-
-        // Item 22: Verificar convite ativo de Cycle Review (participant_review_invited_at)
-        try {
-          const invitations = await cerCycleInvitationService.list(activeEnr.id)
-          const invitation = invitations.find((i) => !i.completed_at)
-          setActiveReviewInvite(invitation ? { cycleId: invitation.care_cycle_id } : null)
-        } catch {
-          setActiveReviewInvite(null)
-        }
 
         // Item 14: Onboarding aparece uma vez no first access apropriado
         // Reutiliza journey_states (current_stage === 'onboarding' ou metadata.onboarding_completed)
@@ -903,7 +916,8 @@ export const InteragenteHome: React.FC = () => {
             <Button onClick={loadData}>Tentar carregar meus registros</Button>
           </div>
         )}
-        {!dataLoadError && hasSentIntakeOnce && !activeExperienceId && (
+        {loading && <p role="status">Atualizando seu percurso…</p>}
+        {!loading && !dataLoadError && hasSentIntakeOnce && !activeExperienceId && (
           <section
             aria-label="Seu próximo passo"
             className="cer-reading-panel rounded-xl border border-primary/30 p-4 space-y-2"
@@ -2014,6 +2028,14 @@ export const InteragenteHome: React.FC = () => {
                 </Button>
               </div>
             </div>
+            {careLoadError && (
+              <div role="alert" className="rounded-xl border p-4 space-y-2">
+                <p>{careLoadError}</p>
+                <Button variant="outline" onClick={loadData}>
+                  Carregar práticas e revisões novamente
+                </Button>
+              </div>
+            )}
             <Tabs value={careTab} onValueChange={setCareTab}>
               <TabsList aria-label="Equilíbrio" className="h-auto flex-wrap">
                 <TabsTrigger value="rotina">Minha rotina atual</TabsTrigger>
@@ -2352,7 +2374,7 @@ export const InteragenteHome: React.FC = () => {
                           <ArrowRight className="w-3.5 h-3.5" />
                         </Button>
                       </div>
-                    ) : (
+                    ) : careLoadError ? null : (
                       <div className="p-4 rounded-lg bg-muted/20 border border-border/40 text-xs text-muted-foreground text-center">
                         Nenhuma revisão de ciclo pendente no momento. As revisões são abertas pela
                         profissional ao final de cada ciclo de acompanhamento.
@@ -2399,22 +2421,30 @@ export const InteragenteHome: React.FC = () => {
 
                   {assignments.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {assignments.map((asgn) => (
-                        <ExperimentCard
-                          key={asgn.id}
-                          assignment={asgn}
-                          onConfirm={handleConfirmExperiment}
-                          onResponseRecorded={loadData}
-                        />
-                      ))}
+                      {assignments.map((asgn) =>
+                        demoAdapter.isEnabled() ? (
+                          <DemoExperimentCard
+                            key={asgn.id}
+                            assignment={asgn}
+                            onUpdated={loadData}
+                          />
+                        ) : (
+                          <ExperimentCard
+                            key={asgn.id}
+                            assignment={asgn}
+                            onConfirm={handleConfirmExperiment}
+                            onResponseRecorded={loadData}
+                          />
+                        ),
+                      )}
                     </div>
-                  ) : (
+                  ) : careLoadError ? null : (
                     <EmptyState
                       variant="experiments"
                       title="Experimentos combinados"
                       description="Os experimentos aparecem depois que algo for combinado com sua profissional."
-                      actionLabel="Ver detalhes na página de experimentos"
-                      onAction={() => navigate('/experimentos')}
+                      actionLabel="Consultar meu plano"
+                      onAction={() => setCareTab('plano')}
                     />
                   )}
                 </div>
@@ -2552,6 +2582,13 @@ export const InteragenteHome: React.FC = () => {
               </div>
             )}
             <ParticipantIntegrativeMapView
+              treatmentVariant={
+                person?.treatment_preference === 'feminino'
+                  ? 'feminino'
+                  : person?.treatment_preference === 'masculino'
+                    ? 'masculino'
+                    : 'neutro'
+              }
               responses={participantResponses}
               enrollmentId={enrollment?.id}
               participantName={person?.preferred_name || person?.full_name || 'você'}
@@ -2577,6 +2614,7 @@ export const InteragenteHome: React.FC = () => {
         {activeExperienceId && enrollment && user?.id && (
           <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-y-auto p-4 sm:p-6 flex flex-col justify-start">
             <ExperienceEngine
+              key={`${enrollment.id}:${activeExperienceId}`}
               experienceId={activeExperienceId}
               enrollmentId={enrollment.id}
               respondentUserId={user.id}

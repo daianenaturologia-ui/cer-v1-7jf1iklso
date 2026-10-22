@@ -200,7 +200,7 @@ export function DevelopmentRoutineOrganizer({
         <h3 className="font-serif text-xl">Organizar minha rotina</h3>
         <p className="text-sm text-muted-foreground">
           Escolham as ações que cabem agora. A rotina se repete semanalmente a partir da data
-          escolhida; vocês podem pausar ou reorganizar depois.
+          escolhida até a data final, se informada. Vocês podem pausar ou reorganizar depois.
         </p>
       </div>
       {version.stage === 'agreed' && (
@@ -246,6 +246,17 @@ export function DevelopmentRoutineOrganizer({
                         </label>
                       ))}
                     </div>
+                    <label className="block text-sm">
+                      Repetir até (opcional)
+                      <Input
+                        type="date"
+                        min={c.effectiveDay}
+                        value={c.schedule.until || ''}
+                        onChange={(e) =>
+                          update(action.id, { schedule: { ...c.schedule, until: e.target.value } })
+                        }
+                      />
+                    </label>
                     <div className="grid sm:grid-cols-2 gap-3">
                       <label className="text-sm">
                         Horário

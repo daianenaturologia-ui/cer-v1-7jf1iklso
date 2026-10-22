@@ -44,7 +44,7 @@ export default function Layout() {
         <aside
           role="region"
           aria-label="Controles do modo de demonstração"
-          className="sticky top-0 z-50 bg-amber-500/15 border-b border-amber-500/30 text-amber-950 dark:text-amber-100 backdrop-blur-md px-3 py-1.5 shadow-xs"
+          className="relative z-40 bg-amber-500/15 border-b border-amber-500/30 text-amber-950 dark:text-amber-100 backdrop-blur-md px-3 py-1.5 shadow-xs"
         >
           <div className="mx-auto flex max-w-6xl min-w-0 flex-wrap items-center justify-between gap-2 text-xs">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
