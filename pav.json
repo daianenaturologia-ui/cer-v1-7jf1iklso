@@ -1,54 +1,48 @@
 {
   "job": "primeiro-atendimento-verification",
   "job_name": "Primeiro Atendimento Verification (PAV-01..06)",
-  "sha": "3efaf04ded3a1f209034ecc7525f7603f1dd938c",
-  "conclusion": "success",
-  "timestamp_utc": "2026-10-22T16:36:11.794Z",
-  "run_id": "39815342815",
-  "run_number": "594",
-  "summary": {
-    "total": 6,
-    "pass": 6,
-    "fail": 0,
-    "blocked": 0,
-    "all_pass": true
-  },
+  "sha": "cc8b376d669cd5b4386c23d2830e61fe02840166",
+  "conclusion": "failure",
+  "timestamp_utc": "2026-10-22T16:53:23.796Z",
+  "run_id": "39817817552",
+  "run_number": "595",
+  "summary": null,
   "scenarios": [
     {
       "id": "PAV-01",
-      "status": "PASS",
-      "description": "Interagente A salva relato como rascunho (draft) — invisível à profissional vinculada",
-      "details": "RLS garantiu 0 itens na listagem e getOne negado (404/403) para a profissional"
+      "status": "NÃO EXECUTADO",
+      "description": "Verificação funcional do primeiro atendimento",
+      "details": "Job interrompido antes ou durante a execução"
     },
     {
       "id": "PAV-02",
-      "status": "PASS",
-      "description": "Interagente A envia relato (approved/shared_care) — profissional vinculada lê com autoria correta",
-      "details": "Relato acessível no prontuário com participant_user_id=4r69g7rq1e07o2y e exibição validada (\"Enviado por Alice\")"
+      "status": "NÃO EXECUTADO",
+      "description": "Verificação funcional do primeiro atendimento",
+      "details": "Job interrompido antes ou durante a execução"
     },
     {
       "id": "PAV-03",
-      "status": "PASS",
-      "description": "Profissional registra sessão e nota privada — interagente A não consegue acessar nota profissional",
-      "details": "RLS estrito bloqueou acesso da interagente à nota profissional (0 itens na lista e getOne negado)"
+      "status": "NÃO EXECUTADO",
+      "description": "Verificação funcional do primeiro atendimento",
+      "details": "Job interrompido antes ou durante a execução"
     },
     {
       "id": "PAV-04",
-      "status": "PASS",
-      "description": "Plano em rascunho invisível à interagente A; após compartilhamento torna-se visível",
-      "details": "Rascunho bloqueado (list=0, getOne negado). Após transição deliberada para presented/active, acesso liberado à interagente."
+      "status": "NÃO EXECUTADO",
+      "description": "Verificação funcional do primeiro atendimento",
+      "details": "Job interrompido antes ou durante a execução"
     },
     {
       "id": "PAV-05",
-      "status": "PASS",
-      "description": "Interagente A registra as 4 respostas ao próximo passo — profissional vê e zero notas clínicas geradas",
-      "details": "Todas as 4 respostas registradas e conferidas pela profissional. Total de notas clínicas inalterado (1 -> 1)."
+      "status": "NÃO EXECUTADO",
+      "description": "Verificação funcional do primeiro atendimento",
+      "details": "Job interrompido antes ou durante a execução"
     },
     {
       "id": "PAV-06",
-      "status": "PASS",
-      "description": "Interagente B não vinculada não acessa relato, plano, nota e retorno de A por lista nem por ID real",
-      "details": "Isolamento RLS perfeito contra participante externa: list=0 e getOne negado para todos os 4 recursos de A."
+      "status": "NÃO EXECUTADO",
+      "description": "Verificação funcional do primeiro atendimento",
+      "details": "Job interrompido antes ou durante a execução"
     }
   ]
 }
