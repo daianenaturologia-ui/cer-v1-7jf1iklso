@@ -50,6 +50,7 @@ import { ProfessionalSessionManager } from '@/components/ProfessionalSessionMana
 import { ProfessionalAiWorkspace } from '@/components/ProfessionalAiWorkspace'
 import { CerArtStrip } from '@/components/CerArtwork'
 import pb from '@/lib/pocketbase/client'
+import { professionalListProgress, type ProfessionalListProgress } from '@/services/professionalListProgress'
 
 export const ProfissionalHome: React.FC = () => {
   const { user, person, logout, isDemo } = useAuth()
@@ -57,6 +58,7 @@ export const ProfissionalHome: React.FC = () => {
   const [products, setProducts] = useState<CerProductRecord[]>([])
   const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [listProgress, setListProgress] = useState<Record<string, ProfessionalListProgress>>({})
   const [submitting, setSubmitting] = useState(false)
 
   // Navegação Principal Profissional (Build 09C):
@@ -89,6 +91,11 @@ export const ProfissionalHome: React.FC = () => {
       ])
       setEnrollments(list)
       setProducts(prods)
+      const progress = await Promise.all(list.map(async (enrollment) => [
+        enrollment.id,
+        await professionalListProgress(enrollment.id, enrollment.expand?.journey_states_via_enrollment_id?.[0]),
+      ] as const))
+      setListProgress(Object.fromEntries(progress))
       if (prods.length > 0 && !selectedProductId) {
         setSelectedProductId(prods[0].id)
       }
@@ -162,21 +169,12 @@ export const ProfissionalHome: React.FC = () => {
   // Montagem dos dados de ParticipantList com atenção acoplada
   const participantListItems: ParticipantListItemData[] = enrollments.map((enr) => {
     const personData = enr.expand?.person_id
-    const journeyData = enr.expand?.journey_states_via_enrollment_id?.[0]
     const pAttn = attentionItems.filter((i) => i.enrollmentId === enr.id)
 
     const secCount = pAttn.filter((i) => i.category === 'SEGURANÇA').length
     const revCount = pAttn.filter((i) => i.category === 'REVISAR').length
 
-    let nextStep = 'Aguardando início de acolhimento'
-    if (journeyData?.current_stage === 'consciousness') {
-      nextStep =
-        journeyData.stage_status === 'integrado'
-          ? 'Consciência concluída — formular Plano de Desenvolvimento'
-          : 'Acompanhar respostas das experiências e Mandala'
-    } else if (journeyData?.current_stage === 'equilibrium_realization') {
-      nextStep = 'Acompanhar experimentos ativos e Cycle Review'
-    }
+    const progress = listProgress[enr.id]
 
     return {
       enrollment: enr,
@@ -184,9 +182,9 @@ export const ProfissionalHome: React.FC = () => {
       preferredName: personData?.preferred_name,
       email: personData?.email || '—',
       status: enr.status,
-      currentStage: journeyData?.current_stage || 'onboarding',
-      stageStatus: journeyData?.stage_status || 'nao_iniciado',
-      nextStep,
+      currentStage: progress?.currentStage || 'unavailable',
+      stageStatus: progress?.stageStatus || 'unknown',
+      nextStep: progress?.nextStep || 'Abra a visão geral para atualizar o acompanhamento',
       attentionCount: {
         security: secCount,
         review: revCount,

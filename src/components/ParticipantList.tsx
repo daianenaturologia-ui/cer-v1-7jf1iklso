@@ -55,13 +55,16 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
   const stageLabels: Record<string, string> = {
     onboarding: 'Acolhimento',
     consciousness: 'Consciência',
-    equilibrium_realization: 'Realização & Equilíbrio',
+    evolution: 'Evolução',
+    equilibrium_realization: 'Equilíbrio & Realização',
+    unavailable: 'Acompanhamento',
   }
 
   const stageStatusLabels: Record<string, string> = {
     nao_iniciado: 'A iniciar',
     em_andamento: 'Em andamento',
     integrado: 'Integrado',
+    unknown: 'Conferir jornada',
   }
 
   // Filtragem
