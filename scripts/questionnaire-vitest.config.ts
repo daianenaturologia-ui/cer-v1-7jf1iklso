@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     include: [
+      'src/services/professionalListProgress.test.ts',
       'src/components/experience/ExperienceDimensionTransition.test.tsx',
       'src/components/RoutineReflection.test.tsx',
       'src/components/CycleReviewCompletion.test.tsx',
