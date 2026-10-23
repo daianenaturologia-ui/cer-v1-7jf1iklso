@@ -863,7 +863,10 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
       chapter1ActiveRevision={persistedC1Rev ?? derivedC1.activeRevisionNumber ?? 1}
       chapter1LastCompletedRevision={c1LastCompletedRev}
       chapter1HasCorrectionInProgress={Boolean(
-        (persistedC1Rev && persistedC1Rev > (c1LastCompletedRev ?? 0) && !isC1Completed) ||
+        (persistedC1Rev &&
+          persistedC1Rev > 1 &&
+          persistedC1Rev > (c1LastCompletedRev ?? 0) &&
+          !isC1Completed) ||
         (derivedC1.activeRevisionNumber > 1 &&
           !isC1Completed &&
           derivedC1.activeRevisionNumber > (c1LastCompletedRev ?? 0)),
@@ -875,7 +878,10 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
       chapter2ActiveRevision={persistedC2Rev ?? derivedC2.activeRevisionNumber ?? 1}
       chapter2LastCompletedRevision={c2LastCompletedRev}
       chapter2HasCorrectionInProgress={Boolean(
-        (persistedC2Rev && persistedC2Rev > (c2LastCompletedRev ?? 0) && !isC2Completed) ||
+        (persistedC2Rev &&
+          persistedC2Rev > 1 &&
+          persistedC2Rev > (c2LastCompletedRev ?? 0) &&
+          !isC2Completed) ||
         (derivedC2.activeRevisionNumber > 1 &&
           !isC2Completed &&
           derivedC2.activeRevisionNumber > (c2LastCompletedRev ?? 0)),
