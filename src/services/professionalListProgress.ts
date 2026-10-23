@@ -26,12 +26,16 @@ export async function professionalListProgress(
       return {
         currentStage: 'equilibrium_realization',
         stageStatus: 'em_andamento',
-        nextStep: plan.stage === 'agreed'
-          ? 'Acompanhar ações combinadas e revisar o ciclo de cuidado'
-          : 'Construir o Plano de Desenvolvimento nos encontros',
+        nextStep:
+          plan.stage === 'agreed'
+            ? 'Acompanhar ações combinadas e revisar o ciclo de cuidado'
+            : 'Construir o Plano de Desenvolvimento nos encontros',
       }
     }
-    const coverage = consciousnessCoverage([], progress.filter((p) => p.enrollment_id === enrollmentId))
+    const coverage = consciousnessCoverage(
+      [],
+      progress.filter((p) => p.enrollment_id === enrollmentId),
+    )
     if (coverage.every((d) => d.completed)) {
       return {
         currentStage: 'evolution',
@@ -50,11 +54,12 @@ export async function professionalListProgress(
     return {
       currentStage,
       stageStatus: legacy?.stage_status || 'nao_iniciado',
-      nextStep: currentStage === 'equilibrium_realization'
-        ? 'Acompanhar práticas e revisar o ciclo de cuidado'
-        : currentStage === 'consciousness'
-          ? 'Conferir o preenchimento das seis dimensões'
-          : 'Acompanhar o acolhimento inicial',
+      nextStep:
+        currentStage === 'equilibrium_realization'
+          ? 'Acompanhar práticas e revisar o ciclo de cuidado'
+          : currentStage === 'consciousness'
+            ? 'Conferir o preenchimento das seis dimensões'
+            : 'Acompanhar o acolhimento inicial',
     }
   } catch {
     return {

@@ -50,7 +50,10 @@ import { ProfessionalSessionManager } from '@/components/ProfessionalSessionMana
 import { ProfessionalAiWorkspace } from '@/components/ProfessionalAiWorkspace'
 import { CerArtStrip } from '@/components/CerArtwork'
 import pb from '@/lib/pocketbase/client'
-import { professionalListProgress, type ProfessionalListProgress } from '@/services/professionalListProgress'
+import {
+  professionalListProgress,
+  type ProfessionalListProgress,
+} from '@/services/professionalListProgress'
 
 export const ProfissionalHome: React.FC = () => {
   const { user, person, logout, isDemo } = useAuth()
@@ -91,10 +94,18 @@ export const ProfissionalHome: React.FC = () => {
       ])
       setEnrollments(list)
       setProducts(prods)
-      const progress = await Promise.all(list.map(async (enrollment) => [
-        enrollment.id,
-        await professionalListProgress(enrollment.id, enrollment.expand?.journey_states_via_enrollment_id?.[0]),
-      ] as const))
+      const progress = await Promise.all(
+        list.map(
+          async (enrollment) =>
+            [
+              enrollment.id,
+              await professionalListProgress(
+                enrollment.id,
+                enrollment.expand?.journey_states_via_enrollment_id?.[0],
+              ),
+            ] as const,
+        ),
+      )
       setListProgress(Object.fromEntries(progress))
       if (prods.length > 0 && !selectedProductId) {
         setSelectedProductId(prods[0].id)
