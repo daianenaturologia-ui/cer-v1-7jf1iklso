@@ -159,7 +159,9 @@ routerAdd(
       result = {
         person: person.publicExport(),
         enrollment: enrollment.publicExport(),
-        ...(temporaryCredential ? { tempPasswordGenerated: temporaryCredential } : {}),
+      }
+      if (temporaryCredential) {
+        result.tempPasswordGenerated = temporaryCredential
       }
     })
     return e.json(200, result)
