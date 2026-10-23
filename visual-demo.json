@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "ea70325f4c9d76616e0305101bcd619995db575c",
-  "conclusion": "success",
-  "timestamp_utc": "2026-10-23T14:01:58.944Z",
-  "run_id": "39965954576",
-  "run_number": "606",
-  "all_success": true,
-  "failure_reason": null,
+  "sha": "3e8c54c18a6ad8fc91dbad7768a9f619cc5da4f4",
+  "conclusion": "failure",
+  "timestamp_utc": "2026-10-23T17:51:36.112Z",
+  "run_id": "39997498711",
+  "run_number": "607",
+  "all_success": false,
+  "failure_reason": "Interrompido na etapa 5 (Profissional: Plano de Desenvolvimento Compartilhado): page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"http://127.0.0.1:4173/profissional/participantes/q2nzs3bzam736o7?tab=equilibrio&tool=plano\", waiting until \"networkidle\"\n",
   "steps": [
     {
       "num": 1,
@@ -46,15 +46,15 @@
       "id": "05-plano-compartilhado",
       "title": "Profissional: Plano de Desenvolvimento Compartilhado",
       "filename": "05-plano-compartilhado.png",
-      "status": "PASS",
-      "note": ""
+      "status": "FAIL",
+      "note": "page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"http://127.0.0.1:4173/profissional/participantes/q2nzs3bzam736o7?tab=equilibrio&tool=plano\", waiting until \"networkidle\"\n"
     },
     {
       "num": 6,
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -62,7 +62,7 @@
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
       "filename": "07-retorno-no-prontuario.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -70,7 +70,7 @@
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
       "filename": "08-interagente-b-sem-acesso.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     }
   ]
