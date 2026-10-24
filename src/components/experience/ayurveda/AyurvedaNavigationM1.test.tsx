@@ -25,7 +25,7 @@ import {
   DEMO_PERSON_MARIANA,
 } from '@/services/demoAdapter'
 import { experienceResponseService, enrollmentExperienceService } from '@/services/experienceEngine'
-import { AYV_C1_PROMPTS } from '@/services/ayurvedaChapter1'
+import { AYV_C1_PROMPTS, setPersistedActiveChapter1Revision } from '@/services/ayurvedaChapter1'
 import { AYV_C2_PROMPTS, setPersistedActiveChapter2Revision } from '@/services/ayurvedaChapter2'
 import pb from '@/lib/pocketbase/client'
 
@@ -173,6 +173,57 @@ describe('Microlote M1 — Estabilização da Navegação de Corpo & Fisiologia'
     })
     setPersistedActiveChapter2Revision(DEMO_ENROLLMENT_ID, 1)
   }
+
+  it('retoma a primeira versão parcial do C1 sem apresentá-la como correção', async () => {
+    await experienceResponseService.saveResponse({
+      enrollmentId: DEMO_ENROLLMENT_ID,
+      experienceId: 'exp-corpo-fisiologia-07b',
+      promptId: AYV_C1_PROMPTS.P1_STRUCTURE.id,
+      promptKey: AYV_C1_PROMPTS.P1_STRUCTURE.key,
+      respondentUserId: DEMO_USER_MARIANA.id,
+      responseType: 'ChoiceCards',
+      promptVersion: 1,
+      structuredValue: { value: 'light_narrow', choice: 'light_narrow' },
+    })
+    setPersistedActiveChapter1Revision(DEMO_ENROLLMENT_ID, 1)
+
+    render(
+      <AyurvedaChaptersNavigator
+        enrollmentId={DEMO_ENROLLMENT_ID}
+        experienceId="exp-corpo-fisiologia-07b"
+        respondentUserId={DEMO_USER_MARIANA.id}
+      />,
+    )
+
+    expect(await screen.findByRole('button', { name: 'Retomar Capítulo 1' })).toBeEnabled()
+    expect(screen.queryByText('Correção em andamento')).not.toBeInTheDocument()
+  })
+
+  it('retoma a primeira versão parcial do C2 sem apresentá-la como correção', async () => {
+    await seedC1Completed()
+    await experienceResponseService.saveResponse({
+      enrollmentId: DEMO_ENROLLMENT_ID,
+      experienceId: 'exp-corpo-fisiologia-07b',
+      promptId: AYV_C2_PROMPTS.P1_HUNGER_PATTERN.id,
+      promptKey: AYV_C2_PROMPTS.P1_HUNGER_PATTERN.key,
+      respondentUserId: DEMO_USER_MARIANA.id,
+      responseType: 'MultiSelectCards',
+      promptVersion: 1,
+      structuredValue: { value: ['variable'], selectedOptionIds: ['variable'] },
+    })
+    setPersistedActiveChapter2Revision(DEMO_ENROLLMENT_ID, 1)
+
+    render(
+      <AyurvedaChaptersNavigator
+        enrollmentId={DEMO_ENROLLMENT_ID}
+        experienceId="exp-corpo-fisiologia-07b"
+        respondentUserId={DEMO_USER_MARIANA.id}
+      />,
+    )
+
+    expect(await screen.findByRole('button', { name: 'Retomar Capítulo 2' })).toBeEnabled()
+    expect(screen.queryByText('Correção em andamento')).not.toBeInTheDocument()
+  })
 
   // 1. encerramento C1 -> "Voltar aos capítulos" -> hub
   it('1. encerramento C1 -> "Voltar aos capítulos" -> hub', async () => {
