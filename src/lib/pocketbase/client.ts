@@ -2,7 +2,6 @@ import PocketBase from 'pocketbase'
 
 export function getPocketBaseUrl(): string {
   let url = ''
-
   if (
     typeof import.meta !== 'undefined' &&
     import.meta.env &&
@@ -14,7 +13,6 @@ export function getPocketBaseUrl(): string {
   }
 
   url = url.trim()
-
   if (!url) {
     throw new Error('Backend não configurado: defina VITE_POCKETBASE_URL no ambiente')
   }
