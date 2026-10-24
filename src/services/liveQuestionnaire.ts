@@ -15,13 +15,21 @@ export function questionnaireRecordId(kind: string, logicalId: string): string {
 export function normalizeLiveResponse<
   T extends { experience_id: string; prompt_id: string; expand?: any },
 >(record: T): T {
-  const logicalId = record.expand?.prompt_id?.schema_config?.cer_logical_prompt_id
+  const identity = record as T & {
+    structured_value?: { metadata?: { canonical_prompt_id?: unknown } }
+    backend_prompt_id?: string
+    backend_experience_id?: string
+  }
+  const candidate =
+    record.expand?.prompt_id?.schema_config?.cer_logical_prompt_id ||
+    identity.structured_value?.metadata?.canonical_prompt_id
+  const logicalId = typeof candidate === 'string' && candidate.trim() ? candidate : undefined
   return {
     ...record,
     ...(logicalId ? { prompt_id: logicalId } : {}),
     // Preserve real relation IDs for consumers that need a backend record.
-    backend_prompt_id: record.prompt_id,
-    backend_experience_id: record.experience_id,
+    backend_prompt_id: identity.backend_prompt_id || record.prompt_id,
+    backend_experience_id: identity.backend_experience_id || record.experience_id,
   }
 }
 

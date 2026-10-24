@@ -1,4 +1,5 @@
 import type { ExperienceResponseRecord } from '@/types/cer'
+import { normalizeLiveResponse } from './liveQuestionnaire'
 import { BUILD_07C_MENTE_PROMPTS, BUILD_07C_REGULACAO_PROMPTS } from './build07cPrompts'
 import { BUILD_07D_RELACOES_PROMPTS } from './build07dPrompts'
 import { BUILD_07E_SEXUALIDADE_PROMPTS } from './build07ePrompts'
@@ -41,7 +42,9 @@ export function professionalQuestionnaireResponses(
       const prompt =
         r.expand?.prompt_id ||
         prompts.find((p) => p.id === r.prompt_id || (p.schema_config as any)?.prompt_key === key)
-      return prompt ? { ...r, expand: { ...r.expand, prompt_id: prompt } } : { ...r }
+      return normalizeLiveResponse(
+        prompt ? { ...r, expand: { ...r.expand, prompt_id: prompt } } : { ...r },
+      )
     })
     .filter(
       (r) =>
