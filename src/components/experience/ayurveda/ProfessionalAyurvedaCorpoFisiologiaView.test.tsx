@@ -10,6 +10,9 @@ import { AYV_C2_PROMPTS } from '@/services/ayurvedaChapter2'
 import type { ExperienceResponseRecord } from '@/types/cer'
 import { demoAdapter } from '@/services/demoAdapter'
 import pb from '@/lib/pocketbase/client'
+import { professionalQuestionnaireResponses } from '@/services/professionalQuestionnaireRead'
+import { questionnaireRecordId } from '@/services/liveQuestionnaire'
+import { deriveChapter3Status } from '@/services/ayurvedaChapter3'
 
 describe('M4A — Visão Profissional Factual dos Capítulos 1 e 2 de Corpo & Fisiologia', () => {
   beforeEach(() => {
@@ -287,6 +290,48 @@ describe('M4A — Visão Profissional Factual dos Capítulos 1 e 2 de Corpo & Fi
       },
     }),
   ]
+
+  it('mostra respostas e conclusão com IDs físicos e identificador canônico somente nos metadados', () => {
+    const source = [
+      ...buildMockResponsesRev1(),
+      createMockResp({
+        id: 'c3-completion',
+        prompt_id: 'ayv_c3_chapter_completion',
+        structured_value: { completed: true },
+      }),
+    ]
+    const persisted = source.map((record) => {
+      const {
+        prompt_key: _key,
+        value,
+        metadata: oldMetadata,
+        ...rest
+      } = record.structured_value as Record<string, unknown>
+      const { prompt_key: _metadataKey, ...metadata } = (oldMetadata || {}) as Record<
+        string,
+        unknown
+      >
+      return {
+        ...record,
+        prompt_id: questionnaireRecordId('prompt', record.prompt_id),
+        structured_value: {
+          ...rest,
+          ...(value === undefined ? {} : { choice: value }),
+          metadata: { ...metadata, canonical_prompt_id: record.prompt_id },
+        },
+      }
+    })
+    const normalized = professionalQuestionnaireResponses(persisted, 'enr-mariana-01')
+    render(
+      <ProfessionalAyurvedaCorpoFisiologiaView
+        responses={normalized}
+        participantName="Teste fictício"
+      />,
+    )
+    expect(screen.getByText(/Estrutura leve ou estreita/i)).toBeInTheDocument()
+    expect(screen.queryByText('Esta interagente ainda não iniciou este capítulo.')).toBeNull()
+    expect(deriveChapter3Status(normalized).status).toBe('completed')
+  })
 
   // Teste 1: Daiane abre Corpo & Fisiologia da interagente
   it('1. Daiane abre Corpo & Fisiologia com cabeçalho factual e nome da interagente', () => {
