@@ -659,6 +659,12 @@ export function DevelopmentPlanWorkspace({
               meta principal e as ações estiverem combinados, disponibilize a organização da rotina.
               Você pode retomar e revisar o plano depois.
             </p>
+            <p className="text-sm text-muted-foreground">
+              Para compartilhar a proposta, preencha o momento atual. Para combinar o plano,
+              preencha também as prioridades, uma meta principal e seu sinal de avanço. Cada
+              meta ou área de cuidado incluída precisa de ao menos uma ação, com título e
+              descrição de como será experimentada. Você pode salvar um rascunho incompleto.
+            </p>
             <Button disabled={busy} variant="outline" onClick={() => void share('building')}>
               Compartilhar para construir nos encontros
             </Button>

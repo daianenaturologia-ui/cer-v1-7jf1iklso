@@ -139,7 +139,9 @@ export const CycleReviewView: React.FC<CycleReviewViewProps> = ({
 
       toast({
         title: completed ? 'Revisão de Ciclo Concluída' : 'Rascunho de Revisão Salvo',
-        description: 'Decisão e síntese registradas com rastreabilidade clínica.',
+        description: completed
+          ? 'Revisão concluída. A decisão e os campos preenchidos foram salvos.'
+          : 'Rascunho salvo. Você pode continuar a revisão depois.',
       })
 
       if (onUpdated) onUpdated()
