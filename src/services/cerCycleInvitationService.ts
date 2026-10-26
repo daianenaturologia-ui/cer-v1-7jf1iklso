@@ -81,9 +81,25 @@ export const cerCycleInvitationService = {
       demoAdapter.writeCareStore(store)
       return invitation
     }
-    return pb.collection(collection).update(invitationId, {
-      participant_reflection: reflection.trim(),
-      completed_at: new Date().toISOString(),
-    })
+    try {
+      return await pb.collection(collection).update(invitationId, {
+        participant_reflection: reflection.trim(),
+        completed_at: new Date().toISOString(),
+      })
+    } catch {
+      // An interrupted response does not prove the write failed. Confirm the
+      // exact submitted text before showing success; never repeat the write.
+      try {
+        const saved = await pb.collection(collection).getOne<CycleInvitation>(invitationId, {
+          requestKey: null,
+        })
+        if (saved.completed_at && saved.participant_reflection === reflection.trim()) return saved
+      } catch {
+        // If confirmation also fails, keep the outcome explicitly uncertain.
+      }
+      throw new Error(
+        'Não foi possível confirmar o compartilhamento. Seu texto continua aqui. Tente novamente quando a conexão estiver disponível.',
+      )
+    }
   },
 }

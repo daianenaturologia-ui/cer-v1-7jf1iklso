@@ -14,6 +14,7 @@ export default defineConfig({
       'src/services/cerCareCyclesDemo.test.ts',
       'src/components/DemoExperimentCard.test.tsx',
       'src/components/ParticipantCycleReflection.test.tsx',
+      'src/services/cerCycleInvitationService.test.ts',
       'src/services/cerProtectionPatternContent.test.ts',
       'src/services/libraryCommunity.test.ts',
       'src/components/LibraryCommunity.test.tsx',
