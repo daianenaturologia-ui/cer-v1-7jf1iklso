@@ -1,3 +1,4 @@
+import { demoAdapter } from '@/services/demoAdapter'
 import {
   professionalQuestionnaireResponses,
   isSharedQuestionnaireRecord,
@@ -278,20 +279,22 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant={isDemoQaScenarioActive ? 'secondary' : 'outline'}
-              size="sm"
-              onClick={handleToggleQaScenario}
-              className="text-xs border-dashed gap-1"
-              data-testid="toggle-qa-scenario-btn"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              <span>
-                {isDemoQaScenarioActive
-                  ? 'Cenário QA Consciência Ativo'
-                  : 'Ativar Cenário QA (6 Dimensões)'}
-              </span>
-            </Button>
+            {demoAdapter.isEnabled() && (
+              <Button
+                variant={isDemoQaScenarioActive ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={handleToggleQaScenario}
+                className="text-xs border-dashed gap-1"
+                data-testid="toggle-qa-scenario-btn"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span>
+                  {isDemoQaScenarioActive
+                    ? 'Cenário QA Consciência Ativo'
+                    : 'Ativar Cenário QA (6 Dimensões)'}
+                </span>
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -415,7 +418,7 @@ export const ProfessionalConscienciaSection: React.FC<ProfessionalConscienciaSec
                               className="h-7 text-xs px-3"
                               onClick={() => setCorpoActiveTab('factual')}
                             >
-                              Visão Factual (Capítulos 1, 2 e 3)
+                              Respostas registradas (Capítulos 1 a 4)
                             </Button>
                             <Button
                               type="button"
