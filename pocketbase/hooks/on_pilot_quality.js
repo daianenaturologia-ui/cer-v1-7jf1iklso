@@ -56,16 +56,20 @@ routerAdd(
       )
       if (!links.length) throw new ForbiddenError('Vínculo encerrado.')
     }
-    const feedbackDTO = (r, internal = false) => ({
-      id: r.id,
-      category: r.getString('category'),
-      message: r.getString('message'),
-      status: r.getString('status'),
-      created: r.getString('created'),
-      ...(internal
-        ? { enrollment_id: r.getString('enrollment_id'), review_note: r.getString('review_note') }
-        : {}),
-    })
+    const feedbackDTO = (r, internal = false) => {
+      const dto = {
+        id: r.id,
+        category: r.getString('category'),
+        message: r.getString('message'),
+        status: r.getString('status'),
+        created: r.getString('created'),
+      }
+      if (internal) {
+        dto.enrollment_id = r.getString('enrollment_id')
+        dto.review_note = r.getString('review_note')
+      }
+      return dto
+    }
     if (body.action === 'context') {
       if (!hasRole('interagente')) throw new ForbiddenError('Espaço das interagentes.')
       return e.json(
@@ -329,10 +333,11 @@ cronAdd('cer_pilot_weekly_quality', '0 11 * * 1', () => {
         'feedback_save',
         'quality_load',
       ])
-        byCode[code] = count('cer_pilot_incidents', filter + ' && code = {:code}', {
-          ...params,
-          code,
-        })
+        byCode[code] = count(
+          'cer_pilot_incidents',
+          filter + ' && code = {:code}',
+          Object.assign({}, params, { code }),
+        )
       const r = new Record(app.findCollectionByNameOrId('cer_pilot_weekly_audits'))
       r.set('professional_id', professional)
       r.set('week_start', week)
