@@ -2,7 +2,7 @@
   "name": "skip-react-template",
   "description": "CER V1 — Continuidade entre dimensões, plano, práticas e revisão de ciclos",
   "private": true,
-  "version": "0.0.432",
+  "version": "0.0.433",
   "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
