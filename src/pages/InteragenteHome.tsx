@@ -112,6 +112,7 @@ import { SerConscienciaMap } from '@/components/SerConscienciaMap'
 import { CerArtStrip } from '@/components/CerArtwork'
 import { OnboardingFlow } from '@/components/OnboardingFlow'
 import { completeOnboarding, hasCompletedOnboarding } from '@/services/onboardingCompletion'
+import { reportIncident } from '@/services/pilotQuality'
 import { EmptyState } from '@/components/EmptyState'
 import pb from '@/lib/pocketbase/client'
 
@@ -504,6 +505,7 @@ export const InteragenteHome: React.FC = () => {
       await loadData()
     } catch {
       setOnboardingError('Não foi possível salvar a conclusão do acolhimento. Você pode tentar novamente; seu cadastro permanece ativo.')
+      reportIncident('onboarding_save', 'journey')
     } finally {
       setOnboardingBusy(false)
     }
