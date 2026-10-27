@@ -127,6 +127,41 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
     check(req('/api/collections/enrollments/records/'+enrollment['id'],token=token)[0]==200,'new participant reads own enrollment')
     check(req('/api/collections/enrollments/records/'+enrollment['id'],token=q)[0]==404,'other professional cannot read new enrollment')
     check(any(r['enrollment_id']==enrollment['id'] and r['current_stage']=='onboarding' for r in adminitems('journey_states')),'journey starts in onboarding')
+    journey=next(r for r in adminitems('journey_states') if r['enrollment_id']==enrollment['id'])
+    journey_path='/api/collections/journey_states/records/'+journey['id']
+    check(req(journey_path,token=token)[0]==200,'new participant reads own initial journey')
+    check(req(journey_path,{'current_stage':'consciousness'},token,method='PATCH')[0]>=400,'raw arbitrary journey editing stays blocked for participants')
+    welcome_endpoint='/backend/v1/cer/onboarding/complete'
+    welcome={'enrollment_id':enrollment['id']}
+    check(req(welcome_endpoint,welcome)[0]>=400,'anonymous cannot complete welcome')
+    check(req(welcome_endpoint,welcome,p)[0]>=400,'professional cannot complete welcome for participant')
+    check(req(welcome_endpoint,welcome,q)[0]>=400,'unrelated professional cannot complete welcome')
+    check(req(welcome_endpoint,welcome,ordinary)[0]>=400,'another participant cannot complete welcome')
+    code,done=req(welcome_endpoint,{**welcome,'current_stage':'equilibrium_realization','user_id':'forged'},token)
+    check(code==200 and done.get('completed') is True and done.get('current_stage')=='consciousness','participant completes only their own welcome without arbitrary stage input')
+    resumed=login('new@example.invalid')[1]['token']
+    code,reloaded=req(journey_path,token=resumed)
+    check(code==200 and reloaded['metadata']['onboarding_completed'] and reloaded['current_stage']=='consciousness','welcome completion persists across fresh authentication')
+    first_completed_at=reloaded['metadata']['onboarding_completed_at']
+    check(req(welcome_endpoint,welcome,resumed)[0]==200 and req(journey_path,token=resumed)[1]['metadata']['onboarding_completed_at']==first_completed_at,'welcome retry is idempotent and keeps original completion date')
+    code,professional_journey=req(journey_path,token=p)
+    check(code==200 and professional_journey['current_stage']=='consciousness','linked professional reads actual welcome progress')
+    check(req(journey_path,token=q)[0]>=400,'other professional cannot read welcome progress')
+    code,prepared=req('/backend/v1/cer/questionnaires/prepare',{'enrollment_id':enrollment['id'],'experience_id':'exp-corpo-fisiologia-07b','prompt_id':'ayv_c1_p1_estrutura_corporal'},resumed)
+    check(code==200 and prepared.get('prompt_id'),'first dimension prepares a real canonical question')
+    response_body={'enrollment_id':enrollment['id'],'experience_id':prepared['experience_id'],'prompt_id':prepared['prompt_id'],'respondent_user_id':uid,'response_type':'ChoiceCards','access_class':'shared_care','structured_value':{'choice':'intermediate'},'free_text':'','prompt_version':1,'version':1,'status':'saved'}
+    code,first_response=req('/api/collections/experience_responses/records',response_body,resumed)
+    check(code==200,'first dimension partial answer saves without completing the chapter')
+    response_path='/api/collections/experience_responses/records/'+first_response['id']
+    resumed=login('new@example.invalid')[1]['token']
+    code,answer=req(response_path,token=resumed)
+    check(code==200 and answer['structured_value']['choice']=='intermediate','partial answer resumes with exact stored choice after new login')
+    code,professional_answer=req(response_path,token=p)
+    check(code==200 and professional_answer['structured_value']['choice']=='intermediate','linked professional sees exact shared partial answer')
+    check(req(response_path,token=q)[0]>=400,'other professional cannot read partial answer')
+    check(req(response_path,{'access_class':'participant_private'},resumed,method='PATCH')[0]==200,'participant can mark own answer private')
+    check(req(response_path,token=p)[0]>=400,'linked professional cannot read private partial answer')
+    check(req(response_path,token=resumed)[0]==200,'private partial answer remains available to its author')
     codes=['exp-corpo-fisiologia-07b','exp-mente-emocoes-07c','exp-regulacao-respostas-07c','exp-relacoes-07d','exp-sexualidade-07e','exp-sentido-conexao-07f']
     for experience in codes:
         status,prepared=req('/backend/v1/cer/questionnaires/prepare',{'enrollment_id':enrollment['id'],'experience_id':experience},token)

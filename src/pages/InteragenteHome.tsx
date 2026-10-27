@@ -111,6 +111,7 @@ import { MandalaStructuredView } from '@/components/MandalaStructuredView'
 import { SerConscienciaMap } from '@/components/SerConscienciaMap'
 import { CerArtStrip } from '@/components/CerArtwork'
 import { OnboardingFlow } from '@/components/OnboardingFlow'
+import { completeOnboarding, hasCompletedOnboarding } from '@/services/onboardingCompletion'
 import { EmptyState } from '@/components/EmptyState'
 import pb from '@/lib/pocketbase/client'
 
@@ -185,6 +186,8 @@ export const InteragenteHome: React.FC = () => {
   const [assignments, setAssignments] = useState<CerPracticeAssignmentRecord[]>([])
   const [plannerItems, setPlannerItems] = useState<CerPlannerItemRecord[]>([])
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingBusy, setOnboardingBusy] = useState(false)
+  const [onboardingError, setOnboardingError] = useState('')
   const [activeReviewInvite, setActiveReviewInvite] = useState<{ cycleId: string } | null>(null)
   const [showAvatarEditModal, setShowAvatarEditModal] = useState(false)
 
@@ -435,13 +438,9 @@ export const InteragenteHome: React.FC = () => {
         // Item 14: Onboarding aparece uma vez no first access apropriado
         // Reutiliza journey_states (current_stage === 'onboarding' ou metadata.onboarding_completed)
         const journeyRecord = activeEnr.expand?.journey_states_via_enrollment_id?.[0]
-        const hasCompletedOnboarding =
-          journeyRecord?.metadata?.onboarding_completed ||
-          journeyRecord?.current_stage === 'consciousness' ||
-          journeyRecord?.current_stage === 'equilibrium_realization' ||
-          localStorage.getItem(`cer_onboarding_completed_${activeEnr.id}`)
+        const welcomeCompleted = hasCompletedOnboarding(journeyRecord, demoAdapter.isEnabled(), activeEnr.id)
 
-        if (!hasCompletedOnboarding && journeyRecord?.current_stage === 'onboarding') {
+        if (!welcomeCompleted && journeyRecord?.current_stage === 'onboarding') {
           setShowOnboarding(true)
         }
       }
@@ -491,29 +490,23 @@ export const InteragenteHome: React.FC = () => {
   }
 
   const handleFinishOnboarding = async () => {
-    setShowOnboarding(false)
-    if (enrollment?.id) {
-      localStorage.setItem(`cer_onboarding_completed_${enrollment.id}`, 'true')
-      if (!demoAdapter.isEnabled()) {
-        const journeyRecord = enrollment.expand?.journey_states_via_enrollment_id?.[0]
-        if (journeyRecord?.id) {
-          try {
-            await pb.collection('journey_states').update(journeyRecord.id, {
-              current_stage: 'consciousness',
-              stage_status: 'em_andamento',
-              metadata: {
-                ...(journeyRecord.metadata || {}),
-                onboarding_completed: true,
-                onboarding_completed_at: new Date().toISOString(),
-              },
-            })
-          } catch {
-            /* intentionally ignored */
-          }
-        }
+    if (onboardingBusy) return
+    setOnboardingBusy(true)
+    setOnboardingError('')
+    try {
+      if (!enrollment?.id) throw new Error('Acompanhamento indisponível.')
+      if (demoAdapter.isEnabled()) {
+        localStorage.setItem(`cer_onboarding_completed_${enrollment.id}`, 'true')
+      } else {
+        await completeOnboarding(enrollment.id)
       }
+      setShowOnboarding(false)
+      await loadData()
+    } catch {
+      setOnboardingError('Não foi possível salvar a conclusão do acolhimento. Você pode tentar novamente; seu cadastro permanece ativo.')
+    } finally {
+      setOnboardingBusy(false)
     }
-    await loadData()
   }
 
   useEffect(() => {
@@ -764,6 +757,8 @@ export const InteragenteHome: React.FC = () => {
         <OnboardingFlow
           interagenteName={person?.preferred_name || person?.full_name}
           onComplete={handleFinishOnboarding}
+          busy={onboardingBusy}
+          error={onboardingError}
         />
       </div>
     )
