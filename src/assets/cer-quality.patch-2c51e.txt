@@ -1,0 +1,718 @@
+diff --git a/docs/feedback-e-qualidade-piloto.md b/docs/feedback-e-qualidade-piloto.md
+new file mode 100644
+index 0000000..c8abd8b
+--- /dev/null
++++ b/docs/feedback-e-qualidade-piloto.md
+@@ -0,0 +1,34 @@
++# Feedback e qualidade do piloto
++
++Interagentes precisam poder relatar tanto dificuldades no app quanto percepções do processo de acompanhamento. O registro pertence à autora e ao acompanhamento escolhido. Não é anônimo nem público. A profissional primária ativa acessa o conteúdo; outras interagentes, outras profissionais e profissionais desvinculadas não acessam. Notas internas de revisão não voltam no DTO da autora. O formulário explica destinatário, identificação, limite de 3.000 caracteres e revisão semanal sem acompanhamento em tempo real.
++
++## Caminhos e confirmação de gravação
++
++- `/feedback`: assuntos Uso do app e Meu processo de acompanhamento; lista de relatos e situação Recebido/Em análise/Análise concluída.
++- `/profissional/qualidade`: caixa paginada, acesso ao acompanhamento, notas internas, situação e relatórios semanais.
++- Links disponíveis no topo das páginas autenticadas. Demonstração não envia feedbacks ou telemetria reais.
++- POST autenticado `/backend/v1/cer/quality`; nenhuma das três coleções novas permite API bruta ao usuário.
++- A identidade, profissional destinatária e situação inicial são determinadas pelo servidor. Campo forjado não altera esses valores.
++- Limite de dez relatos por autora em 24 horas. Reenvio idêntico usa chave estável para não duplicar quando a resposta da rede se perde. A interface preserva texto/chave na tentativa incerta e só limpa após resposta positiva. Recarregar/fechar antes do envio não preserva o rascunho.
++
++## Detecção e recuperação limitadas
++
++Erros de renderização, eventos globais error/unhandledrejection, falhas de conclusão do acolhimento e de envio/carregamento de feedback geram apenas código enumerado, área enumerada e versão fixa do recurso. Não se enviam mensagens de exceção, stack traces, caminhos/queries, e-mails, tokens, respostas ou texto terapêutico. O vínculo técnico é derivado da própria matrícula e profissional primária. Falhas antes de autenticação, antes do carregamento do monitor ou sem vínculo único podem não ser registradas.
++
++Deduplicação em memória por sessão/código/área, máximo de vinte chaves por sessão e trinta ocorrências por conta em 24 horas no servidor. Falha do monitor é suprimida para não gerar uma cadeia de rejeições. Não há fila offline persistente. O limite é proteção operacional, não contagem estatisticamente completa de todos os incidentes.
++
++A recuperação automática repete uma leitura de qualidade no máximo uma vez em falha de rede/5xx. Não repete escritas incertas, não altera respostas, progresso, planos ou permissões e não edita código. A tela de recuperação de erro explica a limitação do conteúdo ainda não enviado e exige escolha da pessoa para remontar a tela. Mudanças de código passam por reprodução, teste e revisão; percepções do processo terapêutico são avaliadas pela profissional.
++
++## Auditoria semanal nativa
++
++`cronAdd('cer_pilot_weekly_quality', '0 11 * * 1', ...)`: segunda 11h UTC / 8h Brasília. Agendador padrão UTC do PocketBase; confirmar suporte/listagem e execução na plataforma hospedada, não apenas a existência do arquivo. O job agrega a semana anterior fechada, com início na segunda 00h Brasília, e recupera até quatro semanas após indisponibilidade. Nenhum relatório vazio retroativo. Índice único profissional/semana impede duplicação. Relatório automático mantém contagens por assunto e código técnico, pendências na geração e campo separado de ciência profissional. Não copia texto terapêutico para a auditoria automática nem declara o sistema saudável por ausência de erros registrados.
++
++O painel exige revisão humana dos relatos e fornece situação e anotação interna. Marcar relatório como revisado não corrige nem certifica uma falha. Esta primeira versão não transforma texto livre em comandos, não pede a uma IA para interpretar casos clínicos e não executa código proposto por feedback.
++
++## Implantação e validação
++
++Migração 0093 cria apenas `cer_pilot_feedback`, `cer_pilot_incidents`, `cer_pilot_weekly_audits`, campos e índices com regras fechadas. Aplicá-la antes de carregar o hook. Confirmar job registrado e pipeline de build; somente prévia. Preservar correções 433/434, client.ts canônico, dados anteriores, SMTP, credenciais e papéis. Não publicar produção nesta etapa.
++
++`scripts/verify-self-registration.py` executa banco completo, contas sintéticas em loopback e interceptação de e-mails. Cobre cadastro e início existentes, feedback/idempotência/quota, isolamento e desvinculação, DTO sem nota interna, telemetria sem texto arbitrário, registro e execução real do cron, contagens da semana e idempotência. O preparo temporal do cron usa SQLite somente no banco descartável para retroagir registros sintéticos: não há acesso direto a banco vivo nem contorno de autenticação no produto.
++
++`scripts/quality-vitest.config.ts` cobre interface de envio com erro/reenvio e confirmação do servidor, recuperação limitada de leitura e ausência de retry automático de escrita, isolamento demo e telemetria mínima. Não certifica percurso visual completo autenticado na prévia, que continua dependendo de sessão legítima de interagente disponível no navegador de testes.
+diff --git a/pocketbase/hooks/on_pilot_quality.js b/pocketbase/hooks/on_pilot_quality.js
+new file mode 100644
+index 0000000..bd0d8d8
+--- /dev/null
++++ b/pocketbase/hooks/on_pilot_quality.js
+@@ -0,0 +1,133 @@
++// Deliberately accepts enumerated diagnostics only, never error messages/URLs/stacks.
++routerAdd('POST', '/backend/v1/cer/quality', (e) => {
++  const app = e.app
++  const body = e.requestInfo().body
++  const actor = app.findRecordById('users', e.auth.id)
++  if (actor.getString('status') !== 'active') throw new ForbiddenError('Conta inativa.')
++  const hasRole = (role) => app.findRecordsByFilter('user_roles', 'user_id = {:id} && role = {:role} && is_active = true', '', 1, 0, { id: actor.id, role }).length > 0
++  const isProfessional = hasRole('profissional')
++  const ownEnrollments = () => app.findRecordsByFilter('enrollments', 'person_id = {:person} && status = "active"', '', 100, 0, { person: actor.getString('person_id') })
++  const primary = (enrollment) => {
++    const links = app.findRecordsByFilter('professional_enrollment_access', 'enrollment_id = {:id} && access_role = "primary" && is_active = true', '', 2, 0, { id: enrollment.id })
++    if (links.length !== 1) throw new BadRequestError('Não foi possível identificar sua profissional responsável.')
++    const professional = app.findRecordById('users', links[0].getString('professional_user_id'))
++    if (professional.getString('status') !== 'active') throw new ForbiddenError('Profissional indisponível.')
++    return professional.id
++  }
++  const canReview = (record) => {
++    if (!isProfessional || record.getString('professional_id') !== actor.id) throw new ForbiddenError('Sem acesso.')
++    // A former professional cannot continue reading therapeutic feedback after unlinking.
++    const links = app.findRecordsByFilter('professional_enrollment_access', 'enrollment_id = {:id} && professional_user_id = {:user} && access_role = "primary" && is_active = true', '', 1, 0, { id: record.getString('enrollment_id'), user: actor.id })
++    if (!links.length) throw new ForbiddenError('Vínculo encerrado.')
++  }
++  const feedbackDTO = (r) => ({ id: r.id, category: r.getString('category'), message: r.getString('message'), status: r.getString('status'), created: r.getString('created'), ...(isProfessional ? { enrollment_id: r.getString('enrollment_id'), review_note: r.getString('review_note') } : {}) })
++  if (body.action === 'context') {
++    if (!hasRole('interagente')) throw new ForbiddenError('Espaço das interagentes.')
++    return e.json(200, ownEnrollments().map((r) => ({ id: r.id, professional: app.findRecordById('users', primary(r)).getString('name'), product: app.findRecordById('cer_products', r.getString('product_id')).getString('name') })))
++  }
++  if (body.action === 'submit') {
++    if (!hasRole('interagente')) throw new ForbiddenError('Espaço das interagentes.')
++    if (!['app', 'process'].includes(body.category) || typeof body.message !== 'string' || !body.message.trim() || body.message.trim().length > 3000 || typeof body.request_id !== 'string' || !/^[a-zA-Z0-9-]{16,64}$/.test(body.request_id)) throw new BadRequestError('Confira seu relato (até 3.000 caracteres).')
++    let result
++    app.runInTransaction((tx) => {
++      const enrollment = tx.findRecordById('enrollments', String(body.enrollment_id || ''))
++      if (enrollment.getString('person_id') !== actor.getString('person_id') || enrollment.getString('status') !== 'active') throw new ForbiddenError('Sem acesso.')
++      const old = tx.findRecordsByFilter('cer_pilot_feedback', 'author_id = {:id} && request_id = {:request}', '', 1, 0, { id: actor.id, request: body.request_id })
++      if (old.length) {
++        if (old[0].getString('message') !== body.message.trim() || old[0].getString('category') !== body.category || old[0].getString('enrollment_id') !== enrollment.id) throw new BadRequestError('Atualize o formulário antes de enviar outro relato.')
++        result = old[0]; return
++      }
++      if (tx.countRecords('cer_pilot_feedback', $dbx.exp('author_id = {:id} AND created >= {:since}', { id: actor.id, since: new Date(Date.now() - 86400000).toISOString().replace('T', ' ') })) >= 10) throw new BadRequestError('Limite de relatos de hoje atingido. Tente novamente amanhã.')
++      const r = new Record(tx.findCollectionByNameOrId('cer_pilot_feedback'))
++      const values = { author_id: actor.id, enrollment_id: enrollment.id, professional_id: primary(enrollment), category: body.category, message: body.message.trim(), status: 'new', request_id: body.request_id }
++      for (const k in values) r.set(k, values[k])
++      tx.save(r); result = r
++    })
++    return e.json(200, feedbackDTO(result))
++  }
++  if (body.action === 'mine') {
++    if (!hasRole('interagente')) throw new ForbiddenError('Espaço das interagentes.')
++    return e.json(200, app.findRecordsByFilter('cer_pilot_feedback', 'author_id = {:id}', '-created,-id', 100, 0, { id: actor.id }).map(feedbackDTO))
++  }
++  if (body.action === 'incident') {
++    if (!['ui_exception', 'unhandled_rejection', 'onboarding_save', 'feedback_save', 'quality_load'].includes(body.code) || !['journey', 'professional', 'feedback', 'other'].includes(body.area) || body.release !== 'pilot-quality-v1') throw new BadRequestError('Diagnóstico inválido.')
++    let professional
++    if (isProfessional) professional = actor.id
++    else {
++      if (!hasRole('interagente')) throw new ForbiddenError('Sem acesso.')
++      const enrollment = ownEnrollments().find((r) => r.id === body.enrollment_id)
++      if (!enrollment) throw new ForbiddenError('Sem acesso.')
++      professional = primary(enrollment)
++    }
++    // Hard cap, including forged clients; no arbitrary metadata is persisted.
++    let accepted = false
++    app.runInTransaction((tx) => {
++      if (tx.countRecords('cer_pilot_incidents', $dbx.exp('actor_id = {:id} AND created >= {:since}', { id: actor.id, since: new Date(Date.now() - 86400000).toISOString().replace('T', ' ') })) >= 30) return
++      const r = new Record(tx.findCollectionByNameOrId('cer_pilot_incidents'))
++      const values = { actor_id: actor.id, professional_id: professional, code: body.code, area: body.area, release: body.release }
++      for (const k in values) r.set(k, values[k])
++      tx.save(r); accepted = true
++    })
++    return e.json(200, { accepted })
++  }
++  if (!isProfessional) throw new ForbiddenError('Espaço profissional.')
++  if (body.action === 'inbox') {
++    const page = Math.max(0, Math.min(10000, Math.floor(Number(body.page) || 0)))
++    const rows = app.findRecordsByFilter('cer_pilot_feedback', 'professional_id = {:id} && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= {:id} && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active = true && enrollment_id.professional_enrollment_access_via_enrollment_id.access_role = "primary"', '-created,-id', 51, page * 50, { id: actor.id })
++    const visible = rows.filter((r) => { try { canReview(r); return true } catch { return false } })
++    return e.json(200, { items: visible.slice(0, 50).map(feedbackDTO), has_more: rows.length > 50 })
++  }
++  if (body.action === 'review') {
++    if (!['new', 'reviewing', 'resolved'].includes(body.status) || typeof body.note !== 'string' || body.note.length > 1000) throw new BadRequestError('Revisão inválida.')
++    const r = app.findRecordById('cer_pilot_feedback', String(body.id || ''))
++    canReview(r)
++    r.set('status', body.status); r.set('review_note', body.note.trim()); app.save(r)
++    return e.json(200, feedbackDTO(r))
++  }
++  if (body.action === 'audits') {
++    return e.json(200, app.findRecordsByFilter('cer_pilot_weekly_audits', 'professional_id = {:id}', '-week_start', 26, 0, { id: actor.id }).map((r) => ({ id: r.id, week_start: r.getString('week_start'), week_end: r.getString('week_end'), summary: r.get('summary'), reviewed_at: r.getString('reviewed_at') })))
++  }
++  if (body.action === 'acknowledge') {
++    const r = app.findRecordById('cer_pilot_weekly_audits', String(body.id || ''))
++    if (r.getString('professional_id') !== actor.id) throw new ForbiddenError('Sem acesso.')
++    if (!r.getString('reviewed_at')) { r.set('reviewed_at', new Date().toISOString()); app.save(r) }
++    return e.json(200, { reviewed: true })
++  }
++  throw new BadRequestError('Ação inválida.')
++}, $apis.requireAuth('users'), $apis.bodyLimit(16000))
++
++// Mondays 11:00 UTC = 08:00 America/Sao_Paulo. Previous complete local week.
++// Catch up the last four weeks after downtime; unique index makes reruns safe.
++cronAdd('cer_pilot_weekly_quality', '0 11 * * 1', () => {
++  const app = $app
++  const count = (collection, filter, params) => app.countRecords(collection, $dbx.exp(filter.replace(/ && /g, ' AND '), params))
++  const local = new Date(Date.now() - 3 * 3600000)
++  const day = (local.getUTCDay() + 6) % 7
++  const monday = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() - day) + 3 * 3600000
++  const roles = app.findRecordsByFilter('user_roles', 'role = "profissional" && is_active = true && user_id.status = "active"', '', 0, 0)
++  const seen = {}
++  for (const role of roles) {
++    const professional = role.getString('user_id')
++    if (seen[professional]) continue
++    seen[professional] = true
++    for (let offset = 1; offset <= 4; offset++) {
++      const start = new Date(monday - offset * 7 * 86400000).toISOString()
++      const end = new Date(monday - (offset - 1) * 7 * 86400000).toISOString()
++      const week = start.slice(0, 10)
++      if (count('cer_pilot_weekly_audits', 'professional_id = {:id} && week_start = {:week}', { id: professional, week })) continue
++      const params = { id: professional, start: start.replace('T', ' '), end: end.replace('T', ' ') }
++      const filter = 'professional_id = {:id} && created >= {:start} && created < {:end}'
++      const appFeedback = count('cer_pilot_feedback', filter + ' && category = "app"', params)
++      const processFeedback = count('cer_pilot_feedback', filter + ' && category = "process"', params)
++      const incidents = count('cer_pilot_incidents', filter, params)
++      // No empty retroactive reports; zero incidents never certifies system health.
++      if (!appFeedback && !processFeedback && !incidents) continue
++      const byCode = {}
++      for (const code of ['ui_exception', 'unhandled_rejection', 'onboarding_save', 'feedback_save', 'quality_load']) byCode[code] = count('cer_pilot_incidents', filter + ' && code = {:code}', { ...params, code })
++      const r = new Record(app.findCollectionByNameOrId('cer_pilot_weekly_audits'))
++      r.set('professional_id', professional); r.set('week_start', week); r.set('week_end', end.slice(0, 10))
++      r.set('summary', { app_feedback: appFeedback, process_feedback: processFeedback, incidents, by_code: byCode, pending_review_at_generation: count('cer_pilot_feedback', filter + ' && status != "resolved"', params) })
++      app.save(r)
++    }
++  }
++})
+diff --git a/pocketbase/migrations/0093_pilot_quality.js b/pocketbase/migrations/0093_pilot_quality.js
+new file mode 100644
+index 0000000..5ad7f95
+--- /dev/null
++++ b/pocketbase/migrations/0093_pilot_quality.js
+@@ -0,0 +1,26 @@
++// Private feedback and minimal technical incidents. No raw client access.
++migrate((app) => {
++  const users = app.findCollectionByNameOrId('users').id
++  const enrollments = app.findCollectionByNameOrId('enrollments').id
++  const relation = (name, collectionId) => ({ name, type: 'relation', collectionId, required: true, maxSelect: 1 })
++  const dates = [{ name: 'created', type: 'autodate', onCreate: true }, { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true }]
++  const save = (name, fields, indexes = []) => app.save(new Collection({ name, type: 'base', listRule: null, viewRule: null, createRule: null, updateRule: null, deleteRule: null, fields: [...fields, ...dates], indexes }))
++  save('cer_pilot_feedback', [relation('author_id', users), relation('enrollment_id', enrollments), relation('professional_id', users),
++    { name: 'category', type: 'select', required: true, maxSelect: 1, values: ['app', 'process'] },
++    { name: 'message', type: 'text', required: true, max: 3000 },
++    { name: 'status', type: 'select', required: true, maxSelect: 1, values: ['new', 'reviewing', 'resolved'] },
++    { name: 'request_id', type: 'text', required: true, max: 64 },
++    { name: 'review_note', type: 'text', max: 1000 },
++  ], ['CREATE UNIQUE INDEX idx_feedback_request ON cer_pilot_feedback (author_id, request_id)'])
++  save('cer_pilot_incidents', [relation('actor_id', users), relation('professional_id', users),
++    { name: 'code', type: 'select', required: true, maxSelect: 1, values: ['ui_exception', 'unhandled_rejection', 'onboarding_save', 'feedback_save', 'quality_load'] },
++    { name: 'area', type: 'select', required: true, maxSelect: 1, values: ['journey', 'professional', 'feedback', 'other'] },
++    { name: 'release', type: 'text', required: true, max: 40 },
++  ])
++  save('cer_pilot_weekly_audits', [relation('professional_id', users),
++    { name: 'week_start', type: 'text', required: true, max: 10 },
++    { name: 'week_end', type: 'text', required: true, max: 10 },
++    { name: 'summary', type: 'json', required: true },
++    { name: 'reviewed_at', type: 'date' },
++  ], ['CREATE UNIQUE INDEX idx_quality_week ON cer_pilot_weekly_audits (professional_id, week_start)'])
++}, () => { throw new Error('Preserve os feedbacks; reversão exige migração revisada.') })
+diff --git a/scripts/quality-vitest.config.ts b/scripts/quality-vitest.config.ts
+new file mode 100644
+index 0000000..ae4783d
+--- /dev/null
++++ b/scripts/quality-vitest.config.ts
+@@ -0,0 +1,3 @@
++import { defineConfig } from 'vitest/config'
++import path from 'node:path'
++export default defineConfig({ resolve: { alias: { '@': path.resolve(process.cwd(), 'src') } }, test: { environment: 'jsdom', setupFiles: ['src/test/setup.ts'], include: ['src/services/pilotQuality.test.ts', 'src/pages/PilotFeedback.test.tsx', 'src/services/onboardingCompletion.test.ts', 'src/components/OnboardingFlow.test.tsx'] } })
+diff --git a/scripts/verify-self-registration.py b/scripts/verify-self-registration.py
+index e597fb1..7e0196e 100644
+--- a/scripts/verify-self-registration.py
++++ b/scripts/verify-self-registration.py
+@@ -209,6 +209,87 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
+     check(login('new@example.invalid')[0]==200,'revocation preserves already activated account')
+     check(req('/api/collections/users/confirm-verification',{'token':pending_tokens[0]})[0]==204,'email may be confirmed independently of link')
+     check(req('/api/collections/users/auth-with-password',{'identity':pending['email'],'password':pending['password']})[0]==403,'revoked link blocks unfinished activation')
++    quality='/backend/v1/cer/quality'
++    check(req(quality,{'action':'mine'})[0] in (401,403),'quality rejects anonymous readers')
++    check(req(quality,{'action':'inbox'},token)[0]==403,'participant cannot read professional feedback inbox')
++    check(req(quality,{'action':'context'},token)[1][0]['id']==enrollment['id'],'feedback context derives own active enrollment')
++    feedback={'action':'submit','enrollment_id':enrollment['id'],'category':'process','message':'SYNTHETIC feedback <script>alert(1)</script>','request_id':'synthetic-feedback-request-001','professional_id':'forged','status':'resolved','review_note':'forged'}
++    check(req(quality,feedback,ordinary)[0]>=400,'other participant cannot submit for this enrollment')
++    check(req(quality,feedback,p)[0]==403,'professional cannot impersonate participant feedback')
++    check(req(quality,{**feedback,'message':'   '},token)[0]==400,'empty feedback rejected')
++    check(req(quality,{**feedback,'message':'x'*3001},token)[0]==400,'oversize feedback rejected')
++    check(req(quality,{**feedback,'category':'clinical-diagnosis'},token)[0]==400,'arbitrary feedback category rejected')
++    code,stored=req(quality,feedback,token)
++    check(code==200 and stored['status']=='new' and 'review_note' not in stored,'own feedback accepted with server status and private DTO')
++    fid=stored['id']
++    check(req(quality,feedback,token)[1].get('id')==fid,'repeated identical feedback is idempotent')
++    check(req(quality,{**feedback,'message':'changed'},token)[0]==400,'idempotency key cannot silently replace original feedback')
++    check(req(quality,{'action':'mine'},ordinary)[1]==[],'other participant cannot list feedback')
++    check(req(quality,{'action':'inbox'},q)[1].get('items')==[],'unrelated professional cannot list feedback')
++    code,inbox=req(quality,{'action':'inbox'},p)
++    check(code==200 and inbox['items'][0]['id']==fid and inbox['items'][0]['enrollment_id']==enrollment['id'],'primary professional reads scoped feedback and follow-up link')
++    review={'action':'review','id':fid,'status':'reviewing','note':'SYNTHETIC internal review'}
++    check(req(quality,review,q)[0]==403,'unrelated professional cannot review feedback')
++    check(req(quality,review,token)[0]==403,'participant cannot forge review status')
++    check(req(quality,review,p)[1].get('status')=='reviewing','primary professional saves review')
++    mine=req(quality,{'action':'mine'},token)[1]
++    check(mine[0]['status']=='reviewing' and 'review_note' not in mine[0] and mine[0]['message']==feedback['message'],'participant sees original feedback and status without internal note')
++    for collection in ['cer_pilot_feedback','cer_pilot_incidents','cer_pilot_weekly_audits']:
++        check(req('/api/collections/'+collection+'/records',token=token)[0]>=400,'raw participant listing stays closed '+collection)
++        check(req('/api/collections/'+collection+'/records',{'message':'forged'},token)[0]>=400,'raw participant writes stay closed '+collection)
++    incident={'action':'incident','code':'onboarding_save','area':'journey','release':'pilot-quality-v1','enrollment_id':enrollment['id'],'message':'SECRET DO NOT STORE','stack':'SECRET','url':'https://example.invalid?token=SECRET','metadata':{'clinical':'SECRET'}}
++    check(req(quality,incident,token)[1].get('accepted') is True,'own enumerated diagnostic accepted')
++    rows=adminitems('cer_pilot_incidents')
++    check(len(rows)==1 and 'SECRET' not in json.dumps(rows) and rows[0]['code']=='onboarding_save','diagnostic stores no arbitrary message URL stack or clinical metadata')
++    check(req(quality,{**incident,'code':'SECRET'},token)[0]==400,'arbitrary diagnostic text refused')
++    check(req(quality,incident,ordinary)[0]==403,'other participant cannot attach incident to enrollment')
++    # Revoke the professional link only in this disposable database, then restore.
++    access=accesses[0]
++    path='/api/collections/professional_enrollment_access/records/'+access['id']
++    check(req(path,{'is_active':False},admin,method='PATCH')[0]==200,'bench deactivates link for privacy regression')
++    check(req(quality,{'action':'inbox'},p)[1].get('items')==[],'former professional loses feedback visibility')
++    check(req(quality,review,p)[0]==403,'former professional loses feedback review permission')
++    check(req(path,{'is_active':True},admin,method='PATCH')[0]==200,'bench restores link')
++    # Backdate only synthetic records to previous local week; run the actual cron API.
++    from datetime import datetime, timedelta, timezone
++    local_now=datetime.now(timezone(timedelta(hours=-3)))
++    current_monday=local_now.replace(hour=0,minute=0,second=0,microsecond=0)-timedelta(days=local_now.weekday())
++    previous_start=current_monday-timedelta(days=7)
++    inside=(previous_start+timedelta(hours=2)).astimezone(timezone.utc).isoformat().replace('+00:00','Z')
++    import sqlite3
++    with sqlite3.connect(data/'data.db') as fixture_db:
++        for col,rid in [('cer_pilot_feedback',fid),('cer_pilot_incidents',rows[0]['id'])]:
++            fixture_db.execute('UPDATE '+col+' SET created = ? WHERE id = ?', (inside.replace('T',' '),rid))
++    check(adminitems('cer_pilot_feedback')[0]['created'].startswith(previous_start.strftime('%Y-%m-%d')),'bench backdates synthetic records for real weekly-window check')
++    check(req(quality,{**feedback,'category':'app','message':'SYNTHETIC current week','request_id':'synthetic-current-week-001'},token)[0]==200,'current-week feedback fixture exists outside closed audit week')
++    code,crons=req('/api/crons',token=admin)
++    check(code==200 and any(c['id']=='cer_pilot_weekly_quality' and c['expression']=='0 11 * * 1' for c in crons),'weekly audit is registered for Monday 08h Brasilia')
++    check(req('/api/crons/cer_pilot_weekly_quality',{},p)[0]==403,'professional cannot invoke superuser scheduler')
++    check(req('/api/crons/cer_pilot_weekly_quality',{},admin)[0]==204,'actual weekly cron trigger accepted on bench')
++    audits=[]
++    for _ in range(50):
++        audits=adminitems('cer_pilot_weekly_audits')
++        if audits:break
++        time.sleep(.1)
++    check(len(audits)==1,'weekly cron creates one scoped audit')
++    summary=audits[0]['summary']
++    check(summary['process_feedback']==1 and summary['app_feedback']==0 and summary['incidents']==1 and summary['by_code']['onboarding_save']==1,'weekly audit counts actual feedback and sanitized incidents')
++    check('SYNTHETIC' not in json.dumps(summary) and 'message' not in json.dumps(summary),'weekly automatic audit does not copy therapeutic text')
++    check(req(quality,{'action':'audits'},q)[1]==[],'other professional cannot read audit')
++    check(req(quality,{'action':'audits'},token)[0]==403,'participant cannot read professional audit')
++    check(req(quality,{'action':'audits'},p)[1][0]['id']==audits[0]['id'],'professional sees own audit')
++    check(req(quality,{'action':'acknowledge','id':audits[0]['id']},q)[0]==403,'other professional cannot acknowledge audit')
++    check(req(quality,{'action':'acknowledge','id':audits[0]['id']},p)[1].get('reviewed') is True,'professional acknowledges audit without changing clinical data')
++    check(req('/api/crons/cer_pilot_weekly_quality',{},admin)[0]==204,'weekly cron may be retried')
++    time.sleep(.3)
++    check(len(adminitems('cer_pilot_weekly_audits'))==1,'weekly retry does not duplicate audit')
++    for i in range(9):
++        check(req(quality,{**feedback,'request_id':'synthetic-quota-request-'+str(i)},token)[0]==200,'feedback quota accepts allowed item '+str(i))
++    check(req(quality,{**feedback,'request_id':'synthetic-quota-request-overflow'},token)[0]==400,'feedback daily quota enforced')
++    for i in range(30):
++        check(req(quality,incident,token)[1].get('accepted') is True,'incident quota accepts allowed item '+str(i))
++    check(req(quality,incident,token)[1].get('accepted') is False,'incident quota stops additional collection')
++    check(req(quality,feedback,token)[1].get('id')==fid,'feedback idempotency survives quota saturation')
+     success=True
+     print(json.dumps({'version':version,'passed':len(passed),'checks':passed,'scope':'disposable loopback; synthetic mail intercepted; no live deployment or mailbox delivery certified'},ensure_ascii=False))
+ finally:
+@@ -217,7 +298,7 @@ finally:
+     if 'logs' in locals():
+         logs.flush();logs.seek(0)
+         lines=logs.readlines()
+-        errors=[line.strip() for line in lines[-50:] if any(k in line.lower() for k in ['error', 'message', 'reference', 'typeerror']) and not any(k in line.lower() for k in ['password','token','authorization'])]
+-        if not success and errors:print('Bench error details:', '\n'.join(errors[-5:]))
++        errors=[line.strip() for line in lines if any(k in line.lower() for k in ['error', 'message', 'reference', 'typeerror']) and not any(k in line.lower() for k in ['password','token','authorization'])]
++        if not success and errors:print('Bench error details:', '\n'.join(errors[-12:]))
+         logs.close()
+     shutil.rmtree(root,ignore_errors=True)
+diff --git a/src/App.tsx b/src/App.tsx
+index e07b0f0..cff046e 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -9,6 +9,8 @@ import HomeDispatcher from './pages/HomeDispatcher'
+ import Login from './pages/Login'
+ import Register from './pages/Register'
+ import ConfirmEmail from './pages/ConfirmEmail'
++import PilotFeedback from './pages/PilotFeedback'
++import PilotQuality from './pages/PilotQuality'
+ import ResetPassword from './pages/ResetPassword'
+ import NotFound from './pages/NotFound'
+ import Layout from './components/Layout'
+@@ -35,6 +37,8 @@ const App = () => {
+               <Route path="/confirmar-email" element={<ConfirmEmail />} />
+               <Route path="/reset-password" element={<ResetPassword />} />
+               <Route element={<Layout />}>
++                <Route path="/feedback" element={<ProtectedRoute><PilotFeedback /></ProtectedRoute>} />
++                <Route path="/profissional/qualidade" element={<ProtectedRoute><PilotQuality /></ProtectedRoute>} />
+                 <Route
+                   path="/"
+                   element={
+diff --git a/src/components/Layout.tsx b/src/components/Layout.tsx
+index 3d76d57..863f04e 100644
+--- a/src/components/Layout.tsx
++++ b/src/components/Layout.tsx
+@@ -8,6 +8,7 @@ import { demoAdapter } from '@/services/demoAdapter'
+ import { Button } from '@/components/ui/button'
+ import { Badge } from '@/components/ui/badge'
+ import { Sparkles, ArrowRightLeft, LogOut } from 'lucide-react'
++import { PilotQualityBoundary, PilotQualityTools } from './PilotQualityBoundary'
+ 
+ export default function Layout() {
+   const [isDemo, setIsDemo] = useState(() => demoAdapter.isEnabled())
+@@ -110,7 +111,8 @@ export default function Layout() {
+       )}
+ 
+       <main className="flex min-w-0 max-w-full flex-1 flex-col">
+-        <Outlet />
++        <PilotQualityTools />
++        <PilotQualityBoundary><Outlet /></PilotQualityBoundary>
+       </main>
+     </div>
+   )
+diff --git a/src/components/PilotQualityBoundary.tsx b/src/components/PilotQualityBoundary.tsx
+new file mode 100644
+index 0000000..1f34b7d
+--- /dev/null
++++ b/src/components/PilotQualityBoundary.tsx
+@@ -0,0 +1,44 @@
++import React, { useEffect } from 'react'
++import { Link, useLocation } from 'react-router-dom'
++import { useAuth } from '@/contexts/AuthContext'
++import { reportIncident, readQuality, setQualityEnrollment, type FeedbackContext, type IncidentArea } from '@/services/pilotQuality'
++import { Button } from './ui/button'
++
++export class PilotQualityBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
++  state = { failed: false }
++  static getDerivedStateFromError() { return { failed: true } }
++  componentDidCatch() { reportIncident('ui_exception', 'other') }
++  render() {
++    if (this.state.failed) return <section className="mx-auto max-w-lg p-6 space-y-4" role="alert">
++      <h1 className="text-xl font-semibold">Vamos retomar com cuidado</h1>
++      <p>Esta tela encontrou uma falha. O que já foi salvo continua no seu acompanhamento. O que ainda não foi enviado pode precisar ser preenchido novamente.</p>
++      <Button onClick={() => this.setState({ failed: false })}>Tentar abrir a tela novamente</Button>
++      <p><a className="underline" href="/feedback">Relatar uma dificuldade</a></p>
++    </section>
++    return this.props.children
++  }
++}
++export function PilotQualityTools() {
++  const { user, isAuthenticated, isProfissional, isInteragente, isDemo } = useAuth()
++  const { pathname } = useLocation()
++  const area: IncidentArea = pathname.startsWith('/profissional') ? 'professional' : pathname === '/feedback' ? 'feedback' : 'journey'
++  useEffect(() => {
++    setQualityEnrollment('')
++    let active = true
++    if (isAuthenticated && isInteragente && !isDemo) void readQuality<FeedbackContext[]>('context').then((rows) => { if (active) setQualityEnrollment(rows.length === 1 ? rows[0].id : '') }).catch(() => {})
++    return () => { active = false; setQualityEnrollment('') }
++  }, [user?.id, isAuthenticated, isInteragente, isDemo])
++  useEffect(() => {
++    if (!isAuthenticated || isDemo) return
++    const onError = () => reportIncident('ui_exception', area)
++    const onRejection = () => reportIncident('unhandled_rejection', area)
++    window.addEventListener('error', onError)
++    window.addEventListener('unhandledrejection', onRejection)
++    return () => { window.removeEventListener('error', onError); window.removeEventListener('unhandledrejection', onRejection) }
++  }, [isAuthenticated, isDemo, area])
++  if (!isAuthenticated || isDemo) return null
++  return <aside aria-label="Cuidado com a experiência" className="border-b bg-background px-4 py-2 text-sm flex flex-wrap justify-end gap-4">
++    {isInteragente && <Link className="underline underline-offset-4" to="/feedback">Sua experiência no CER</Link>}
++    {isProfissional && <Link className="underline underline-offset-4" to="/profissional/qualidade">Feedbacks e qualidade</Link>}
++  </aside>
++}
+diff --git a/src/pages/InteragenteHome.tsx b/src/pages/InteragenteHome.tsx
+index 1131929..050f2f0 100644
+--- a/src/pages/InteragenteHome.tsx
++++ b/src/pages/InteragenteHome.tsx
+@@ -112,6 +112,7 @@ import { SerConscienciaMap } from '@/components/SerConscienciaMap'
+ import { CerArtStrip } from '@/components/CerArtwork'
+ import { OnboardingFlow } from '@/components/OnboardingFlow'
+ import { completeOnboarding, hasCompletedOnboarding } from '@/services/onboardingCompletion'
++import { reportIncident } from '@/services/pilotQuality'
+ import { EmptyState } from '@/components/EmptyState'
+ import pb from '@/lib/pocketbase/client'
+ 
+@@ -504,6 +505,7 @@ export const InteragenteHome: React.FC = () => {
+       await loadData()
+     } catch {
+       setOnboardingError('Não foi possível salvar a conclusão do acolhimento. Você pode tentar novamente; seu cadastro permanece ativo.')
++      reportIncident('onboarding_save', 'journey')
+     } finally {
+       setOnboardingBusy(false)
+     }
+diff --git a/src/pages/PilotFeedback.test.tsx b/src/pages/PilotFeedback.test.tsx
+new file mode 100644
+index 0000000..30e3a3e
+--- /dev/null
++++ b/src/pages/PilotFeedback.test.tsx
+@@ -0,0 +1,35 @@
++import React from 'react'
++import { beforeEach, expect, it, vi } from 'vitest'
++import { render, screen, fireEvent, waitFor } from '@testing-library/react'
++import { MemoryRouter } from 'react-router-dom'
++const { read, submit, report } = vi.hoisted(() => ({ read: vi.fn(), submit: vi.fn(), report: vi.fn() }))
++vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ isInteragente: true, isDemo: false }) }))
++vi.mock('@/services/pilotQuality', () => ({ readQuality: read, submitFeedback: submit, reportIncident: report }))
++import PilotFeedback from './PilotFeedback'
++beforeEach(() => {
++  vi.clearAllMocks()
++  read.mockImplementation(async (action) => action === 'context' ? [{ id: 'syntheticenroll1', professional: 'Profissional fictícia', product: 'Piloto' }] : [])
++})
++it('retains an uncertain feedback and retries the same idempotency key; success requires server', async () => {
++  submit.mockRejectedValueOnce({ status: 0 }).mockResolvedValueOnce({ id: 'feedback1', category: 'app', message: 'Relato fictício', status: 'new', created: '2026-10-27' })
++  render(<MemoryRouter><PilotFeedback /></MemoryRouter>)
++  await screen.findByRole('button', { name: 'Enviar meu relato' })
++  fireEvent.change(screen.getByLabelText('Seu relato'), { target: { value: 'Relato fictício' } })
++  fireEvent.click(screen.getByRole('button', { name: 'Enviar meu relato' }))
++  await screen.findByRole('alert')
++  expect(screen.getByLabelText('Seu relato')).toHaveValue('Relato fictício')
++  expect(screen.queryByText(/Seu relato foi recebido/)).not.toBeInTheDocument()
++  fireEvent.click(screen.getByRole('button', { name: 'Enviar meu relato' }))
++  await screen.findByText(/Seu relato foi recebido/)
++  expect(submit.mock.calls[0][0].request_id).toEqual(submit.mock.calls[1][0].request_id)
++  expect(screen.getByLabelText('Seu relato')).toHaveValue('')
++  expect(screen.getByText('Relato fictício')).toBeInTheDocument()
++})
++it('shows failed loading with explicit retry and never claims an empty inbox is confirmed', async () => {
++  read.mockRejectedValueOnce({ status: 500 })
++  render(<MemoryRouter><PilotFeedback /></MemoryRouter>)
++  await screen.findByRole('alert')
++  fireEvent.click(screen.getByRole('button', { name: 'Atualizar relatos' }))
++  await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
++  expect(screen.getByRole('button', { name: 'Enviar meu relato' })).toBeInTheDocument()
++})
+diff --git a/src/pages/PilotFeedback.tsx b/src/pages/PilotFeedback.tsx
+new file mode 100644
+index 0000000..2c8d324
+--- /dev/null
++++ b/src/pages/PilotFeedback.tsx
+@@ -0,0 +1,68 @@
++import React, { useEffect, useRef, useState } from 'react'
++import { Link } from 'react-router-dom'
++import { useAuth } from '@/contexts/AuthContext'
++import { readQuality, submitFeedback, reportIncident, type FeedbackContext, type FeedbackRecord, type FeedbackCategory } from '@/services/pilotQuality'
++import { Button } from '@/components/ui/button'
++
++const statusLabel = { new: 'Recebido', reviewing: 'Em análise', resolved: 'Análise concluída' }
++export default function PilotFeedback() {
++  const { isInteragente, isDemo } = useAuth()
++  const [contexts, setContexts] = useState<FeedbackContext[]>([])
++  const [records, setRecords] = useState<FeedbackRecord[]>([])
++  const [enrollment, setEnrollment] = useState('')
++  const [category, setCategory] = useState<FeedbackCategory>('app')
++  const [message, setMessage] = useState('')
++  const [busy, setBusy] = useState(false)
++  const [loading, setLoading] = useState(true)
++  const [loadFailed, setLoadFailed] = useState(false)
++  const [error, setError] = useState('')
++  const [notice, setNotice] = useState('')
++  const [revision, setRevision] = useState(0)
++  const request = useRef<{ id: string; signature: string } | null>(null)
++  useEffect(() => {
++    if (!isInteragente || isDemo) { setLoading(false); return }
++    let active = true
++    setLoading(true); setLoadFailed(false); setError('')
++    void Promise.all([readQuality<FeedbackContext[]>('context'), readQuality<FeedbackRecord[]>('mine')]).then(([ctx, rows]) => {
++      if (!active) return
++      setContexts(ctx); setRecords(rows); setEnrollment((old) => ctx.some((c) => c.id === old) ? old : ctx.length === 1 ? ctx[0].id : '')
++    }).catch(() => { if (active) { setLoadFailed(true); setError('Não foi possível carregar seu espaço. Você pode tentar novamente.') }; reportIncident('quality_load', 'feedback') }).finally(() => { if (active) setLoading(false) })
++    return () => { active = false }
++  }, [isInteragente, isDemo, revision])
++  async function submit(e: React.FormEvent) {
++    e.preventDefault()
++    if (busy || !message.trim() || !enrollment) return
++    setBusy(true); setError(''); setNotice('')
++    const signature = JSON.stringify([enrollment, category, message.trim()])
++    if (request.current?.signature !== signature) request.current = { id: crypto.randomUUID(), signature }
++    try {
++      const saved = await submitFeedback({ enrollment_id: enrollment, category, message, request_id: request.current.id })
++      setRecords((old) => [saved, ...old.filter((r) => r.id !== saved.id)]); setMessage(''); request.current = null
++      setNotice('Seu relato foi recebido. Obrigada por ajudar a cuidar desta experiência.')
++    } catch { setError('Não foi possível confirmar o envio. Seu texto continua aqui. Tente novamente para confirmar sem duplicar o mesmo relato.'); reportIncident('feedback_save', 'feedback') }
++    finally { setBusy(false) }
++  }
++  if (!isInteragente || isDemo) return <main className="max-w-2xl mx-auto p-6"><h1 className="text-2xl">Sua experiência no CER</h1><p>Este espaço privado está disponível na conta real da interagente.</p><Link to="/">Voltar ao início</Link></main>
++  return <div className="w-full max-w-2xl mx-auto p-5 sm:p-8 space-y-6">
++    <Link className="underline" to="/">Voltar à jornada</Link>
++    <h1 className="text-2xl font-semibold">Sua experiência no CER</h1>
++    <p>O que está ajudando? O que ficou difícil ou poderia ser diferente? Você pode falar sobre o app ou sobre seu processo de acompanhamento.</p>
++    <p className="text-sm text-muted-foreground">Seu relato é identificado e privado, acessível a você e à profissional responsável por este acompanhamento. Não aparece para outras interagentes. A revisão é semanal; este espaço não é acompanhado em tempo real.</p>
++    {error && <p role="alert" className="text-destructive">{error}</p>}
++    {notice && <p role="status">{notice}</p>}
++    {loading ? <p role="status">Carregando…</p> : loadFailed ? null : <>
++      {!contexts.length ? <p>Seu acompanhamento ainda não está disponível para receber relatos.</p> : <form onSubmit={submit} className="space-y-4 rounded-xl border p-5">
++        <label className="block">Acompanhamento<select aria-label="Acompanhamento" className="block w-full border rounded p-2 bg-background" disabled={busy} required value={enrollment} onChange={(e) => setEnrollment(e.target.value)}><option value="">Selecione</option>{contexts.map((c) => <option key={c.id} value={c.id}>{c.product} — {c.professional}</option>)}</select></label>
++        <label className="block">Sobre o que você quer falar?<select aria-label="Assunto" className="block w-full border rounded p-2 bg-background" disabled={busy} value={category} onChange={(e) => setCategory(e.target.value as FeedbackCategory)}><option value="app">Uso do app</option><option value="process">Meu processo de acompanhamento</option></select></label>
++        <label className="block" htmlFor="pilot-feedback">Seu relato</label><textarea id="pilot-feedback" className="block w-full min-h-36 border rounded p-3 bg-background" required maxLength={3000} disabled={busy} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Conte o que aconteceu, o que ajudou ou o que você gostaria de melhorar. Não inclua senhas." />
++        <p className="text-xs text-muted-foreground">{message.length}/3.000 caracteres. Envie apenas o que deseja compartilhar com sua profissional.</p>
++        <Button type="submit" disabled={busy || !enrollment || !message.trim()}>{busy ? 'Enviando…' : 'Enviar meu relato'}</Button>
++      </form>}
++      <h2 className="text-xl font-semibold">Relatos enviados</h2>
++      {!records.length && <p>Você ainda não enviou relatos.</p>}
++      {records.map((r) => <article key={r.id} className="border rounded-xl p-4 space-y-2"><p className="text-sm">{r.category === 'app' ? 'Uso do app' : 'Processo de acompanhamento'} · {statusLabel[r.status]}</p><p className="whitespace-pre-wrap break-words">{r.message}</p></article>)}
++      {records.length >= 100 && <p className="text-sm">Mostrando os 100 relatos mais recentes.</p>}
++    </>}
++    <Button variant="outline" disabled={busy || loading} onClick={() => setRevision((r) => r + 1)}>Atualizar relatos</Button>
++  </div>
++}
+diff --git a/src/pages/PilotQuality.tsx b/src/pages/PilotQuality.tsx
+new file mode 100644
+index 0000000..555aaaf
+--- /dev/null
++++ b/src/pages/PilotQuality.tsx
+@@ -0,0 +1,67 @@
++import React, { useEffect, useState } from 'react'
++import { Link } from 'react-router-dom'
++import { useAuth } from '@/contexts/AuthContext'
++import { readQuality, reviewFeedback, acknowledgeAudit, type FeedbackRecord, type FeedbackStatus, type WeeklyAudit } from '@/services/pilotQuality'
++import { Button } from '@/components/ui/button'
++
++function ReviewCard({ record, onSaved }: { record: FeedbackRecord; onSaved: (r: FeedbackRecord) => void }) {
++  const [status, setStatus] = useState(record.status)
++  const [note, setNote] = useState(record.review_note || '')
++  const [busy, setBusy] = useState(false)
++  const [error, setError] = useState('')
++  const [saved, setSaved] = useState(false)
++  async function save() {
++    setBusy(true); setError(''); setSaved(false)
++    try { onSaved(await reviewFeedback(record.id, status, note)); setSaved(true) } catch { setError('Não foi possível salvar a análise. Tente novamente.') } finally { setBusy(false) }
++  }
++  return <article className="rounded-xl border p-5 space-y-3">
++    <p className="font-semibold">{record.category === 'app' ? 'Uso do app' : 'Processo de acompanhamento'}</p>
++    <p className="text-sm text-muted-foreground">Recebido em {new Date(record.created).toLocaleDateString('pt-BR')}</p>
++    <p className="whitespace-pre-wrap break-words">{record.message}</p>
++    {record.enrollment_id && <Link className="underline" to={`/profissional/participantes/${record.enrollment_id}`}>Abrir acompanhamento</Link>}
++    <label className="block">Situação<select aria-label="Situação do relato" disabled={busy} className="block border rounded p-2 bg-background" value={status} onChange={(e) => setStatus(e.target.value as FeedbackStatus)}><option value="new">Recebido</option><option value="reviewing">Em análise</option><option value="resolved">Análise concluída</option></select></label>
++    <label className="block">Anotação interna da revisão<textarea aria-label="Anotação interna" className="block border rounded p-2 w-full bg-background" maxLength={1000} disabled={busy} value={note} onChange={(e) => setNote(e.target.value)} /></label>
++    <p className="text-xs text-muted-foreground">A interagente acompanha a situação. Esta anotação é interna. Concluir a análise não confirma uma correção técnica: registre a evidência do teste quando houver uma falha do app.</p>
++    {error && <p role="alert">{error}</p>}{saved && <p role="status">Análise salva.</p>}<Button disabled={busy} onClick={save}>{busy ? 'Salvando…' : 'Salvar análise'}</Button>
++  </article>
++}
++export default function PilotQuality() {
++  const { isProfissional, isDemo } = useAuth()
++  const [items, setItems] = useState<FeedbackRecord[]>([])
++  const [audits, setAudits] = useState<WeeklyAudit[]>([])
++  const [hasMore, setHasMore] = useState(false)
++  const [page, setPage] = useState(0)
++  const [loading, setLoading] = useState(true)
++  const [loadFailed, setLoadFailed] = useState(false)
++  const [error, setError] = useState('')
++  const [revision, setRevision] = useState(0)
++  const [ackBusy, setAckBusy] = useState('')
++  useEffect(() => {
++    if (!isProfissional || isDemo) { setLoading(false); return }
++    let active = true
++    setLoading(true); setLoadFailed(false); setError(''); setItems([])
++    void Promise.all([readQuality<{ items: FeedbackRecord[]; has_more: boolean }>('inbox', { page }), readQuality<WeeklyAudit[]>('audits')]).then(([inbox, reports]) => {
++      if (active) { setItems(inbox.items); setHasMore(inbox.has_more); setAudits(reports) }
++    }).catch(() => { if (active) { setLoadFailed(true); setError('Não foi possível carregar os relatos e relatórios. Tente atualizar.') } }).finally(() => { if (active) setLoading(false) })
++    return () => { active = false }
++  }, [isProfissional, isDemo, page, revision])
++  async function acknowledge(id: string) {
++    setAckBusy(id); setError('')
++    try { await acknowledgeAudit(id); setRevision((r) => r + 1) } catch { setError('Não foi possível confirmar a revisão do relatório.') } finally { setAckBusy('') }
++  }
++  if (!isProfissional || isDemo) return <div className="p-6">Este painel está disponível na conta profissional real. <Link to="/">Voltar</Link></div>
++  return <div className="w-full max-w-4xl mx-auto p-5 sm:p-8 space-y-6">
++    <Link className="underline" to="/profissional">Voltar ao painel</Link><h1 className="text-2xl font-semibold">Feedbacks e qualidade</h1>
++    <p>Um espaço para ouvir as interagentes, acompanhar dificuldades e registrar o que foi verificado.</p>
++    <p className="text-sm text-muted-foreground">Relatório automático às segundas-feiras, às 8h de Brasília, referente à semana anterior. A análise do processo de acompanhamento é sua. Falhas técnicas precisam ser reproduzidas, corrigidas e testadas antes de serem consideradas resolvidas.</p>
++    {error && <p role="alert">{error}</p>}<Button variant="outline" disabled={loading} onClick={() => setRevision((r) => r + 1)}>Atualizar painel</Button>
++    {loading ? <p role="status">Carregando…</p> : loadFailed ? null : <>
++      <h2 className="text-xl font-semibold">Relatórios semanais</h2>
++      {!audits.length && <p>Ainda não há relatório semanal. Relatos novos aparecem abaixo assim que são enviados.</p>}
++      {audits.map((a) => <article className="rounded-xl border p-4 space-y-2" key={a.id}><h3 className="font-semibold">Semana de {a.week_start} (até {a.week_end}, sem incluir este dia)</h3><p>App: {a.summary.app_feedback} relatos · Processo: {a.summary.process_feedback} relatos · Ocorrências técnicas: {a.summary.incidents}</p><p>Pendentes na geração: {a.summary.pending_review_at_generation}</p><p className="text-sm">{Object.entries(a.summary.by_code).filter(([, count]) => count).map(([code, count]) => `${code}: ${count}`).join(' · ') || 'Nenhuma ocorrência técnica registrada nesse período.'}</p><p className="text-sm text-muted-foreground">Contagens registradas não cobrem todas as falhas possíveis. O relatório não altera respostas, planos ou código.</p>{a.reviewed_at ? <p>Revisão do relatório registrada.</p> : <Button disabled={!!ackBusy} onClick={() => acknowledge(a.id)}>{ackBusy === a.id ? 'Salvando…' : 'Marcar relatório como revisado'}</Button>}</article>)}
++      <h2 className="text-xl font-semibold">Relatos das interagentes</h2>{!items.length && <p>Nenhum relato disponível nesta página.</p>}
++      {items.map((r) => <ReviewCard key={r.id} record={r} onSaved={(saved) => setItems((old) => old.map((item) => item.id === saved.id ? saved : item))} />)}
++      <div className="flex gap-3"><Button variant="outline" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Anteriores</Button><Button variant="outline" disabled={!hasMore} onClick={() => setPage((p) => p + 1)}>Próximos</Button></div>
++    </>}
++  </div>
++}
+diff --git a/src/services/pilotQuality.test.ts b/src/services/pilotQuality.test.ts
+new file mode 100644
+index 0000000..57c292b
+--- /dev/null
++++ b/src/services/pilotQuality.test.ts
+@@ -0,0 +1,42 @@
++import { beforeEach, describe, expect, it, vi } from 'vitest'
++const { send, demo } = vi.hoisted(() => ({ send: vi.fn(), demo: vi.fn(() => false) }))
++vi.mock('@/lib/pocketbase/client', () => ({ default: { send, authStore: { isValid: true, record: { id: 'syntheticuser001' } } } }))
++vi.mock('./demoAdapter', () => ({ demoAdapter: { isEnabled: demo } }))
++import { readQuality, submitFeedback, reportIncident, setQualityEnrollment } from './pilotQuality'
++describe('pilot quality safety boundaries', () => {
++  beforeEach(() => { send.mockReset(); demo.mockReturnValue(false) })
++  it('recovers a transient read once, preserving its scope', async () => {
++    send.mockRejectedValueOnce({ status: 503 }).mockResolvedValueOnce([])
++    await expect(readQuality('inbox', { page: 2 })).resolves.toEqual([])
++    expect(send).toHaveBeenCalledTimes(2)
++    expect(send.mock.calls[0]).toEqual(send.mock.calls[1])
++  })
++  it('never loops on reads or retries denied access', async () => {
++    send.mockRejectedValue({ status: 503 })
++    await expect(readQuality('mine')).rejects.toEqual({ status: 503 })
++    expect(send).toHaveBeenCalledTimes(2)
++    send.mockClear(); send.mockRejectedValue({ status: 403 })
++    await expect(readQuality('mine')).rejects.toEqual({ status: 403 })
++    expect(send).toHaveBeenCalledTimes(1)
++  })
++  it('does not repeat feedback writes on an uncertain network result', async () => {
++    send.mockRejectedValue({ status: 0 })
++    await expect(submitFeedback({ enrollment_id: 'syntheticenroll1', category: 'app', message: 'synthetic', request_id: 'synthetic-request-001' })).rejects.toEqual({ status: 0 })
++    expect(send).toHaveBeenCalledTimes(1)
++  })
++  it('does not send demo feedback or telemetry to the server', async () => {
++    demo.mockReturnValue(true)
++    await expect(readQuality('mine')).rejects.toThrow('conta real')
++    await expect(submitFeedback({ enrollment_id: 'demo', category: 'process', message: 'synthetic', request_id: 'synthetic-request-001' })).rejects.toThrow('conta real')
++    reportIncident('feedback_save', 'feedback')
++    expect(send).not.toHaveBeenCalled()
++  })
++  it('deduplicates enumerated telemetry and suppresses its own failure', async () => {
++    send.mockRejectedValue({ status: 500 })
++    setQualityEnrollment('syntheticenroll1')
++    reportIncident('ui_exception', 'journey'); reportIncident('ui_exception', 'journey')
++    await Promise.resolve()
++    expect(send).toHaveBeenCalledTimes(1)
++    expect(send.mock.calls[0][1].body).toEqual({ action: 'incident', code: 'ui_exception', area: 'journey', enrollment_id: 'syntheticenroll1', release: 'pilot-quality-v1' })
++  })
++})
+diff --git a/src/services/pilotQuality.ts b/src/services/pilotQuality.ts
+new file mode 100644
+index 0000000..5c91b20
+--- /dev/null
++++ b/src/services/pilotQuality.ts
+@@ -0,0 +1,40 @@
++import pb from '@/lib/pocketbase/client'
++import { demoAdapter } from './demoAdapter'
++
++export type FeedbackCategory = 'app' | 'process'
++export type FeedbackStatus = 'new' | 'reviewing' | 'resolved'
++export type IncidentCode = 'ui_exception' | 'unhandled_rejection' | 'onboarding_save' | 'feedback_save' | 'quality_load'
++export type IncidentArea = 'journey' | 'professional' | 'feedback' | 'other'
++export interface FeedbackRecord { id: string; category: FeedbackCategory; message: string; status: FeedbackStatus; created: string; enrollment_id?: string; review_note?: string }
++export interface FeedbackContext { id: string; professional: string; product: string }
++export interface WeeklyAudit { id: string; week_start: string; week_end: string; reviewed_at: string; summary: { app_feedback: number; process_feedback: number; incidents: number; pending_review_at_generation: number; by_code: Partial<Record<IncidentCode, number>> } }
++const endpoint = '/backend/v1/cer/quality'
++const send = <T>(body: object) => pb.send<T>(endpoint, { method: 'POST', body, requestKey: null })
++
++// Only read actions recover automatically, at most once. Never retry writes here.
++export async function readQuality<T>(action: 'context' | 'mine' | 'inbox' | 'audits', extra = {}): Promise<T> {
++  if (demoAdapter.isEnabled()) throw new Error('Este espaço usa uma conta real para manter o feedback privado.')
++  try { return await send<T>({ action, ...extra }) } catch (error) {
++    const status = (error as { status?: number; isAbort?: boolean }).status
++    if ((error as { isAbort?: boolean }).isAbort || (status !== 0 && !(status && status >= 500))) throw error
++    return send<T>({ action, ...extra })
++  }
++}
++export async function submitFeedback(body: { enrollment_id: string; category: FeedbackCategory; message: string; request_id: string }) {
++  if (demoAdapter.isEnabled()) throw new Error('Envio disponível na conta real.')
++  return send<FeedbackRecord>({ ...body, action: 'submit' })
++}
++export const reviewFeedback = (id: string, status: FeedbackStatus, note: string) => send<FeedbackRecord>({ action: 'review', id, status, note })
++export const acknowledgeAudit = (id: string) => send<{ reviewed: boolean }>({ action: 'acknowledge', id })
++
++const sent = new Set<string>()
++let enrollmentId = ''
++export function setQualityEnrollment(id: string) { enrollmentId = id }
++// No exception object, email, free text, query, URL, token or clinical response.
++export function reportIncident(code: IncidentCode, area: IncidentArea) {
++  if (demoAdapter.isEnabled() || !pb.authStore.isValid || !pb.authStore.record?.id) return
++  const key = `${pb.authStore.record.id}:${code}:${area}`
++  if (sent.has(key) || sent.size >= 20) return
++  sent.add(key)
++  void send({ action: 'incident', code, area, enrollment_id: enrollmentId, release: 'pilot-quality-v1' }).catch(() => { /* Monitoring must never cause another rejection. */ })
++}
