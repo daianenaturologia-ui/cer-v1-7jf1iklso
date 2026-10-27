@@ -1,4 +1,5 @@
 import { CerLibrary } from '@/components/CerLibrary'
+import { RegistrationLinks } from '@/components/RegistrationLinks'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -327,6 +328,11 @@ export const ProfissionalHome: React.FC = () => {
         {activeMainTab === 'participantes' && (
           <div className="space-y-6">
             {/* A pessoa e o acesso ao workspace são a ação principal. */}
+            {!isDemo && (
+              <div className="flex justify-end">
+                <RegistrationLinks products={products} />
+              </div>
+            )}
             <ParticipantList
               participants={participantListItems}
               loading={loading}
