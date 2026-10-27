@@ -209,6 +209,87 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
     check(login('new@example.invalid')[0]==200,'revocation preserves already activated account')
     check(req('/api/collections/users/confirm-verification',{'token':pending_tokens[0]})[0]==204,'email may be confirmed independently of link')
     check(req('/api/collections/users/auth-with-password',{'identity':pending['email'],'password':pending['password']})[0]==403,'revoked link blocks unfinished activation')
+    quality='/backend/v1/cer/quality'
+    check(req(quality,{'action':'mine'})[0] in (401,403),'quality rejects anonymous readers')
+    check(req(quality,{'action':'inbox'},token)[0]==403,'participant cannot read professional feedback inbox')
+    check(req(quality,{'action':'context'},token)[1][0]['id']==enrollment['id'],'feedback context derives own active enrollment')
+    feedback={'action':'submit','enrollment_id':enrollment['id'],'category':'process','message':'SYNTHETIC feedback <script>alert(1)</script>','request_id':'synthetic-feedback-request-001','professional_id':'forged','status':'resolved','review_note':'forged'}
+    check(req(quality,feedback,ordinary)[0]>=400,'other participant cannot submit for this enrollment')
+    check(req(quality,feedback,p)[0]==403,'professional cannot impersonate participant feedback')
+    check(req(quality,{**feedback,'message':'   '},token)[0]==400,'empty feedback rejected')
+    check(req(quality,{**feedback,'message':'x'*3001},token)[0]==400,'oversize feedback rejected')
+    check(req(quality,{**feedback,'category':'clinical-diagnosis'},token)[0]==400,'arbitrary feedback category rejected')
+    code,stored=req(quality,feedback,token)
+    check(code==200 and stored['status']=='new' and 'review_note' not in stored,'own feedback accepted with server status and private DTO')
+    fid=stored['id']
+    check(req(quality,feedback,token)[1].get('id')==fid,'repeated identical feedback is idempotent')
+    check(req(quality,{**feedback,'message':'changed'},token)[0]==400,'idempotency key cannot silently replace original feedback')
+    check(req(quality,{'action':'mine'},ordinary)[1]==[],'other participant cannot list feedback')
+    check(req(quality,{'action':'inbox'},q)[1].get('items')==[],'unrelated professional cannot list feedback')
+    code,inbox=req(quality,{'action':'inbox'},p)
+    check(code==200 and inbox['items'][0]['id']==fid and inbox['items'][0]['enrollment_id']==enrollment['id'],'primary professional reads scoped feedback and follow-up link')
+    review={'action':'review','id':fid,'status':'reviewing','note':'SYNTHETIC internal review'}
+    check(req(quality,review,q)[0]==403,'unrelated professional cannot review feedback')
+    check(req(quality,review,token)[0]==403,'participant cannot forge review status')
+    check(req(quality,review,p)[1].get('status')=='reviewing','primary professional saves review')
+    mine=req(quality,{'action':'mine'},token)[1]
+    check(mine[0]['status']=='reviewing' and 'review_note' not in mine[0] and mine[0]['message']==feedback['message'],'participant sees original feedback and status without internal note')
+    for collection in ['cer_pilot_feedback','cer_pilot_incidents','cer_pilot_weekly_audits']:
+        check(req('/api/collections/'+collection+'/records',token=token)[0]>=400,'raw participant listing stays closed '+collection)
+        check(req('/api/collections/'+collection+'/records',{'message':'forged'},token)[0]>=400,'raw participant writes stay closed '+collection)
+    incident={'action':'incident','code':'onboarding_save','area':'journey','release':'pilot-quality-v1','enrollment_id':enrollment['id'],'message':'SECRET DO NOT STORE','stack':'SECRET','url':'https://example.invalid?token=SECRET','metadata':{'clinical':'SECRET'}}
+    check(req(quality,incident,token)[1].get('accepted') is True,'own enumerated diagnostic accepted')
+    rows=adminitems('cer_pilot_incidents')
+    check(len(rows)==1 and 'SECRET' not in json.dumps(rows) and rows[0]['code']=='onboarding_save','diagnostic stores no arbitrary message URL stack or clinical metadata')
+    check(req(quality,{**incident,'code':'SECRET'},token)[0]==400,'arbitrary diagnostic text refused')
+    check(req(quality,incident,ordinary)[0]==403,'other participant cannot attach incident to enrollment')
+    # Revoke the professional link only in this disposable database, then restore.
+    access=accesses[0]
+    path='/api/collections/professional_enrollment_access/records/'+access['id']
+    check(req(path,{'is_active':False},admin,method='PATCH')[0]==200,'bench deactivates link for privacy regression')
+    check(req(quality,{'action':'inbox'},p)[1].get('items')==[],'former professional loses feedback visibility')
+    check(req(quality,review,p)[0]==403,'former professional loses feedback review permission')
+    check(req(path,{'is_active':True},admin,method='PATCH')[0]==200,'bench restores link')
+    # Backdate only synthetic records to previous local week; run the actual cron API.
+    from datetime import datetime, timedelta, timezone
+    local_now=datetime.now(timezone(timedelta(hours=-3)))
+    current_monday=local_now.replace(hour=0,minute=0,second=0,microsecond=0)-timedelta(days=local_now.weekday())
+    previous_start=current_monday-timedelta(days=7)
+    inside=(previous_start+timedelta(hours=2)).astimezone(timezone.utc).isoformat().replace('+00:00','Z')
+    import sqlite3
+    with sqlite3.connect(data/'data.db') as fixture_db:
+        for col,rid in [('cer_pilot_feedback',fid),('cer_pilot_incidents',rows[0]['id'])]:
+            fixture_db.execute('UPDATE '+col+' SET created = ? WHERE id = ?', (inside.replace('T',' '),rid))
+    check(adminitems('cer_pilot_feedback')[0]['created'].startswith(previous_start.strftime('%Y-%m-%d')),'bench backdates synthetic records for real weekly-window check')
+    check(req(quality,{**feedback,'category':'app','message':'SYNTHETIC current week','request_id':'synthetic-current-week-001'},token)[0]==200,'current-week feedback fixture exists outside closed audit week')
+    code,crons=req('/api/crons',token=admin)
+    check(code==200 and any(c['id']=='cer_pilot_weekly_quality' and c['expression']=='0 11 * * 1' for c in crons),'weekly audit is registered for Monday 08h Brasilia')
+    check(req('/api/crons/cer_pilot_weekly_quality',{},p)[0]==403,'professional cannot invoke superuser scheduler')
+    check(req('/api/crons/cer_pilot_weekly_quality',{},admin)[0]==204,'actual weekly cron trigger accepted on bench')
+    audits=[]
+    for _ in range(50):
+        audits=adminitems('cer_pilot_weekly_audits')
+        if audits:break
+        time.sleep(.1)
+    check(len(audits)==1,'weekly cron creates one scoped audit')
+    summary=audits[0]['summary']
+    check(summary['process_feedback']==1 and summary['app_feedback']==0 and summary['incidents']==1 and summary['by_code']['onboarding_save']==1,'weekly audit counts actual feedback and sanitized incidents')
+    check('SYNTHETIC' not in json.dumps(summary) and 'message' not in json.dumps(summary),'weekly automatic audit does not copy therapeutic text')
+    check(req(quality,{'action':'audits'},q)[1]==[],'other professional cannot read audit')
+    check(req(quality,{'action':'audits'},token)[0]==403,'participant cannot read professional audit')
+    check(req(quality,{'action':'audits'},p)[1][0]['id']==audits[0]['id'],'professional sees own audit')
+    check(req(quality,{'action':'acknowledge','id':audits[0]['id']},q)[0]==403,'other professional cannot acknowledge audit')
+    check(req(quality,{'action':'acknowledge','id':audits[0]['id']},p)[1].get('reviewed') is True,'professional acknowledges audit without changing clinical data')
+    check(req('/api/crons/cer_pilot_weekly_quality',{},admin)[0]==204,'weekly cron may be retried')
+    time.sleep(.3)
+    check(len(adminitems('cer_pilot_weekly_audits'))==1,'weekly retry does not duplicate audit')
+    for i in range(9):
+        check(req(quality,{**feedback,'request_id':'synthetic-quota-request-'+str(i)},token)[0]==200,'feedback quota accepts allowed item '+str(i))
+    check(req(quality,{**feedback,'request_id':'synthetic-quota-request-overflow'},token)[0]==400,'feedback daily quota enforced')
+    for i in range(30):
+        check(req(quality,incident,token)[1].get('accepted') is True,'incident quota accepts allowed item '+str(i))
+    check(req(quality,incident,token)[1].get('accepted') is False,'incident quota stops additional collection')
+    check(req(quality,feedback,token)[1].get('id')==fid,'feedback idempotency survives quota saturation')
     success=True
     print(json.dumps({'version':version,'passed':len(passed),'checks':passed,'scope':'disposable loopback; synthetic mail intercepted; no live deployment or mailbox delivery certified'},ensure_ascii=False))
 finally:
@@ -217,7 +298,7 @@ finally:
     if 'logs' in locals():
         logs.flush();logs.seek(0)
         lines=logs.readlines()
-        errors=[line.strip() for line in lines[-50:] if any(k in line.lower() for k in ['error', 'message', 'reference', 'typeerror']) and not any(k in line.lower() for k in ['password','token','authorization'])]
-        if not success and errors:print('Bench error details:', '\n'.join(errors[-5:]))
+        errors=[line.strip() for line in lines if any(k in line.lower() for k in ['error', 'message', 'reference', 'typeerror']) and not any(k in line.lower() for k in ['password','token','authorization'])]
+        if not success and errors:print('Bench error details:', '\n'.join(errors[-12:]))
         logs.close()
     shutil.rmtree(root,ignore_errors=True)
