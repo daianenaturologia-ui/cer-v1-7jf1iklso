@@ -290,6 +290,10 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
         check(req(quality,incident,token)[1].get('accepted') is True,'incident quota accepts allowed item '+str(i))
     check(req(quality,incident,token)[1].get('accepted') is False,'incident quota stops additional collection')
     check(req(quality,feedback,token)[1].get('id')==fid,'feedback idempotency survives quota saturation')
+    with sqlite3.connect(data/'data.db') as fixture_db:
+        fixture_db.execute('INSERT INTO user_roles (id,user_id,role,is_active,created,updated) VALUES (?,?,?,1,?,?)',(secrets.token_hex(8)[:15],uid,'profissional',inside.replace('T',' '),inside.replace('T',' ')))
+    check(any(r['user_id']==uid and r['role']=='profissional' for r in adminitems('user_roles')),'bench adds dual-role fixture for note privacy')
+    check('review_note' not in req(quality,{'action':'mine'},token)[1][0],'professional who is also a participant still cannot read their own internal therapy note')
     success=True
     print(json.dumps({'version':version,'passed':len(passed),'checks':passed,'scope':'disposable loopback; synthetic mail intercepted; no live deployment or mailbox delivery certified'},ensure_ascii=False))
 finally:

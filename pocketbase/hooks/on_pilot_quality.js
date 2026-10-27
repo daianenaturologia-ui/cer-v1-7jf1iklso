@@ -20,7 +20,7 @@ routerAdd('POST', '/backend/v1/cer/quality', (e) => {
     const links = app.findRecordsByFilter('professional_enrollment_access', 'enrollment_id = {:id} && professional_user_id = {:user} && access_role = "primary" && is_active = true', '', 1, 0, { id: record.getString('enrollment_id'), user: actor.id })
     if (!links.length) throw new ForbiddenError('Vínculo encerrado.')
   }
-  const feedbackDTO = (r) => ({ id: r.id, category: r.getString('category'), message: r.getString('message'), status: r.getString('status'), created: r.getString('created'), ...(isProfessional ? { enrollment_id: r.getString('enrollment_id'), review_note: r.getString('review_note') } : {}) })
+  const feedbackDTO = (r, internal = false) => ({ id: r.id, category: r.getString('category'), message: r.getString('message'), status: r.getString('status'), created: r.getString('created'), ...(internal ? { enrollment_id: r.getString('enrollment_id'), review_note: r.getString('review_note') } : {}) })
   if (body.action === 'context') {
     if (!hasRole('interagente')) throw new ForbiddenError('Espaço das interagentes.')
     return e.json(200, ownEnrollments().map((r) => ({ id: r.id, professional: app.findRecordById('users', primary(r)).getString('name'), product: app.findRecordById('cer_products', r.getString('product_id')).getString('name') })))
@@ -47,7 +47,7 @@ routerAdd('POST', '/backend/v1/cer/quality', (e) => {
   }
   if (body.action === 'mine') {
     if (!hasRole('interagente')) throw new ForbiddenError('Espaço das interagentes.')
-    return e.json(200, app.findRecordsByFilter('cer_pilot_feedback', 'author_id = {:id}', '-created,-id', 100, 0, { id: actor.id }).map(feedbackDTO))
+    return e.json(200, app.findRecordsByFilter('cer_pilot_feedback', 'author_id = {:id}', '-created,-id', 100, 0, { id: actor.id }).map((r) => feedbackDTO(r)))
   }
   if (body.action === 'incident') {
     if (!['ui_exception', 'unhandled_rejection', 'onboarding_save', 'feedback_save', 'quality_load'].includes(body.code) || !['journey', 'professional', 'feedback', 'other'].includes(body.area) || body.release !== 'pilot-quality-v1') throw new BadRequestError('Diagnóstico inválido.')
@@ -75,14 +75,14 @@ routerAdd('POST', '/backend/v1/cer/quality', (e) => {
     const page = Math.max(0, Math.min(10000, Math.floor(Number(body.page) || 0)))
     const rows = app.findRecordsByFilter('cer_pilot_feedback', 'professional_id = {:id} && enrollment_id.professional_enrollment_access_via_enrollment_id.professional_user_id ?= {:id} && enrollment_id.professional_enrollment_access_via_enrollment_id.is_active = true && enrollment_id.professional_enrollment_access_via_enrollment_id.access_role = "primary"', '-created,-id', 51, page * 50, { id: actor.id })
     const visible = rows.filter((r) => { try { canReview(r); return true } catch { return false } })
-    return e.json(200, { items: visible.slice(0, 50).map(feedbackDTO), has_more: rows.length > 50 })
+    return e.json(200, { items: visible.slice(0, 50).map((r) => feedbackDTO(r, true)), has_more: rows.length > 50 })
   }
   if (body.action === 'review') {
     if (!['new', 'reviewing', 'resolved'].includes(body.status) || typeof body.note !== 'string' || body.note.length > 1000) throw new BadRequestError('Revisão inválida.')
     const r = app.findRecordById('cer_pilot_feedback', String(body.id || ''))
     canReview(r)
     r.set('status', body.status); r.set('review_note', body.note.trim()); app.save(r)
-    return e.json(200, feedbackDTO(r))
+    return e.json(200, feedbackDTO(r, true))
   }
   if (body.action === 'audits') {
     return e.json(200, app.findRecordsByFilter('cer_pilot_weekly_audits', 'professional_id = {:id}', '-week_start', 26, 0, { id: actor.id }).map((r) => ({ id: r.id, week_start: r.getString('week_start'), week_end: r.getString('week_end'), summary: r.get('summary'), reviewed_at: r.getString('reviewed_at') })))
