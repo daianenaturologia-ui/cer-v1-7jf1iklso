@@ -48,6 +48,7 @@ export default function PilotFeedback() {
     <h1 className="text-2xl font-semibold">Sua experiência no CER</h1>
     <p>O que está ajudando? O que ficou difícil ou poderia ser diferente? Você pode falar sobre o app ou sobre seu processo de acompanhamento.</p>
     <p className="text-sm text-muted-foreground">Seu relato é identificado e privado, acessível a você e à profissional responsável por este acompanhamento. Não aparece para outras interagentes. A revisão é semanal; este espaço não é acompanhado em tempo real.</p>
+    <p className="text-sm text-muted-foreground">Para melhorar o app, registramos códigos técnicos de erro; o conteúdo das suas respostas não é incluído nesses registros.</p>
     {error && <p role="alert" className="text-destructive">{error}</p>}
     {notice && <p role="status">{notice}</p>}
     {loading ? <p role="status">Carregando…</p> : loadFailed ? null : <>
