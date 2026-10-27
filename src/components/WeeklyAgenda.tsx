@@ -74,6 +74,9 @@ export function WeeklyAgenda({
   const [busy, setBusy] = useState(false)
   const [revision, setRevision] = useState(0)
   const [notice, setNotice] = useState('')
+  const planHref = readOnly
+    ? `/profissional/participantes/${encodeURIComponent(enrollmentId)}?tab=equilibrio`
+    : '/?etapa=equilibrio'
   useEffect(() => {
     let active = true
     setNotes([])
@@ -498,7 +501,7 @@ export function WeeklyAgenda({
             <p className="text-sm">Tudo que tem horário está na sua semana.</p>
           )}
           {!readOnly && (
-            <Link to="/?etapa=equilibrio" className="text-sm text-primary underline">
+            <Link to={planHref} className="text-sm text-primary underline">
               Abrir meu Plano de Desenvolvimento
             </Link>
           )}
@@ -699,7 +702,7 @@ export function WeeklyAgenda({
                       onSaved={() => setRevision((v) => v + 1)}
                     />
                   )}
-                  <Link className="underline text-primary" to="/?etapa=equilibrio">
+                  <Link className="underline text-primary" to={planHref}>
                     Rever o plano e organizar a rotina
                   </Link>
                 </div>
