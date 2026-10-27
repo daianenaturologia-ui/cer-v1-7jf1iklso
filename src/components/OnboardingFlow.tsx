@@ -24,9 +24,11 @@ import {
 interface OnboardingFlowProps {
   onComplete: () => void
   interagenteName?: string
+  busy?: boolean
+  error?: string
 }
 
-export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, interagenteName }) => {
+export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, interagenteName, busy = false, error }) => {
   const [step, setStep] = useState(0)
 
   const moments = [
@@ -163,7 +165,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, inte
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="pt-2">{current.body}</CardContent>
+      <CardContent className="pt-2">{current.body}{error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}</CardContent>
 
       <CardFooter className="flex items-center justify-between pt-4 border-t border-border/40 bg-muted/10">
         <Button
@@ -171,7 +173,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, inte
           variant="ghost"
           size="sm"
           onClick={() => setStep((s) => Math.max(0, s - 1))}
-          disabled={step === 0}
+          disabled={step === 0 || busy}
           className="text-xs h-9 gap-1"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
@@ -183,9 +185,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, inte
             type="button"
             size="sm"
             onClick={onComplete}
+            disabled={busy}
             className="text-xs h-9 px-5 gap-1.5 font-medium"
           >
-            <span>Concluir e Começar</span>
+            <span>{busy ? 'Salvando…' : 'Concluir e Começar'}</span>
             <CheckCircle2 className="w-4 h-4" />
           </Button>
         ) : (
