@@ -19,9 +19,9 @@ try:
     for src in pathlib.Path('pocketbase/migrations').glob('*.js'):shutil.copy(src,migrations/src.name)
     fixture='''migrate((app)=>{
 const save=(col,d)=>{const r=new Record(app.findCollectionByNameOrId(col));for(const k in d)r.set(k,d[k]);app.save(r);return r};
-for(const name of ['professional','other','ordinary']){
+for(const name of ['professional','other','ordinary','legacy']){
 const p=save('persons',{full_name:'Disposable '+name,email:name+'@example.invalid'});
-const u=new Record(app.findCollectionByNameOrId('users'));u.set('email',name+'@example.invalid');u.set('name',name);u.setPassword(PASSWORD);u.set('person_id',p.id);u.set('status','active');u.set('verified',true);app.save(u);
+const u=new Record(app.findCollectionByNameOrId('users'));u.set('email',name+'@example.invalid');u.set('name',name);u.setPassword(PASSWORD);u.set('person_id',p.id);u.set('status','active');u.set('verified',name!=='legacy');app.save(u);
 save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profissional',is_active:true});
 }},()=>{});'''.replace('PASSWORD',json.dumps(password))
     (migrations/'9999_registration_fixture.js').write_text(fixture)
@@ -32,7 +32,7 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
     assert run.returncode==0, 'Bench administrator setup failed'
     for src in pathlib.Path('pocketbase/hooks').glob('*.js'):shutil.copy(src,hooks/(src.stem+'.pb.js'))
     mail=root/'verification.html'
-    (hooks/'zz_registration_mail.pb.js').write_text("onMailerRecordVerificationSend((e)=>{if(e.record.getString('email')==='mail-failure@example.invalid')throw new Error('Synthetic mail failure');$os.writeFile("+json.dumps(str(mail))+",e.message.html.split('').map(c=>c.charCodeAt(0)),384)},'users')")
+    (hooks/'zz_registration_mail.pb.js').write_text("onMailerSend((e)=>{const email=e.message.to[0].address;if(email==='mail-failure@example.invalid')throw new Error('Synthetic mail failure');$os.writeFile("+json.dumps(str(mail))+",unescape(encodeURIComponent(email+'\\n'+e.message.html)).split('').map(c=>c.charCodeAt(0)),384)})")
     (hooks/'zz_registration_rollback.pb.js').write_text("""onRecordCreate((e)=>{
       const user=e.app.findRecordById('users',e.record.getString('user_id'));
       if(user.getString('email')==='rollback@example.invalid')throw new BadRequestError('Synthetic transaction failure');
@@ -59,6 +59,11 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
             if req('/api/health')[0]==200:break
         except OSError:pass
         time.sleep(.1)
+    def wait_mail(email):
+        for _ in range(80):
+            if mail.exists() and mail.read_text().startswith(email+'\n'):return
+            time.sleep(.05)
+        raise AssertionError('Synthetic verification message did not reach interceptor')
     def check(ok,label):
         assert ok,label
         passed.append(label)
@@ -82,6 +87,10 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
     check(req(endpoint,{'action':'info','slug':'invalid'})[0]==400,'invalid public link refused')
     code,info=req(endpoint,{'action':'info','slug':link['slug']})
     check(code==200 and set(info)=={'professionalName','productName'},'public link reveals only intended names')
+    check(req('/api/collections/users/request-verification',{'email':'legacy@example.invalid'})[0]==204,'existing non-registration user retains native verification request')
+    wait_mail('legacy@example.invalid')
+    check(mail.exists(),'existing verification email produced asynchronously')
+    check('confirmar-email#token=' not in mail.read_text(),'existing non-registration email template preserved')
     body={'action':'register','slug':link['slug'],'fullName':'Synthetic New Participant','email':'new@example.invalid','password':password,'passwordConfirm':password,'acceptLink':True,'website':'','role':'admin','verified':True,'professionalUserId':'forged'}
     check(req(endpoint,{**body,'acceptLink':False})[0]==400,'link association choice required')
     check(req(endpoint,{**body,'passwordConfirm':'different'})[0]==400,'password confirmation enforced')
@@ -89,7 +98,10 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
     code,result=req(endpoint,body)
     assert code==200, 'Registration HTTP '+str(code)+' '+str(result)
     check(code==200 and result=={'next':'check_email'},'registration returns neither credential nor token')
+    wait_mail('new@example.invalid')
     check(mail.exists(),'synthetic verification email generated and intercepted locally')
+    check('https://cer-v1-1444e--preview.goskip.app/confirmar-email#token=' in mail.read_text(),'self-registration mail targets the served preview confirmation page')
+    check('https://cer-v1-1444e.goskip.app' not in mail.read_text(),'self-registration mail does not link to unpublished production')
     check(login('new@example.invalid')[0]==403,'unverified account receives no auth token')
     def adminitems(col):
         status,result=req('/api/collections/'+col+'/records?perPage=200',token=admin)
@@ -131,6 +143,7 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
     check(len(adminitems('persons'))==before_people and not any(u['email']=='rollback@example.invalid' for u in adminitems('users')),'failed pending-account creation rolls back person and user')
     failure={**body,'email':'activation-failure@example.invalid'}
     check(req(endpoint,failure)[0]==200,'activation rollback fixture created')
+    wait_mail(failure['email'])
     tokens=re.findall(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+',mail.read_text())
     check(req('/api/collections/users/confirm-verification',{'token':tokens[0]})[0]==204,'activation rollback fixture verified')
     failed_user=next(u for u in adminitems('users') if u['email']==failure['email'])
@@ -143,6 +156,7 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
     check(req('/api/collections/users/records',{'email':'raw@example.invalid','password':password,'passwordConfirm':password})[0]>=400,'raw public account creation remains blocked')
     pending={**body,'email':'revoked-pending@example.invalid'}
     check(req(endpoint,pending)[0]==200,'pending account created before revocation')
+    wait_mail(pending['email'])
     pending_tokens=re.findall(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+',mail.read_text())
     check(req(endpoint,{**body,'email':'mail-failure@example.invalid'})[0]==503,'mail transport failure is reported without claiming successful delivery')
     mail_user=next(u for u in adminitems('users') if u['email']=='mail-failure@example.invalid')

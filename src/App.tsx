@@ -8,6 +8,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import HomeDispatcher from './pages/HomeDispatcher'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ConfirmEmail from './pages/ConfirmEmail'
 import ResetPassword from './pages/ResetPassword'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
@@ -31,6 +32,7 @@ const App = () => {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro/:slug" element={<Register />} />
+              <Route path="/confirmar-email" element={<ConfirmEmail />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route element={<Layout />}>
                 <Route
