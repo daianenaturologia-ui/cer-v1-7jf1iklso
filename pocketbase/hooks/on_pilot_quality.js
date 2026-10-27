@@ -20,7 +20,16 @@ routerAdd('POST', '/backend/v1/cer/quality', (e) => {
     const links = app.findRecordsByFilter('professional_enrollment_access', 'enrollment_id = {:id} && professional_user_id = {:user} && access_role = "primary" && is_active = true', '', 1, 0, { id: record.getString('enrollment_id'), user: actor.id })
     if (!links.length) throw new ForbiddenError('Vínculo encerrado.')
   }
-  const feedbackDTO = (r, internal = false) => ({ id: r.id, category: r.getString('category'), message: r.getString('message'), status: r.getString('status'), created: r.getString('created'), ...(internal ? { enrollment_id: r.getString('enrollment_id'), review_note: r.getString('review_note') } : {}) })
+  // Keep generated helpers out of isolated JSVM callbacks: object spread can
+  // compile to a module-level helper that is unavailable when this route runs.
+  const feedbackDTO = (r, internal = false) => {
+    const dto = { id: r.id, category: r.getString('category'), message: r.getString('message'), status: r.getString('status'), created: r.getString('created') }
+    if (internal) {
+      dto.enrollment_id = r.getString('enrollment_id')
+      dto.review_note = r.getString('review_note')
+    }
+    return dto
+  }
   if (body.action === 'context') {
     if (!hasRole('interagente')) throw new ForbiddenError('Espaço das interagentes.')
     return e.json(200, ownEnrollments().map((r) => ({ id: r.id, professional: app.findRecordById('users', primary(r)).getString('name'), product: app.findRecordById('cer_products', r.getString('product_id')).getString('name') })))
@@ -123,7 +132,7 @@ cronAdd('cer_pilot_weekly_quality', '0 11 * * 1', () => {
       // No empty retroactive reports; zero incidents never certifies system health.
       if (!appFeedback && !processFeedback && !incidents) continue
       const byCode = {}
-      for (const code of ['ui_exception', 'unhandled_rejection', 'onboarding_save', 'feedback_save', 'quality_load']) byCode[code] = count('cer_pilot_incidents', filter + ' && code = {:code}', { ...params, code })
+      for (const code of ['ui_exception', 'unhandled_rejection', 'onboarding_save', 'feedback_save', 'quality_load']) byCode[code] = count('cer_pilot_incidents', filter + ' && code = {:code}', Object.assign({}, params, { code }))
       const r = new Record(app.findCollectionByNameOrId('cer_pilot_weekly_audits'))
       r.set('professional_id', professional); r.set('week_start', week); r.set('week_end', end.slice(0, 10))
       r.set('summary', { app_feedback: appFeedback, process_feedback: processFeedback, incidents, by_code: byCode, pending_review_at_generation: count('cer_pilot_feedback', filter + ' && status != "resolved"', params) })

@@ -30,7 +30,11 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
     assert run.returncode==0 and 'Error: Failed' not in run.stdout+run.stderr, 'Migration failed: '+(run.stdout+run.stderr)[-800:]
     run=subprocess.run([binary,'superuser','upsert','admin@example.invalid',password,'--dir='+str(data),'--migrationsDir='+str(migrations),'--hooksDir='+str(hooks)],capture_output=True,text=True)
     assert run.returncode==0, 'Bench administrator setup failed'
-    for src in pathlib.Path('pocketbase/hooks').glob('*.js'):shutil.copy(src,hooks/(src.stem+'.pb.js'))
+    for src in pathlib.Path('pocketbase/hooks').glob('*.js'):
+        artifact=os.environ.get('CER_QUALITY_HOOK_ARTIFACT') if src.name=='on_pilot_quality.js' else None
+        selected=pathlib.Path(artifact) if artifact else src
+        if artifact:assert selected.is_absolute(), 'Use an absolute compiled quality artifact path'
+        shutil.copy(selected,hooks/(src.stem+'.pb.js'))
     mail=root/'verification.html'
     (hooks/'zz_registration_mail.pb.js').write_text("onMailerSend((e)=>{const email=e.message.to[0].address;if(email==='mail-failure@example.invalid')throw new Error('Synthetic mail failure');$os.writeFile("+json.dumps(str(mail))+",unescape(encodeURIComponent(email+'\\n'+e.message.html)).split('').map(c=>c.charCodeAt(0)),384)})")
     (hooks/'zz_registration_rollback.pb.js').write_text("""onRecordCreate((e)=>{
