@@ -90,9 +90,9 @@ export const cerCycleInvitationService = {
       // An interrupted response does not prove the write failed. Confirm the
       // exact submitted text before showing success; never repeat the write.
       try {
-        const saved = await pb.collection(collection).getOne<CycleInvitation>(invitationId, {
-          requestKey: null,
-        })
+        const saved = await pb
+          .collection(collection)
+          .getOne<CycleInvitation>(invitationId, { requestKey: null })
         if (saved.completed_at && saved.participant_reflection === reflection.trim()) return saved
       } catch {
         // If confirmation also fails, keep the outcome explicitly uncertain.
