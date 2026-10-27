@@ -5,6 +5,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
-    include: ['src/pages/Register.test.tsx', 'src/pages/LoginRecovery.test.tsx'],
+    include: [
+      'src/pages/Register.test.tsx',
+      'src/pages/LoginRecovery.test.tsx',
+      'src/pages/ConfirmEmail.test.tsx',
+    ],
   },
 })

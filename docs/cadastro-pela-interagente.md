@@ -41,3 +41,13 @@ Antes de disponibilizar o fluxo, revisar e aprovar especificamente a nova forma 
 Antes de distribuir links, confirmar o transporte de e-mail e o endereço de ação do template nativo no ambiente vivo e realizar um envio controlado a uma caixa autorizada. A consulta somente leitura pelo Skip não conseguiu determinar essas configurações sem acesso a segredos; elas continuam desconhecidas. Não há certificação de entrega a Gmail/Outlook, de abertura do link pelo celular ou de conclusão da jornada na prévia gerenciada.
 
 Não há instalação em loja, mudança de credenciais de contas existentes, publicação em produção, link real gerado ou convite enviado nesta implementação.
+
+## Correção do destino de confirmação — 27/10/2026
+
+O teste real recebeu o e-mail, mas seu destino nativo abriu o domínio de produção ainda não publicado. O cadastro ficou `invited`, não verificado e com solicitação pendente. O hook `on_registration_verification_email.js` usa o token nativo já emitido e muda somente a mensagem de contas com solicitação de cadastro pendente: aponta para a página `/confirmar-email` da prévia. Não altera SMTP, senha, verificação, papéis ou regras. Contas anteriores sem solicitação pendente mantêm seu template nativo.
+
+A página exige clique explícito para confirmar, chama `confirmVerification` no servidor e só apresenta sucesso após a resposta nativa. O token fica no fragmento, removido do histórico ao abrir, sem armazenamento local, logs ou login automático. Link ausente, expirado ou já usado oferece entrada e reenvio nativo sem senha. O reenvio não cria outra conta.
+
+Implantar primeiro a página no frontend e depois o hook de e-mail, mantendo a migração0092 já aplicada. O destino confiável está fixado no domínio desta prévia para não aceitar origens arbitrárias de requisições. Antes de publicar em produção, revisar este destino, implantar a página nesse ambiente e testar um novo e-mail. Publicar produção não é parte desta correção. Links antigos não mudam: a titular deve solicitar uma mensagem nova e abrir a mais recente.
+
+O recebimento relatado pela usuária comprova a entrega daquela mensagem, mas não prova ainda a confirmação pelo novo destino nem o primeiro login. Esses dois passos continuam dependentes do uso do link pela titular, sem alterar `verified` administrativamente.
