@@ -1,13 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { execSync } from 'node:child_process'
-
-try {
-  console.log('[copy-asset] running download-and-assemble...')
-  execSync('node scripts/download-and-assemble.mjs', { stdio: 'inherit' })
-} catch (e) {
-  console.error('[copy-asset] error:', e)
-}
 
 // Copy official Ayurveda assets to public/assets/ayurveda/
 const ayurvedaAssets = [

@@ -438,7 +438,11 @@ export const InteragenteHome: React.FC = () => {
         // Item 14: Onboarding aparece uma vez no first access apropriado
         // Reutiliza journey_states (current_stage === 'onboarding' ou metadata.onboarding_completed)
         const journeyRecord = activeEnr.expand?.journey_states_via_enrollment_id?.[0]
-        const welcomeCompleted = hasCompletedOnboarding(journeyRecord, demoAdapter.isEnabled(), activeEnr.id)
+        const welcomeCompleted = hasCompletedOnboarding(
+          journeyRecord,
+          demoAdapter.isEnabled(),
+          activeEnr.id,
+        )
 
         if (!welcomeCompleted && journeyRecord?.current_stage === 'onboarding') {
           setShowOnboarding(true)
@@ -503,7 +507,9 @@ export const InteragenteHome: React.FC = () => {
       setShowOnboarding(false)
       await loadData()
     } catch {
-      setOnboardingError('Não foi possível salvar a conclusão do acolhimento. Você pode tentar novamente; seu cadastro permanece ativo.')
+      setOnboardingError(
+        'Não foi possível salvar a conclusão do acolhimento. Você pode tentar novamente; seu cadastro permanece ativo.',
+      )
     } finally {
       setOnboardingBusy(false)
     }

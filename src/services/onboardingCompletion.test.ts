@@ -3,7 +3,10 @@ import { completeOnboarding, hasCompletedOnboarding } from './onboardingCompleti
 
 const send = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/pocketbase/client', () => ({ default: { send } }))
-beforeEach(() => { vi.clearAllMocks(); localStorage.clear() })
+beforeEach(() => {
+  vi.clearAllMocks()
+  localStorage.clear()
+})
 
 test('an old browser flag cannot hide unfinished real onboarding', () => {
   localStorage.setItem('cer_onboarding_completed_enrollment', 'true')
@@ -12,16 +15,26 @@ test('an old browser flag cannot hide unfinished real onboarding', () => {
 })
 
 test('confirmed or advanced server progress stays completed on a fresh browser', () => {
-  expect(hasCompletedOnboarding({ current_stage: 'onboarding', metadata: { onboarding_completed: true } }, false, 'enrollment')).toBe(true)
+  expect(
+    hasCompletedOnboarding(
+      { current_stage: 'onboarding', metadata: { onboarding_completed: true } },
+      false,
+      'enrollment',
+    ),
+  ).toBe(true)
   expect(hasCompletedOnboarding({ current_stage: 'consciousness' }, false, 'enrollment')).toBe(true)
-  expect(hasCompletedOnboarding({ current_stage: 'equilibrium_realization' }, false, 'enrollment')).toBe(true)
+  expect(
+    hasCompletedOnboarding({ current_stage: 'equilibrium_realization' }, false, 'enrollment'),
+  ).toBe(true)
 })
 
 test('completion uses the restricted server action, without local completion flags', async () => {
   send.mockResolvedValueOnce({ completed: true, current_stage: 'consciousness' })
   await completeOnboarding('enrollment')
   expect(send).toHaveBeenCalledExactlyOnceWith('/backend/v1/cer/onboarding/complete', {
-    method: 'POST', body: { enrollment_id: 'enrollment' }, requestKey: null,
+    method: 'POST',
+    body: { enrollment_id: 'enrollment' },
+    requestKey: null,
   })
   expect(localStorage.length).toBe(0)
 })

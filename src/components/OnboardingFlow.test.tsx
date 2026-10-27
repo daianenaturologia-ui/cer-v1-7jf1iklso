@@ -24,7 +24,9 @@ test('saving prevents repeated completion and a save error preserves the last mo
   expect(screen.getByRole('button', { name: 'Salvando…' })).toBeDisabled()
   fireEvent.click(screen.getByRole('button', { name: 'Salvando…' }))
   expect(finish).not.toHaveBeenCalled()
-  view.rerender(<OnboardingFlow onComplete={finish} error="Não foi possível salvar. Tente novamente." />)
+  view.rerender(
+    <OnboardingFlow onComplete={finish} error="Não foi possível salvar. Tente novamente." />,
+  )
   expect(screen.getByRole('alert')).toHaveTextContent('Tente novamente')
   expect(screen.getByText('Momento 5 de 5')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Concluir e Começar' })).toBeEnabled()

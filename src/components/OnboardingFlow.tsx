@@ -28,7 +28,12 @@ interface OnboardingFlowProps {
   error?: string
 }
 
-export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, interagenteName, busy = false, error }) => {
+export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
+  onComplete,
+  interagenteName,
+  busy = false,
+  error,
+}) => {
   const [step, setStep] = useState(0)
 
   const moments = [
@@ -165,7 +170,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, inte
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="pt-2">{current.body}{error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}</CardContent>
+      <CardContent className="pt-2">
+        {current.body}
+        {error && (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+      </CardContent>
 
       <CardFooter className="flex items-center justify-between pt-4 border-t border-border/40 bg-muted/10">
         <Button
