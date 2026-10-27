@@ -1,0 +1,310 @@
+diff --git a/src/App.tsx b/src/App.tsx
+index e07b0f0..cff046e 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -9,6 +9,8 @@ import HomeDispatcher from './pages/HomeDispatcher'
+ import Login from './pages/Login'
+ import Register from './pages/Register'
+ import ConfirmEmail from './pages/ConfirmEmail'
++import PilotFeedback from './pages/PilotFeedback'
++import PilotQuality from './pages/PilotQuality'
+ import ResetPassword from './pages/ResetPassword'
+ import NotFound from './pages/NotFound'
+ import Layout from './components/Layout'
+@@ -35,6 +37,8 @@ const App = () => {
+               <Route path="/confirmar-email" element={<ConfirmEmail />} />
+               <Route path="/reset-password" element={<ResetPassword />} />
+               <Route element={<Layout />}>
++                <Route path="/feedback" element={<ProtectedRoute><PilotFeedback /></ProtectedRoute>} />
++                <Route path="/profissional/qualidade" element={<ProtectedRoute><PilotQuality /></ProtectedRoute>} />
+                 <Route
+                   path="/"
+                   element={
+diff --git a/src/components/Layout.tsx b/src/components/Layout.tsx
+index 3d76d57..863f04e 100644
+--- a/src/components/Layout.tsx
++++ b/src/components/Layout.tsx
+@@ -8,6 +8,7 @@ import { demoAdapter } from '@/services/demoAdapter'
+ import { Button } from '@/components/ui/button'
+ import { Badge } from '@/components/ui/badge'
+ import { Sparkles, ArrowRightLeft, LogOut } from 'lucide-react'
++import { PilotQualityBoundary, PilotQualityTools } from './PilotQualityBoundary'
+ 
+ export default function Layout() {
+   const [isDemo, setIsDemo] = useState(() => demoAdapter.isEnabled())
+@@ -110,7 +111,8 @@ export default function Layout() {
+       )}
+ 
+       <main className="flex min-w-0 max-w-full flex-1 flex-col">
+-        <Outlet />
++        <PilotQualityTools />
++        <PilotQualityBoundary><Outlet /></PilotQualityBoundary>
+       </main>
+     </div>
+   )
+diff --git a/src/components/PilotQualityBoundary.tsx b/src/components/PilotQualityBoundary.tsx
+new file mode 100644
+index 0000000..1f34b7d
+--- /dev/null
++++ b/src/components/PilotQualityBoundary.tsx
+@@ -0,0 +1,44 @@
++import React, { useEffect } from 'react'
++import { Link, useLocation } from 'react-router-dom'
++import { useAuth } from '@/contexts/AuthContext'
++import { reportIncident, readQuality, setQualityEnrollment, type FeedbackContext, type IncidentArea } from '@/services/pilotQuality'
++import { Button } from './ui/button'
++
++export class PilotQualityBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
++  state = { failed: false }
++  static getDerivedStateFromError() { return { failed: true } }
++  componentDidCatch() { reportIncident('ui_exception', 'other') }
++  render() {
++    if (this.state.failed) return <section className="mx-auto max-w-lg p-6 space-y-4" role="alert">
++      <h1 className="text-xl font-semibold">Vamos retomar com cuidado</h1>
++      <p>Esta tela encontrou uma falha. O que já foi salvo continua no seu acompanhamento. O que ainda não foi enviado pode precisar ser preenchido novamente.</p>
++      <Button onClick={() => this.setState({ failed: false })}>Tentar abrir a tela novamente</Button>
++      <p><a className="underline" href="/feedback">Relatar uma dificuldade</a></p>
++    </section>
++    return this.props.children
++  }
++}
++export function PilotQualityTools() {
++  const { user, isAuthenticated, isProfissional, isInteragente, isDemo } = useAuth()
++  const { pathname } = useLocation()
++  const area: IncidentArea = pathname.startsWith('/profissional') ? 'professional' : pathname === '/feedback' ? 'feedback' : 'journey'
++  useEffect(() => {
++    setQualityEnrollment('')
++    let active = true
++    if (isAuthenticated && isInteragente && !isDemo) void readQuality<FeedbackContext[]>('context').then((rows) => { if (active) setQualityEnrollment(rows.length === 1 ? rows[0].id : '') }).catch(() => {})
++    return () => { active = false; setQualityEnrollment('') }
++  }, [user?.id, isAuthenticated, isInteragente, isDemo])
++  useEffect(() => {
++    if (!isAuthenticated || isDemo) return
++    const onError = () => reportIncident('ui_exception', area)
++    const onRejection = () => reportIncident('unhandled_rejection', area)
++    window.addEventListener('error', onError)
++    window.addEventListener('unhandledrejection', onRejection)
++    return () => { window.removeEventListener('error', onError); window.removeEventListener('unhandledrejection', onRejection) }
++  }, [isAuthenticated, isDemo, area])
++  if (!isAuthenticated || isDemo) return null
++  return <aside aria-label="Cuidado com a experiência" className="border-b bg-background px-4 py-2 text-sm flex flex-wrap justify-end gap-4">
++    {isInteragente && <Link className="underline underline-offset-4" to="/feedback">Sua experiência no CER</Link>}
++    {isProfissional && <Link className="underline underline-offset-4" to="/profissional/qualidade">Feedbacks e qualidade</Link>}
++  </aside>
++}
+diff --git a/src/pages/InteragenteHome.tsx b/src/pages/InteragenteHome.tsx
+index 1131929..050f2f0 100644
+--- a/src/pages/InteragenteHome.tsx
++++ b/src/pages/InteragenteHome.tsx
+@@ -112,6 +112,7 @@ import { SerConscienciaMap } from '@/components/SerConscienciaMap'
+ import { CerArtStrip } from '@/components/CerArtwork'
+ import { OnboardingFlow } from '@/components/OnboardingFlow'
+ import { completeOnboarding, hasCompletedOnboarding } from '@/services/onboardingCompletion'
++import { reportIncident } from '@/services/pilotQuality'
+ import { EmptyState } from '@/components/EmptyState'
+ import pb from '@/lib/pocketbase/client'
+ 
+@@ -504,6 +505,7 @@ export const InteragenteHome: React.FC = () => {
+       await loadData()
+     } catch {
+       setOnboardingError('Não foi possível salvar a conclusão do acolhimento. Você pode tentar novamente; seu cadastro permanece ativo.')
++      reportIncident('onboarding_save', 'journey')
+     } finally {
+       setOnboardingBusy(false)
+     }
+diff --git a/src/pages/PilotFeedback.tsx b/src/pages/PilotFeedback.tsx
+new file mode 100644
+index 0000000..477bc4c
+--- /dev/null
++++ b/src/pages/PilotFeedback.tsx
+@@ -0,0 +1,69 @@
++import React, { useEffect, useRef, useState } from 'react'
++import { Link } from 'react-router-dom'
++import { useAuth } from '@/contexts/AuthContext'
++import { readQuality, submitFeedback, reportIncident, type FeedbackContext, type FeedbackRecord, type FeedbackCategory } from '@/services/pilotQuality'
++import { Button } from '@/components/ui/button'
++
++const statusLabel = { new: 'Recebido', reviewing: 'Em análise', resolved: 'Análise concluída' }
++export default function PilotFeedback() {
++  const { isInteragente, isDemo } = useAuth()
++  const [contexts, setContexts] = useState<FeedbackContext[]>([])
++  const [records, setRecords] = useState<FeedbackRecord[]>([])
++  const [enrollment, setEnrollment] = useState('')
++  const [category, setCategory] = useState<FeedbackCategory>('app')
++  const [message, setMessage] = useState('')
++  const [busy, setBusy] = useState(false)
++  const [loading, setLoading] = useState(true)
++  const [loadFailed, setLoadFailed] = useState(false)
++  const [error, setError] = useState('')
++  const [notice, setNotice] = useState('')
++  const [revision, setRevision] = useState(0)
++  const request = useRef<{ id: string; signature: string } | null>(null)
++  useEffect(() => {
++    if (!isInteragente || isDemo) { setLoading(false); return }
++    let active = true
++    setLoading(true); setLoadFailed(false); setError('')
++    void Promise.all([readQuality<FeedbackContext[]>('context'), readQuality<FeedbackRecord[]>('mine')]).then(([ctx, rows]) => {
++      if (!active) return
++      setContexts(ctx); setRecords(rows); setEnrollment((old) => ctx.some((c) => c.id === old) ? old : ctx.length === 1 ? ctx[0].id : '')
++    }).catch(() => { if (active) { setLoadFailed(true); setError('Não foi possível carregar seu espaço. Você pode tentar novamente.') }; reportIncident('quality_load', 'feedback') }).finally(() => { if (active) setLoading(false) })
++    return () => { active = false }
++  }, [isInteragente, isDemo, revision])
++  async function submit(e: React.FormEvent) {
++    e.preventDefault()
++    if (busy || !message.trim() || !enrollment) return
++    setBusy(true); setError(''); setNotice('')
++    const signature = JSON.stringify([enrollment, category, message.trim()])
++    if (request.current?.signature !== signature) request.current = { id: crypto.randomUUID(), signature }
++    try {
++      const saved = await submitFeedback({ enrollment_id: enrollment, category, message, request_id: request.current.id })
++      setRecords((old) => [saved, ...old.filter((r) => r.id !== saved.id)]); setMessage(''); request.current = null
++      setNotice('Seu relato foi recebido. Obrigada por ajudar a cuidar desta experiência.')
++    } catch { setError('Não foi possível confirmar o envio. Seu texto continua aqui. Tente novamente para confirmar sem duplicar o mesmo relato.'); reportIncident('feedback_save', 'feedback') }
++    finally { setBusy(false) }
++  }
++  if (!isInteragente || isDemo) return <main className="max-w-2xl mx-auto p-6"><h1 className="text-2xl">Sua experiência no CER</h1><p>Este espaço privado está disponível na conta real da interagente.</p><Link to="/">Voltar ao início</Link></main>
++  return <div className="w-full max-w-2xl mx-auto p-5 sm:p-8 space-y-6">
++    <Link className="underline" to="/">Voltar à jornada</Link>
++    <h1 className="text-2xl font-semibold">Sua experiência no CER</h1>
++    <p>O que está ajudando? O que ficou difícil ou poderia ser diferente? Você pode falar sobre o app ou sobre seu processo de acompanhamento.</p>
++    <p className="text-sm text-muted-foreground">Seu relato é identificado e privado, acessível a você e à profissional responsável por este acompanhamento. Não aparece para outras interagentes. A revisão é semanal; este espaço não é acompanhado em tempo real.</p>
++    <p className="text-sm text-muted-foreground">Para melhorar o app, registramos códigos técnicos de erro; o conteúdo das suas respostas não é incluído nesses registros.</p>
++    {error && <p role="alert" className="text-destructive">{error}</p>}
++    {notice && <p role="status">{notice}</p>}
++    {loading ? <p role="status">Carregando…</p> : loadFailed ? null : <>
++      {!contexts.length ? <p>Seu acompanhamento ainda não está disponível para receber relatos.</p> : <form onSubmit={submit} className="space-y-4 rounded-xl border p-5">
++        <label className="block">Acompanhamento<select aria-label="Acompanhamento" className="block w-full border rounded p-2 bg-background" disabled={busy} required value={enrollment} onChange={(e) => setEnrollment(e.target.value)}><option value="">Selecione</option>{contexts.map((c) => <option key={c.id} value={c.id}>{c.product} — {c.professional}</option>)}</select></label>
++        <label className="block">Sobre o que você quer falar?<select aria-label="Assunto" className="block w-full border rounded p-2 bg-background" disabled={busy} value={category} onChange={(e) => setCategory(e.target.value as FeedbackCategory)}><option value="app">Uso do app</option><option value="process">Meu processo de acompanhamento</option></select></label>
++        <label className="block" htmlFor="pilot-feedback">Seu relato</label><textarea id="pilot-feedback" className="block w-full min-h-36 border rounded p-3 bg-background" required maxLength={3000} disabled={busy} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Conte o que aconteceu, o que ajudou ou o que você gostaria de melhorar. Não inclua senhas." />
++        <p className="text-xs text-muted-foreground">{message.length}/3.000 caracteres. Envie apenas o que deseja compartilhar com sua profissional.</p>
++        <Button type="submit" disabled={busy || !enrollment || !message.trim()}>{busy ? 'Enviando…' : 'Enviar meu relato'}</Button>
++      </form>}
++      <h2 className="text-xl font-semibold">Relatos enviados</h2>
++      {!records.length && <p>Você ainda não enviou relatos.</p>}
++      {records.map((r) => <article key={r.id} className="border rounded-xl p-4 space-y-2"><p className="text-sm">{r.category === 'app' ? 'Uso do app' : 'Processo de acompanhamento'} · {statusLabel[r.status]}</p><p className="whitespace-pre-wrap break-words">{r.message}</p></article>)}
++      {records.length >= 100 && <p className="text-sm">Mostrando os 100 relatos mais recentes.</p>}
++    </>}
++    <Button variant="outline" disabled={busy || loading} onClick={() => setRevision((r) => r + 1)}>Atualizar relatos</Button>
++  </div>
++}
+diff --git a/src/pages/PilotQuality.tsx b/src/pages/PilotQuality.tsx
+new file mode 100644
+index 0000000..5a6e0c8
+--- /dev/null
++++ b/src/pages/PilotQuality.tsx
+@@ -0,0 +1,69 @@
++import React, { useEffect, useState } from 'react'
++import { Link } from 'react-router-dom'
++import { useAuth } from '@/contexts/AuthContext'
++import { readQuality, reviewFeedback, acknowledgeAudit, type FeedbackRecord, type FeedbackStatus, type WeeklyAudit } from '@/services/pilotQuality'
++import { Button } from '@/components/ui/button'
++
++const incidentLabels: Record<string, string> = { ui_exception: 'Falha ao abrir uma tela', unhandled_rejection: 'Falha inesperada', onboarding_save: 'Acolhimento: dificuldade ao salvar', feedback_save: 'Relato: dificuldade ao enviar', quality_load: 'Dificuldade ao carregar relatos' }
++
++function ReviewCard({ record, onSaved }: { record: FeedbackRecord; onSaved: (r: FeedbackRecord) => void }) {
++  const [status, setStatus] = useState(record.status)
++  const [note, setNote] = useState(record.review_note || '')
++  const [busy, setBusy] = useState(false)
++  const [error, setError] = useState('')
++  const [saved, setSaved] = useState(false)
++  async function save() {
++    setBusy(true); setError(''); setSaved(false)
++    try { onSaved(await reviewFeedback(record.id, status, note)); setSaved(true) } catch { setError('Não foi possível salvar a análise. Tente novamente.') } finally { setBusy(false) }
++  }
++  return <article className="rounded-xl border p-5 space-y-3">
++    <p className="font-semibold">{record.category === 'app' ? 'Uso do app' : 'Processo de acompanhamento'}</p>
++    <p className="text-sm text-muted-foreground">Recebido em {new Date(record.created).toLocaleDateString('pt-BR')}</p>
++    <p className="whitespace-pre-wrap break-words">{record.message}</p>
++    {record.enrollment_id && <Link className="underline" to={`/profissional/participantes/${record.enrollment_id}`}>Abrir acompanhamento</Link>}
++    <label className="block">Situação<select aria-label="Situação do relato" disabled={busy} className="block border rounded p-2 bg-background" value={status} onChange={(e) => setStatus(e.target.value as FeedbackStatus)}><option value="new">Recebido</option><option value="reviewing">Em análise</option><option value="resolved">Análise concluída</option></select></label>
++    <label className="block">Anotação interna da revisão<textarea aria-label="Anotação interna" className="block border rounded p-2 w-full bg-background" maxLength={1000} disabled={busy} value={note} onChange={(e) => setNote(e.target.value)} /></label>
++    <p className="text-xs text-muted-foreground">A interagente acompanha a situação. Esta anotação é interna. Concluir a análise não confirma uma correção técnica: registre a evidência do teste quando houver uma falha do app.</p>
++    {error && <p role="alert">{error}</p>}{saved && <p role="status">Análise salva.</p>}<Button disabled={busy} onClick={save}>{busy ? 'Salvando…' : 'Salvar análise'}</Button>
++  </article>
++}
++export default function PilotQuality() {
++  const { isProfissional, isDemo } = useAuth()
++  const [items, setItems] = useState<FeedbackRecord[]>([])
++  const [audits, setAudits] = useState<WeeklyAudit[]>([])
++  const [hasMore, setHasMore] = useState(false)
++  const [page, setPage] = useState(0)
++  const [loading, setLoading] = useState(true)
++  const [loadFailed, setLoadFailed] = useState(false)
++  const [error, setError] = useState('')
++  const [revision, setRevision] = useState(0)
++  const [ackBusy, setAckBusy] = useState('')
++  useEffect(() => {
++    if (!isProfissional || isDemo) { setLoading(false); return }
++    let active = true
++    setLoading(true); setLoadFailed(false); setError(''); setItems([])
++    void Promise.all([readQuality<{ items: FeedbackRecord[]; has_more: boolean }>('inbox', { page }), readQuality<WeeklyAudit[]>('audits')]).then(([inbox, reports]) => {
++      if (active) { setItems(inbox.items); setHasMore(inbox.has_more); setAudits(reports) }
++    }).catch(() => { if (active) { setLoadFailed(true); setError('Não foi possível carregar os relatos e relatórios. Tente atualizar.') } }).finally(() => { if (active) setLoading(false) })
++    return () => { active = false }
++  }, [isProfissional, isDemo, page, revision])
++  async function acknowledge(id: string) {
++    setAckBusy(id); setError('')
++    try { await acknowledgeAudit(id); setRevision((r) => r + 1) } catch { setError('Não foi possível confirmar a revisão do relatório.') } finally { setAckBusy('') }
++  }
++  if (!isProfissional || isDemo) return <div className="p-6">Este painel está disponível na conta profissional real. <Link to="/">Voltar</Link></div>
++  return <div className="w-full max-w-4xl mx-auto p-5 sm:p-8 space-y-6">
++    <Link className="underline" to="/profissional">Voltar ao painel</Link><h1 className="text-2xl font-semibold">Feedbacks e qualidade</h1>
++    <p>Um espaço para ouvir as interagentes, acompanhar dificuldades e registrar o que foi verificado.</p>
++    <p className="text-sm text-muted-foreground">Relatório automático às segundas-feiras, às 8h de Brasília, referente à semana anterior. A análise do processo de acompanhamento é sua. Falhas técnicas precisam ser reproduzidas, corrigidas e testadas antes de serem consideradas resolvidas.</p>
++    {error && <p role="alert">{error}</p>}<Button variant="outline" disabled={loading} onClick={() => setRevision((r) => r + 1)}>Atualizar painel</Button>
++    {loading ? <p role="status">Carregando…</p> : loadFailed ? null : <>
++      <h2 className="text-xl font-semibold">Relatórios semanais</h2>
++      {!audits.length && <p>Ainda não há relatório semanal. Relatos novos aparecem abaixo assim que são enviados.</p>}
++      {audits.map((a) => <article className="rounded-xl border p-4 space-y-2" key={a.id}><h3 className="font-semibold">Semana de {new Date(a.week_start + 'T12:00:00').toLocaleDateString('pt-BR')}</h3><p>App: {a.summary.app_feedback} relatos · Processo: {a.summary.process_feedback} relatos · Ocorrências técnicas: {a.summary.incidents}</p><p>Pendentes na geração: {a.summary.pending_review_at_generation}</p><p className="text-sm">{Object.entries(a.summary.by_code).filter(([, count]) => count).map(([code, count]) => `${incidentLabels[code] || 'Ocorrência técnica'}: ${count}`).join(' · ') || 'Nenhuma ocorrência técnica registrada nesse período.'}</p><p className="text-sm text-muted-foreground">Contagens registradas não cobrem todas as falhas possíveis. O relatório não altera respostas, planos ou código.</p>{a.reviewed_at ? <p>Revisão do relatório registrada.</p> : <Button disabled={!!ackBusy} onClick={() => acknowledge(a.id)}>{ackBusy === a.id ? 'Salvando…' : 'Marcar relatório como revisado'}</Button>}</article>)}
++      <h2 className="text-xl font-semibold">Relatos das interagentes</h2>{!items.length && <p>Nenhum relato disponível nesta página.</p>}
++      {items.map((r) => <ReviewCard key={r.id} record={r} onSaved={(saved) => setItems((old) => old.map((item) => item.id === saved.id ? saved : item))} />)}
++      <div className="flex gap-3"><Button variant="outline" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Anteriores</Button><Button variant="outline" disabled={!hasMore} onClick={() => setPage((p) => p + 1)}>Próximos</Button></div>
++    </>}
++  </div>
++}
+diff --git a/src/services/pilotQuality.ts b/src/services/pilotQuality.ts
+new file mode 100644
+index 0000000..5c91b20
+--- /dev/null
++++ b/src/services/pilotQuality.ts
+@@ -0,0 +1,40 @@
++import pb from '@/lib/pocketbase/client'
++import { demoAdapter } from './demoAdapter'
++
++export type FeedbackCategory = 'app' | 'process'
++export type FeedbackStatus = 'new' | 'reviewing' | 'resolved'
++export type IncidentCode = 'ui_exception' | 'unhandled_rejection' | 'onboarding_save' | 'feedback_save' | 'quality_load'
++export type IncidentArea = 'journey' | 'professional' | 'feedback' | 'other'
++export interface FeedbackRecord { id: string; category: FeedbackCategory; message: string; status: FeedbackStatus; created: string; enrollment_id?: string; review_note?: string }
++export interface FeedbackContext { id: string; professional: string; product: string }
++export interface WeeklyAudit { id: string; week_start: string; week_end: string; reviewed_at: string; summary: { app_feedback: number; process_feedback: number; incidents: number; pending_review_at_generation: number; by_code: Partial<Record<IncidentCode, number>> } }
++const endpoint = '/backend/v1/cer/quality'
++const send = <T>(body: object) => pb.send<T>(endpoint, { method: 'POST', body, requestKey: null })
++
++// Only read actions recover automatically, at most once. Never retry writes here.
++export async function readQuality<T>(action: 'context' | 'mine' | 'inbox' | 'audits', extra = {}): Promise<T> {
++  if (demoAdapter.isEnabled()) throw new Error('Este espaço usa uma conta real para manter o feedback privado.')
++  try { return await send<T>({ action, ...extra }) } catch (error) {
++    const status = (error as { status?: number; isAbort?: boolean }).status
++    if ((error as { isAbort?: boolean }).isAbort || (status !== 0 && !(status && status >= 500))) throw error
++    return send<T>({ action, ...extra })
++  }
++}
++export async function submitFeedback(body: { enrollment_id: string; category: FeedbackCategory; message: string; request_id: string }) {
++  if (demoAdapter.isEnabled()) throw new Error('Envio disponível na conta real.')
++  return send<FeedbackRecord>({ ...body, action: 'submit' })
++}
++export const reviewFeedback = (id: string, status: FeedbackStatus, note: string) => send<FeedbackRecord>({ action: 'review', id, status, note })
++export const acknowledgeAudit = (id: string) => send<{ reviewed: boolean }>({ action: 'acknowledge', id })
++
++const sent = new Set<string>()
++let enrollmentId = ''
++export function setQualityEnrollment(id: string) { enrollmentId = id }
++// No exception object, email, free text, query, URL, token or clinical response.
++export function reportIncident(code: IncidentCode, area: IncidentArea) {
++  if (demoAdapter.isEnabled() || !pb.authStore.isValid || !pb.authStore.record?.id) return
++  const key = `${pb.authStore.record.id}:${code}:${area}`
++  if (sent.has(key) || sent.size >= 20) return
++  sent.add(key)
++  void send({ action: 'incident', code, area, enrollment_id: enrollmentId, release: 'pilot-quality-v1' }).catch(() => { /* Monitoring must never cause another rejection. */ })
++}

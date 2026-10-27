@@ -8,6 +8,7 @@ import { demoAdapter } from '@/services/demoAdapter'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sparkles, ArrowRightLeft, LogOut } from 'lucide-react'
+import { PilotQualityBoundary, PilotQualityTools } from './PilotQualityBoundary'
 
 export default function Layout() {
   const [isDemo, setIsDemo] = useState(() => demoAdapter.isEnabled())
@@ -110,7 +111,10 @@ export default function Layout() {
       )}
 
       <main className="flex min-w-0 max-w-full flex-1 flex-col">
-        <Outlet />
+        <PilotQualityTools />
+        <PilotQualityBoundary>
+          <Outlet />
+        </PilotQualityBoundary>
       </main>
     </div>
   )

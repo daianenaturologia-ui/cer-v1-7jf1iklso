@@ -9,6 +9,8 @@ import HomeDispatcher from './pages/HomeDispatcher'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ConfirmEmail from './pages/ConfirmEmail'
+import PilotFeedback from './pages/PilotFeedback'
+import PilotQuality from './pages/PilotQuality'
 import ResetPassword from './pages/ResetPassword'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
@@ -35,6 +37,22 @@ const App = () => {
               <Route path="/confirmar-email" element={<ConfirmEmail />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route element={<Layout />}>
+                <Route
+                  path="/feedback"
+                  element={
+                    <ProtectedRoute>
+                      <PilotFeedback />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profissional/qualidade"
+                  element={
+                    <ProtectedRoute>
+                      <PilotQuality />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/"
                   element={
