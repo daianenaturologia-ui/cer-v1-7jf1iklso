@@ -288,8 +288,9 @@ export const Login: React.FC = () => {
                     </div>
 
                     <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
-                      A entrada de interagentes ocorre sob convite e acompanhamento profissional.
-                      Precisa de ajuda? Fale com sua profissional.
+                      A entrada de interagentes ocorre sob convite e acompanhamento profissional. Se
+                      você criou sua conta por um link de cadastro, confirme seu e-mail antes de
+                      entrar. Precisa de ajuda? Fale com sua profissional.
                     </p>
                   </CardFooter>
                 </form>
