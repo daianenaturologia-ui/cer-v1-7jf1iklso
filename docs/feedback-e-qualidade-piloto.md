@@ -32,3 +32,20 @@ Migração 0093 cria apenas `cer_pilot_feedback`, `cer_pilot_incidents`, `cer_pi
 `scripts/verify-self-registration.py` executa banco completo, contas sintéticas em loopback e interceptação de e-mails. Cobre cadastro e início existentes, feedback/idempotência/quota, isolamento e desvinculação, DTO sem nota interna, telemetria sem texto arbitrário, registro e execução real do cron, contagens da semana e idempotência. O preparo temporal do cron usa SQLite somente no banco descartável para retroagir registros sintéticos: não há acesso direto a banco vivo nem contorno de autenticação no produto.
 
 `scripts/quality-vitest.config.ts` cobre interface de envio com erro/reenvio e confirmação do servidor, recuperação limitada de leitura e ausência de retry automático de escrita, isolamento demo e telemetria mínima. Não certifica percurso visual completo autenticado na prévia, que continua dependendo de sessão legítima de interagente disponível no navegador de testes.
+
+## Correção do empacotamento após o teste visual
+
+O teste enviado pela usuária mostrou envio incerto seguido de falha na leitura. O diagnóstico técnico, sem consultar registros pessoais, encontrou `ReferenceError: __spreadValues is not defined at feedbackDTO` no runtime. A fonte contém object spread, mas o empacotamento o transforma em chamada a um helper de módulo. Os handlers do PocketBase são serializados em contextos isolados: helpers externos ao callback não ficam disponíveis (documentação: https://pocketbase.io/docs/js-overview/#handlers-scope).
+
+O DTO agora é construído por atribuições condicionais, mantendo notas internas somente no fluxo profissional autorizado. O objeto de parâmetros do cron usa `Object.assign` no próprio callback. Não há mudança de schema, regras, propriedade, cotas, dados ou idempotência.
+
+Os ensaios anteriores executavam diretamente o JavaScript fonte e não cobriam esse passo de empacotamento. `scripts/compile-pilot-quality-bench.cjs` usa o TypeScript instalado para gerar um artefato ES5 com o mesmo tipo de dependência externa, que então é carregado no PocketBase real. Não é o compilador exato do Skip: é uma regressão de isolamento que reproduziu o problema com `__assign` na fonte anterior, inclusive após a gravação da linha sintética. A fonte corrigida passa também pelo artefato compilado.
+
+Execução, sempre em banco descartável e com mensagens interceptadas:
+
+```sh
+node scripts/compile-pilot-quality-bench.cjs /tmp/cer-quality-hook-bench.js
+CER_QUALITY_HOOK_ARTIFACT=/tmp/cer-quality-hook-bench.js CER_POCKETBASE_BINARY=/path/to/pocketbase python scripts/verify-self-registration.py
+```
+
+Confirmar a leitura pelo painel profissional após deploy antes de pedir reenvio à autora: uma falha da resposta após o commit não prova ausência de gravação. Não corrigir isso inserindo outro feedback por administração.
