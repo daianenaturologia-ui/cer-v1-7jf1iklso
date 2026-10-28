@@ -51,3 +51,10 @@ A página exige clique explícito para confirmar, chama `confirmVerification` no
 Implantar primeiro a página no frontend e depois o hook de e-mail, mantendo a migração0092 já aplicada. O destino confiável está fixado no domínio desta prévia para não aceitar origens arbitrárias de requisições. Antes de publicar em produção, revisar este destino, implantar a página nesse ambiente e testar um novo e-mail. Publicar produção não é parte desta correção. Links antigos não mudam: a titular deve solicitar uma mensagem nova e abrir a mais recente.
 
 O recebimento relatado pela usuária comprova a entrega daquela mensagem, mas não prova ainda a confirmação pelo novo destino nem o primeiro login. Esses dois passos continuam dependentes do uso do link pela titular, sem alterar `verified` administrativamente.
+
+
+## Destino publicado do piloto — 28/10/2026
+
+Após publicação autorizada pela titular, o domínio `https://cer-v1-1444e.goskip.app` passou a servir o app. O destino confiável do hook de confirmação passa de prévia para esse domínio fixo, mantendo `/confirmar-email#token=...`, o token nativo, o escopo apenas de solicitações de cadastro pendentes e o template de contas anteriores. Sem origem derivada de requisição, novas permissões ou alterações de SMTP. Links antigos já enviados permanecem como foram gerados.
+
+O ensaio REST intercepta as mensagens sintéticas em banco descartável e verifica o destino publicado, confirmação e ativação por login; não comprova entrega de e-mail real. Publicação da página e leitura visual pública são distintas do deploy do hook e da comprovação de entrega. Recuperação de senha não foi alterada com base em suposição sobre o template nativo.

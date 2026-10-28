@@ -104,8 +104,8 @@ save('user_roles',{user_id:u.id,role:name==='ordinary'?'interagente':'profission
     check(code==200 and result=={'next':'check_email'},'registration returns neither credential nor token')
     wait_mail('new@example.invalid')
     check(mail.exists(),'synthetic verification email generated and intercepted locally')
-    check('https://cer-v1-1444e--preview.goskip.app/confirmar-email#token=' in mail.read_text(),'self-registration mail targets the served preview confirmation page')
-    check('https://cer-v1-1444e.goskip.app' not in mail.read_text(),'self-registration mail does not link to unpublished production')
+    check('https://cer-v1-1444e.goskip.app/confirmar-email#token=' in mail.read_text(),'self-registration mail targets the published pilot confirmation page')
+    check('https://cer-v1-1444e--preview.goskip.app' not in mail.read_text(),'self-registration mail no longer sends new participants to preview')
     check(login('new@example.invalid')[0]==403,'unverified account receives no auth token')
     def adminitems(col):
         status,result=req('/api/collections/'+col+'/records?perPage=200',token=admin)
