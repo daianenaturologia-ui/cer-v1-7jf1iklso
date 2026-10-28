@@ -128,7 +128,7 @@ describe('Correção Executiva 1 de 2: Pré-consulta visível e Daiane sem prefi
     // Cenário F: Recarregar / remontar e confirmar que o bloco continua visível
     unmount2()
 
-    render(
+    const { unmount: unmount3 } = render(
       <MemoryRouter>
         <InteragenteHome />
       </MemoryRouter>,
@@ -142,6 +142,36 @@ describe('Correção Executiva 1 de 2: Pré-consulta visível e Daiane sem prefi
     expect(blocoRecarregado.textContent).toContain(ans1)
     expect(blocoRecarregado.textContent).toContain(ans2)
     expect(blocoRecarregado.textContent).toContain(ans3)
+
+    // Editar retoma as respostas e só compartilha uma nova versão após confirmação.
+    fireEvent.click(screen.getByRole('button', { name: 'Editar minhas respostas' }))
+    const editInputs = screen.getAllByRole('textbox') as HTMLTextAreaElement[]
+    expect(editInputs.map((input) => input.value)).toEqual([ans1, ans2, ans3])
+    expect((demoAdapter as any).state.messages.filter((m: any) => m.status === 'approved')).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar ao relato enviado' }))
+    expect(screen.getByTestId('bloco-enviado-para-daiane')).toHaveTextContent(ans2)
+    fireEvent.click(screen.getByRole('button', { name: 'Editar minhas respostas' }))
+    const revisedHelp = 'Agora prefiro uma pausa silenciosa'
+    fireEvent.change(screen.getAllByRole('textbox')[1], { target: { value: revisedHelp } })
+    const failedSend = vi.spyOn(cerJournalService, 'createNextSessionMessage')
+      .mockRejectedValueOnce(new Error('Falha sintética de rede'))
+    fireEvent.click(screen.getByRole('button', { name: /Enviar para Daiane/i }))
+    await waitFor(() => expect(failedSend).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(screen.getByRole('button', { name: /Enviar para Daiane/i })).not.toBeDisabled())
+    expect((screen.getAllByRole('textbox')[1] as HTMLTextAreaElement).value).toBe(revisedHelp)
+    expect((demoAdapter as any).state.messages.filter((m: any) => m.status === 'approved')).toHaveLength(1)
+    failedSend.mockRestore()
+    fireEvent.click(screen.getByRole('button', { name: /Enviar para Daiane/i }))
+    await waitFor(() => expect(screen.getByTestId('bloco-enviado-para-daiane')).toHaveTextContent(revisedHelp))
+    const updatedMessages = (demoAdapter as any).state.messages.filter((m: any) => m.status === 'approved')
+    expect(updatedMessages).toHaveLength(2)
+    expect(updatedMessages.find((m: any) => m.id === approved[0].id)?.message_text).toContain(ans2)
+    const professionalUpdates = await cerJournalService.listApprovedMessagesForProfessional(updatedMessages[0].enrollment_id)
+    expect(professionalUpdates.some((m) => m.message_text.includes(revisedHelp))).toBe(true)
+    unmount3()
+    render(<MemoryRouter><InteragenteHome /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByTestId('bloco-enviado-para-daiane')).toHaveTextContent(revisedHelp))
+
 
     // Cenário H: Iniciar novo relato sem apagar o primeiro
     const btnNovo = screen.getByRole('button', { name: /Enviar novo relato/i })
@@ -165,7 +195,7 @@ describe('Correção Executiva 1 de 2: Pré-consulta visível e Daiane sem prefi
       expect(blocoAtualizado.textContent).toContain(ans1Novo)
       // O histórico preserva o primeiro relato
       expect(screen.getByText(/Envios anteriores/i)).toBeInTheDocument()
-      expect(screen.getByText(new RegExp(ans1))).toBeInTheDocument()
+      expect(screen.getAllByText(new RegExp(ans1)).length).toBeGreaterThanOrEqual(1)
     })
 
     // Cenário J: Zero chamadas ao backend PocketBase conectado
