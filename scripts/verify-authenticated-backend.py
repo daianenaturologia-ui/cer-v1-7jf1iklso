@@ -364,6 +364,13 @@ try:
         approved=record('cer_next_session_messages',tokens['a'],'PATCH',{'status':'approved'},message['id'])
         check('Approval shares and stamps message',lambda:require(approved['approved_at'] and record('cer_next_session_messages',tokens['p'],id=message['id'])['access_class']=='shared_care'))
         check('Unlinked professional cannot read approved message',lambda:require(request(endpoint,tokens['q'])[0]==404))
+        revised=record('cer_next_session_messages',tokens['a'],'POST',{'enrollment_id':enroll['a'],'participant_user_id':actors['a']['record']['id'],'message_text':'Fictional revised initial intake','summary_text':'Revised intake','status':'draft','access_class':'participant_private'})
+        revised_path='/api/collections/cer_next_session_messages/records/'+revised['id']
+        check('Intake revision remains private before explicit send',lambda:require(request(revised_path,tokens['p'])[0]==404 and record('cer_next_session_messages',tokens['a'],id=revised['id'])['message_text']=='Fictional revised initial intake'))
+        record('cer_next_session_messages',tokens['a'],'PATCH',{'status':'approved'},revised['id'])
+        check('Intake revision shared with assigned professional',lambda:require(record('cer_next_session_messages',tokens['p'],id=revised['id'])['message_text']=='Fictional revised initial intake'))
+        check('Intake previous sent version preserved',lambda:require(record('cer_next_session_messages',tokens['a'],id=message['id'])['message_text']=='Fictional shared summary' and record('cer_next_session_messages',tokens['p'],id=message['id'])['status']=='approved'))
+        check('Intake revision remains blocked for unrelated accounts',lambda:require(request(revised_path,tokens['q'])[0]==404 and request(revised_path,tokens['b'])[0]==404))
         record('cer_next_session_messages',tokens['a'],'PATCH',{'status':'withdrawn'},message['id'])
         check('Withdrawal blocks previously issued professional token',lambda:require(request(endpoint,tokens['p'])[0]==404))
         check('Withdrawn message cannot be reapproved',lambda:require(request(endpoint,tokens['a'],'PATCH',{'status':'approved'})[0]==400))

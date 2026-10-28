@@ -6,6 +6,7 @@ import {
   nextConsciousnessExperience,
   type JourneyMoment,
 } from '@/services/participantJourney'
+import { parseInitialIntake } from '@/services/initialIntake'
 import { JourneyNavigation } from '@/components/JourneyNavigation'
 import { CerMapUpdateNotice } from '@/components/CerMapUpdateNotice'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -282,26 +283,10 @@ export const InteragenteHome: React.FC = () => {
             )[0]
             if (latestDraft.message_text) {
               setIsWritingNewIntake(true)
-              // Parse do rascunho estruturado se houver
-              const text = latestDraft.message_text
-              const bringsMatch = text.match(/O que a traz:\n([\s\S]*?)(?=\n\nO que já a ajuda:|$)/)
-              const helpsMatch = text.match(
-                /O que já a ajuda:\n([\s\S]*?)(?=\n\nO que deseja cuidar:|$)/,
-              )
-              const caresMatch = text.match(/O que deseja cuidar:\n([\s\S]*?)$/)
-              if (bringsMatch || helpsMatch || caresMatch) {
-                setInitialIntakeWhatBrings(
-                  (prev) => prev || (bringsMatch ? bringsMatch[1].trim() : ''),
-                )
-                setInitialIntakeWhatHelps(
-                  (prev) => prev || (helpsMatch ? helpsMatch[1].trim() : ''),
-                )
-                setInitialIntakeWhatCares(
-                  (prev) => prev || (caresMatch ? caresMatch[1].trim() : ''),
-                )
-              } else {
-                setInitialIntakeWhatBrings((prev) => prev || text)
-              }
+              const answers = parseInitialIntake(latestDraft.message_text)
+              setInitialIntakeWhatBrings((prev) => prev || answers.brings)
+              setInitialIntakeWhatHelps((prev) => prev || answers.helps)
+              setInitialIntakeWhatCares((prev) => prev || answers.cares)
             }
           }
         } catch {
@@ -1359,7 +1344,22 @@ export const InteragenteHome: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between gap-2 pt-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const answers = parseInitialIntake(lastSentIntakeMessage.message_text)
+                          setInitialIntakeWhatBrings(answers.brings)
+                          setInitialIntakeWhatHelps(answers.helps)
+                          setInitialIntakeWhatCares(answers.cares)
+                          setIsWritingNewIntake(true)
+                          setIntakeSubmittedMessage(null)
+                        }}
+                        className="text-xs h-8"
+                      >
+                        Editar minhas respostas
+                      </Button>
                       <Button
                         size="sm"
                         onClick={() => setActivePhase('consciencia')}
@@ -1383,6 +1383,13 @@ export const InteragenteHome: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-3.5">
+                    {lastSentIntakeMessage && (
+                      <p className="text-xs text-muted-foreground" role="note">
+                        Você pode mudar suas respostas. A atualização só será compartilhada quando
+                        você enviar para {PROFESSIONAL_DISPLAY_NAME}. O relato anterior continuará
+                        no histórico.
+                      </p>
+                    )}
                     {/* Pergunta 1 */}
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground block">
@@ -1390,6 +1397,7 @@ export const InteragenteHome: React.FC = () => {
                       </label>
                       <Textarea
                         placeholder="Conte com suas palavras o que a fez procurar este acompanhamento..."
+                        disabled={intakeSending || intakeSavingDraft}
                         value={initialIntakeWhatBrings}
                         onChange={(e) => setInitialIntakeWhatBrings(e.target.value)}
                         className="text-xs min-h-[75px] resize-y"
@@ -1404,6 +1412,7 @@ export const InteragenteHome: React.FC = () => {
                       </label>
                       <Textarea
                         placeholder="Coisas simples ou pessoas que já trazem alívio ou sustentação..."
+                        disabled={intakeSending || intakeSavingDraft}
                         value={initialIntakeWhatHelps}
                         onChange={(e) => setInitialIntakeWhatHelps(e.target.value)}
                         className="text-xs min-h-[75px] resize-y"
@@ -1418,6 +1427,7 @@ export const InteragenteHome: React.FC = () => {
                       </label>
                       <Textarea
                         placeholder="O que no seu ritmo, corpo ou sentimentos pede atenção agora..."
+                        disabled={intakeSending || intakeSavingDraft}
                         value={initialIntakeWhatCares}
                         onChange={(e) => setInitialIntakeWhatCares(e.target.value)}
                         className="text-xs min-h-[75px] resize-y"
@@ -1435,6 +1445,7 @@ export const InteragenteHome: React.FC = () => {
                             type="button"
                             variant="ghost"
                             size="sm"
+                            disabled={intakeSending || intakeSavingDraft}
                             onClick={() => setIsWritingNewIntake(false)}
                             className="text-xs h-8 text-muted-foreground"
                           >
