@@ -1,5 +1,4 @@
-// Pilot preview only. Before production, deploy its confirmation page and review
-// this trusted origin. Never derive credential destinations from request headers.
+// Published pilot origin, verified before enabling registration emails. Never derive credential destinations from request headers.
 onMailerRecordVerificationSend((e) => {
   const pending = e.app.findRecordsByFilter(
     'cer_registration_requests',
@@ -12,8 +11,7 @@ onMailerRecordVerificationSend((e) => {
   if (!pending.length) return e.next()
   const token = e.meta.token
   if (typeof token !== 'string' || !token) throw new Error('Confirmação indisponível.')
-  const url =
-    'https://cer-v1-1444e--preview.goskip.app/confirmar-email#token=' + encodeURIComponent(token)
+  const url = 'https://cer-v1-1444e.goskip.app/confirmar-email#token=' + encodeURIComponent(token)
   e.message.subject = 'Confirme seu e-mail para iniciar no CER'
   e.message.html =
     '<p>Seu cadastro no CER está quase pronto.</p>' +
