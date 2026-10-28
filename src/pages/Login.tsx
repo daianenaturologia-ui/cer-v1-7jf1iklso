@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +12,7 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card'
-import { AlertCircle, Lock, Mail, CheckCircle2, HelpCircle, Sparkles } from 'lucide-react'
+import { AlertCircle, Lock, Mail, CheckCircle2, HelpCircle, Sparkles, Eye, EyeOff } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { FirstLoginPasswordChange } from '@/components/FirstLoginPasswordChange'
 import { DevLoginHelpers } from '@/components/DevLoginHelpers'
@@ -21,6 +21,7 @@ import { demoAdapter } from '@/services/demoAdapter'
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -42,6 +43,7 @@ export const Login: React.FC = () => {
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setShowPassword(false)
     setLoading(true)
 
     try {
@@ -202,6 +204,16 @@ export const Login: React.FC = () => {
                 </CardHeader>
                 <form onSubmit={handleLoginSubmit}>
                   <CardContent className="space-y-4">
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm space-y-1.5">
+                      <p className="font-medium">Primeiro acesso? Confirme seu e-mail</p>
+                      <p className="text-xs text-muted-foreground">
+                        Depois do cadastro, abra a mensagem do CER e clique em confirmar seu e-mail.
+                        Só então entre com sua senha. Confira também Spam e Lixo eletrônico.
+                      </p>
+                      <Link to="/confirmar-email" className="text-xs font-medium text-primary underline">
+                        Não recebi o e-mail · Reenviar confirmação
+                      </Link>
+                    </div>
                     {error && (
                       <Alert variant="destructive" className="py-2 text-xs">
                         <AlertCircle className="h-4 w-4" />
@@ -249,13 +261,26 @@ export const Login: React.FC = () => {
                         <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="password"
-                          type="password"
+                          type={showPassword ? 'text' : 'password'}
                           placeholder="Sua senha de acesso"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          className="pl-9 text-sm"
+                          className="pl-9 pr-12 text-sm"
                         />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute inset-y-0 right-0 h-10 w-10"
+                          aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                          aria-controls="password"
+                          aria-pressed={showPassword}
+                          disabled={loading}
+                          onClick={() => setShowPassword((visible) => !visible)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                        </Button>
                       </div>
                     </div>
 

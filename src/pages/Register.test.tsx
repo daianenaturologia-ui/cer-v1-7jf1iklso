@@ -56,7 +56,7 @@ it('depois do envio orienta confirmar e-mail antes de entrar, sem guardar senha'
   fireEvent.submit(screen.getByRole('button', { name: 'Criar minha conta' }).closest('form')!)
   expect(await screen.findByRole('heading', { name: 'Confira seu e-mail' })).toBeInTheDocument()
   expect(screen.queryByLabelText('Crie sua senha')).toBeNull()
-  expect(screen.getByRole('link', { name: 'Entrar na minha jornada' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'Já confirmei meu e-mail · Entrar' })).toHaveAttribute(
     'href',
     '/login',
   )
