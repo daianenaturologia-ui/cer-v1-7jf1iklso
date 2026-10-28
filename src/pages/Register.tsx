@@ -4,6 +4,7 @@ import { selfRegistration, type RegistrationInfo } from '@/services/selfRegistra
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function Register() {
   const { slug = '' } = useParams()
@@ -13,6 +14,8 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setConfirm] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [acceptLink, setAccept] = useState(false)
   const [website, setWebsite] = useState('')
   const [busy, setBusy] = useState(false)
@@ -31,6 +34,8 @@ export default function Register() {
     setEmail('')
     setPassword('')
     setConfirm('')
+    setShowPassword(false)
+    setShowConfirm(false)
     setAccept(false)
     setWebsite('')
     setNotice('')
@@ -83,11 +88,15 @@ export default function Register() {
       if (generation.current !== requestGeneration) return
       setPassword('')
       setConfirm('')
+      setShowPassword(false)
+      setShowConfirm(false)
       setSent(true)
     } catch {
       if (generation.current !== requestGeneration) return
       setPassword('')
       setConfirm('')
+      setShowPassword(false)
+      setShowConfirm(false)
       setError(
         'Não foi possível concluir ou confirmar o envio. Seus dados de nome e e-mail continuam aqui. Se já enviou o cadastro, use Reenviar confirmação; caso contrário, tente novamente.',
       )
@@ -142,8 +151,12 @@ export default function Register() {
                     mensagem, confirme seu e-mail e volte para entrar. Se já tem uma conta, use seu
                     acesso ou recupere a senha.
                   </p>
+                  <p className="text-sm font-medium text-primary">
+                    O primeiro acesso só será liberado depois de confirmar seu e-mail. Confira
+                    também Spam e Lixo eletrônico.
+                  </p>
                   <Button asChild>
-                    <Link to="/login">Entrar na minha jornada</Link>
+                    <Link to="/login">Já confirmei meu e-mail · Entrar</Link>
                   </Button>
                 </div>
               ) : (
@@ -175,34 +188,66 @@ export default function Register() {
                   </div>
                   <div>
                     <Label htmlFor="registration-password">Crie sua senha</Label>
-                    <Input
-                      id="registration-password"
-                      type="password"
-                      autoComplete="new-password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      minLength={10}
-                      maxLength={64}
-                      required
-                      disabled={busy}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="registration-password"
+                        type={showPassword ? 'text' : 'password'}
+                        className="pr-12"
+                        autoComplete="new-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        minLength={10}
+                        maxLength={64}
+                        required
+                        disabled={busy}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute inset-y-0 right-0 h-10 w-10"
+                        aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                        aria-controls="registration-password"
+                        aria-pressed={showPassword}
+                        disabled={busy}
+                        onClick={() => setShowPassword((visible) => !visible)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       Use pelo menos 10 caracteres. Sua profissional não recebe essa senha.
                     </p>
                   </div>
                   <div>
                     <Label htmlFor="registration-confirm">Repita sua senha</Label>
-                    <Input
-                      id="registration-confirm"
-                      type="password"
-                      autoComplete="new-password"
-                      value={passwordConfirm}
-                      onChange={(e) => setConfirm(e.target.value)}
-                      required
-                      minLength={10}
-                      maxLength={64}
-                      disabled={busy}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="registration-confirm"
+                        type={showConfirm ? 'text' : 'password'}
+                        className="pr-12"
+                        autoComplete="new-password"
+                        value={passwordConfirm}
+                        onChange={(e) => setConfirm(e.target.value)}
+                        required
+                        minLength={10}
+                        maxLength={64}
+                        disabled={busy}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute inset-y-0 right-0 h-10 w-10"
+                        aria-label={showConfirm ? 'Ocultar confirmação de senha' : 'Mostrar confirmação de senha'}
+                        aria-controls="registration-confirm"
+                        aria-pressed={showConfirm}
+                        disabled={busy}
+                        onClick={() => setShowConfirm((visible) => !visible)}
+                      >
+                        {showConfirm ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                      </Button>
+                    </div>
                   </div>
                   <div aria-hidden="true" className="hidden">
                     <input
