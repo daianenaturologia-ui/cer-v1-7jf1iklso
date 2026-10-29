@@ -96,7 +96,9 @@ export function ProfessionalJourneySummary({
       <div className="flex justify-between items-start gap-3">
         <div>
           <h2 className="font-serif text-xl">O momento de {name}</h2>
-          <p className="text-sm text-muted-foreground">O que chegou da jornada, em um só lugar.</p>
+          <p className="text-sm text-muted-foreground">
+            Registros do percurso para acompanhar os próximos passos.
+          </p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => setRevision((v) => v + 1)}>
           Atualizar

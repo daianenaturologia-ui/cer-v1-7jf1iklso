@@ -1,0 +1,352 @@
+[
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Experimento acolhido",
+    "after": "Experiência registrada"
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Sua percepção ajuda a calibrar o ritmo do cuidado.",
+    "after": "Seu registro ajuda a ajustar os próximos passos."
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Seu momento foi registrado com leveza e carinho.",
+    "after": "Seu momento foi registrado."
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Preferências acolhidas",
+    "after": "Preferências salvas"
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Sua forma de tratamento e nome preferido foram salvos com carinho.",
+    "after": "Sua forma de tratamento e nome preferido foram salvos."
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Retorno acolhido",
+    "after": "Retorno enviado"
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Seu nome preferido ou apelido de carinho...",
+    "after": "Nome ou apelido que você prefere..."
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Conte com suas palavras o que a fez procurar este acompanhamento...",
+    "after": "Conte com suas palavras o que motivou você a procurar este acompanhamento..."
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Sua percepção foi acolhida",
+    "after": "Percepção registrada"
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Este plano e próximo passo foram compartilhados por Daiane. Você pode registrar com leveza como isso soa para você agora.",
+    "after": "Daiane compartilhou este plano e próximo passo. Como essa proposta cabe no seu momento?"
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Sua figura foi personalizada com sucesso.",
+    "after": "Sua figura foi personalizada."
+  },
+  {
+    "file": "src/pages/NotFound.tsx",
+    "before": "Oops! Page not found",
+    "after": "Não encontramos esta página"
+  },
+  {
+    "file": "src/pages/NotFound.tsx",
+    "before": "Return to Home",
+    "after": "Voltar ao início"
+  },
+  {
+    "file": "src/pages/ProfissionalHome.tsx",
+    "before": "Workspace",
+    "after": "Acompanhamento"
+  },
+  {
+    "file": "src/pages/ProfissionalHome.tsx",
+    "before": "Espaço de Presença & Preparação de Encontros",
+    "after": "Preparar encontros"
+  },
+  {
+    "file": "src/pages/ProfissionalHome.tsx",
+    "before": "Interagente vinculada com sucesso!",
+    "after": "Interagente vinculada."
+  },
+  {
+    "file": "src/pages/ProfissionalHome.tsx",
+    "before": "Nome Completo (Identidade Humana - PERSON) *",
+    "after": "Nome completo *"
+  },
+  {
+    "file": "src/pages/ProfissionalHome.tsx",
+    "before": "E-mail da Interagente (USER_ACCOUNT) *",
+    "after": "E-mail da interagente *"
+  },
+  {
+    "file": "src/pages/ProfissionalHome.tsx",
+    "before": "Produto CER (CER_PRODUCT) *",
+    "after": "Modalidade do acompanhamento *"
+  },
+  {
+    "file": "src/components/CerPracticeLibrary.tsx",
+    "before": "Compreender abre caminho. É ao experimentar, perceber a resposta do corpo e repetir o que ajuda que novos modos de viver podem ganhar espaço. Praticar nem sempre é fácil: comece pequeno, adapte e retome com gentileza.",
+    "after": "Explore as práticas e observe como elas cabem no seu dia. O que ajudou você? O que precisa de ajuste? Essas percepções apoiam a conversa sobre a continuidade."
+  },
+  {
+    "file": "src/components/CycleMandala.tsx",
+    "before": "Um encontro com seu corpo, suas emoções e a natureza.",
+    "after": "Um espaço para observar sua energia, suas emoções e as condições do seu dia."
+  },
+  {
+    "file": "src/components/DevelopmentPlanDocument.tsx",
+    "before": "Objetivos terapêuticos e prioridades de cuidado",
+    "after": "Prioridades de cuidado"
+  },
+  {
+    "file": "src/components/DevelopmentPlanWorkspace.tsx",
+    "before": "Objetivos terapêuticos e prioridades de cuidado",
+    "after": "Prioridades de cuidado"
+  },
+  {
+    "file": "src/components/DevelopmentPlanWorkspace.tsx",
+    "before": "Defina as necessidades de cuidado e tratamento que emergem do mapa, seus objetivos e o que acompanhar. Apresente uma proposta individualizada para conversar no encontro.",
+    "after": "Reúna as necessidades, os recursos e as condições que pedem atenção no Mapa CER. Prepare uma proposta para conversar e ajustar no encontro."
+  },
+  {
+    "file": "src/components/DevelopmentPlanWorkspace.tsx",
+    "before": "Carta acrescentada aos objetivos terapêuticos do rascunho. Revejam e ajustem juntas antes de compartilhar o plano.",
+    "after": "Carta acrescentada às prioridades de cuidado do rascunho. Revejam antes de compartilhar o plano."
+  },
+  {
+    "file": "src/components/DevelopmentPlanWorkspace.tsx",
+    "before": "Uma meta principal concentra o esforço deste ciclo. Os cuidados sustentam o equilíbrio; estas ações aproximam a pessoa da conquista. Combinem possibilidades reais e organizem os horários depois.",
+    "after": "Escolham uma meta principal para este ciclo e ações que caibam na vida da pessoa. Considerem seus projetos, recursos, energia e tempo disponível antes de organizar os horários."
+  },
+  {
+    "file": "src/components/OnboardingFlow.tsx",
+    "before": "O CER é um ambiente de desenvolvimento humano integral desenhado para acolher sua história com respeito e profundidade.",
+    "after": "O Método CER apoia suas escolhas e seus projetos, com atenção à energia e às condições que sustentam sua caminhada."
+  },
+  {
+    "file": "src/components/OnboardingFlow.tsx",
+    "before": "Aqui você encontra um espaço seguro para reconhecer suas necessidades, mapear o que faz sentido para o seu momento e vivenciar experiências combinadas com sua profissional.",
+    "after": "Aqui você pode reconhecer o que importa, registrar sua experiência e organizar os passos combinados com sua profissional. Este espaço também é para quem está bem e deseja crescer com mais consciência."
+  },
+  {
+    "file": "src/components/OnboardingFlow.tsx",
+    "before": "“O ser humano não funciona em partes. Cada percepção sua importa para o todo.”",
+    "after": "“Como você quer viver enquanto realiza?”"
+  },
+  {
+    "file": "src/components/OnboardingFlow.tsx",
+    "before": "No seu próprio tempo, sem cobranças de desempenho",
+    "after": "Um ritmo que caiba na sua vida"
+  },
+  {
+    "file": "src/components/OnboardingFlow.tsx",
+    "before": "Não há respostas certas ou erradas. O CER não é uma prova nem uma lista de metas a cumprir.",
+    "after": "Suas respostas ajudam a compreender seu momento. Objetivos, responsabilidades, recursos e pausas fazem parte dessa conversa."
+  },
+  {
+    "file": "src/components/OnboardingFlow.tsx",
+    "before": "Você pode pausar a qualquer momento e retomar quando fizer sentido. Práticas e reflexões são convites para o seu dia a dia, e não obrigações com notas ou cobranças.",
+    "after": "Você pode pausar e retomar. As práticas e reflexões ajudam a perceber o que funciona na sua rotina e o que precisa de ajuste."
+  },
+  {
+    "file": "src/components/OnboardingFlow.tsx",
+    "before": "Se algum dia você não conseguir realizar um experimento, tudo bem. Compartilhar o que foi difícil ajuda a calibrar o caminho com a sua profissional.",
+    "after": "O que ajudou você a avançar? O que dificultou? Compartilhar essas percepções ajuda a combinar um próximo passo possível."
+  },
+  {
+    "file": "src/components/OnboardingFlow.tsx",
+    "before": "Sua privacidade é respeitada em cada detalhe",
+    "after": "Entenda o que você compartilha"
+  },
+  {
+    "file": "src/components/OnboardingFlow.tsx",
+    "before": "Você sempre sabe o que é compartilhado e o que fica guardado apenas com você.",
+    "after": "Observe as indicações de privacidade antes de salvar ou enviar um registro."
+  },
+  {
+    "file": "src/components/OnboardingFlow.tsx",
+    "before": "A inteligência do sistema existe para organizar conexões, não para dar ordens.",
+    "after": "O sistema ajuda a organizar informações para o acompanhamento."
+  },
+  {
+    "file": "src/components/ParticipantWorkspace.tsx",
+    "before": "Carregando prontuário e dados de cuidado...",
+    "after": "Carregando acompanhamento..."
+  },
+  {
+    "file": "src/components/ParticipantWorkspace.tsx",
+    "before": "Workspace Clínico",
+    "after": "Espaço de acompanhamento"
+  },
+  {
+    "file": "src/components/ParticipantWorkspace.tsx",
+    "before": "Prontuário de Daiane",
+    "after": "Registro profissional"
+  },
+  {
+    "file": "src/components/ProfessionalSessionManager.tsx",
+    "before": "Nota profissional salva com sucesso.",
+    "after": "Nota profissional salva."
+  },
+  {
+    "file": "src/components/WeeklyAgenda.tsx",
+    "before": "Agenda atualizada. Há espaço para o seu ritmo.",
+    "after": "Agenda atualizada."
+  },
+  {
+    "file": "src/components/WeeklyAgenda.tsx",
+    "before": "Foco, descanso e tempo para viver gostosamente.",
+    "after": "Organize o que importa, com espaço para trabalho, descanso e vida."
+  },
+  {
+    "file": "src/components/WeeklyAgenda.tsx",
+    "before": "Uma tarefa, uma pausa, algo gostoso…",
+    "after": "Uma tarefa, uma pausa, um encontro…"
+  },
+  {
+    "file": "src/components/experience/AyurvedaPersonalReading.tsx",
+    "before": "Essa não é uma leitura definitiva, pois o diagnóstico na medicina ayurvédica depende de um olhar em conjunto com o terapeuta. Com Daiane, ao longo do processo, vocês poderão aprofundar e ajustar esse olhar. Nossa intenção é aproximar seu funcionamento e sua energia da sua constituição original, regular Agni e diminuir os sinais de Ama.",
+    "after": "Esta leitura usa conceitos tradicionais do Ayurveda e as respostas que você registrou. Ela é exploratória e pode ser aprofundada com Daiane, considerando sua história e seu momento. Não equivale a uma avaliação médica nem atribui comprovação científica a todos os conceitos tradicionais."
+  },
+  {
+    "file": "src/components/experience/CerMapReadingsView.tsx",
+    "before": "Toque em um comportamento para abrir sua leitura individual acolhedora.",
+    "after": "Toque em um comportamento para conhecer sua leitura e os pontos de atenção."
+  },
+  {
+    "file": "src/components/experience/CerMapReadingsView.tsx",
+    "before": "CER • Cuidado em Relação",
+    "after": "Método CER · Consciência, Equilíbrio e Realização"
+  },
+  {
+    "file": "src/components/experience/LifeDirections.tsx",
+    "before": "O que está pesando hoje e quero transformar?",
+    "after": "O que merece minha atenção e desejo transformar?"
+  },
+  {
+    "file": "src/components/experience/LifeIntegrationGame.tsx",
+    "before": "Carta salva no seu presente. Se a compartilhar, ela poderá orientar os objetivos terapêuticos do seu plano, junto da sua meta.",
+    "after": "Carta salva no seu presente. Se a compartilhar, ela poderá orientar as prioridades de cuidado do seu plano, junto da sua meta."
+  },
+  {
+    "file": "src/components/experience/LifeIntegrationGame.tsx",
+    "before": "As cartas representam o que ainda queremos resolver com o passado e escolhemos cuidar e curar no presente, para abrir espaço a um futuro melhor. Escolha as que fazem sentido ou crie a sua. Você pode passar; não há obrigação de perdoar, retomar contato ou apressar um luto.",
+    "after": "As cartas ajudam a reconhecer o que da sua história você deseja compreender ou cuidar no presente. Escolha as que fazem sentido ou crie a sua. Você pode passar; não há obrigação de perdoar, retomar contato ou apressar um luto."
+  },
+  {
+    "file": "src/components/experience/LifeIntegrationGame.tsx",
+    "before": "A meta expressa um sonho ou desejo para o futuro. A carta expressa uma resolução com o passado que você deseja trabalhar agora. Ambas orientam os objetivos terapêuticos do seu Plano de Desenvolvimento e os cuidados e ações combinados nos encontros.",
+    "after": "A meta expressa algo que você deseja construir. A carta registra o que da sua história você quer cuidar agora. Ambas podem orientar as prioridades do seu Plano de Desenvolvimento e as ações combinadas nos encontros."
+  },
+  {
+    "file": "src/components/experience/MyNextStepWizard.tsx",
+    "before": "Sua meta pode estar na saúde, nas relações, no trabalho ou em um propósito. Escreva uma mudança concreta que deseja alcançar. Ela será o foco deste ciclo do CER.",
+    "after": "Sua meta pode envolver saúde, relações, trabalho ou outro projeto importante. Escreva uma mudança concreta que deseja alcançar. Ela será o foco deste ciclo do CER."
+  },
+  {
+    "file": "src/components/experience/MyNextStepWizard.tsx",
+    "before": "Hoje está difícil…",
+    "after": "Hoje, minha realidade é…"
+  },
+  {
+    "file": "src/components/EmptyState.tsx",
+    "before": "Quando combinarem uma prática, ela aparecerá organizada aqui com leveza.",
+    "after": "Quando combinarem uma prática, ela aparecerá aqui com as orientações para realizá-la."
+  },
+  {
+    "file": "src/components/QuickResponseFlow.tsx",
+    "before": "Resposta registrada com acolhimento",
+    "after": "Resposta registrada"
+  },
+  {
+    "file": "src/components/QuickResponseFlow.tsx",
+    "before": "Sua percepção foi acolhida e orienta o cuidado compartilhado.",
+    "after": "Sua percepção foi registrada para orientar os próximos passos do acompanhamento."
+  },
+  {
+    "file": "src/components/QuickResponseFlow.tsx",
+    "before": "Sua resposta ajuda a calibrar a intensidade e a adequação do cuidado. Não existe certo ou errado.",
+    "after": "Sua resposta ajuda a ajustar a prática ao seu momento. Conte como foi para você."
+  },
+  {
+    "file": "src/components/PracticeStepViewer.tsx",
+    "before": "Interrupção consciente e acolhida",
+    "after": "Você pode interromper a prática"
+  },
+  {
+    "file": "src/components/experience/ResourceAgendaForm.tsx",
+    "before": "agenda e pode ser reorganizado com leveza.",
+    "after": "agenda e pode ser reorganizado quando precisar."
+  },
+  {
+    "file": "src/components/PlannerGentleGuide.tsx",
+    "before": "Reorganize com leveza.",
+    "after": "Ajuste o planejamento quando precisar."
+  },
+  {
+    "file": "src/components/PlannerGentleGuide.tsx",
+    "before": "Se algo não couber no horário escolhido, tudo bem. Abra o momento e use Editar para",
+    "after": "Se algo não couber no horário escolhido, abra o momento e use Editar para"
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Sua resposta ajuda Daiane a calibrar o ritmo junto com você.",
+    "after": "Sua resposta ajuda você e Daiane a ajustar os próximos passos."
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Práticas acolhidas no cotidiano",
+    "after": "Práticas no cotidiano"
+  },
+  {
+    "file": "src/pages/InteragenteHome.tsx",
+    "before": "Momentos combinados com a profissional para olhar para trás, pausar e calibrar",
+    "after": "Momentos combinados com a profissional para rever o caminho, pausar e ajustar"
+  },
+  {
+    "file": "src/pages/ConfirmEmail.tsx",
+    "before": "Agora entre com o e-mail e a senha que você escolheu para iniciar sua jornada.",
+    "after": "Entre com o e-mail e a senha que você escolheu para acessar seu percurso."
+  },
+  {
+    "file": "src/pages/ConfirmEmail.tsx",
+    "before": "Entrar na minha jornada",
+    "after": "Entrar no meu percurso"
+  },
+  {
+    "file": "src/pages/PlannerPage.tsx",
+    "before": "Voltar à jornada",
+    "after": "Voltar ao meu percurso"
+  },
+  {
+    "file": "src/pages/PilotFeedback.tsx",
+    "before": "Voltar à jornada",
+    "after": "Voltar ao meu percurso"
+  },
+  {
+    "file": "src/components/ProfessionalJourneySummary.tsx",
+    "before": "O que chegou da jornada, em um só lugar.",
+    "after": "Registros do percurso para acompanhar os próximos passos."
+  },
+  {
+    "file": "src/components/experience/ExperienceEngine.tsx",
+    "before": "Pronto. Esse registro passa a fazer parte da sua jornada. Obrigado por dedicar este momento a você.",
+    "after": "Este registro faz parte do seu percurso. Você pode seguir para o próximo passo ou fazer uma pausa."
+  },
+  {
+    "file": "src/pages/ProfissionalHome.tsx",
+    "before": "Para dar acesso ao acompanhamento, vincule a interagente por convite\n              pela profissional.",
+    "after": "Vincule a interagente por convite para dar acesso ao acompanhamento."
+  }
+]

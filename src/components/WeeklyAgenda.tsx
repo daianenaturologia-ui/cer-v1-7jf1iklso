@@ -220,7 +220,7 @@ export function WeeklyAgenda({
       await action()
       setEditing(null)
       setSelected(null)
-      setNotice('Agenda atualizada. Há espaço para o seu ritmo.')
+      setNotice('Agenda atualizada.')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível salvar. Tente novamente.')
     } finally {
@@ -268,7 +268,7 @@ export function WeeklyAgenda({
         <p className="text-xs text-muted-foreground">
           {readOnly
             ? 'Somente os passos que a pessoa escolheu compartilhar.'
-            : 'Foco, descanso e tempo para viver gostosamente.'}
+            : 'Organize o que importa, com espaço para trabalho, descanso e vida.'}
         </p>
       </div>
       {routineError && (
@@ -600,7 +600,7 @@ export function WeeklyAgenda({
                   maxLength={160}
                   value={editing.title}
                   onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                  placeholder="Uma tarefa, uma pausa, algo gostoso…"
+                  placeholder="Uma tarefa, uma pausa, um encontro…"
                 />
               </label>
               <div className="grid sm:grid-cols-2 gap-3">

@@ -71,7 +71,7 @@ export const PlannerPage: React.FC = () => {
         <header className="flex flex-wrap gap-3 items-center justify-between">
           <h1 className="font-serif text-xl flex gap-2 items-center">
             <Calendar className="w-5 h-5 text-primary" />
-            Minha agenda
+            Planner · Minha agenda
           </h1>
           <JourneyNavigation />
         </header>
@@ -99,7 +99,7 @@ export const PlannerPage: React.FC = () => {
           <p>
             Seu acompanhamento ainda não está disponível.{' '}
             <Link className="underline" to="/">
-              Voltar à jornada
+              Voltar ao meu percurso
             </Link>
           </p>
         )}

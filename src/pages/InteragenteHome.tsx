@@ -449,8 +449,8 @@ export const InteragenteHome: React.FC = () => {
         capacity_response: capacity,
       })
       toast({
-        title: 'Experimento acolhido',
-        description: 'Sua percepção ajuda a calibrar o ritmo do cuidado.',
+        title: 'Experiência registrada',
+        description: 'Seu registro ajuda a ajustar os próximos passos.',
       })
       await loadData()
     } catch (err: unknown) {
@@ -467,7 +467,7 @@ export const InteragenteHome: React.FC = () => {
       await cerPlannerService.completeItem(itemId)
       toast({
         title: 'Momento registrado',
-        description: 'Seu momento foi registrado com leveza e carinho.',
+        description: 'Seu momento foi registrado.',
       })
       await loadData()
     } catch (err: unknown) {
@@ -538,8 +538,8 @@ export const InteragenteHome: React.FC = () => {
       localStorage.setItem(`cer_treatment_pref_completed_${person.id}`, 'true')
       setHasCompletedInitialPreference(true)
       toast({
-        title: 'Preferências acolhidas',
-        description: 'Sua forma de tratamento e nome preferido foram salvos com carinho.',
+        title: 'Preferências salvas',
+        description: 'Sua forma de tratamento e nome preferido foram salvos.',
       })
       await loadData()
     } catch (err: unknown) {
@@ -666,7 +666,7 @@ export const InteragenteHome: React.FC = () => {
         },
       }))
       toast({
-        title: 'Retorno acolhido',
+        title: 'Retorno enviado',
         description: 'Seu retorno sobre o próximo passo foi compartilhado com Daiane.',
       })
       await loadData()
@@ -762,7 +762,7 @@ export const InteragenteHome: React.FC = () => {
       <header className="border-b border-border/60 bg-card/40 backdrop-blur-sm sticky top-0 z-10">
         <div className="mx-auto flex min-h-14 max-w-4xl min-w-0 items-center justify-between gap-2 px-4 py-2">
           <div className="flex min-w-0 items-center gap-1 sm:gap-2">
-            <span className="font-serif font-bold text-lg tracking-tight">CER</span>
+            <span className="font-serif font-bold text-lg tracking-tight">Método CER</span>
             <Badge
               variant="outline"
               className="hidden sm:inline-flex text-[10px] font-normal uppercase tracking-wider"
@@ -984,7 +984,7 @@ export const InteragenteHome: React.FC = () => {
                       Como você prefere que chamemos você?
                     </Label>
                     <Input
-                      placeholder="Seu nome preferido ou apelido de carinho..."
+                      placeholder="Nome ou apelido que você prefere..."
                       value={preferredNameInput}
                       onChange={(e) => setPreferredNameInput(e.target.value)}
                       className="text-xs h-9"
@@ -1117,19 +1117,17 @@ export const InteragenteHome: React.FC = () => {
                 </p>
 
                 <p>
-                  No <strong className="cer-emphasis">Equilíbrio</strong>, vamos compreender e
-                  cuidar dos processos físicos, mentais e emocionais que dificultam suas ações. Para
-                  isso, poderemos utilizar diferentes práticas e recursos, sempre respeitando seu
-                  momento, seus limites e o que realmente faz sentido para você.
+                  No <strong className="cer-emphasis">Equilíbrio</strong>, o olhar se volta às
+                  condições que sustentam suas ações: energia, descanso, recursos e limites. As
+                  práticas e os cuidados são combinados considerando o que ajuda você e o que
+                  precisa de ajuste.
                 </p>
 
                 <p>
-                  Na <strong className="cer-emphasis">Realização</strong>, transformaremos essa
-                  compreensão em escolhas e passos possíveis. Vamos reconhecer a direção que você
-                  deseja seguir, as mudanças que quer construir e os hábitos que podem ajudá-la a
-                  levar esse cuidado para a sua vida. A proposta é criar uma rotina firme o
-                  suficiente para sustentar seus objetivos e confortável o suficiente para ser
-                  vivida.
+                  Na <strong className="cer-emphasis">Realização</strong>, você aproxima suas
+                  escolhas da vida que deseja viver. Seus projetos e responsabilidades orientam
+                  passos possíveis, com espaço para perceber o que funciona, aprender e reorganizar
+                  a rotina.
                 </p>
 
                 <p>
@@ -1140,9 +1138,9 @@ export const InteragenteHome: React.FC = () => {
                 </p>
 
                 <p>
-                  Este aplicativo pode acompanhar atendimentos individuais e também experiências ou
-                  cursos de desenvolvimento pessoal. As áreas disponíveis dependerão do percurso que
-                  estivermos realizando.
+                  As áreas disponíveis acompanham o percurso em que você está. Cada recurso tem uma
+                  função: conhecer seu momento, apoiar uma escolha ou organizar a prática no dia a
+                  dia.
                 </p>
 
                 <p>
@@ -1161,7 +1159,7 @@ export const InteragenteHome: React.FC = () => {
                   <ul className="space-y-1.5 pl-3 border-l-2 border-primary/30">
                     <li>
                       <strong className="cer-emphasis">Meu Mapa CER:</strong> uma síntese
-                      integrativa construída a partir do seu percurso, revisada por mim e
+                      integrativa construída a partir do seu percurso, revisada por Daiane e
                       compartilhada com você.
                     </li>
                     <li>
@@ -1208,8 +1206,8 @@ export const InteragenteHome: React.FC = () => {
                 </p>
 
                 <div className="pt-2 font-serif text-foreground">
-                  <p>Com carinho,</p>
-                  <p className="font-semibold">Daia</p>
+                  <p>Para seguir com consciência,</p>
+                  <p className="font-semibold">Daiane Cenci — Desenvolvimento com Consciência.</p>
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -1396,7 +1394,7 @@ export const InteragenteHome: React.FC = () => {
                         O que motivou sua busca por cuidado e desenvolvimento neste momento?
                       </label>
                       <Textarea
-                        placeholder="Conte com suas palavras o que a fez procurar este acompanhamento..."
+                        placeholder="Conte com suas palavras o que motivou você a procurar este acompanhamento..."
                         disabled={intakeSending || intakeSavingDraft}
                         value={initialIntakeWhatBrings}
                         onChange={(e) => setInitialIntakeWhatBrings(e.target.value)}
@@ -1740,8 +1738,10 @@ export const InteragenteHome: React.FC = () => {
                       quais caminhos deseja construir.
                     </p>
                     <div className="pt-2 font-serif text-foreground">
-                      <p>Com carinho,</p>
-                      <p className="font-semibold">Daia</p>
+                      <p>Para seguir com consciência,</p>
+                      <p className="font-semibold">
+                        Daiane Cenci — Desenvolvimento com Consciência.
+                      </p>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
@@ -1904,7 +1904,7 @@ export const InteragenteHome: React.FC = () => {
                             },
                           }))
                           toast({
-                            title: 'Sua percepção foi acolhida',
+                            title: 'Percepção registrada',
                             description: 'Obrigada por compartilhar.',
                           })
                         } catch (e: unknown) {
@@ -2092,8 +2092,8 @@ export const InteragenteHome: React.FC = () => {
                             <span>Nosso plano de ação</span>
                           </h3>
                           <p className="text-xs text-muted-foreground leading-relaxed">
-                            Este plano e próximo passo foram compartilhados por Daiane. Você pode
-                            registrar com leveza como isso soa para você agora.
+                            Daiane compartilhou este plano e próximo passo. Como essa proposta cabe
+                            no seu momento?{' '}
                           </p>
                         </div>
 
@@ -2215,7 +2215,7 @@ export const InteragenteHome: React.FC = () => {
                                     <span className="text-[11px] text-muted-foreground italic">
                                       {isSaved
                                         ? 'Seu retorno foi compartilhado com Daiane.'
-                                        : 'Sua resposta ajuda Daiane a calibrar o ritmo junto com você.'}
+                                        : 'Sua resposta ajuda você e Daiane a ajustar os próximos passos.'}
                                     </span>
                                     {!isSaved && currentType && (
                                       <Button
@@ -2320,9 +2320,7 @@ export const InteragenteHome: React.FC = () => {
                           }{' '}
                           de {assignments.length}
                         </span>
-                        <p className="text-[11px] text-muted-foreground">
-                          Práticas acolhidas no cotidiano
-                        </p>
+                        <p className="text-[11px] text-muted-foreground">Práticas no cotidiano</p>
                       </div>
 
                       <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1">
@@ -2362,7 +2360,7 @@ export const InteragenteHome: React.FC = () => {
                       <span>Revisões de Ciclo</span>
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      Momentos combinados com a profissional para olhar para trás, pausar e calibrar
+                      Momentos combinados com a profissional para rever o caminho, pausar e ajustar
                       as próximas direções.
                     </CardDescription>
                   </CardHeader>
@@ -2563,7 +2561,7 @@ export const InteragenteHome: React.FC = () => {
                     })
                     toast({
                       title: 'Representação atualizada',
-                      description: 'Sua figura foi personalizada com sucesso.',
+                      description: 'Sua figura foi personalizada.',
                     })
                     setShowAvatarEditModal(false)
                     await loadData()

@@ -1,3 +1,4 @@
+import { CerBrand } from '@/components/CerBrand'
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
@@ -95,12 +96,7 @@ export const Login: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">CER V1</h1>
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">
-            Desenvolvimento Humano Integral
-          </p>
-        </div>
+        <CerBrand />
 
         {needsFirstLoginPassword ? (
           // ============================================

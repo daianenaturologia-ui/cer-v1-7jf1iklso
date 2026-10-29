@@ -166,7 +166,7 @@ export const PracticeStepViewer: React.FC<PracticeStepViewerProps> = ({
             <div className="flex items-start gap-2 text-amber-900 dark:text-amber-200">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
               <div>
-                <span className="font-semibold block">Interrupção consciente e acolhida</span>
+                <span className="font-semibold block">Você pode interromper a prática</span>
                 <span>
                   Respeitar o seu limite é parte essencial da prática. Não há penalidade ou falha em
                   parar quando o corpo pedir.

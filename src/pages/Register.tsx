@@ -1,3 +1,4 @@
+import { CerBrand } from '@/components/CerBrand'
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { selfRegistration, type RegistrationInfo } from '@/services/selfRegistration'
@@ -125,9 +126,7 @@ export default function Register() {
   return (
     <main className="min-h-screen bg-background px-5 py-12">
       <section className="mx-auto max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
-        <p className="text-sm tracking-widest text-primary">
-          CER · DESENVOLVIMENTO COM CONSCIÊNCIA
-        </p>
+        <CerBrand />
         <h1 className="font-serif text-3xl">Seu primeiro passo</h1>
         {loading ? (
           <p role="status">Conferindo seu convite…</p>

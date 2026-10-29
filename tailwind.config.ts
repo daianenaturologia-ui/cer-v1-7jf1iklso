@@ -27,9 +27,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        serif: ['Lora', 'Georgia', 'serif'],
-        sans: ['Lora', 'Georgia', 'serif'],
-        display: ['Lora', 'Georgia', 'serif'],
+        serif: ['Cormorant Garamond', 'Georgia', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Cormorant Garamond', 'Georgia', 'serif'],
       },
       colors: {
         border: 'hsl(var(--border))',

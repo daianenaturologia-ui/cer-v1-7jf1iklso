@@ -33,7 +33,7 @@ it('prepares, shares across sessions and explicitly schedules the agreed action 
   fireEvent.change(await screen.findByLabelText(/Seu momento atual/), {
     target: { value: 'Momento fictício' },
   })
-  fireEvent.change(screen.getByLabelText(/Objetivos terapêuticos e prioridades de cuidado/), {
+  fireEvent.change(screen.getByLabelText(/Prioridades de cuidado/), {
     target: { value: 'Prioridade fictícia' },
   })
   fireEvent.click(screen.getByText('Definir meta principal'))

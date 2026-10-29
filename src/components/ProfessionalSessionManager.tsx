@@ -389,7 +389,7 @@ export const ProfessionalSessionManager: React.FC<ProfessionalSessionManagerProp
         setActiveNote(created)
       }
       if (noteDrafts.current.get(sessionId) === savedDraft) noteDrafts.current.delete(sessionId)
-      setFeedback({ message: 'Nota profissional salva com sucesso.', type: 'success' })
+      setFeedback({ message: 'Nota profissional salva.', type: 'success' })
     } catch (err: unknown) {
       if (current !== selection.current) return
       setFeedback({

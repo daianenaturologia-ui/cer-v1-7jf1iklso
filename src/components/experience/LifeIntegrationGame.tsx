@@ -136,7 +136,7 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
       )
       setSavedId(saved.id)
       setNotice(
-        'Carta salva no seu presente. Se a compartilhar, ela poderá orientar os objetivos terapêuticos do seu plano, junto da sua meta.',
+        'Carta salva no seu presente. Se a compartilhar, ela poderá orientar as prioridades de cuidado do seu plano, junto da sua meta.',
       )
     } catch (e) {
       setNotice(
@@ -158,15 +158,14 @@ export function LifeIntegrationGame({ enrollmentId }: { enrollmentId: string }) 
       </p>
       <h3 className="font-serif text-xl">Cartas do próximo capítulo</h3>
       <p className="text-sm">
-        As cartas representam o que ainda queremos resolver com o passado e escolhemos cuidar e
-        curar no presente, para abrir espaço a um futuro melhor. Escolha as que fazem sentido ou
-        crie a sua. Você pode passar; não há obrigação de perdoar, retomar contato ou apressar um
-        luto.
+        As cartas ajudam a reconhecer o que da sua história você deseja compreender ou cuidar no
+        presente. Escolha as que fazem sentido ou crie a sua. Você pode passar; não há obrigação de
+        perdoar, retomar contato ou apressar um luto.{' '}
       </p>
       <p className="text-sm">
-        A meta expressa um sonho ou desejo para o futuro. A carta expressa uma resolução com o
-        passado que você deseja trabalhar agora. Ambas orientam os objetivos terapêuticos do seu
-        Plano de Desenvolvimento e os cuidados e ações combinados nos encontros.
+        A meta expressa algo que você deseja construir. A carta registra o que da sua história você
+        quer cuidar agora. Ambas podem orientar as prioridades do seu Plano de Desenvolvimento e as
+        ações combinadas nos encontros.{' '}
       </p>
       {step < 3 ? (
         <>

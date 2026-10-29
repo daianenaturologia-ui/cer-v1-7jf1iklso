@@ -99,19 +99,16 @@ export function CerPracticeLibrary({
         </p>
         <h2 className="font-serif text-2xl">Biblioteca CER</h2>
         <p className="text-sm leading-relaxed">
-          A Biblioteca CER está em construção e recebe novos materiais aos poucos. Encontre
-          inspiração para cuidar de si e dar vida ao seu plano. Explore as áreas, conheça as
-          práticas e converse com Daiane sobre o que faz sentido para seu momento. Este é um acervo
-          para consultar os conteúdos que apoiam seu desenvolvimento. O plano de cuidado e a rotina
-          são construídos em seus próprios espaços, nos encontros.
+          Explore práticas e materiais que apoiam seu desenvolvimento. Converse com Daiane sobre o
+          que faz sentido para seu momento. Nos encontros, vocês combinam os recursos que podem
+          integrar seu plano e sua rotina no Planner. O acervo recebe novos materiais aos poucos.
         </p>
       </header>
       <div className="rounded-2xl border p-5 space-y-3 text-sm leading-relaxed">
         <h3 className="font-serif text-lg">Da consciência à experiência</h3>
         <p>
-          Compreender abre caminho. É ao experimentar, perceber a resposta do corpo e repetir o que
-          ajuda que novos modos de viver podem ganhar espaço. Praticar nem sempre é fácil: comece
-          pequeno, adapte e retome com gentileza.
+          Explore as práticas e observe como elas cabem no seu dia. O que ajudou você? O que precisa
+          de ajuste? Essas percepções apoiam a conversa sobre a continuidade.{' '}
         </p>
         <details>
           <summary className="cursor-pointer text-primary min-h-10">

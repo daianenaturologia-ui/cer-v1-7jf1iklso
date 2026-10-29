@@ -104,7 +104,7 @@ export function ResourceAgendaForm({
     <div className="space-y-3 rounded-lg bg-primary/5 p-3" aria-label="Preparar momento na agenda">
       <p className="text-xs">
         Transforme esta estratégia em um pequeno passo possível. O momento fica privado na sua
-        agenda e pode ser reorganizado com leveza.
+        agenda e pode ser reorganizado quando precisar.
       </p>
       <label className="block text-xs space-y-1">
         Meu pequeno passo

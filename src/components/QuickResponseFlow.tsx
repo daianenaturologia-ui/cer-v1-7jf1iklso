@@ -184,11 +184,11 @@ export const QuickResponseFlow: React.FC<QuickResponseFlowProps> = ({
       })
 
       toast({
-        title: 'Resposta registrada com acolhimento',
+        title: 'Resposta registrada',
         description:
           responseType === 'was_too_much'
             ? 'Notamos que foi demais. Sinalizamos para revisão com a profissional.'
-            : 'Sua percepção foi acolhida e orienta o cuidado compartilhado.',
+            : 'Sua percepção foi registrada para orientar os próximos passos do acompanhamento.',
       })
 
       onSuccess()
@@ -218,7 +218,7 @@ export const QuickResponseFlow: React.FC<QuickResponseFlowProps> = ({
           </DialogTitle>
           <DialogDescription className="text-xs">
             {step === 'quick'
-              ? 'Sua resposta ajuda a calibrar a intensidade e a adequação do cuidado. Não existe certo ou errado.'
+              ? 'Sua resposta ajuda a ajustar a prática ao seu momento. Conte como foi para você.'
               : 'Espaço aberto para aprofundar suas percepções com calma e sem cobranças.'}
           </DialogDescription>
         </DialogHeader>

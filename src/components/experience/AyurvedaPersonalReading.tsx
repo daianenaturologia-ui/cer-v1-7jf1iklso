@@ -142,10 +142,10 @@ export function AyurvedaPersonalReading({
             suas condições de saúde e sua realidade cotidiana.
           </p>
           <p>
-            Essa não é uma leitura definitiva, pois o diagnóstico na medicina ayurvédica depende de
-            um olhar em conjunto com o terapeuta. Com Daiane, ao longo do processo, vocês poderão
-            aprofundar e ajustar esse olhar. Nossa intenção é aproximar seu funcionamento e sua
-            energia da sua constituição original, regular Agni e diminuir os sinais de Ama.
+            Esta leitura usa conceitos tradicionais do Ayurveda e as respostas que você registrou.
+            Ela é exploratória e pode ser aprofundada com Daiane, considerando sua história e seu
+            momento. Não equivale a uma avaliação médica nem atribui comprovação científica a todos
+            os conceitos tradicionais.{' '}
           </p>
           <p>
             Se quiser aprofundar essa descoberta, converse com Daiane. Juntas, vocês poderão

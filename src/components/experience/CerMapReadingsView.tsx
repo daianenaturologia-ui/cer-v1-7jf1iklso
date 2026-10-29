@@ -1489,7 +1489,7 @@ export function CerMapReadingsView({
               Mente e Emoções
             </h3>
             <p className="text-xs text-muted-foreground">
-              Toque em um comportamento para abrir sua leitura individual acolhedora.
+              Toque em um comportamento para conhecer sua leitura e os pontos de atenção.{' '}
             </p>
           </div>
           <Button
@@ -1853,7 +1853,10 @@ export function CerMapReadingsView({
             Você pode reconhecer, discordar ou trazer outra experiência para a conversa. Sua
             experiência ajuda a aprofundar e atualizar este mapa.
           </span>
-          <span className="font-mono text-[10px] shrink-0">CER • Cuidado em Relação</span>
+          <span className="font-mono text-[10px] shrink-0">
+            {' '}
+            Método CER · Consciência, Equilíbrio e Realização{' '}
+          </span>
         </div>
       </footer>
 
