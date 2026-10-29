@@ -760,7 +760,7 @@ async function main() {
     const btnSendRetorno = page.locator('button:has-text("Enviar retorno para Daiane")').first()
     await btnSendRetorno.click()
 
-    await page.waitForSelector('text=Retorno acolhido', { timeout: 8000 })
+    await page.waitForSelector('text=Retorno enviado', { timeout: 8000 })
 
     const img6Path = path.join(ARTIFACTS_DIR, STEP_DEFINITIONS[5].filename)
     await page.screenshot({ path: img6Path, fullPage: true })
