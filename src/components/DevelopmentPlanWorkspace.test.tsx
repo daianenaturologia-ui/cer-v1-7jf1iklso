@@ -82,9 +82,9 @@ it('carta escolhida integra objetivos terapêuticos do rascunho sem criar outra 
   fireEvent.click(screen.getByText('Trazer carta do meu presente'))
   await screen.findByText('Quero acolher uma despedida')
   fireEvent.click(screen.getByText('Usar esta carta nos objetivos terapêuticos'))
-  expect(
-    (screen.getByLabelText(/Objetivos terapêuticos e prioridades/) as HTMLTextAreaElement).value,
-  ).toContain('Quero acolher uma despedida')
+  expect((screen.getByLabelText(/Prioridades de cuidado/) as HTMLTextAreaElement).value).toContain(
+    'Quero acolher uma despedida',
+  )
   await waitFor(() => expect(save).toHaveBeenCalled(), { timeout: 2500 })
   expect(save.mock.calls.at(-1)[1].goals).toHaveLength(0)
   expect(share).not.toHaveBeenCalled()

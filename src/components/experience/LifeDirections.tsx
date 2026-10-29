@@ -544,7 +544,7 @@ export function LifeDirections({
             {editing.kind === 'present'
               ? 'Como estão meu corpo, meus sentimentos e minha vida hoje?'
               : planning
-                ? 'O que está pesando hoje e quero transformar?'
+                ? 'O que merece minha atenção e desejo transformar?'
                 : 'O que desejo viver, cultivar ou transformar?'}
             <Textarea
               rows={5}

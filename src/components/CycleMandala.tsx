@@ -387,7 +387,7 @@ export function CycleMandala({
           <p>
             {readOnly
               ? 'Somente os dias que a pessoa escolheu compartilhar. Lacunas não significam ausência de sintomas.'
-              : 'Um encontro com seu corpo, suas emoções e a natureza.'}
+              : 'Um espaço para observar sua energia, suas emoções e as condições do seu dia.'}
           </p>
         </div>
         {!readOnly && (

@@ -210,7 +210,9 @@ export const ProfissionalHome: React.FC = () => {
       <header className="border-b border-border/60 bg-card/40 backdrop-blur-sm sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-serif font-bold text-lg tracking-tight text-foreground">CER</span>
+            <span className="font-serif font-bold text-lg tracking-tight text-foreground">
+              Método CER
+            </span>
             <Badge variant="outline" className="text-[10px] font-normal uppercase tracking-wider">
               Profissional de Cuidado
             </Badge>
@@ -254,7 +256,7 @@ export const ProfissionalHome: React.FC = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="text-xs gap-1.5">
                 <Compass className="w-3.5 h-3.5" />
-                <span>Workspace</span>
+                <span> Acompanhamento </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-72 max-h-80 overflow-y-auto">
@@ -347,7 +349,7 @@ export const ProfissionalHome: React.FC = () => {
           <div className="space-y-4">
             <div className="space-y-1">
               <h2 className="text-lg font-serif font-semibold text-foreground">
-                Espaço de Presença & Preparação de Encontros
+                Preparar encontros{' '}
               </h2>
               <p className="text-xs text-muted-foreground">
                 Acompanhe o que mudou, notas privadas, o Mapa atual e os temas trazidos pelos
@@ -383,7 +385,7 @@ export const ProfissionalHome: React.FC = () => {
           <div className="space-y-4">
             {enrollments.length === 0 || !user ? (
               <p className="text-xs text-muted-foreground py-8 text-center">
-                Nenhum participante vinculado para briefing assistido.
+                Ainda não há participantes vinculados para preparar um resumo.
               </p>
             ) : (
               enrollments.map((enr) => (
@@ -415,8 +417,7 @@ export const ProfissionalHome: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">Vincular Nova Interagente</DialogTitle>
             <DialogDescription className="text-xs">
-              Conforme a Constituição do CER, a entrada da interagente ocorre sob convite/vinculação
-              pela profissional.
+              Vincule a interagente por convite para dar acesso ao acompanhamento.
             </DialogDescription>
           </DialogHeader>
 
@@ -424,7 +425,7 @@ export const ProfissionalHome: React.FC = () => {
             <div className="space-y-4 py-2">
               <div className="flex items-center gap-2 text-primary text-sm font-medium">
                 <CheckCircle2 className="w-5 h-5 text-primary" />
-                <span>Interagente vinculada com sucesso!</span>
+                <span> Interagente vinculada. </span>
               </div>
 
               {createdResult.tempPasswordGenerated ? (
@@ -484,7 +485,7 @@ export const ProfissionalHome: React.FC = () => {
 
               <div className="space-y-1.5">
                 <Label htmlFor="fullName" className="text-xs font-medium">
-                  Nome Completo (Identidade Humana - PERSON) *
+                  Nome completo *{' '}
                 </Label>
                 <Input
                   id="fullName"
@@ -511,7 +512,7 @@ export const ProfissionalHome: React.FC = () => {
 
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-xs font-medium">
-                  E-mail da Interagente (USER_ACCOUNT) *
+                  E-mail da interagente *{' '}
                 </Label>
                 <Input
                   id="email"
@@ -526,7 +527,7 @@ export const ProfissionalHome: React.FC = () => {
 
               <div className="space-y-1.5">
                 <Label htmlFor="product" className="text-xs font-medium">
-                  Produto CER (CER_PRODUCT) *
+                  Modalidade do acompanhamento *{' '}
                 </Label>
                 <select
                   id="product"

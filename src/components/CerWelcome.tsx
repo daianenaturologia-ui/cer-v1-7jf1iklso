@@ -21,74 +21,42 @@ export function CerWelcome() {
           <span className="flex items-start gap-3">
             <HeartHandshake className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <span className="font-serif text-lg font-semibold">
-              Comece aqui — Parabéns por escolher iniciar essa jornada
+              Comece aqui — Como você quer viver enquanto realiza?
             </span>
           </span>
           <ChevronDown className="w-4 h-4 shrink-0 mt-1" />
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="cer-prose border-t border-border/40 px-5 py-5 space-y-4 text-foreground/90">
+        <p className="cer-pullquote">Realize o que importa. Viva com mais sentido.</p>
         <p>
-          Às vezes, uma jornada de encontro consigo começa com um desencontro. Uma perda, uma
-          relação que mudou, um modo de viver que deixou de fazer sentido. Às vezes, começa com uma
-          vontade silenciosa: compreender melhor quem somos e encontrar novas possibilidades.
+          O Método CER —{' '}
+          <strong className="cer-emphasis">Consciência, Equilíbrio e Realização</strong> — apoia a
+          construção de uma vida com sentido, presença e realização. Você pode estar bem e querer
+          crescer, buscar uma mudança ou precisar de apoio para reorganizar o caminho.
         </p>
         <p>
-          Não escolhemos tudo o que nos acontece. Mas podemos, aos poucos, entender como nos
-          relacionamos com a vida e descobrir o que desejamos transformar.
+          Seus projetos, sua produtividade e suas responsabilidades têm lugar aqui. Assim como sua
+          energia, seus vínculos, seu descanso e o que torna a vida valiosa para você. Cuidar dessas
+          condições pode ajudar a sustentar o que você deseja realizar, sem virar mais uma cobrança.
         </p>
         <p>
-          <strong className="cer-pullquote">Tudo começa com uma decisão.</strong> Ela não resolve
-          tudo de uma vez, mas pode abrir um novo caminho.
-        </p>
-        <p>Minha jornada começou com uma perda. E, ao atravessá-la, pude começar a me encontrar.</p>
-        <p>
-          Naquele momento, percebi que muitas das minhas escolhas aconteciam sem que eu
-          compreendesse o que me fazia escolher. Reconhecer isso não apagou o sofrimento, mas
-          despertou em mim um desejo imenso de olhar para minha história e entender a forma como eu
-          havia aprendido a viver.
+          No app, você encontra espaços para conhecer seu momento, registrar percepções e organizar
+          os passos combinados no acompanhamento. As etapas ajudam a perceber o que importa,
+          experimentar possibilidades e ajustar o que couber na sua realidade.
         </p>
         <p>
-          Também compreendi que tomar consciência, por si só, não era suficiente. Eu precisava ter
-          condições de transformar o que descobria em atitudes reais.
+          Daiane Cenci é naturóloga especializada em neurociência, instrutora de Yoga e estudante de
+          Tantra. Seu trabalho associa saberes ancestrais, especialmente Ayurveda e Yoga, a
+          conhecimentos de neurociência, respeitando a singularidade de cada pessoa.
         </p>
         <p>
-          Comecei, então, a cuidar do meu equilíbrio. Aprendi a me regular e a encontrar mais
-          coerência entre o meu pensar, sentir e agir. Foi quando consegui colocar aquela
-          consciência em prática, respeitando meu momento e aprendendo com cada tentativa.
+          Saberes tradicionais, referências científicas e experiências pessoais contribuem de formas
+          diferentes. Ao longo do percurso, essas referências são apresentadas em seu contexto, sem
+          atribuir comprovação científica a tudo.
         </p>
-        <p>
-          Desse caminho, somado à minha formação e ao acompanhamento de outras pessoas, nasceu o
-          Método CER:{' '}
-          <strong className="cer-emphasis">Consciência, Equilíbrio e Realização.</strong>
-        </p>
-        <p>
-          Este espaço é um convite para você conhecer seu próprio funcionamento, reconhecer seus
-          potenciais, cuidar do que precisa de atenção e construir uma vida com mais autonomia e
-          sentido.
-        </p>
-        <p>
-          Ao longo dessa jornada, você aprenderá a reconhecer seus recursos, compreender suas
-          dificuldades e construir caminhos em direção ao que deseja. Vamos trabalhar para que foco,
-          produtividade e realização possam caminhar junto com qualidade de vida.
-        </p>
-        <p>
-          Quando falo em <strong className="cer-emphasis">viver gostosamente</strong>, falo de
-          encontrar mais presença, prazer e sentido na vida que você constrói. De ter espaço para
-          seus desejos, suas responsabilidades, seus vínculos e seu descanso. De aprender a
-          atravessar os desafios sem perder de vista aquilo que torna a vida valiosa para você.
-        </p>
-        <p>
-          O percurso será organizado em etapas, com momentos para aprender, experimentar e
-          reconhecer o que mudou. Seu ritmo, suas condições de vida e suas necessidades serão
-          considerados ao longo do processo. Em cada etapa, vamos conversar sobre os próximos passos
-          e sobre o acompanhamento que faz sentido para você.
-        </p>
-        <p>
-          Você não precisa chegar sabendo por onde seguir. Podemos descobrir esse caminho em
-          conjunto.
-        </p>
-        <p className="cer-pullquote">Bora começar?</p>
+        <p>Qual próximo passo cabe na sua realidade?</p>
+        <p className="font-medium">Daiane Cenci — Desenvolvimento com Consciência.</p>
       </CollapsibleContent>
     </Collapsible>
   )

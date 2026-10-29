@@ -1722,7 +1722,7 @@ export const ExperienceEngine: React.FC<ExperienceEngineProps> = ({
           <h2 className="text-2xl font-serif font-medium text-foreground">Momento Concluído</h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
             {experience?.closing_text ||
-              'Pronto. Esse registro passa a fazer parte da sua jornada. Obrigado por dedicar este momento a você.'}
+              'Este registro faz parte do seu percurso. Você pode seguir para o próximo passo ou fazer uma pausa.'}
           </p>
         </div>
 

@@ -41,17 +41,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       id: 'welcome',
       icon: <Heart className="w-8 h-8 text-primary" />,
       badge: 'Boas-vindas ao CER',
-      title: `Olá${interagenteName ? `, ${interagenteName}` : ''}. Bem-vinda ao seu espaço de cuidado.`,
+      title: `Olá${interagenteName ? `, ${interagenteName}` : ''}. Este é o seu espaço no Método CER.`,
       description:
-        'O CER é um ambiente de desenvolvimento humano integral desenhado para acolher sua história com respeito e profundidade.',
+        'O Método CER apoia suas escolhas e seus projetos, com atenção à energia e às condições que sustentam sua caminhada.',
       body: (
         <div className="space-y-3 text-xs text-muted-foreground leading-relaxed">
           <p>
-            Aqui você encontra um espaço seguro para reconhecer suas necessidades, mapear o que faz
-            sentido para o seu momento e vivenciar experiências combinadas com sua profissional.
+            Aqui você pode reconhecer o que importa, registrar sua experiência e organizar os passos
+            combinados com sua profissional. Este espaço também é para quem está bem e deseja
+            crescer com mais consciência.{' '}
           </p>
           <div className="p-3 rounded-lg bg-primary/5 border border-primary/15 text-foreground italic">
-            “O ser humano não funciona em partes. Cada percepção sua importa para o todo.”
+            “Como você quer viver enquanto realiza?”{' '}
           </div>
         </div>
       ),
@@ -60,18 +61,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       id: 'rhythm',
       icon: <Clock className="w-8 h-8 text-primary" />,
       badge: 'Seu Ritmo',
-      title: 'No seu próprio tempo, sem cobranças de desempenho',
+      title: 'Um ritmo que caiba na sua vida',
       description:
-        'Não há respostas certas ou erradas. O CER não é uma prova nem uma lista de metas a cumprir.',
+        'Suas respostas ajudam a compreender seu momento. Objetivos, responsabilidades, recursos e pausas fazem parte dessa conversa.',
       body: (
         <div className="space-y-3 text-xs text-muted-foreground leading-relaxed">
           <p>
-            Você pode pausar a qualquer momento e retomar quando fizer sentido. Práticas e reflexões
-            são convites para o seu dia a dia, e não obrigações com notas ou cobranças.
+            Você pode pausar e retomar. As práticas e reflexões ajudam a perceber o que funciona na
+            sua rotina e o que precisa de ajuste.{' '}
           </p>
           <p>
-            Se algum dia você não conseguir realizar um experimento, tudo bem. Compartilhar o que
-            foi difícil ajuda a calibrar o caminho com a sua profissional.
+            O que ajudou você a avançar? O que dificultou? Compartilhar essas percepções ajuda a
+            combinar um próximo passo possível.{' '}
           </p>
         </div>
       ),
@@ -80,8 +81,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       id: 'privacy',
       icon: <Shield className="w-8 h-8 text-primary" />,
       badge: 'Privacidade Consciente',
-      title: 'Sua privacidade é respeitada em cada detalhe',
-      description: 'Você sempre sabe o que é compartilhado e o que fica guardado apenas com você.',
+      title: 'Entenda o que você compartilha',
+      description: 'Observe as indicações de privacidade antes de salvar ou enviar um registro.',
       body: (
         <div className="space-y-3 text-xs text-muted-foreground leading-relaxed">
           <div className="p-3 rounded-lg bg-card border border-border/60 text-foreground font-serif text-sm">
@@ -100,7 +101,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       icon: <Bot className="w-8 h-8 text-primary" />,
       badge: 'Papel da Tecnologia',
       title: 'A tecnologia apoia o olhar humano, nunca o substitui',
-      description: 'A inteligência do sistema existe para organizar conexões, não para dar ordens.',
+      description: 'O sistema ajuda a organizar informações para o acompanhamento.',
       body: (
         <div className="space-y-3 text-xs text-muted-foreground leading-relaxed">
           <div className="p-3 rounded-lg bg-card border border-border/60 text-foreground font-serif text-sm">

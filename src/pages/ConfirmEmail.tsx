@@ -1,3 +1,4 @@
+import { CerBrand } from '@/components/CerBrand'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import pb from '@/lib/pocketbase/client'
@@ -60,17 +61,15 @@ export default function ConfirmEmail() {
   return (
     <main className="min-h-screen bg-background px-5 py-12">
       <section className="mx-auto max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
-        <p className="text-sm tracking-widest text-primary">
-          CER · DESENVOLVIMENTO COM CONSCIÊNCIA
-        </p>
+        <CerBrand />
         <h1 className="font-serif text-3xl">
           {confirmed ? 'E-mail confirmado' : 'Confirme seu e-mail'}
         </h1>
         {confirmed ? (
           <>
-            <p>Agora entre com o e-mail e a senha que você escolheu para iniciar sua jornada.</p>
+            <p>Entre com o e-mail e a senha que você escolheu para acessar seu percurso.</p>
             <Button asChild>
-              <Link to="/login">Entrar na minha jornada</Link>
+              <Link to="/login">Entrar no meu percurso</Link>
             </Button>
           </>
         ) : (

@@ -1,3 +1,4 @@
+import { CerBrand } from './CerBrand'
 /* Layout Component - A component that wraps the main content of the app
    - Use this file to add a header, footer, or other elements that should be present on every page
    - This component is used in the App.tsx file to wrap the main content of the app */
@@ -110,6 +111,7 @@ export default function Layout() {
         </aside>
       )}
 
+      <CerBrand context="app" />
       <main className="flex min-w-0 max-w-full flex-1 flex-col">
         <PilotQualityTools />
         <PilotQualityBoundary>

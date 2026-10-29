@@ -174,7 +174,7 @@ export const ParticipantWorkspace: React.FC = () => {
   if (loading) {
     return (
       <div className="container max-w-6xl mx-auto py-12 px-4 text-center">
-        <p className="text-sm text-muted-foreground">Carregando prontuário e dados de cuidado...</p>
+        <p className="text-sm text-muted-foreground"> Carregando acompanhamento... </p>
       </div>
     )
   }
@@ -213,7 +213,7 @@ export const ParticipantWorkspace: React.FC = () => {
               </Button>
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">Workspace Clínico</span>
+            <span className="text-xs font-medium text-foreground"> Espaço de acompanhamento </span>
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-xl font-bold font-serif text-foreground">{participantName}</h1>
@@ -229,7 +229,7 @@ export const ParticipantWorkspace: React.FC = () => {
             </Badge>
 
             <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">
-              Prontuário de Daiane
+              Registro profissional{' '}
             </Badge>
           </div>
 
@@ -461,7 +461,7 @@ export const ParticipantWorkspace: React.FC = () => {
                     Consciência concluída — revisar integração
                   </span>
                   <p className="text-xs">
-                    As experiências canônicas da participante foram concluídas. A síntese
+                    As experiências do percurso da participante foram concluídas. A síntese
                     integrativa, o Mapa e os desafios identificados estão prontos para fundamentar o
                     Plano de Desenvolvimento.
                   </p>

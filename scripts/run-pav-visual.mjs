@@ -477,6 +477,19 @@ async function main() {
     console.log(`  -> Imagem salva: ${STEP_DEFINITIONS[0].filename}`)
     stepStatuses[0].status = 'COMPLETA'
 
+    // Evidência da revisão visual em celular, sempre após login em conta fictícia.
+    const desktopViewport = page.viewportSize()
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.screenshot({ path: path.join(ARTIFACTS_DIR, '01-relato-mobile.png'), fullPage: true })
+    await page.keyboard.press('Tab')
+    await page.screenshot({ path: path.join(ARTIFACTS_DIR, '01-foco-mobile.png') })
+    const mobileWidths = await page.evaluate(() => ({
+      viewport: window.innerWidth,
+      content: document.documentElement.scrollWidth,
+    }))
+    console.log('[MOBILE] Larguras de viewport e conteúdo:', JSON.stringify(mobileWidths))
+    await page.setViewportSize(desktopViewport)
+
     // =========================================================================
     // ETAPA 2: 02-relato-enviado.png
     // Interagente A: "Enviar para Daiane"
@@ -556,7 +569,7 @@ async function main() {
     // Clicar em "Salvar Anotação"
     const btnSalvarNota = page.locator('button:has-text("Salvar Anotação")').first()
     await btnSalvarNota.click()
-    await page.waitForSelector('text=Nota profissional salva com sucesso', { timeout: 8000 })
+    await page.waitForSelector('text=Nota profissional salva.', { timeout: 8000 })
 
     const img4Path = path.join(ARTIFACTS_DIR, STEP_DEFINITIONS[3].filename)
     await page.screenshot({ path: img4Path, fullPage: true })
@@ -582,7 +595,7 @@ async function main() {
       .getByLabel(/Seu momento atual/)
       .fill('Síntese fictícia para construir o desenvolvimento em sessão.')
     await writtenPlan
-      .getByLabel(/Objetivos terapêuticos e prioridades de cuidado/)
+      .getByLabel(/Prioridades de cuidado/)
       .fill('Priorizar descanso e uma rotina possível.')
     await writtenPlan.getByRole('button', { name: 'Definir meta principal', exact: true }).click()
     await writtenPlan.getByLabel('Mudança que queremos alcançar').fill('Ter espaço para descanso')
@@ -760,7 +773,7 @@ async function main() {
     const btnSendRetorno = page.locator('button:has-text("Enviar retorno para Daiane")').first()
     await btnSendRetorno.click()
 
-    await page.waitForSelector('text=Retorno acolhido', { timeout: 8000 })
+    await page.waitForSelector('text=Retorno enviado', { timeout: 8000 })
 
     const img6Path = path.join(ARTIFACTS_DIR, STEP_DEFINITIONS[5].filename)
     await page.screenshot({ path: img6Path, fullPage: true })

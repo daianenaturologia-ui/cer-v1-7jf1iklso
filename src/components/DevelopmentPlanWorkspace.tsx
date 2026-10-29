@@ -385,13 +385,10 @@ export function DevelopmentPlanWorkspace({
                 />
               </label>
               <label className="block space-y-2">
-                <span className="font-serif text-lg">
-                  Objetivos terapêuticos e prioridades de cuidado
-                </span>
+                <span className="font-serif text-lg">Prioridades de cuidado </span>
                 <span className="block text-xs text-muted-foreground">
-                  Defina as necessidades de cuidado e tratamento que emergem do mapa, seus objetivos
-                  e o que acompanhar. Apresente uma proposta individualizada para conversar no
-                  encontro.
+                  Reúna as necessidades, os recursos e as condições que pedem atenção no Mapa CER.
+                  Prepare uma proposta para conversar e ajustar no encontro.{' '}
                 </span>
                 <Textarea
                   maxLength={10000}
@@ -409,7 +406,7 @@ export function DevelopmentPlanWorkspace({
                       priorities: addLetterToPriorities(document.priorities, letter),
                     })
                     setNotice(
-                      'Carta acrescentada aos objetivos terapêuticos do rascunho. Revejam e ajustem juntas antes de compartilhar o plano.',
+                      'Carta acrescentada às prioridades de cuidado do rascunho. Revejam antes de compartilhar o plano.',
                     )
                   } catch (e) {
                     setError(
@@ -449,9 +446,9 @@ export function DevelopmentPlanWorkspace({
                   }}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Uma meta principal concentra o esforço deste ciclo. Os cuidados sustentam o
-                  equilíbrio; estas ações aproximam a pessoa da conquista. Combinem possibilidades
-                  reais e organizem os horários depois.
+                  Escolham uma meta principal para este ciclo e ações que caibam na vida da pessoa.
+                  Considerem seus projetos, recursos, energia e tempo disponível antes de organizar
+                  os horários.{' '}
                 </p>
                 {document.goals
                   .filter((g) => !isCareChapter(g))

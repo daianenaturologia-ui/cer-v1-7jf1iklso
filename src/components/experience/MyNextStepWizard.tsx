@@ -169,11 +169,11 @@ export function MyNextStepWizard({
         <div className="space-y-4">
           <h4 className="font-serif text-xl">Uma meta que tenha sentido para você</h4>
           <p className="text-sm text-muted-foreground">
-            Sua meta pode estar na saúde, nas relações, no trabalho ou em um propósito. Escreva uma
-            mudança concreta que deseja alcançar. Ela será o foco deste ciclo do CER.
+            Sua meta pode envolver saúde, relações, trabalho ou outro projeto importante. Escreva
+            uma mudança concreta que deseja alcançar. Ela será o foco deste ciclo do CER.{' '}
           </p>
           <div className="rounded-xl bg-primary/5 p-4">
-            <p className="text-xs text-primary font-semibold mb-2">Hoje está difícil…</p>
+            <p className="text-xs text-primary font-semibold mb-2"> Hoje, minha realidade é… </p>
             <p className="text-sm whitespace-pre-wrap">
               {value.narrative || 'Ainda estou encontrando palavras para o meu momento.'}
             </p>

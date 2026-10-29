@@ -38,10 +38,12 @@ export function PlannerGentleGuide() {
             difíceis.
           </li>
           <li className="pl-1 sm:col-span-2">
-            <strong className="block text-foreground">Reorganize com leveza.</strong>
-            Se algo não couber no horário escolhido, tudo bem. Abra o momento e use Editar para
-            escolher outro horário. Você também pode diminuir o passo. Reconheça o que conseguiu
-            viver e use esse aprendizado para ajustar os próximos dias.
+            <strong className="block text-foreground">
+              Ajuste o planejamento quando precisar.
+            </strong>
+            Se algo não couber no horário escolhido, abra o momento e use Editar para escolher outro
+            horário. Você também pode diminuir o passo. Reconheça o que conseguiu viver e use esse
+            aprendizado para ajustar os próximos dias.
           </li>
         </ol>
         <p className="border-t border-primary/15 pt-3">

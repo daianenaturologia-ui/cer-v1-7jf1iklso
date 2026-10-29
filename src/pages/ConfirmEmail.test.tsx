@@ -33,7 +33,7 @@ test('removes token from history and waits for explicit confirmation', async () 
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar meu e-mail' }))
   await screen.findByRole('heading', { name: 'E-mail confirmado' })
   expect(mocks.confirm).toHaveBeenCalledExactlyOnceWith('synthetic-token', { requestKey: null })
-  expect(screen.getByRole('link', { name: 'Entrar na minha jornada' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'Entrar no meu percurso' })).toHaveAttribute(
     'href',
     '/login',
   )

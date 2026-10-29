@@ -180,7 +180,7 @@ it('mantém a nota e não conclui quando o salvamento falha', async () => {
     text: 'Rascunho para recuperar',
   })
   await userEvent.click(screen.getByRole('button', { name: 'Salvar Anotação' }))
-  await screen.findByText('Nota profissional salva com sucesso.')
+  await screen.findByText('Nota profissional salva.')
   expect(screen.queryByText(/Alterações ainda não salvas/)).toBeNull()
 })
 

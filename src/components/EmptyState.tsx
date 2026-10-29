@@ -50,7 +50,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     planner: {
       title: 'Janela de práticas',
       description: 'Ainda não há nenhum experimento combinado para este momento.',
-      nextStep: 'Quando combinarem uma prática, ela aparecerá organizada aqui com leveza.',
+      nextStep:
+        'Quando combinarem uma prática, ela aparecerá aqui com as orientações para realizá-la.',
       icon: <Calendar className="w-8 h-8 text-primary/70" />,
     },
     mandala: {
