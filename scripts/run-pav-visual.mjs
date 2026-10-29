@@ -556,7 +556,7 @@ async function main() {
     // Clicar em "Salvar Anotação"
     const btnSalvarNota = page.locator('button:has-text("Salvar Anotação")').first()
     await btnSalvarNota.click()
-    await page.waitForSelector('text=Nota profissional salva com sucesso', { timeout: 8000 })
+    await page.waitForSelector('text=Nota profissional salva.', { timeout: 8000 })
 
     const img4Path = path.join(ARTIFACTS_DIR, STEP_DEFINITIONS[3].filename)
     await page.screenshot({ path: img4Path, fullPage: true })
