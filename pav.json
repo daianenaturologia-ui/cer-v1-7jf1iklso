@@ -1,11 +1,11 @@
 {
   "job": "primeiro-atendimento-verification",
   "job_name": "Primeiro Atendimento Verification (PAV-01..06)",
-  "sha": "fbdeecca72b244a2c3883f0b041aefc539ed8bac",
+  "sha": "df6299795085a499e88bed0815a10a666ff543ce",
   "conclusion": "failure",
-  "timestamp_utc": "2026-10-29T12:35:13.363Z",
-  "run_id": "40874442258",
-  "run_number": "646",
+  "timestamp_utc": "2026-10-29T12:35:53.603Z",
+  "run_id": "40874540385",
+  "run_number": "647",
   "summary": null,
   "scenarios": [
     {
