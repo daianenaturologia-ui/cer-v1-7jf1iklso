@@ -1,77 +1,69 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "27c50c008676c0404e985d24083342156187bbba",
+  "sha": "fbdeecca72b244a2c3883f0b041aefc539ed8bac",
   "conclusion": "failure",
-  "timestamp_utc": "2026-10-29T12:34:05.435Z",
-  "run_id": "40874098265",
-  "run_number": "645",
+  "timestamp_utc": "2026-10-29T12:35:28.025Z",
+  "run_id": "40874442258",
+  "run_number": "646",
   "all_success": false,
-  "failure_reason": "Interrompido na etapa 5 (Profissional: Plano de Desenvolvimento Compartilhado): locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Construção do Plano de Desenvolvimento' }).getByLabel(/Objetivos terapêuticos e prioridades de cuidado/)\n",
+  "failure_reason": "Job falhou antes de concluir",
   "steps": [
     {
       "num": 1,
       "id": "01-relato-rascunho",
       "title": "Interagente A: Relato Inicial em Rascunho",
-      "filename": "01-relato-rascunho.png",
-      "status": "PASS",
-      "note": ""
+      "status": "NÃO EXECUTADO",
+      "note": "Job interrompido antes ou durante a etapa"
     },
     {
       "num": 2,
       "id": "02-relato-enviado",
       "title": "Interagente A: Relato Enviado para Daiane",
-      "filename": "02-relato-enviado.png",
-      "status": "PASS",
-      "note": ""
+      "status": "NÃO EXECUTADO",
+      "note": "Job interrompido antes ou durante a etapa"
     },
     {
       "num": 3,
       "id": "03-prontuario-relato",
       "title": "Profissional: Prontuário com Relato Recebido",
-      "filename": "03-prontuario-relato.png",
-      "status": "PASS",
-      "note": ""
+      "status": "NÃO EXECUTADO",
+      "note": "Job interrompido antes ou durante a etapa"
     },
     {
       "num": 4,
       "id": "04-nota-privada",
       "title": "Profissional: Sessão Manual e Nota Privada",
-      "filename": "04-nota-privada.png",
-      "status": "PASS",
-      "note": ""
+      "status": "NÃO EXECUTADO",
+      "note": "Job interrompido antes ou durante a etapa"
     },
     {
       "num": 5,
       "id": "05-plano-compartilhado",
-      "title": "Profissional: Plano de Desenvolvimento Compartilhado",
-      "filename": "05-plano-compartilhado.png",
-      "status": "FAIL",
-      "note": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Construção do Plano de Desenvolvimento' }).getByLabel(/Objetivos terapêuticos e prioridades de cuidado/)\n"
+      "title": "Profissional: Plano de Cuidado Compartilhado",
+      "status": "NÃO EXECUTADO",
+      "note": "Job interrompido antes ou durante a etapa"
     },
     {
       "num": 6,
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
-      "filename": "06-retorno-proximo-passo.png",
       "status": "NÃO EXECUTADO",
-      "note": ""
+      "note": "Job interrompido antes ou durante a etapa"
     },
     {
       "num": 7,
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
-      "filename": "07-retorno-no-prontuario.png",
       "status": "NÃO EXECUTADO",
-      "note": ""
+      "note": "Job interrompido antes ou durante a etapa"
     },
     {
       "num": 8,
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
-      "filename": "08-interagente-b-sem-acesso.png",
       "status": "NÃO EXECUTADO",
-      "note": ""
+      "note": "Job interrompido antes ou durante a etapa"
     }
   ]
 }
