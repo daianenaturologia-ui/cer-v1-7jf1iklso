@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "7357e93315d1634f1a2ff58a04a5fed61c7c4b53",
-  "conclusion": "success",
-  "timestamp_utc": "2026-10-29T12:30:00.952Z",
-  "run_id": "40873592365",
-  "run_number": "644",
-  "all_success": true,
-  "failure_reason": null,
+  "sha": "27c50c008676c0404e985d24083342156187bbba",
+  "conclusion": "failure",
+  "timestamp_utc": "2026-10-29T12:34:05.435Z",
+  "run_id": "40874098265",
+  "run_number": "645",
+  "all_success": false,
+  "failure_reason": "Interrompido na etapa 5 (Profissional: Plano de Desenvolvimento Compartilhado): locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Construção do Plano de Desenvolvimento' }).getByLabel(/Objetivos terapêuticos e prioridades de cuidado/)\n",
   "steps": [
     {
       "num": 1,
@@ -46,15 +46,15 @@
       "id": "05-plano-compartilhado",
       "title": "Profissional: Plano de Desenvolvimento Compartilhado",
       "filename": "05-plano-compartilhado.png",
-      "status": "PASS",
-      "note": ""
+      "status": "FAIL",
+      "note": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('region', { name: 'Construção do Plano de Desenvolvimento' }).getByLabel(/Objetivos terapêuticos e prioridades de cuidado/)\n"
     },
     {
       "num": 6,
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -62,7 +62,7 @@
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
       "filename": "07-retorno-no-prontuario.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -70,7 +70,7 @@
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
       "filename": "08-interagente-b-sem-acesso.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     }
   ]
