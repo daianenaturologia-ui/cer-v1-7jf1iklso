@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "start": "vite dev",
-    "qa:probe": "echo probe 2",
+    "qa:probe": "node scripts/import-pr73.mjs",
     "dev": "vite",
     "copy:asset": "node scripts/copy-asset.mjs && node scripts/crop-atlases.mjs && node scripts/collect-evidence.mjs",
     "prebuild": "node scripts/copy-asset.mjs && node scripts/crop-atlases.mjs && node scripts/collect-evidence.mjs",
@@ -32,6 +32,7 @@
     "test:primeiro-atendimento-verification": "node scripts/run-primeiro-atendimento-verification.mjs",
     "test:pav-visual": "node scripts/run-pav-visual.mjs",
     "setup:ayurveda": "node scripts/download-and-assemble.mjs && node scripts/check-status.mjs",
+    "import:pr73": "node scripts/import-pr73.mjs",
     "test:ayurveda-assets": "node lote_0a_base64/decode-ayurveda-assets.mjs && node lote_0a_kit/validate-assets.mjs"
   },
   "dependencies": {
