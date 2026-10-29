@@ -1,11 +1,11 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "1b926625c9a6a55ac002c7de4449c28466645b81",
+  "sha": "fb3d1eeb22f67dc4933634bb3347b09c1c7a8d54",
   "conclusion": "failure",
-  "timestamp_utc": "2026-10-29T12:27:01.633Z",
-  "run_id": "40873149296",
-  "run_number": "642",
+  "timestamp_utc": "2026-10-29T12:29:56.351Z",
+  "run_id": "40873581972",
+  "run_number": "643",
   "all_success": false,
   "failure_reason": "Interrompido na etapa 4 (Profissional: Sessão Manual e Nota Privada): page.waitForSelector: Timeout 8000ms exceeded.\nCall log:\n  - waiting for locator('text=Nota profissional salva com sucesso') to be visible\n",
   "steps": [
