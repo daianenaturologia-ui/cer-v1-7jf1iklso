@@ -1,11 +1,11 @@
 {
   "job": "qa-general",
   "job_name": "General QA Practices (Etapa 1..9)",
-  "sha": "fbdeecca72b244a2c3883f0b041aefc539ed8bac",
+  "sha": "df6299795085a499e88bed0815a10a666ff543ce",
   "conclusion": "failure",
-  "timestamp_utc": "2026-10-29T12:35:43.337Z",
-  "run_id": "40874442258",
-  "run_number": "646",
+  "timestamp_utc": "2026-10-29T12:36:21.067Z",
+  "run_id": "40874540385",
+  "run_number": "647",
   "pipeline_conclusion": "FAIL",
   "summary": {
     "total": 7,
@@ -19,49 +19,49 @@
       "step_number": 1,
       "name": "Testes Unitários Puros (testsCorrecao1A, testsLote3A, testsCorrecao3A1, testsMigration0049, testsMigration0059, testsCadernoV1 e testsDemoCorrection)",
       "status": "PASS",
-      "duration_ms": 4893,
+      "duration_ms": 3354,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 2,
       "name": "Teste da Trava de Segurança Canônica (safeMutableGate: 5 cenários determinísticos)",
       "status": "PASS",
-      "duration_ms": 992,
+      "duration_ms": 988,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 3,
       "name": "Verificação do Ambiente (inspeção de segurança)",
       "status": "PASS",
-      "duration_ms": 1,
+      "duration_ms": 0,
       "message": "Ambiente protegido: URL do backend PocketBase não configurada ou vazia"
     },
     {
       "step_number": 4,
       "name": "Integração Mutável (7.A, 7.B, 7.C, 3.A, Caderno)",
       "status": "BLOCKED",
-      "duration_ms": 1113,
+      "duration_ms": 1228,
       "message": "BLOQUEADO: URL do backend PocketBase não configurada ou vazia. Suíte de segurança comprovou bloqueio sem escritas."
     },
     {
       "step_number": 5,
       "name": "Regressões Funcionais Determinísticas (regras temporais, editorial gates, imutabilidade, schema 0049, rules 0059, caderno e demo)",
       "status": "PASS",
-      "duration_ms": 2457,
+      "duration_ms": 2580,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 6,
       "name": "Análise Estática de Código (oxlint src)",
       "status": "PASS",
-      "duration_ms": 416,
+      "duration_ms": 423,
       "message": "Concluído com sucesso"
     },
     {
       "step_number": 7,
       "name": "Verificação de Tipos TypeScript (tsc --noEmit)",
       "status": "FAIL",
-      "duration_ms": 16628,
+      "duration_ms": 17129,
       "message": "Processo encerrou com código 2"
     }
   ]
