@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "748a8b9b153627d68eb80f93e585707440fdda7e",
-  "conclusion": "success",
-  "timestamp_utc": "2026-10-29T12:39:36.820Z",
-  "run_id": "40874937281",
-  "run_number": "648",
-  "all_success": true,
-  "failure_reason": null,
+  "sha": "77af966c63a2e85a06d36753e8aaa55b6ac88f50",
+  "conclusion": "failure",
+  "timestamp_utc": "2026-10-29T12:41:57.141Z",
+  "run_id": "40875219371",
+  "run_number": "649",
+  "all_success": false,
+  "failure_reason": "Interrompido na etapa 6 (Interagente A: Retorno ao Próximo Passo): page.waitForSelector: Timeout 8000ms exceeded.\nCall log:\n  - waiting for locator('text=Retorno acolhido') to be visible\n",
   "steps": [
     {
       "num": 1,
@@ -54,15 +54,15 @@
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "PASS",
-      "note": ""
+      "status": "FAIL",
+      "note": "page.waitForSelector: Timeout 8000ms exceeded.\nCall log:\n  - waiting for locator('text=Retorno acolhido') to be visible\n"
     },
     {
       "num": 7,
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
       "filename": "07-retorno-no-prontuario.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -70,7 +70,7 @@
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
       "filename": "08-interagente-b-sem-acesso.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     }
   ]
