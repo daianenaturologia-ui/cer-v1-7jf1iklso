@@ -1,13 +1,13 @@
 {
   "job": "visual-demo-primeiro-atendimento",
   "job_name": "Visual Demo — Primeiro Atendimento",
-  "sha": "4b9a4c9772629f6fd1b4d1cb58216175481475f5",
-  "conclusion": "success",
-  "timestamp_utc": "2026-10-28T18:07:15.653Z",
-  "run_id": "40741863906",
-  "run_number": "641",
-  "all_success": true,
-  "failure_reason": null,
+  "sha": "1b926625c9a6a55ac002c7de4449c28466645b81",
+  "conclusion": "failure",
+  "timestamp_utc": "2026-10-29T12:27:01.633Z",
+  "run_id": "40873149296",
+  "run_number": "642",
+  "all_success": false,
+  "failure_reason": "Interrompido na etapa 4 (Profissional: Sessão Manual e Nota Privada): page.waitForSelector: Timeout 8000ms exceeded.\nCall log:\n  - waiting for locator('text=Nota profissional salva com sucesso') to be visible\n",
   "steps": [
     {
       "num": 1,
@@ -38,15 +38,15 @@
       "id": "04-nota-privada",
       "title": "Profissional: Sessão Manual e Nota Privada",
       "filename": "04-nota-privada.png",
-      "status": "PASS",
-      "note": ""
+      "status": "FAIL",
+      "note": "page.waitForSelector: Timeout 8000ms exceeded.\nCall log:\n  - waiting for locator('text=Nota profissional salva com sucesso') to be visible\n"
     },
     {
       "num": 5,
       "id": "05-plano-compartilhado",
       "title": "Profissional: Plano de Desenvolvimento Compartilhado",
       "filename": "05-plano-compartilhado.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -54,7 +54,7 @@
       "id": "06-retorno-proximo-passo",
       "title": "Interagente A: Retorno ao Próximo Passo",
       "filename": "06-retorno-proximo-passo.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -62,7 +62,7 @@
       "id": "07-retorno-no-prontuario",
       "title": "Profissional: Retorno da Interagente no Prontuário",
       "filename": "07-retorno-no-prontuario.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     },
     {
@@ -70,7 +70,7 @@
       "id": "08-interagente-b-sem-acesso",
       "title": "Interagente B: Isolamento Estrito",
       "filename": "08-interagente-b-sem-acesso.png",
-      "status": "PASS",
+      "status": "NÃO EXECUTADO",
       "note": ""
     }
   ]
