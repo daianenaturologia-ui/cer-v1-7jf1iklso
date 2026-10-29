@@ -477,6 +477,19 @@ async function main() {
     console.log(`  -> Imagem salva: ${STEP_DEFINITIONS[0].filename}`)
     stepStatuses[0].status = 'COMPLETA'
 
+    // Evidência da revisão visual em celular, sempre após login em conta fictícia.
+    const desktopViewport = page.viewportSize()
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.screenshot({ path: path.join(ARTIFACTS_DIR, '01-relato-mobile.png'), fullPage: true })
+    await page.keyboard.press('Tab')
+    await page.screenshot({ path: path.join(ARTIFACTS_DIR, '01-foco-mobile.png') })
+    const mobileWidths = await page.evaluate(() => ({
+      viewport: window.innerWidth,
+      content: document.documentElement.scrollWidth,
+    }))
+    console.log('[MOBILE] Larguras de viewport e conteúdo:', JSON.stringify(mobileWidths))
+    await page.setViewportSize(desktopViewport)
+
     // =========================================================================
     // ETAPA 2: 02-relato-enviado.png
     // Interagente A: "Enviar para Daiane"
