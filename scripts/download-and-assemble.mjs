@@ -81,14 +81,4 @@ async function run() {
   console.log(JSON.stringify(results, null, 2))
 }
 
-export async function fetchGithubPR73() {
-  const commit = 'c2e5ac79f25206c9d9ccf5b9734eb2870f12a2ec'
-  const repo = 'daianenaturologia-ui/cer-v1-7jf1iklso'
-  const res = await fetch(`https://api.github.com/repos/${repo}/commits/${commit}`)
-  const data = await res.json()
-  return data
-}
-
-if (process.argv[1] && process.argv[1].endsWith('download-and-assemble.mjs') && !process.argv.includes('--fetch-pr')) {
-  run()
-}
+run()
