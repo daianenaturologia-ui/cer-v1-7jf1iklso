@@ -549,13 +549,27 @@ describe('M2C: Salvamento Versionado das Correções do Capítulo 1', () => {
     // O resumo da revisão ativa 2 deve refletir "Estrutura ampla ou sólida"
     expect(screen.getByText(/Estrutura ampla ou sólida/i)).toBeInTheDocument()
 
+    // Simula a leitura assíncrona do servidor após concluir, como na prévia.
+    const listResponses = experienceResponseService.listResponsesByExperience.bind(
+      experienceResponseService,
+    )
+    vi.spyOn(experienceResponseService, 'listResponsesByExperience').mockImplementationOnce(
+      async (...args) => {
+        await new Promise((resolve) => setTimeout(resolve, 30))
+        return listResponses(...args)
+      },
+    )
+
     // Concluir Capítulo
     const completeBtn = screen.getByRole('button', { name: /Concluir este capítulo/i })
     await user.click(completeBtn)
 
-    await waitFor(() => {
-      expect(screen.getByText(/Capítulo 1 concluído/i)).toBeInTheDocument()
-    })
+    expect(
+      await screen.findByRole('heading', { name: 'Percurso de Avaliação Corporal' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Capítulo 1 concluído/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Começar Capítulo 2' })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: 'Avançar para Pele' })).not.toBeInTheDocument()
 
     // Registro de conclusão da revisão 2 deve existir no armazenamento
     const all = await experienceResponseService.listResponsesByExperience(

@@ -726,7 +726,7 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
           onStartCorrection={handleCorrectionStartedInC1}
           onClose={onClose}
           onCompleted={() => {
-            reloadData()
+            handleExitToHub()
             onCompleted?.()
           }}
           onOpenAvatarCustomization={onOpenAvatarCustomization}

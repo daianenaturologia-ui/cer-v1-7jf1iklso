@@ -183,7 +183,7 @@ export const AyurvedaChaptersHub: React.FC<AyurvedaChaptersHubProps> = ({
             : 'Capítulo 3 em andamento'
         : c1CanonicalState === 'completed'
           ? c2CanonicalState === 'not_started'
-            ? 'Capítulo 2 disponível'
+            ? 'Capítulo 1 concluído · Capítulo 2 disponível'
             : c2CanonicalState === 'correcting_ready_to_complete'
               ? 'Correção do Capítulo 2 pronta para concluir'
               : c2CanonicalState === 'correcting_in_progress'
