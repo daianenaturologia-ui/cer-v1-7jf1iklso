@@ -72,7 +72,7 @@ const App = () => {
                 <Route
                   path="/profissional/participantes/:enrollmentId"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requiredRole="profissional">
                       <ParticipantWorkspace />
                     </ProtectedRoute>
                   }
@@ -80,7 +80,7 @@ const App = () => {
                 <Route
                   path="/profissional/:enrollmentId"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requiredRole="profissional">
                       <ParticipantWorkspace />
                     </ProtectedRoute>
                   }
