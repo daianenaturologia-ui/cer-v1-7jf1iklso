@@ -4,6 +4,7 @@ export default defineConfig({
   resolve: { alias: { '@': path.resolve(process.cwd(), 'src') } },
   test: {
     environment: 'jsdom',
+    setupFiles: ['src/test/setup.ts'],
     include: [
       'src/services/weeklyAgenda.test.ts',
       'src/services/plannerNotesServer.test.ts',
