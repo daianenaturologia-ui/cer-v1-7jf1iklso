@@ -59,6 +59,7 @@ interface Props {
   mode?: 'intro' | 'answering' | 'ready_to_complete' | 'completed' | 'review' | 'correcting'
   onBackToHub: () => void
   onCompleted?: () => void
+  onNextChapter?: () => void
 }
 
 export const AyurvedaChapter3Flow: React.FC<Props> = ({
@@ -69,6 +70,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
   mode,
   onBackToHub,
   onCompleted,
+  onNextChapter,
 }) => {
   const [step, setStep] = useState(initialStep)
   const [state, setState] = useState<AyurvedaChapter3State>({})
@@ -654,19 +656,18 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
     )
 
   if (step === 6) {
+    const isCompleted = derived.status === 'completed' && !isCorrectionMode
     return (
       <div className="mx-auto max-w-2xl space-y-5 py-4">
         {saver.status}
         <div className="rounded-2xl border border-primary/25 bg-primary/5 p-5 text-center space-y-2">
-          {derived.status === 'completed' ? (
+          {isCompleted ? (
             <CheckCircle2 className="mx-auto h-7 w-7 text-emerald-600" />
           ) : (
             <Clock className="mx-auto h-7 w-7 text-amber-600" />
           )}
           <h2 className="font-serif text-2xl">
-            {derived.status === 'completed'
-              ? 'Capítulo 3 concluído'
-              : 'Revise suas mudanças atuais'}
+            {isCompleted ? 'Capítulo 3 concluído' : 'Revise suas mudanças atuais'}
           </h2>
           <p className="text-xs text-muted-foreground">
             O habitual dos capítulos anteriores permanece separado do que está diferente agora.
@@ -813,7 +814,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
             )}
           </CardContent>
         </Card>
-        {derived.status === 'completed' && !isCorrectionMode && (
+        {isCompleted && (
           <div className="rounded-xl border bg-primary/5 p-3 space-y-2 text-sm">
             <p>
               Vamos acompanhar seu momento a cada 35 dias. Esta reavaliação retoma somente Ayurveda:
@@ -841,7 +842,7 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
           </div>
         )}
         <div className="flex flex-wrap justify-between gap-2">
-          {derived.status === 'completed' && !isCorrectionMode ? (
+          {isCompleted ? (
             <Button
               variant="outline"
               onClick={() => {
@@ -872,6 +873,11 @@ export const AyurvedaChapter3Flow: React.FC<Props> = ({
             </Button>
           )}
         </div>
+        {isCompleted && onNextChapter && (
+          <Button className="w-full h-auto whitespace-normal" onClick={onNextChapter}>
+            Próximo capítulo: minha síntese
+          </Button>
+        )}
         {correctionError && (
           <p role="alert" className="text-xs text-destructive">
             {correctionError}

@@ -788,19 +788,12 @@ export const AyurvedaChaptersNavigator: React.FC<AyurvedaChaptersNavigatorProps>
           initialStep={navState.currentStep ?? 1}
           mode={navState.mode as AyurvedaNavigationChapterMode}
           onBackToHub={handleExitToHub}
+          onNextChapter={handleStartChapter4FromHub}
           onCompleted={() => {
             reloadData()
             onCompleted?.()
           }}
         />
-        {derivedC3.status === 'completed' && navState.mode !== 'correcting' && (
-          <Button
-            className="mt-4 w-full h-auto whitespace-normal"
-            onClick={handleStartChapter4FromHub}
-          >
-            Próximo capítulo: minha síntese
-          </Button>
-        )}
       </div>
     )
   }

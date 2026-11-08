@@ -165,6 +165,7 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
     )
     const saveSpy = vi.mocked(experienceResponseService.saveResponse)
     const user = userEvent.setup()
+    const onNextChapter = vi.fn()
 
     render(
       <AyurvedaChapter3Flow
@@ -172,15 +173,19 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
         experienceId="exp-corpo-fisiologia-07b"
         respondentUserId="participant-demo"
         onBackToHub={() => {}}
+        onNextChapter={onNextChapter}
       />,
     )
 
     await screen.findByText('Capítulo 3 concluído')
+    const nextChapter = { name: 'Próximo capítulo: minha síntese' }
+    expect(screen.getByRole('button', nextChapter)).toBeEnabled()
     await user.click(screen.getByRole('button', { name: 'Corrigir minhas respostas' }))
     expect(screen.getByRole('dialog', { name: 'Corrigir respostas do Capítulo 3?' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Começar correção' }))
 
     expect(screen.getByText(/versão anterior preservada/i)).toBeTruthy()
+    expect(screen.queryByRole('button', nextChapter)).not.toBeInTheDocument()
     expect(saveSpy).not.toHaveBeenCalled()
 
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
@@ -192,6 +197,8 @@ describe('Capítulo 3 — contexto de medicamentos e suplementos', () => {
     await user.tab()
     await user.click(screen.getByRole('button', { name: 'Revisar' }))
 
+    expect(screen.getByRole('heading', { name: 'Revise suas mudanças atuais' })).toBeVisible()
+    expect(screen.queryByRole('button', nextChapter)).not.toBeInTheDocument()
     expect(saveSpy).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Concluir correção' }))
 
