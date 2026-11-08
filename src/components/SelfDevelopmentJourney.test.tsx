@@ -11,7 +11,7 @@ import { careEpisodeInput, emptyCareEpisode } from '@/services/careEpisode'
 import { episodeReviewInput, emptyEpisodeReview } from '@/services/careEpisodeReview'
 import { lifeDirectionsService } from '@/services/lifeDirections'
 import { WeeklyAgenda } from './WeeklyAgenda'
-import { localDateInput, mondayOf } from '@/services/weeklyAgenda'
+import { localDateInput, moveDay, sundayOf } from '@/services/weeklyAgenda'
 vi.mock('@/lib/pocketbase/client', () => ({
   default: {
     collection: () => {
@@ -41,7 +41,7 @@ it('o horário digitado ao planejar permanece na agenda após reabrir', async ()
     'Segunda ao fim do trabalho',
   )
   await user.click(screen.getByText('Personalizar · horário, alternativa e sinais'))
-  const moment = mondayOf(new Date())
+  const moment = moveDay(sundayOf(new Date()), 1)
   moment.setHours(17, 15)
   fireEvent.input(screen.getByLabelText('Reservar data e horário (opcional)'), {
     target: { value: localDateInput(moment) },
@@ -186,7 +186,7 @@ it('registra um cuidado existente, preserva a privacidade e o mesmo horário no 
   await user.type(screen.getByLabelText('Meu cuidado na prática'), 'Minha caminhada habitual')
   await user.type(screen.getByLabelText('Quando isso cabe na minha vida?'), 'Depois do café')
   await user.click(screen.getByText('Personalizar · horário, alternativa e sinais'))
-  const moment = mondayOf(new Date())
+  const moment = moveDay(sundayOf(new Date()), 1)
   moment.setHours(8, 30)
   fireEvent.input(screen.getByLabelText('Reservar data e horário (opcional)'), {
     target: { value: localDateInput(moment) },
