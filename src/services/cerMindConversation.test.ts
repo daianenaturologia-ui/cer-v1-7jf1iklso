@@ -24,6 +24,19 @@ it('seleciona só três padrões pela intensidade ordinal e sinaliza empate no l
   expect(text).toContain('seu lado analítico'.replace('seu', 'Seu'))
   expect(text).not.toMatch(/Insistente|Crítico|Você registrou:|exemplo fictício/)
 })
+it('distingue os padrões escolhidos dos acrescentados pela frequência', () => {
+  const d = dim({
+    hipervigilante: 'Repete-se com frequência',
+    hiper_realizador: 'Repete-se com frequência',
+    hiper_racional: 'Aparece em algumas situações',
+  })
+  const text = mindConversation('Mariana', d, [], {}, false, ['hipervigilante', 'hiper_realizador'])
+
+  expect(text).toContain(
+    'Você destacou Hipervigilante e Hiper-realizador como movimentos que interferem no seu cotidiano.',
+  )
+  expect(text).toContain('Pelas frequências registradas, também vamos olhar para Hiper-racional.')
+})
 it('não inventa intensidade para respostas desconhecidas, negativas ou seleção antiga', () => {
   expect(
     strongestMindPatterns(

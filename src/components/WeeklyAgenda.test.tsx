@@ -7,7 +7,7 @@ import { WeeklyAgenda } from './WeeklyAgenda'
 import { demoAdapter, DEMO_ENROLLMENT_ID } from '@/services/demoAdapter'
 import { plannerNotesService } from '@/services/plannerNotes'
 import { selfDevelopmentService } from '@/services/selfDevelopment'
-import { mondayOf, localDateInput } from '@/services/weeklyAgenda'
+import { sundayOf, moveDay, localDateInput } from '@/services/weeklyAgenda'
 import { DEVELOPMENT_CATALOG } from '@/services/developmentCatalog'
 vi.mock('@/lib/pocketbase/client', () => ({
   default: {
@@ -76,7 +76,7 @@ it('leva passo sem horário para a semana e registra execução mantendo sua ori
   page()
   await user.click(await screen.findByRole('tab', { name: /Sem horário/ }))
   await user.click(await screen.findByRole('button', { name: /Observar meu ritmo/ }))
-  const start = mondayOf(new Date())
+  const start = moveDay(sundayOf(new Date()), 1)
   start.setHours(9)
   const input = screen.getByLabelText('Reservar horário') as HTMLInputElement
   fireEvent.change(input, { target: { value: localDateInput(start) } })

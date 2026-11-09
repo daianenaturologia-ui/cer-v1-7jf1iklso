@@ -1106,7 +1106,7 @@ export const AyurvedaChapter1Flow: React.FC<AyurvedaChapter1FlowProps> = ({
 
   return (
     <div className="w-full">
-      {saver.status}
+      <div className="min-h-5">{saver.status}</div>
       {validationError && (
         <p role="alert" className="text-sm text-destructive">
           {validationError}
