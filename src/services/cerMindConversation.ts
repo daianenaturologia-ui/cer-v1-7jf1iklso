@@ -107,10 +107,23 @@ export function mindConversation(
   const list = (items: string[]) =>
     items.length < 2 ? items.join('') : items.slice(0, -1).join(', ') + ' e ' + items.at(-1)
   if (!keys.length && !feelings.length) return ''
+  const declaredNames = keys.filter((key) => declared.includes(key)).map((key) => names[key])
+  const additionalNames = keys.filter((key) => !declared.includes(key)).map((key) => names[key])
+  const declaredIntro = declaredNames.length
+    ? `Você destacou ${list(declaredNames)} como movimentos que interferem no seu cotidiano. `
+    : ''
+  const frequencyIntro = additionalNames.length
+    ? `Pelas frequências registradas, também vamos olhar para ${list(additionalNames)}.`
+    : ''
+  const patternIntro = declaredNames.length
+    ? declaredIntro + frequencyIntro
+    : keys.length
+      ? `Entre seus movimentos de proteção, vamos aprofundar aqui ${list(additionalNames)}, que estão entre os mais intensos na sua leitura.`
+      : ''
   const paragraphs = [
-    `${name}, vamos olhar com carinho para o que suas respostas nos ajudam a compreender. ${feelings.length ? `No questionário, você destacou ${list(feelings)} entre as emoções mais presentes. ` : ''}${keys.length ? `Entre seus movimentos de proteção, vamos aprofundar aqui ${list(keys.map((k) => names[k]))}, ${declared.length ? 'que você destacou como interferentes no seu cotidiano.' : 'que estão entre os mais intensos na sua leitura.'}` : ''}`,
+    `${name}, vamos olhar com carinho para o que suas respostas nos ajudam a compreender. ${feelings.length ? `No questionário, você destacou ${list(feelings)} entre as emoções mais presentes. ` : ''}${patternIntro}`,
   ]
-  if (tied && !declared.length)
+  if (tied && !declaredNames.length)
     paragraphs.push(
       'Alguns movimentos aparecem com a mesma intensidade. Escolhemos três para começar esta conversa; os demais continuam disponíveis no gráfico, com o destaque que você atribuiu a cada um.',
     )
